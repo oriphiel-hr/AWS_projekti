@@ -1,7 +1,7 @@
 name: Build & Push to ECR (monorepo)
 
 on:
-  workflow_dispatch:      # <— ručno pokretanje iz GitHub UI-a
+  workflow_dispatch:      # ručno pokretanje iz GitHub UI-a
   push:
     branches: [ "main", "staging" ]
     paths:
@@ -16,6 +16,7 @@ permissions:
 env:
   AWS_REGION: ${{ vars.AWS_REGION }}
   AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+  AWS_ROLE_ARN: ${{ vars.AWS_ROLE_ARN }}   # npr. arn:aws:iam::666203386231:role/github-oidc-ecs-ecr
   ECR_REGISTRY: ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com
 
 jobs:
@@ -36,29 +37,45 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      # gradi samo ako se nešto promijenilo u odgovarajućem folderu
+      # Ako je ručno pokretanje, preskoči paths-filter (force change=true)
       - name: Detect changes for ${{ matrix.name }}
         id: changes
         uses: dorny/paths-filter@v3
+        if: github.event_name != 'workflow_dispatch'
         with:
           filters: |
             changed:
               - '${{ matrix.context }}/**'
 
+      - name: Force changed on manual run
+        if: github.event_name == 'workflow_dispatch'
+        run: echo "changed=true" >> $GITHUB_OUTPUT
+        id: manual
+
+      - name: Debug vars
+        if: (github.event_name == 'workflow_dispatch' && steps.manual.outputs.changed == 'true') || steps.changes.outputs.changed == 'true'
+        run: |
+          echo "AWS_REGION=${AWS_REGION}"
+          echo "AWS_ACCOUNT_ID=${AWS_ACCOUNT_ID}"
+          echo "AWS_ROLE_ARN=${AWS_ROLE_ARN}"
+          test -n "${AWS_REGION}" && test -n "${AWS_ACCOUNT_ID}" && test -n "${AWS_ROLE_ARN}" || (echo "❌ Missing required vars"; exit 1)
+
       - name: Configure AWS (OIDC)
-        if: steps.changes.outputs.changed == 'true'
+        if: (github.event_name == 'workflow_dispatch' && steps.manual.outputs.changed == 'true') || steps.changes.outputs.changed == 'true'
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/github-oidc-ecs-ecr
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to ECR
-        if: steps.changes.outputs.changed == 'true'
+        if: (github.event_name == 'workflow_dispatch' && steps.manual.outputs.changed == 'true') || steps.changes.outputs.changed == 'true'
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build & Push
-        if: steps.changes.outputs.changed == 'true'
+        if: (github.event_name == 'workflow_dispatch' && steps.manual.outputs.changed == 'true') || steps.changes.outputs.changed == 'true'
         uses: docker/build-push-action@v6
         with:
           context: ${{ matrix.context }}
