@@ -14,8 +14,8 @@ permissions:
   contents: read
 
 env:
-  AWS_REGION: ${{ vars.AWS_REGION || secrets.AWS_REGION }}
-  AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID || secrets.AWS_ACCOUNT_ID }}
   AWS_ROLE_ARN: ${{ vars.AWS_ROLE_ARN }}   # npr. arn:aws:iam::666203386231:role/github-oidc-ecs-ecr
   ECR_REGISTRY: ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com
 
