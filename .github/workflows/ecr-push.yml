@@ -1,6 +1,7 @@
 name: Build & Push to ECR (monorepo)
 
 on:
+  workflow_dispatch:      # <— ručno pokretanje iz GitHub UI-a
   push:
     branches: [ "main", "staging" ]
     paths:
