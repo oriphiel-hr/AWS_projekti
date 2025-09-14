@@ -1,0 +1,67 @@
+name: Build & Push to ECR (monorepo)
+
+on:
+  push:
+    branches: [ "main", "staging" ]
+    paths:
+      - "pre-pilot/in-store-nav/**"
+      - "uslugar/**"
+      - "oriphiel-poslovni-imenik/**"
+
+permissions:
+  id-token: write   # za OIDC
+  contents: read
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+  ECR_REGISTRY: ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - name: in-store-nav
+            context: pre-pilot/in-store-nav
+            ecr_repo: in-store-nav
+          - name: uslugar
+            context: uslugar
+            ecr_repo: uslugar
+          - name: oriphiel-poslovni-imenik
+            context: oriphiel-poslovni-imenik
+            ecr_repo: oriphiel-poslovni-imenik
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # gradi samo ako se nešto promijenilo u odgovarajućem folderu
+      - name: Detect changes for ${{ matrix.name }}
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            changed:
+              - '${{ matrix.context }}/**'
+
+      - name: Configure AWS (OIDC)
+        if: steps.changes.outputs.changed == 'true'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/github-oidc-ecs-ecr
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to ECR
+        if: steps.changes.outputs.changed == 'true'
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build & Push
+        if: steps.changes.outputs.changed == 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          push: true
+          tags: |
+            ${{ env.ECR_REGISTRY }}/${{ matrix.ecr_repo }}:${{ github.ref_name }}-${{ github.sha }}
+            ${{ env.ECR_REGISTRY }}/${{ matrix.ecr_repo }}:${{ github.ref_name }}
