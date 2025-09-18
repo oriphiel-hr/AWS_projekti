@@ -1,5 +1,10 @@
 name: Build in-store-nav
-
+  run: |
+    docker buildx build \
+      --platform linux/amd64 \
+      -t $ECR_REGISTRY/$ECR_REPOSITORY:main \
+      -t $ECR_REGISTRY/$ECR_REPOSITORY:${{ github.sha }} \
+      --push .
 on:
   push:
     branches: [ main, staging ]
