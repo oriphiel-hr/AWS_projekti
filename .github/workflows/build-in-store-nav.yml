@@ -26,7 +26,6 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
@@ -39,15 +38,14 @@ jobs:
       - name: Login to ECR
         uses: aws-actions/amazon-ecr-login@v2
 
-      # (opcionalno) generiraj metapodatke i korisne tagove
       - name: Docker metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPO }}
           tags: |
-            type=raw,value=${{ github.ref_name }}-${{ github.sha }}   # npr. main-<sha>, staging-<sha>
-            type=raw,value=sha-${{ github.sha }}                      # čisti sha tag
+            type=raw,value=${{ github.ref_name }}-${{ github.sha }}
+            type=raw,value=sha-${{ github.sha }}
 
       - name: Build & Push
         uses: docker/build-push-action@v6
@@ -56,10 +54,7 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
 
-      # izvezi IMAGE_URI (korisno za kasniji deploy)
       - name: Export image URI
         id: img
         run: |
