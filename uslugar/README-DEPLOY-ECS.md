@@ -1,4 +1,4 @@
-# Uslugar CI/CD (GitHub Actions → ECR/ECS Fargate)
+# Uslugar CI/CD (GitHub Actions → ECR/ECS Fargate) 
 
 ## 1) Preduvjeti na AWS-u
 - ECR repo: `uslugar-backend`
