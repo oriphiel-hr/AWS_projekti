@@ -26,21 +26,21 @@ model User {
 }
 
 model ProviderProfile {
-  id          String  @id @default(cuid())
-  user        User    @relation(fields: [userId], references: [id])
-  userId      String  @unique
+  id          String   @id @default(cuid())
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String   @unique
   bio         String?
-  categories  Category[] @relation("ProviderCategories", references: [id])
+  categories  Category[] @relation("ProviderCategories") // ⬅️ bez references
   portfolio   Json?
-  ratingAvg   Float   @default(0)
-  ratingCount Int     @default(0)
+  ratingAvg   Float    @default(0)
+  ratingCount Int      @default(0)
   serviceArea String?
 }
 
 model Category {
   id        String @id @default(cuid())
   name      String @unique
-  providers ProviderProfile[] @relation("ProviderCategories")
+  providers ProviderProfile[] @relation("ProviderCategories") // ⬅️ par na suprotnoj strani
   jobs      Job[]
 }
 
