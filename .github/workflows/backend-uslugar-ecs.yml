@@ -1,0 +1,77 @@
+name: Backend - Reuse existing Task Definition (ECR→ECS)
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "uslugar/backend/**"
+      - ".github/workflows/backend-uslugar-ecs.yml"
+
+env:
+  AWS_REGION: eu-north-1
+  ECR_REPO_BACKEND: uslugar
+  ECS_CLUSTER: apps-cluster
+  ECS_SERVICE: uslugar-service-2gk1f1mv
+  CONTAINER_NAME: uslugar
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions: { id-token: write, contents: read }
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build & Push image
+        env:
+          ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -f uslugar/backend/Dockerfile.prod \
+            -t $ECR_REGISTRY/${{ env.ECR_REPO_BACKEND }}:$IMAGE_TAG uslugar/backend
+          docker push $ECR_REGISTRY/${{ env.ECR_REPO_BACKEND }}:$IMAGE_TAG
+          echo "IMAGE_URI=$ECR_REGISTRY/${{ env.ECR_REPO_BACKEND }}:$IMAGE_TAG" >> $GITHUB_ENV
+
+      - name: Install JQ
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Read current Task Definition
+        run: |
+          TD_ARN=$(aws ecs describe-services \
+            --cluster "${{ env.ECS_CLUSTER }}" \
+            --services "${{ env.ECS_SERVICE }}" \
+            --query "services[0].taskDefinition" --output text)
+          aws ecs describe-task-definition --task-definition "$TD_ARN" \
+            --query "taskDefinition" > td.json
+          jq 'del(.status,.requiresAttributes,.compatibilities,.revision,.registeredAt,.registeredBy)' td.json > td_clean.json
+
+      - name: Replace image in TD
+        run: |
+          jq --arg NAME "${{ env.CONTAINER_NAME }}" --arg IMG "${IMAGE_URI}" '
+            .containerDefinitions = (.containerDefinitions | map(
+              if .name == $NAME then .image = $IMG | . else . end
+            ))
+          ' td_clean.json > td_new.json
+
+      - name: Register new TD revision
+        run: |
+          NEW_TD_ARN=$(aws ecs register-task-definition \
+            --cli-input-json file://td_new.json \
+            --query "taskDefinition.taskDefinitionArn" --output text)
+          echo "NEW_TD_ARN=$NEW_TD_ARN" >> $GITHUB_ENV
+
+      - name: Update service
+        run: |
+          aws ecs update-service \
+            --cluster "${{ env.ECS_CLUSTER }}" \
+            --service "${{ env.ECS_SERVICE }}" \
+            --task-definition "${NEW_TD_ARN}" \
+            --query "service.taskDefinition" --output text
