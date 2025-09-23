@@ -13,6 +13,9 @@ env:
   ECS_CLUSTER: apps-cluster
   ECS_SERVICE: uslugar-service-2gk1f1mv
   CONTAINER_NAME: uslugar
+  # 🔽 Privatni subneti i SG za Fargate task koji će pokrenuti migracije
+  MIGRATE_SUBNETS: subnet-0a00f97768705bbcf,subnet-01b67edfd00dc288c
+  MIGRATE_SG: sg-084c1e49c9c77aff1
 
 jobs:
   deploy:
@@ -38,7 +41,7 @@ jobs:
             echo "No package-lock.json found, generating..."
             npm i --package-lock-only
           fi
-          head -n 20 package-lock.json
+          head -n 20 package-lock.json || true
 
       - name: Build & Push image
         env:
@@ -101,3 +104,31 @@ jobs:
             --service "${{ env.ECS_SERVICE }}" \
             --task-definition "${NEW_TD_ARN}" \
             --query "service.taskDefinition" --output text
+
+      # ✅ Post-deploy: pokreni Prisma migracije kao privremeni Fargate task
+      - name: Run Prisma Migrate (post-deploy)
+        run: |
+          echo "Running prisma migrate deploy on new TD: ${NEW_TD_ARN}"
+          TASK_ARN=$(aws ecs run-task \
+            --cluster "${{ env.ECS_CLUSTER }}" \
+            --launch-type FARGATE \
+            --task-definition "${NEW_TD_ARN}" \
+            --network-configuration "awsvpcConfiguration={subnets=[${{ env.MIGRATE_SUBNETS }}],securityGroups=[${{ env.MIGRATE_SG }}],assignPublicIp=DISABLED}" \
+            --overrides "{\"containerOverrides\":[{\"name\":\"${{ env.CONTAINER_NAME }}\",\"command\":[\"npx\",\"prisma\",\"migrate\",\"deploy\"]}]}" \
+            --region "${{ env.AWS_REGION }}" \
+            --query "tasks[0].taskArn" --output text)
+          echo "Started migrate task: $TASK_ARN"
+
+          # (opcionalno) čekaj da task završi i prikaži status
+          aws ecs wait tasks-stopped \
+            --cluster "${{ env.ECS_CLUSTER }}" \
+            --tasks "$TASK_ARN"
+          EXIT_CODE=$(aws ecs describe-tasks \
+            --cluster "${{ env.ECS_CLUSTER }}" \
+            --tasks "$TASK_ARN" \
+            --query "tasks[0].containers[?name=='${{ env.CONTAINER_NAME }}'].exitCode | [0]" \
+            --output text)
+          echo "Migrate task exit code: $EXIT_CODE"
+          if [ "$EXIT_CODE" != "0" ]; then
+            echo "Prisma migrate failed"; exit 1;
+          fi
