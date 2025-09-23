@@ -105,30 +105,41 @@ jobs:
             --task-definition "${NEW_TD_ARN}" \
             --query "service.taskDefinition" --output text
 
-      # ✅ Post-deploy: pokreni Prisma migracije kao privremeni Fargate task
-      - name: Run Prisma Migrate (post-deploy)
+      # ✅ Post-deploy: pokreni Prisma migracije kao privremeni Fargate task (bez npx)
+      - name: Run Prisma migrate (one-off task)
+        env:
+          SUBNETS: ${{ env.MIGRATE_SUBNETS }}
+          SECGRP: ${{ env.MIGRATE_SG }}
         run: |
           echo "Running prisma migrate deploy on new TD: ${NEW_TD_ARN}"
           TASK_ARN=$(aws ecs run-task \
             --cluster "${{ env.ECS_CLUSTER }}" \
             --launch-type FARGATE \
             --task-definition "${NEW_TD_ARN}" \
-            --network-configuration "awsvpcConfiguration={subnets=[${{ env.MIGRATE_SUBNETS }}],securityGroups=[${{ env.MIGRATE_SG }}],assignPublicIp=DISABLED}" \
-            --overrides "{\"containerOverrides\":[{\"name\":\"${{ env.CONTAINER_NAME }}\",\"command\":[\"npx\",\"prisma\",\"migrate\",\"deploy\"]}]}" \
-            --region "${{ env.AWS_REGION }}" \
-            --query "tasks[0].taskArn" --output text)
+            --network-configuration "awsvpcConfiguration={subnets=[$SUBNETS],securityGroups=[$SECGRP],assignPublicIp=DISABLED}" \
+            --overrides '{
+              "containerOverrides": [{
+                "name": "'"${{ env.CONTAINER_NAME }}"'",
+                "command": ["sh","-lc","./node_modules/.bin/prisma migrate deploy --schema=prisma/schema.prisma"]
+              }]
+            }' \
+            --query "tasks[0].taskArn" --output text --region "${{ env.AWS_REGION }}")
           echo "Started migrate task: $TASK_ARN"
 
-          # (opcionalno) čekaj da task završi i prikaži status
-          aws ecs wait tasks-stopped \
-            --cluster "${{ env.ECS_CLUSTER }}" \
-            --tasks "$TASK_ARN"
+          # čekaj završetak
+          until aws ecs describe-tasks --cluster "${{ env.ECS_CLUSTER }}" --tasks "$TASK_ARN" --region "${{ env.AWS_REGION }}" \
+              --query "tasks[0].lastStatus" --output text | grep -q "STOPPED"; do
+            sleep 5
+          done
+
           EXIT_CODE=$(aws ecs describe-tasks \
-            --cluster "${{ env.ECS_CLUSTER }}" \
-            --tasks "$TASK_ARN" \
-            --query "tasks[0].containers[?name=='${{ env.CONTAINER_NAME }}'].exitCode | [0]" \
-            --output text)
+            --cluster "${{ env.ECS_CLUSTER }}" --tasks "$TASK_ARN" --region "${{ env.AWS_REGION }}" \
+            --query "tasks[0].containers[?name=='${{ env.CONTAINER_NAME }}'].exitCode | [0]" --output text)
+
           echo "Migrate task exit code: $EXIT_CODE"
           if [ "$EXIT_CODE" != "0" ]; then
-            echo "Prisma migrate failed"; exit 1;
+            echo "Prisma migrate failed"
+            # pokaži zadnje logove kontejnera (ako je uključen awslogs driver)
+            aws logs tail "/ecs/${{ env.CONTAINER_NAME }}" --since 15m --region "${{ env.AWS_REGION }}" || true
+            exit 1
           fi

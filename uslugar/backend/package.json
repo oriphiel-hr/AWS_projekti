@@ -1,13 +1,16 @@
 {
   "dependencies": {
-    "@prisma/client": "5.22.0"
+    "@prisma/client": "5.22.0",
+    "express": "4.19.2"
   },
   "devDependencies": {
-    "prisma": "5.22.0"
+    // makni "prisma" odavde ako je bio
   },
+  "prisma": { "schema": "prisma/schema.prisma" },
   "scripts": {
-    "migrate:deploy": "prisma migrate deploy --schema=/app/prisma/schema.prisma",
-    "migrate:status": "prisma migrate status --schema=/app/prisma/schema.prisma",
-    "generate": "prisma generate --schema=/app/prisma/schema.prisma"
+    "start": "node server.js",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate:deploy": "prisma migrate deploy"
   }
 }
+
