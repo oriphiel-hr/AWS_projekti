@@ -1,16 +1,41 @@
-FROM node:20-alpine AS deps
+# ---- deps + build ----
+FROM node:20-bookworm-slim AS build
 WORKDIR /app
+
+# 1) instaliraj deps (uključujući devDependencies zbog migracija)
 COPY package*.json ./
 RUN npm ci
-COPY prisma ./prisma
-RUN npx prisma generate
 
-FROM node:20-alpine AS runner
+# 2) kopiraj shemu i generiraj Prisma klijenta
+COPY prisma ./prisma
+RUN npm run generate
+
+# 3) kopiraj ostatak appa (prilagodi putanju ako je drugačija)
+COPY . .
+
+# Ako koristiš TypeScript, ovdje build:
+# RUN npm run build
+
+
+# ---- runtime ----
+FROM node:20-bookworm-slim AS runner
 WORKDIR /app
+
+# OpenSSL za svaki slučaj (i CA certs)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    openssl ca-certificates && rm -rf /var/lib/apt/lists/*
+
 ENV NODE_ENV=production
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/prisma ./prisma
-COPY src ./src
-COPY package*.json ./
-EXPOSE 4000
+
+# prenesi node_modules (uklj. prisma CLI), prisma/ i app kod
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/prisma ./prisma
+COPY --from=build /app/package*.json ./
+COPY --from=build /app/src ./src
+# ili ako pokrećeš root file:
+# COPY --from=build /app/server.js ./server.js
+
+EXPOSE 3000
 CMD ["node", "src/server.js"]
+# ili ako je root file:
+# CMD ["node", "server.js"]
