@@ -1,16 +1,22 @@
 {
-  "dependencies": {
-    "@prisma/client": "5.22.0",
-    "express": "4.19.2"
-  },
-  "devDependencies": {
-    // makni "prisma" odavde ako je bio
-  },
-  "prisma": { "schema": "prisma/schema.prisma" },
+  "name": "uslugar-backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate:deploy": "prisma migrate deploy"
+    "prisma:generate": "prisma generate --schema=prisma/schema.prisma",
+    "migrate:deploy": "prisma migrate deploy --schema=prisma/schema.prisma",
+    "migrate:dev": "prisma migrate dev --schema=prisma/schema.prisma",
+    "db:push": "prisma db push --schema=prisma/schema.prisma"
+  },
+  "dependencies": {
+    "@prisma/client": "5.22.0",
+    "pg": "^8.12.0",
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "prisma": "5.22.0"
   }
 }
-
