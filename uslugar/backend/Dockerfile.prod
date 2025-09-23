@@ -1,34 +1,18 @@
-# ---- deps/build stage ----
-FROM node:20-bookworm-slim AS build
+# uslugar/backend/Dockerfile.prod
+FROM node:20-bookworm-slim
+
 WORKDIR /app
 
-# samo package datoteke za bolji cache
-COPY uslugar/backend/package*.json ./
-
-# instaliraj deps (uklj. prisma CLI jer je dependency)
+# 1) package*.json iz trenutnog konteksta (uslugar/backend)
+COPY package*.json ./
 RUN npm ci
 
-# kopiraj izvor (uklj. prisma/)
-COPY uslugar/backend/ ./
+# 2) kopiraj sav kod iz trenutnog konteksta
+COPY . .
 
-# generiraj Prisma klijenta (povuče točne engine-e za glibc)
-RUN npx prisma generate
+# 3) generiraj Prisma klijent (glibc), pa makni dev deps
+RUN npx prisma generate --schema=prisma/schema.prisma \
+ && npm prune --omit=dev
 
-# ---- runtime stage ----
-FROM node:20-bookworm-slim
-WORKDIR /app
 ENV NODE_ENV=production
-
-# openssl (sigurno), i cleanup
-RUN apt-get update && apt-get install -y --no-install-recommends openssl \
-  && rm -rf /var/lib/apt/lists/*
-
-# kopiraj node_modules i app
-COPY --from=build /app/node_modules ./node_modules
-COPY --from=build /app/ ./
-
-# port po potrebi
-EXPOSE 3000
-
-# pokretanje
 CMD ["node", "server.js"]
