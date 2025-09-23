@@ -1,41 +1,34 @@
-# ---- deps + build ----
+# ---- deps/build stage ----
 FROM node:20-bookworm-slim AS build
 WORKDIR /app
 
-# 1) instaliraj deps (uključujući devDependencies zbog migracija)
-COPY package*.json ./
+# samo package datoteke za bolji cache
+COPY uslugar/backend/package*.json ./
+
+# instaliraj deps (uklj. prisma CLI jer je dependency)
 RUN npm ci
 
-# 2) kopiraj shemu i generiraj Prisma klijenta
-COPY prisma ./prisma
-RUN npm run generate
+# kopiraj izvor (uklj. prisma/)
+COPY uslugar/backend/ ./
 
-# 3) kopiraj ostatak appa (prilagodi putanju ako je drugačija)
-COPY . .
+# generiraj Prisma klijenta (povuče točne engine-e za glibc)
+RUN npx prisma generate
 
-# Ako koristiš TypeScript, ovdje build:
-# RUN npm run build
-
-
-# ---- runtime ----
-FROM node:20-bookworm-slim AS runner
+# ---- runtime stage ----
+FROM node:20-bookworm-slim
 WORKDIR /app
-
-# OpenSSL za svaki slučaj (i CA certs)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    openssl ca-certificates && rm -rf /var/lib/apt/lists/*
-
 ENV NODE_ENV=production
 
-# prenesi node_modules (uklj. prisma CLI), prisma/ i app kod
-COPY --from=build /app/node_modules ./node_modules
-COPY --from=build /app/prisma ./prisma
-COPY --from=build /app/package*.json ./
-COPY --from=build /app/src ./src
-# ili ako pokrećeš root file:
-# COPY --from=build /app/server.js ./server.js
+# openssl (sigurno), i cleanup
+RUN apt-get update && apt-get install -y --no-install-recommends openssl \
+  && rm -rf /var/lib/apt/lists/*
 
+# kopiraj node_modules i app
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/ ./
+
+# port po potrebi
 EXPOSE 3000
-CMD ["node", "src/server.js"]
-# ili ako je root file:
-# CMD ["node", "server.js"]
+
+# pokretanje
+CMD ["node", "server.js"]
