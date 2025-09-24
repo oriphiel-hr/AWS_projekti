@@ -105,7 +105,7 @@ jobs:
             --task-definition "${NEW_TD_ARN}" \
             --query "service.taskDefinition" --output text
 
-      # ✅ Post-deploy: pokreni Prisma migracije kao privremeni Fargate task
+      # ✅ Post-deploy: pokreni Prisma migracije kao privremeni Fargate task (bez startDisabled)
       - name: Run Prisma migrate (one-off task)
         env:
           SUBNETS: ${{ env.MIGRATE_SUBNETS }}
@@ -117,7 +117,7 @@ jobs:
           aws ecs describe-task-definition --task-definition "${NEW_TD_ARN}" \
             --query "taskDefinition.containerDefinitions[].name" --output text
 
-          # 1) pokreni task, ugasi sve druge kontejnere; promijeni "nginx-proxy" ako je drugo ime
+          # 1) pokreni task: app radi migracije, nginx-proxy miruje
           TASK_ARN=$(aws ecs run-task \
             --cluster "${{ env.ECS_CLUSTER }}" \
             --launch-type FARGATE \
@@ -127,12 +127,16 @@ jobs:
               "containerOverrides": [
                 {
                   "name": "'"${{ env.CONTAINER_NAME }}"'",
-                  "command": ["sh","-lc","npx prisma migrate deploy --schema=prisma/schema.prisma"]
+                  "command": ["sh","-lc","./node_modules/.bin/prisma migrate deploy --schema=prisma/schema.prisma"]
                 },
-                { "name": "nginx-proxy", "startDisabled": true }
+                {
+                  "name": "nginx-proxy",
+                  "command": ["sh","-lc","tail -f /dev/null"]
+                }
               ]
             }' \
-            --query "tasks[0].taskArn" --output text --region "${{ env.AWS_REGION }}")
+            --region "${{ env.AWS_REGION }}" \
+            --query "tasks[0].taskArn" --output text)
 
           echo "Started migrate task: $TASK_ARN"
 
@@ -154,7 +158,7 @@ jobs:
               --cluster "${{ env.ECS_CLUSTER }}" --tasks "$TASK_ARN" --region "${{ env.AWS_REGION }}" \
               --query "tasks[0].containers[?name=='${{ env.CONTAINER_NAME }}'].[reason,lastStatus]" --output table || true
 
-            # (opcionalno) izdvoji tačan log stream samo za taj task
+            # (opcionalno) izdvoji točan log stream za taj task
             LOG_GROUP=$(aws ecs describe-task-definition --task-definition "${NEW_TD_ARN}" \
               --query "taskDefinition.containerDefinitions[?name=='${{ env.CONTAINER_NAME }}'].logConfiguration.options.\"awslogs-group\" | [0]" --output text)
             LOG_PREFIX=$(aws ecs describe-task-definition --task-definition "${NEW_TD_ARN}" \
