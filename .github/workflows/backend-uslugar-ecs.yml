@@ -105,36 +105,48 @@ jobs:
             --task-definition "${NEW_TD_ARN}" \
             --query "service.taskDefinition" --output text
 
-      # ✅ Post-deploy: pokreni Prisma migracije kao privremeni Fargate task (bez startDisabled)
+      # ✅ Post-deploy: pokreni Prisma migracije kao privremeni Fargate task (bolji debug)
       - name: Run Prisma migrate (one-off task)
         env:
           SUBNETS: ${{ env.MIGRATE_SUBNETS }}
           SECGRP: ${{ env.MIGRATE_SG }}
+          # Ako nemaš NAT u privatnim subnetima, privremeno stavi ENABLED:
+          ASSIGN_PUBLIC_IP: DISABLED
         run: |
+          set -euo pipefail
           echo "Running prisma migrate deploy on new TD: ${NEW_TD_ARN}"
 
           # 0) (debug) prikaži imena kontejnera iz nove TD revizije
           aws ecs describe-task-definition --task-definition "${NEW_TD_ARN}" \
             --query "taskDefinition.containerDefinitions[].name" --output text
 
-          # 1) pokreni task: app radi migracije, nginx-proxy miruje
+          # Izaberi bin: lokalni prisma ili npx
+          PRISMA_BIN="./node_modules/.bin/prisma"
+          if [ ! -x "$PRISMA_BIN" ]; then
+            PRISMA_CMD="npx prisma migrate deploy --schema=prisma/schema.prisma"
+          else
+            PRISMA_CMD="$PRISMA_BIN migrate deploy --schema=prisma/schema.prisma"
+          fi
+
+          # Sastavi overrides JSON preko jq (sigurno zbog navodnika)
+          OVERRIDES_JSON=$(jq -n \
+            --arg app "${{ env.CONTAINER_NAME }}" \
+            --arg cmd "$PRISMA_CMD" \
+            --arg sidecar "nginx-proxy" \
+            '{
+              containerOverrides: [
+                { name: $app,    command: ["sh","-lc", $cmd] },
+                { name: $sidecar, command: ["sh","-lc","tail -f /dev/null"] }
+              ]
+            }')
+
+          # 1) pokreni task
           TASK_ARN=$(aws ecs run-task \
             --cluster "${{ env.ECS_CLUSTER }}" \
             --launch-type FARGATE \
             --task-definition "${NEW_TD_ARN}" \
-            --network-configuration "awsvpcConfiguration={subnets=[$SUBNETS],securityGroups=[$SECGRP],assignPublicIp=DISABLED}" \
-            --overrides '{
-              "containerOverrides": [
-                {
-                  "name": "'"${{ env.CONTAINER_NAME }}"'",
-                  "command": ["sh","-lc","./node_modules/.bin/prisma migrate deploy --schema=prisma/schema.prisma"]
-                },
-                {
-                  "name": "nginx-proxy",
-                  "command": ["sh","-lc","tail -f /dev/null"]
-                }
-              ]
-            }' \
+            --network-configuration "awsvpcConfiguration={subnets=[$SUBNETS],securityGroups=[$SECGRP],assignPublicIp=${ASSIGN_PUBLIC_IP}}" \
+            --overrides "${OVERRIDES_JSON}" \
             --region "${{ env.AWS_REGION }}" \
             --query "tasks[0].taskArn" --output text)
 
@@ -143,30 +155,42 @@ jobs:
           # 2) čekaj STOPPED
           aws ecs wait tasks-stopped --cluster "${{ env.ECS_CLUSTER }}" --tasks "$TASK_ARN" --region "${{ env.AWS_REGION }}"
 
-          # 3) pokupi exit code baš za app kontejner
+          # 3) prikaži sažetak razloga na razini taska i kontejnera
+          echo "---- Task stoppedReason ----"
+          aws ecs describe-tasks \
+            --cluster "${{ env.ECS_CLUSTER }}" --tasks "$TASK_ARN" --region "${{ env.AWS_REGION }}" \
+            --query "tasks[0].stoppedReason" --output text || true
+
+          echo "---- Container breakdown ----"
+          aws ecs describe-tasks \
+            --cluster "${{ env.ECS_CLUSTER }}" --tasks "$TASK_ARN" --region "${{ env.AWS_REGION }}" \
+            --query "tasks[0].containers[].{name:name,lastStatus:lastStatus,exitCode:exitCode,reason:reason}" --output table || true
+
+          # 4) pokupi exit code baš za app kontejner
           EXIT_CODE=$(aws ecs describe-tasks \
             --cluster "${{ env.ECS_CLUSTER }}" --tasks "$TASK_ARN" --region "${{ env.AWS_REGION }}" \
             --query "tasks[0].containers[?name=='${{ env.CONTAINER_NAME }}'].exitCode | [0]" --output text)
 
-          echo "Migrate task exit code: $EXIT_CODE"
+          echo "Migrate task exit code: ${EXIT_CODE}"
 
-          if [ "$EXIT_CODE" != "0" ]; then
-            echo "Prisma migrate failed"
+          # 5) logging info
+          LOG_GROUP=$(aws ecs describe-task-definition --task-definition "${NEW_TD_ARN}" \
+            --query "taskDefinition.containerDefinitions[?name=='${{ env.CONTAINER_NAME }}'].logConfiguration.options.\"awslogs-group\" | [0]" --output text)
+          LOG_PREFIX=$(aws ecs describe-task-definition --task-definition "${NEW_TD_ARN}" \
+            --query "taskDefinition.containerDefinitions[?name=='${{ env.CONTAINER_NAME }}'].logConfiguration.options.\"awslogs-stream-prefix\" | [0]" --output text)
+          TASK_ID=${TASK_ARN##*/}
 
-            # (opcionalno) izlistaj razlog kvara
-            aws ecs describe-tasks \
-              --cluster "${{ env.ECS_CLUSTER }}" --tasks "$TASK_ARN" --region "${{ env.AWS_REGION }}" \
-              --query "tasks[0].containers[?name=='${{ env.CONTAINER_NAME }}'].[reason,lastStatus]" --output table || true
+          # 6) fail ako nema urednog exit code-a
+          if [ -z "$EXIT_CODE" ] || [ "$EXIT_CODE" = "None" ] || [ "$EXIT_CODE" != "0" ]; then
+            echo "Prisma migrate failed (exit=${EXIT_CODE:-unset})"
 
-            # (opcionalno) izdvoji točan log stream za taj task
-            LOG_GROUP=$(aws ecs describe-task-definition --task-definition "${NEW_TD_ARN}" \
-              --query "taskDefinition.containerDefinitions[?name=='${{ env.CONTAINER_NAME }}'].logConfiguration.options.\"awslogs-group\" | [0]" --output text)
-            LOG_PREFIX=$(aws ecs describe-task-definition --task-definition "${NEW_TD_ARN}" \
-              --query "taskDefinition.containerDefinitions[?name=='${{ env.CONTAINER_NAME }}'].logConfiguration.options.\"awslogs-stream-prefix\" | [0]" --output text)
-            TASK_ID=${TASK_ARN##*/}
+            # pokušaj specifični stream
             if [ -n "$LOG_GROUP" ] && [ -n "$LOG_PREFIX" ] && [ "$LOG_GROUP" != "None" ] && [ "$LOG_PREFIX" != "None" ]; then
-              aws logs tail "$LOG_GROUP" --log-stream-names "$LOG_PREFIX/${{ env.CONTAINER_NAME }}/$TASK_ID" --since 15m --region "${{ env.AWS_REGION }}" || true
+              aws logs tail "$LOG_GROUP" --log-stream-names "$LOG_PREFIX/${{ env.CONTAINER_NAME }}/$TASK_ID" --since 30m --region "${{ env.AWS_REGION }}" || \
+              aws logs tail "$LOG_GROUP" --since 30m --region "${{ env.AWS_REGION }}" || true
             fi
 
             exit 1
           fi
+
+          echo "Prisma migrate finished successfully."
