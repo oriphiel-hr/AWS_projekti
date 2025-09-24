@@ -1,4 +1,5 @@
-import 'dotenv/config';
+// src/server.js (ESM)
+
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
@@ -9,6 +10,16 @@ import offersRouter from './routes/offers.js';
 import providersRouter from './routes/providers.js';
 import reviewsRouter from './routes/reviews.js';
 
+// Učitaj .env samo izvan produkcije (i ne pucaj ako dotenv nije instaliran lokalno)
+if (process.env.NODE_ENV !== 'production') {
+  try {
+    const { config } = await import('dotenv');
+    config();
+  } catch (e) {
+    console.warn('dotenv nije instaliran – preskačem lokalno učitavanje .env');
+  }
+}
+
 const app = express();
 const prisma = new PrismaClient();
 const PORT = process.env.PORT || 4000;
@@ -17,7 +28,10 @@ app.use(cors());
 app.use(express.json());
 app.use(morgan('dev'));
 
-app.get('/api/health', (req,res)=>res.json({ ok:true, ts:new Date().toISOString() }));
+app.get('/api/health', (req, res) =>
+  res.json({ ok: true, ts: new Date().toISOString() })
+);
+
 app.use('/api/auth', authRouter);
 app.use('/api/jobs', jobsRouter);
 app.use('/api/offers', offersRouter);
