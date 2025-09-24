@@ -80,14 +80,31 @@ jobs:
             .inferenceAccelerators
           )' td.json > td_clean.json
 
-      - name: Replace image in TD
+      - name: Replace image in TD (+ ensure DATABASE_URL secret)
+        env:
+          DB_SECRET_ARN: ${{ secrets.DB_SECRET_ARN }}
         run: |
+          # zamijeni image
           jq --arg NAME "${{ env.CONTAINER_NAME }}" --arg IMG "${IMAGE_URI}" '
             .containerDefinitions = (.containerDefinitions | map(
               if .name == $NAME then .image = $IMG | . else . end
             ))
-          ' td_clean.json > td_new.json
-          echo "New image for container '${{ env.CONTAINER_NAME }}': ${IMAGE_URI}"
+          ' td_clean.json > td_tmp.json
+
+          # osiguraj DATABASE_URL u secrets (valueFrom = ARN)
+          jq --arg NAME "${{ env.CONTAINER_NAME }}" --arg ARN "${DB_SECRET_ARN}" '
+            .containerDefinitions = (.containerDefinitions | map(
+              if .name == $NAME then
+                .secrets = (
+                  (.secrets // [])
+                  | map(select(.name != "DATABASE_URL"))
+                  + [{name:"DATABASE_URL", valueFrom:$ARN}]
+                )
+              else . end
+            ))
+          ' td_tmp.json > td_new.json
+
+          echo "New image & DATABASE_URL secret ensured for '${{ env.CONTAINER_NAME }}'."
 
       - name: Register new TD revision
         run: |
