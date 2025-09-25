@@ -3,6 +3,10 @@ FROM node:20-bookworm-slim
 
 WORKDIR /app
 
+# OpenSSL za Prisma na Debian bookworm (OpenSSL 3)
+RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+ENV PRISMA_OPENSSL_VERSION=3.0.x
+
 # 1) package*.json iz trenutnog konteksta (uslugar/backend)
 COPY package*.json ./
 RUN npm ci
@@ -15,4 +19,5 @@ RUN npx prisma generate --schema=prisma/schema.prisma \
  && npm prune --omit=dev
 
 ENV NODE_ENV=production
-CMD ["node", "server.js"]
+CMD ["node", "src/server.js"]
+

@@ -136,30 +136,28 @@ jobs:
           aws ecs describe-task-definition --task-definition "${NEW_TD_ARN}" \
             --query "taskDefinition.containerDefinitions[].name" --output text
 
-          PRISMA_BIN="./node_modules/.bin/prisma"
-          if [ ! -x "$PRISMA_BIN" ]; then
-            PRISMA_CMD="npx prisma migrate deploy --schema=prisma/schema.prisma"
-          else
-            PRISMA_CMD="$PRISMA_BIN migrate deploy --schema=prisma/schema.prisma"
-          fi
-
-          OVERRIDES_JSON=$(jq -n \
-            --arg app "${{ env.CONTAINER_NAME }}" \
-            --arg cmd "$PRISMA_CMD" \
-            --arg sidecar "nginx-proxy" \
-            '{
-              containerOverrides: [
-                { name: $app,     command: ["sh","-lc", $cmd] },
-                { name: $sidecar, command: ["sh","-lc","tail -f /dev/null"] }
-              ]
-            }')
+          # zapis overrides JSON koji si tražio
+          cat > overrides.json <<'JSON'
+          {
+            "containerOverrides": [
+              {
+                "name": "uslugar",
+                "command": ["sh","-lc","npx prisma migrate deploy --schema=prisma/schema.prisma"],
+                "environment": [
+                  {"name":"PRISMA_OPENSSL_VERSION","value":"3.0.x"}
+                ]
+              },
+              { "name": "nginx-proxy", "command": ["sh","-lc","tail -f /dev/null"] }
+            ]
+          }
+          JSON
 
           TASK_ARN=$(aws ecs run-task \
             --cluster "${{ env.ECS_CLUSTER }}" \
             --launch-type FARGATE \
             --task-definition "${NEW_TD_ARN}" \
             --network-configuration "awsvpcConfiguration={subnets=[$SUBNETS],securityGroups=[${{ env.MIGRATE_SG }}],assignPublicIp=${ASSIGN_PUBLIC_IP}}" \
-            --overrides "${OVERRIDES_JSON}" \
+            --overrides file://overrides.json \
             --region "${{ env.AWS_REGION }}" \
             --query "tasks[0].taskArn" --output text)
 
