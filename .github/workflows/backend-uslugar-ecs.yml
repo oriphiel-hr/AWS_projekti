@@ -1,4 +1,4 @@
-name: Backend - Reuse existing Task Definition (ECR→ECS) 
+name: Backend - Reuse existing Task Definition (ECR→ECS)
 
 on:
   push:
@@ -13,14 +13,17 @@ env:
   ECS_CLUSTER: apps-cluster
   ECS_SERVICE: uslugar-service-2gk1f1mv
   CONTAINER_NAME: uslugar
-  # 🔽 Privatni subneti i SG za Fargate task koji će pokrenuti migracije (nije nužno za migrate korak niže)
-  MIGRATE_SUBNETS: subnet-0a00f97768705bbcf,subnet-01b67edfd00dc288c
+  # 🔽 subneti/SG za one-off Fargate task koji će pokrenuti migracije
+  # koristi javne subnete (radi pull-a iz ECR) ili privatne s NAT-om
+  MIGRATE_SUBNETS: subnet-0a00f97768705bbcf,subnet-0546fb6cc0ad2cc37
   MIGRATE_SG: sg-084c1e49c9c77aff1
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    permissions: { id-token: write, contents: read }
+    permissions:
+      id-token: write
+      contents: write   # treba za opcionalni auto-commit migracija
 
     steps:
       - uses: actions/checkout@v4
@@ -33,15 +36,34 @@ jobs:
       - id: ecr-login
         uses: aws-actions/amazon-ecr-login@v2
 
-      # 🔑 Generiraj package-lock.json ako ga nema (za npm ci u Dockerfileu)
+      # 🔑 Ako nema package-lock.json, generiraj ga (Dockerfile koristi npm ci)
       - name: Generate package-lock.json (backend)
+        working-directory: uslugar/backend
         run: |
-          cd uslugar/backend
           if [ ! -f package-lock.json ]; then
             echo "No package-lock.json found, generating..."
             npm i --package-lock-only
           fi
           head -n 20 package-lock.json || true
+
+      # 🧱 (A) GENERIRAJ MIGRACIJE IZ schema.prisma – BEZ DB-a (create-only)
+      - name: Create initial migration (create-only)
+        working-directory: uslugar/backend
+        run: |
+          npx --yes prisma migrate dev --create-only --name init --schema=prisma/schema.prisma
+          ls -la prisma/migrations || true
+
+      # 📝 (opcionalno) Commitaj generirane migracije natrag u repo
+      - name: Commit generated migrations
+        working-directory: uslugar/backend
+        run: |
+          if [ -d prisma/migrations ] && [ -n "$(ls -A prisma/migrations || true)" ]; then
+            git config user.name  "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add prisma/migrations prisma/migration_lock.toml || true
+            git commit -m "chore(prisma): add/update migrations (CI create-only)" || echo "Nothing to commit"
+            git push || echo "No push (e.g., workflow on PR)"
+          fi
 
       - name: Build & Push image
         env:
@@ -53,7 +75,7 @@ jobs:
           docker push $ECR_REGISTRY/${{ env.ECR_REPO_BACKEND }}:$IMAGE_TAG
           echo "IMAGE_URI=$ECR_REGISTRY/${{ env.ECR_REPO_BACKEND }}:$IMAGE_TAG" >> $GITHUB_ENV
 
-      - name: Install JQ
+      - name: Install jq
         run: sudo apt-get update && sudo apt-get install -y jq
 
       - name: Read current Task Definition
@@ -66,7 +88,7 @@ jobs:
           aws ecs describe-task-definition --task-definition "$TD_ARN" \
             --query "taskDefinition" > td.json
 
-          # Očisti nedopuštena/meta polja prije register-task-definition
+          # Ukloni polja koja se ne smiju slati u register-task-definition
           jq 'del(
             .status,
             .requiresAttributes,
@@ -84,14 +106,14 @@ jobs:
         env:
           DB_SECRET_ARN: ${{ secrets.DB_SECRET_ARN }}
         run: |
-          # zamijeni image
+          # 1) zamijeni image za ciljani container
           jq --arg NAME "${{ env.CONTAINER_NAME }}" --arg IMG "${IMAGE_URI}" '
             .containerDefinitions = (.containerDefinitions | map(
               if .name == $NAME then .image = $IMG | . else . end
             ))
           ' td_clean.json > td_tmp.json
 
-          # osiguraj DATABASE_URL u secrets (valueFrom = ARN)
+          # 2) osiguraj DATABASE_URL secret (valueFrom = ARN iz Secrets Managera)
           jq --arg NAME "${{ env.CONTAINER_NAME }}" --arg ARN "${DB_SECRET_ARN}" '
             .containerDefinitions = (.containerDefinitions | map(
               if .name == $NAME then
@@ -114,7 +136,7 @@ jobs:
           echo "NEW_TD_ARN=$NEW_TD_ARN" >> $GITHUB_ENV
           echo "Registered: $NEW_TD_ARN"
 
-      - name: Update service
+      - name: Update service to new TD
         run: |
           aws ecs update-service \
             --cluster "${{ env.ECS_CLUSTER }}" \
@@ -122,29 +144,25 @@ jobs:
             --task-definition "${NEW_TD_ARN}" \
             --query "service.taskDefinition" --output text
 
-      # ✅ Post-deploy: pokreni Prisma migracije kao privremeni Fargate task (bolji debug)
+      # ✅ POST-DEPLOY: One-off Fargate task koji PRIMIJENI migracije na RDS (stvara tablice)
       - name: Run Prisma migrate (one-off task)
         env:
-          # ⬇️ Javne subnete (s igw): subnet-0a00f97768705bbcf i subnet-0546fb6cc0ad2cc37
-          SUBNETS: subnet-0a00f97768705bbcf,subnet-0546fb6cc0ad2cc37
-          SECGRP: ${{ env.MIGRATE_SG }}   # SG koji dozvoljava egress :443
-          ASSIGN_PUBLIC_IP: ENABLED       # bitno da task dohvati ECR
+          SUBNETS: ${{ env.MIGRATE_SUBNETS }}   # npr. javni sub-netovi zbog ECR pull-a
+          SECGRP:  ${{ env.MIGRATE_SG }}        # SG s egress 443
+          ASSIGN_PUBLIC_IP: ENABLED
         run: |
           set -euo pipefail
-          echo "Running prisma migrate deploy on new TD: ${NEW_TD_ARN}"
+          echo "Running prisma migrate deploy on TD: ${NEW_TD_ARN}"
 
-          aws ecs describe-task-definition --task-definition "${NEW_TD_ARN}" \
-            --query "taskDefinition.containerDefinitions[].name" --output text
-
-          # zapis overrides JSON koji si tražio
+          # Overrides JSON: pokrećemo migrate u 'uslugar' containeru
           cat > overrides.json <<'JSON'
           {
             "containerOverrides": [
               {
                 "name": "uslugar",
-                "command": ["sh","-lc","npx prisma migrate deploy --schema=prisma/schema.prisma"],
+                "command": ["sh","-lc","npx --yes prisma migrate deploy --schema=prisma/schema.prisma && npx --yes prisma migrate status --schema=prisma/schema.prisma"],
                 "environment": [
-                  {"name":"PRISMA_OPENSSL_VERSION","value":"3.0.x"}
+                  { "name": "PRISMA_OPENSSL_VERSION", "value": "3.0.x" }
                 ]
               },
               { "name": "nginx-proxy", "command": ["sh","-lc","tail -f /dev/null"] }
@@ -156,7 +174,7 @@ jobs:
             --cluster "${{ env.ECS_CLUSTER }}" \
             --launch-type FARGATE \
             --task-definition "${NEW_TD_ARN}" \
-            --network-configuration "awsvpcConfiguration={subnets=[$SUBNETS],securityGroups=[${{ env.MIGRATE_SG }}],assignPublicIp=${ASSIGN_PUBLIC_IP}}" \
+            --network-configuration "awsvpcConfiguration={subnets=[$SUBNETS],securityGroups=[$SECGRP],assignPublicIp=${ASSIGN_PUBLIC_IP}}" \
             --overrides file://overrides.json \
             --region "${{ env.AWS_REGION }}" \
             --query "tasks[0].taskArn" --output text)
