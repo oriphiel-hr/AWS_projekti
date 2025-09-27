@@ -46,6 +46,33 @@ jobs:
           fi
           head -n 20 package-lock.json || true
 
+      # ✅ OPCIJA B: Učitaj DATABASE_URL iz Secrets Managera da Prisma "get-config" ne padne
+      - name: Load DATABASE_URL from Secrets Manager (for Prisma get-config)
+        env:
+          DB_SECRET_ARN: ${{ secrets.DB_SECRET_ARN }}
+        run: |
+          set -euo pipefail
+          RAW=$(aws secretsmanager get-secret-value \
+            --secret-id "$DB_SECRET_ARN" \
+            --query SecretString --output text)
+
+          # Ako je JSON, pokušaj pronaći DATABASE_URL / url / connectionString
+          if echo "$RAW" | jq -e . >/dev/null 2>&1; then
+            DB_URL=$(echo "$RAW" | jq -r '.DATABASE_URL // .url // .connectionString // empty')
+          else
+            DB_URL="$RAW"
+          fi
+
+          if [ -z "${DB_URL:-}" ]; then
+            echo "DATABASE_URL not found in secret ($DB_SECRET_ARN)."
+            exit 1
+          fi
+
+          # Sakrij vrijednost u logu i izvezi je drugim koracima
+          echo "::add-mask::$DB_URL"
+          echo "DATABASE_URL=$DB_URL" >> "$GITHUB_ENV"
+          echo "DATABASE_URL loaded."
+
       # 🧱 (A) GENERIRAJ MIGRACIJE IZ schema.prisma – BEZ DB-a (create-only)
       - name: Create initial migration (create-only)
         working-directory: uslugar/backend
