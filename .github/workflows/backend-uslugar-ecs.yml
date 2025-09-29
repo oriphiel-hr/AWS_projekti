@@ -46,35 +46,46 @@ jobs:
           fi
           head -n 20 package-lock.json || true
 
-      # ✅ OPCIJA B: Učitaj DATABASE_URL iz Secrets Managera da Prisma "get-config" ne padne
+      # jq nam treba za čitanje JSON secreta
+      - name: Install jq (for Secrets Manager parsing)
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      # ✅ Učitaj DATABASE_URL iz Secrets Managera (radi i za plain string i za JSON secret)
+      #    Ovaj korak samo služi da prisma get-config/migrate imaju varijablu dostupnu u envu tijekom joba.
       - name: Load DATABASE_URL from Secrets Manager (for Prisma get-config)
         env:
           AWS_REGION: ${{ env.AWS_REGION }}
           DB_SECRET_ARN: ${{ secrets.DB_SECRET_ARN }}
         run: |
           set -euo pipefail
+
+          if [ -z "${DB_SECRET_ARN:-}" ]; then
+            echo "ERROR: DB_SECRET_ARN is empty (GitHub secret nije postavljen ili nije proslijeđen u step)."
+            exit 2
+          fi
+
           RAW=$(aws secretsmanager get-secret-value \
-            --secret-id "$DB_SECRET_ARN" \
-            --query SecretString --output text)
+                  --region "$AWS_REGION" \
+                  --secret-id "$DB_SECRET_ARN" \
+                  --query SecretString --output text)
 
-          # Ako je JSON, pokušaj pronaći DATABASE_URL / url / connectionString
+          # Ako je JSON: pokušaj naći DATABASE_URL / database_url / url; inače tretiraj kao plain string
           if echo "$RAW" | jq -e . >/dev/null 2>&1; then
-            DB_URL=$(echo "$RAW" | jq -r '.DATABASE_URL // .url // .connectionString // empty')
+            DATABASE_URL=$(printf %s "$RAW" | jq -r '.DATABASE_URL // .database_url // .url')
           else
-            DB_URL="$RAW"
+            DATABASE_URL="$RAW"
           fi
 
-          if [ -z "${DB_URL:-}" ]; then
-            echo "DATABASE_URL not found in secret ($DB_SECRET_ARN)."
-            exit 1
+          if [ -z "${DATABASE_URL:-}" ] || [ "${DATABASE_URL}" = "null" ]; then
+            echo "ERROR: DATABASE_URL nije pronađen u secretu."
+            exit 3
           fi
 
-          # Sakrij vrijednost u logu i izvezi je drugim koracima
-          echo "::add-mask::$DB_URL"
-          echo "DATABASE_URL=$DB_URL" >> "$GITHUB_ENV"
+          echo "::add-mask::${DATABASE_URL}"
+          echo "DATABASE_URL=${DATABASE_URL}" >> "$GITHUB_ENV"
           echo "DATABASE_URL loaded."
 
-      # 🧱 (A) GENERIRAJ MIGRACIJE IZ schema.prisma – BEZ DB-a (create-only)
+      # 🧱 GENERIRAJ MIGRACIJE IZ schema.prisma – BEZ DB-a (create-only)
       - name: Create initial migration (create-only)
         working-directory: uslugar/backend
         run: |
@@ -102,9 +113,6 @@ jobs:
             -t $ECR_REGISTRY/${{ env.ECR_REPO_BACKEND }}:$IMAGE_TAG uslugar/backend
           docker push $ECR_REGISTRY/${{ env.ECR_REPO_BACKEND }}:$IMAGE_TAG
           echo "IMAGE_URI=$ECR_REGISTRY/${{ env.ECR_REPO_BACKEND }}:$IMAGE_TAG" >> $GITHUB_ENV
-
-      - name: Install jq
-        run: sudo apt-get update && sudo apt-get install -y jq
 
       - name: Read current Task Definition
         run: |
