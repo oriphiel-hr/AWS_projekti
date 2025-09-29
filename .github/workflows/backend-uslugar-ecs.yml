@@ -171,7 +171,7 @@ jobs:
             --task-definition "${NEW_TD_ARN}" \
             --query "service.taskDefinition" --output text
 
-      # ✅ POST-DEPLOY: One-off Fargate task koji PRIMIJENI migracije na RDS (stvara tablice)
+      # ✅ POST-DEPLOY: One-off Fargate task koji PRIMIJENI migracije na RDS (stvara tablice) 
       - name: Run Prisma migrate (one-off task)
         env:
           SUBNETS: ${{ env.MIGRATE_SUBNETS }}   # npr. javni sub-netovi zbog ECR pull-a
