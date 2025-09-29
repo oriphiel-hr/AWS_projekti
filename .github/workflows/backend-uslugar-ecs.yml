@@ -13,8 +13,7 @@ env:
   ECS_CLUSTER: apps-cluster
   ECS_SERVICE: uslugar-service-2gk1f1mv
   CONTAINER_NAME: uslugar
-  # 🔽 subneti/SG za one-off Fargate task koji će pokrenuti migracije
-  # koristi javne subnete (radi pull-a iz ECR) ili privatne s NAT-om
+  # subneti/SG za one-off Fargate task koji će pokrenuti schema apply
   MIGRATE_SUBNETS: subnet-0a00f97768705bbcf,subnet-0546fb6cc0ad2cc37
   MIGRATE_SG: sg-084c1e49c9c77aff1
 
@@ -23,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
-      contents: write   # treba za opcionalni auto-commit migracija
+      contents: write
 
     steps:
       - uses: actions/checkout@v4
@@ -36,7 +35,7 @@ jobs:
       - id: ecr-login
         uses: aws-actions/amazon-ecr-login@v2
 
-      # 🔑 Ako nema package-lock.json, generiraj ga (Dockerfile koristi npm ci)
+      # Ako nema package-lock.json, generiraj ga (Dockerfile koristi npm ci)
       - name: Generate package-lock.json (backend)
         working-directory: uslugar/backend
         run: |
@@ -46,12 +45,10 @@ jobs:
           fi
           head -n 20 package-lock.json || true
 
-      # jq nam treba za čitanje JSON secreta
       - name: Install jq (for Secrets Manager parsing)
         run: sudo apt-get update && sudo apt-get install -y jq
 
-      # ✅ Učitaj DATABASE_URL iz Secrets Managera (radi i za plain string i za JSON secret)
-      #    Ovaj korak samo služi da prisma get-config/migrate imaju varijablu dostupnu u envu tijekom joba.
+      # Učitaj DATABASE_URL iz Secrets Managera u env (koristit će se u kasnijim stepovima / tasku)
       - name: Load DATABASE_URL from Secrets Manager (for Prisma get-config)
         env:
           AWS_REGION: ${{ env.AWS_REGION }}
@@ -60,7 +57,7 @@ jobs:
           set -euo pipefail
 
           if [ -z "${DB_SECRET_ARN:-}" ]; then
-            echo "ERROR: DB_SECRET_ARN is empty (GitHub secret nije postavljen ili nije proslijeđen u step)."
+            echo "ERROR: DB_SECRET_ARN is empty."
             exit 2
           fi
 
@@ -69,7 +66,6 @@ jobs:
                   --secret-id "$DB_SECRET_ARN" \
                   --query SecretString --output text)
 
-          # Ako je JSON: pokušaj naći DATABASE_URL / database_url / url; inače tretiraj kao plain string
           if echo "$RAW" | jq -e . >/dev/null 2>&1; then
             DATABASE_URL=$(printf %s "$RAW" | jq -r '.DATABASE_URL // .database_url // .url')
           else
@@ -85,24 +81,7 @@ jobs:
           echo "DATABASE_URL=${DATABASE_URL}" >> "$GITHUB_ENV"
           echo "DATABASE_URL loaded."
 
-      # 🧱 GENERIRAJ MIGRACIJE IZ schema.prisma – BEZ DB-a (create-only)
-      - name: Create initial migration (create-only)
-        working-directory: uslugar/backend
-        run: |
-          npx --yes prisma migrate dev --create-only --name init --schema=prisma/schema.prisma
-          ls -la prisma/migrations || true
-
-      # 📝 (opcionalno) Commitaj generirane migracije natrag u repo
-      - name: Commit generated migrations
-        working-directory: uslugar/backend
-        run: |
-          if [ -d prisma/migrations ] && [ -n "$(ls -A prisma/migrations || true)" ]; then
-            git config user.name  "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add prisma/migrations prisma/migration_lock.toml || true
-            git commit -m "chore(prisma): add/update migrations (CI create-only)" || echo "Nothing to commit"
-            git push || echo "No push (e.g., workflow on PR)"
-          fi
+      # (namjerno uklonjeno) - nema `prisma migrate dev --create-only` u CI-ju
 
       - name: Build & Push image
         env:
@@ -124,7 +103,6 @@ jobs:
           aws ecs describe-task-definition --task-definition "$TD_ARN" \
             --query "taskDefinition" > td.json
 
-          # Ukloni polja koja se ne smiju slati u register-task-definition
           jq 'del(
             .status,
             .requiresAttributes,
@@ -142,14 +120,12 @@ jobs:
         env:
           DB_SECRET_ARN: ${{ secrets.DB_SECRET_ARN }}
         run: |
-          # 1) zamijeni image za ciljani container
           jq --arg NAME "${{ env.CONTAINER_NAME }}" --arg IMG "${IMAGE_URI}" '
             .containerDefinitions = (.containerDefinitions | map(
               if .name == $NAME then .image = $IMG | . else . end
             ))
           ' td_clean.json > td_tmp.json
 
-          # 2) osiguraj DATABASE_URL secret (valueFrom = ARN iz Secrets Managera)
           jq --arg NAME "${{ env.CONTAINER_NAME }}" --arg ARN "${DB_SECRET_ARN}" '
             .containerDefinitions = (.containerDefinitions | map(
               if .name == $NAME then
@@ -180,23 +156,21 @@ jobs:
             --task-definition "${NEW_TD_ARN}" \
             --query "service.taskDefinition" --output text
 
-      # ✅ POST-DEPLOY: One-off Fargate task koji PRIMIJENI migracije na RDS (stvara tablice) 
-      - name: Run Prisma migrate (one-off task)
+      # ✅ POST-DEPLOY: Napravi tablice iz schema.prisma u VPC-u (RDS je dostupan iz ECS)
+      - name: Apply schema (Prisma db push via one-off task)
         env:
-          SUBNETS: ${{ env.MIGRATE_SUBNETS }}   # npr. javni sub-netovi zbog ECR pull-a
-          SECGRP:  ${{ env.MIGRATE_SG }}        # SG s egress 443
+          SUBNETS: ${{ env.MIGRATE_SUBNETS }}
+          SECGRP:  ${{ env.MIGRATE_SG }}
           ASSIGN_PUBLIC_IP: ENABLED
         run: |
           set -euo pipefail
-          echo "Running prisma migrate deploy on TD: ${NEW_TD_ARN}"
 
-          # Overrides JSON: pokrećemo migrate u 'uslugar' containeru
           cat > overrides.json <<'JSON'
           {
             "containerOverrides": [
               {
                 "name": "uslugar",
-                "command": ["sh","-lc","npx --yes prisma migrate deploy --schema=prisma/schema.prisma && npx --yes prisma migrate status --schema=prisma/schema.prisma"],
+                "command": ["sh","-lc","npx --yes prisma db push --schema=prisma/schema.prisma && npx --yes prisma migrate status --schema=prisma/schema.prisma"],
                 "environment": [
                   { "name": "PRISMA_OPENSSL_VERSION", "value": "3.0.x" }
                 ]
@@ -215,12 +189,8 @@ jobs:
             --region "${{ env.AWS_REGION }}" \
             --query "tasks[0].taskArn" --output text)
 
-          echo "Started migrate task: $TASK_ARN"
+          echo "Started task: $TASK_ARN"
           aws ecs wait tasks-stopped --cluster "${{ env.ECS_CLUSTER }}" --tasks "$TASK_ARN" --region "${{ env.AWS_REGION }}"
-
-          echo "---- Task stoppedReason ----"
-          aws ecs describe-tasks --cluster "${{ env.ECS_CLUSTER }}" --tasks "$TASK_ARN" --region "${{ env.AWS_REGION }}" \
-            --query "tasks[0].stoppedReason" --output text || true
 
           echo "---- Container breakdown ----"
           aws ecs describe-tasks --cluster "${{ env.ECS_CLUSTER }}" --tasks "$TASK_ARN" --region "${{ env.AWS_REGION }}" \
@@ -230,7 +200,7 @@ jobs:
             --cluster "${{ env.ECS_CLUSTER }}" --tasks "$TASK_ARN" --region "${{ env.AWS_REGION }}" \
             --query "tasks[0].containers[?name=='${{ env.CONTAINER_NAME }}'].exitCode | [0]" --output text)
 
-          echo "Migrate task exit code: ${EXIT_CODE}"
+          echo "Apply schema exit code: ${EXIT_CODE}"
 
           LOG_GROUP=$(aws ecs describe-task-definition --task-definition "${NEW_TD_ARN}" \
             --query "taskDefinition.containerDefinitions[?name=='${{ env.CONTAINER_NAME }}'].logConfiguration.options.\"awslogs-group\" | [0]" --output text)
@@ -239,7 +209,7 @@ jobs:
           TASK_ID=${TASK_ARN##*/}
 
           if [ -z "$EXIT_CODE" ] || [ "$EXIT_CODE" = "None" ] || [ "$EXIT_CODE" != "0" ]; then
-            echo "Prisma migrate failed (exit=${EXIT_CODE:-unset})"
+            echo "Prisma db push failed (exit=${EXIT_CODE:-unset})"
             if [ -n "$LOG_GROUP" ] && [ -n "$LOG_PREFIX" ] && [ "$LOG_GROUP" != "None" ] && [ "$LOG_PREFIX" != "None" ]; then
               aws logs tail "$LOG_GROUP" --log-stream-names "$LOG_PREFIX/${{ env.CONTAINER_NAME }}/$TASK_ID" --since 30m --region "${{ env.AWS_REGION }}" || \
               aws logs tail "$LOG_GROUP" --since 30m --region "${{ env.AWS_REGION }}" || true
@@ -247,4 +217,4 @@ jobs:
             exit 1
           fi
 
-          echo "Prisma migrate finished successfully."
+          echo "Prisma schema applied successfully."
