@@ -49,6 +49,7 @@ jobs:
       # ✅ OPCIJA B: Učitaj DATABASE_URL iz Secrets Managera da Prisma "get-config" ne padne
       - name: Load DATABASE_URL from Secrets Manager (for Prisma get-config)
         env:
+          AWS_REGION: ${{ env.AWS_REGION }}
           DB_SECRET_ARN: ${{ secrets.DB_SECRET_ARN }}
         run: |
           set -euo pipefail
