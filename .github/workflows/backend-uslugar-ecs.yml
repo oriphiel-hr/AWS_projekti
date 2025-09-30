@@ -13,7 +13,7 @@ env:
   ECS_CLUSTER: apps-cluster
   ECS_SERVICE: uslugar-service-2gk1f1mv
   CONTAINER_NAME: uslugar
-  # subneti/SG za one-off Fargate task koji će pokrenuti schema apply
+  # subneti/SG za one-off Fargate task (schema apply)
   MIGRATE_SUBNETS: subnet-0a00f97768705bbcf,subnet-0546fb6cc0ad2cc37
   MIGRATE_SG: sg-084c1e49c9c77aff1
 
@@ -48,7 +48,7 @@ jobs:
       - name: Install jq (for Secrets Manager parsing)
         run: sudo apt-get update && sudo apt-get install -y jq
 
-      # Učitaj DATABASE_URL iz Secrets Managera u env (koristit će se u kasnijim stepovima / tasku)
+      # Učitaj DATABASE_URL iz Secrets Managera (za lokalne provjere/prisma get-config u nekim buildovima)
       - name: Load DATABASE_URL from Secrets Manager (for Prisma get-config)
         env:
           AWS_REGION: ${{ env.AWS_REGION }}
@@ -81,8 +81,6 @@ jobs:
           echo "DATABASE_URL=${DATABASE_URL}" >> "$GITHUB_ENV"
           echo "DATABASE_URL loaded."
 
-      # (namjerno nema `prisma migrate dev --create-only` u CI-ju)
-
       - name: Build & Push image
         env:
           ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
@@ -95,14 +93,17 @@ jobs:
 
       - name: Read current Task Definition
         run: |
+          set -euo pipefail
           TD_ARN=$(aws ecs describe-services \
             --cluster "${{ env.ECS_CLUSTER }}" \
             --services "${{ env.ECS_SERVICE }}" \
             --query "services[0].taskDefinition" --output text)
           echo "Using task definition: $TD_ARN"
-          aws ecs describe-task-definition --task-definition "$TD_ARN" \
-            --query "taskDefinition" > td.json
 
+          aws ecs describe-task-definition --task-definition "$TD_ARN" \
+            --query "taskDefinition" --output json > td.json
+
+          # Očisti polja koja se ne smiju slati u register-task-definition
           jq 'del(
             .status,
             .requiresAttributes,
@@ -116,23 +117,43 @@ jobs:
             .inferenceAccelerators
           )' td.json > td_clean.json
 
-      - name: Replace image in TD (+ ensure DATABASE_URL secret)
+      # 🔑 Zamijeni image i postavi ispravan valueFrom za DATABASE_URL (auto: JSON key suffix ili plain ARN)
+      - name: Replace image in TD (+ ensure DATABASE_URL secret with correct suffix)
         env:
+          AWS_REGION: ${{ env.AWS_REGION }}
           DB_SECRET_ARN: ${{ secrets.DB_SECRET_ARN }}
         run: |
+          set -euo pipefail
+
+          # 1) Zamijeni image za CONTAINER_NAME
           jq --arg NAME "${{ env.CONTAINER_NAME }}" --arg IMG "${IMAGE_URI}" '
             .containerDefinitions = (.containerDefinitions | map(
               if .name == $NAME then .image = $IMG | . else . end
             ))
           ' td_clean.json > td_tmp.json
 
-          jq --arg NAME "${{ env.CONTAINER_NAME }}" --arg ARN "${DB_SECRET_ARN}" '
+          # 2) Odredi VALUE_FROM (ako je tajna JSON s ključem DATABASE_URL => dodaj :DATABASE_URL::
+          RAW=$(aws secretsmanager get-secret-value \
+                  --region "$AWS_REGION" \
+                  --secret-id "$DB_SECRET_ARN" \
+                  --query SecretString --output text || true)
+
+          VALUE_FROM="${DB_SECRET_ARN}"
+          if echo "$RAW" | jq -e . >/dev/null 2>&1; then
+            if [ "$(printf %s "$RAW" | jq -r 'has("DATABASE_URL")')" = "true" ]; then
+              VALUE_FROM="${DB_SECRET_ARN}:DATABASE_URL::"
+            fi
+          fi
+          echo "Using valueFrom: $VALUE_FROM"
+
+          # 3) Ubaci/overwrite secrets[] za DATABASE_URL na ciljanom kontejneru
+          jq --arg NAME "${{ env.CONTAINER_NAME }}" --arg VF "$VALUE_FROM" '
             .containerDefinitions = (.containerDefinitions | map(
               if .name == $NAME then
                 .secrets = (
                   (.secrets // [])
                   | map(select(.name != "DATABASE_URL"))
-                  + [{name:"DATABASE_URL", valueFrom:$ARN}]
+                  + [{name:"DATABASE_URL", valueFrom:$VF}]
                 )
               else . end
             ))
@@ -142,6 +163,7 @@ jobs:
 
       - name: Register new TD revision
         run: |
+          set -euo pipefail
           NEW_TD_ARN=$(aws ecs register-task-definition \
             --cli-input-json file://td_new.json \
             --query "taskDefinition.taskDefinitionArn" --output text)
@@ -156,16 +178,17 @@ jobs:
             --task-definition "${NEW_TD_ARN}" \
             --query "service.taskDefinition" --output text
 
-      # ✅ POST-DEPLOY: pokušaj primijeniti shemu i izvuci max dijagnostike
+      # ✅ POST-DEPLOY: Apply schema preko one-off taska + dijagnostika
       - name: Apply schema (Prisma db push via one-off task, with diagnostics)
         env:
           SUBNETS: ${{ env.MIGRATE_SUBNETS }}
           SECGRP:  ${{ env.MIGRATE_SG }}
           ASSIGN_PUBLIC_IP: ENABLED
+          AWS_REGION: ${{ env.AWS_REGION }}
         run: |
           set -euo pipefail
 
-          # 1) prvo “probe” task — provjeri postoji li sh/node/npm/npx u imageu
+          # Brzi probe – vidljivost basic toolinga
           cat > probe.json <<'JSON'
           {
             "containerOverrides": [
@@ -184,19 +207,19 @@ jobs:
             --task-definition "${NEW_TD_ARN}" \
             --network-configuration "awsvpcConfiguration={subnets=[${SUBNETS}],securityGroups=[${SECGRP}],assignPublicIp=${ASSIGN_PUBLIC_IP}}" \
             --overrides file://probe.json \
-            --region "${{ env.AWS_REGION }}" \
+            --region "${AWS_REGION}" \
             --query "tasks[0].taskArn" --output text)
 
           echo "Probe task: $PROBE_TASK"
-          aws ecs wait tasks-stopped --cluster "${{ env.ECS_CLUSTER }}" --tasks "$PROBE_TASK" --region "${{ env.AWS_REGION }}"
+          aws ecs wait tasks-stopped --cluster "${{ env.ECS_CLUSTER }}" --tasks "$PROBE_TASK" --region "${AWS_REGION}"
           echo "---- PROBE stoppedReason ----"
-          aws ecs describe-tasks --cluster "${{ env.ECS_CLUSTER }}" --tasks "$PROBE_TASK" --region "${{ env.AWS_REGION }}" \
+          aws ecs describe-tasks --cluster "${{ env.ECS_CLUSTER }}" --tasks "$PROBE_TASK" --region "${AWS_REGION}" \
             --query "tasks[0].stoppedReason" --output text || true
           echo "---- PROBE containers ----"
-          aws ecs describe-tasks --cluster "${{ env.ECS_CLUSTER }}" --tasks "$PROBE_TASK" --region "${{ env.AWS_REGION }}" \
+          aws ecs describe-tasks --cluster "${{ env.ECS_CLUSTER }}" --tasks "$PROBE_TASK" --region "${AWS_REGION}" \
             --query "tasks[0].containers[].{name:name,lastStatus:lastStatus,exitCode:exitCode,reason:reason}" --output table || true
 
-          # 2) sad pravi migrate task
+          # Glavni migrate
           cat > overrides.json <<'JSON'
           {
             "containerOverrides": [
@@ -218,27 +241,26 @@ jobs:
             --task-definition "${NEW_TD_ARN}" \
             --network-configuration "awsvpcConfiguration={subnets=[${SUBNETS}],securityGroups=[${SECGRP}],assignPublicIp=${ASSIGN_PUBLIC_IP}}" \
             --overrides file://overrides.json \
-            --region "${{ env.AWS_REGION }}" \
+            --region "${AWS_REGION}" \
             --query "tasks[0].taskArn" --output text)
 
           echo "Started task: $TASK_ARN"
-          aws ecs wait tasks-stopped --cluster "${{ env.ECS_CLUSTER }}" --tasks "$TASK_ARN" --region "${{ env.AWS_REGION }}"
+          aws ecs wait tasks-stopped --cluster "${{ env.ECS_CLUSTER }}" --tasks "$TASK_ARN" --region "${AWS_REGION}}"
 
           echo "---- Task stoppedReason ----"
-          aws ecs describe-tasks --cluster "${{ env.ECS_CLUSTER }}" --tasks "$TASK_ARN" --region "${{ env.AWS_REGION }}" \
+          aws ecs describe-tasks --cluster "${{ env.ECS_CLUSTER }}" --tasks "$TASK_ARN" --region "${AWS_REGION}" \
             --query "tasks[0].stoppedReason" --output text || true
 
           echo "---- Container breakdown ----"
-          aws ecs describe-tasks --cluster "${{ env.ECS_CLUSTER }}" --tasks "$TASK_ARN" --region "${{ env.AWS_REGION }}" \
+          aws ecs describe-tasks --cluster "${{ env.ECS_CLUSTER }}" --tasks "$TASK_ARN" --region "${AWS_REGION}" \
             --query "tasks[0].containers[].{name:name,lastStatus:lastStatus,exitCode:exitCode,reason:reason}" --output table || true
 
           EXIT_CODE=$(aws ecs describe-tasks \
-            --cluster "${{ env.ECS_CLUSTER }}" --tasks "$TASK_ARN" --region "${{ env.AWS_REGION }}" \
+            --cluster "${{ env.ECS_CLUSTER }}" --tasks "$TASK_ARN" --region "${AWS_REGION}" \
             --query "tasks[0].containers[?name=='${{ env.CONTAINER_NAME }}'].exitCode | [0]" --output text)
 
           echo "Apply schema exit code: ${EXIT_CODE}"
 
-          # pokušaj logove s preciznim streamom; ako ne postoji — fallback na cijeli log group (ako postoji)
           LOG_GROUP=$(aws ecs describe-task-definition --task-definition "${NEW_TD_ARN}" \
             --query "taskDefinition.containerDefinitions[?name=='${{ env.CONTAINER_NAME }}'].logConfiguration.options.\"awslogs-group\" | [0]" --output text)
           LOG_PREFIX=$(aws ecs describe-task-definition --task-definition "${NEW_TD_ARN}" \
@@ -249,10 +271,10 @@ jobs:
             echo "Prisma db push failed (exit=${EXIT_CODE:-unset})"
             if [ -n "$LOG_GROUP" ] && [ "$LOG_GROUP" != "None" ]; then
               if [ -n "$LOG_PREFIX" ] && [ "$LOG_PREFIX" != "None" ]; then
-                aws logs tail "$LOG_GROUP" --log-stream-names "$LOG_PREFIX/${{ env.CONTAINER_NAME }}/$TASK_ID" --since 1h --region "${{ env.AWS_REGION }}" || \
-                aws logs tail "$LOG_GROUP" --since 1h --region "${{ env.AWS_REGION }}" || true
+                aws logs tail "$LOG_GROUP" --log-stream-names "$LOG_PREFIX/${{ env.CONTAINER_NAME }}/$TASK_ID" --since 1h --region "${AWS_REGION}" || \
+                aws logs tail "$LOG_GROUP" --since 1h --region "${AWS_REGION}" || true
               else
-                aws logs tail "$LOG_GROUP" --since 1h --region "${{ env.AWS_REGION }}" || true
+                aws logs tail "$LOG_GROUP" --since 1h --region "${AWS_REGION}" || true
               fi
             else
               echo "No CloudWatch log group configured for container '${{ env.CONTAINER_NAME }}' in the task definition."
