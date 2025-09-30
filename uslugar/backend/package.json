@@ -6,8 +6,10 @@
     "express": "^4.19.2",
     "pg": "^8.12.0",
     "@prisma/client": "5.22.0",
+	"prisma": "5.22.0",
     "cors": "^2.8.5",
-    "morgan": "^1.10.0"
+    "morgan": "^1.10.0",
+	"jsonwebtoken": "^9.0.2"
   },
   "devDependencies": { "prisma": "5.22.0" }
 }
