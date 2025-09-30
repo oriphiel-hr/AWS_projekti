@@ -1,59 +1,24 @@
-# ==========================
-# Stage 1: deps + prisma gen
-# ==========================
-FROM node:20-bookworm-slim AS deps
+FROM node:20-bookworm-slim AS base
 WORKDIR /app
 
-# OpenSSL potreban za Prisma engine
-RUN apt-get update && apt-get install -y --no-install-recommends openssl \
- && rm -rf /var/lib/apt/lists/*
+# System deps koje pomažu Prismi
+RUN apt-get update -y && apt-get install -y --no-install-recommends openssl ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
 
-# Keširanje ovisnosti
+ENV NODE_ENV=production
+ENV PRISMA_GENERATE_SKIP_AUTOINSTALL=1
+ENV PRISMA_OPENSSL_VERSION=3.0.x
+
+# samo package datoteke radi boljeg cache-a
 COPY package*.json ./
-# Samo production deps (prisma je u dependencies!)
 RUN npm ci --omit=dev
 
-# Prisma schema + generate (treba za @prisma/client i CLI)
+# Prisma schema i generiranje klijenta u imageu
 COPY prisma ./prisma
-ENV PRISMA_CLI_NO_UPDATE_NOTIFIER=1
-# Ako želiš eksplicitno pinati OpenSSL ABI (bookworm je OpenSSL 3)
-ENV PRISMA_OPENSSL_VERSION=3.0.x
 RUN npx prisma generate
 
-# Kopiraj aplikacijski kod (JS projekt)
-COPY . .
-
-# ==========================
-# Stage 2: runtime
-# ==========================
-FROM node:20-bookworm-slim AS runtime
-WORKDIR /app
-
-ENV NODE_ENV=production \
-    PORT=8080 \
-    PRISMA_CLI_NO_UPDATE_NOTIFIER=1 \
-    PRISMA_OPENSSL_VERSION=3.0.x
-
-# OpenSSL i wget (za healthcheck)
-RUN apt-get update && apt-get install -y --no-install-recommends openssl wget \
- && rm -rf /var/lib/apt/lists/*
-
-# Samo što treba za runtime (node_modules + prisma + kod)
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/prisma ./prisma
-COPY --from=deps /app/package*.json ./
-COPY --from=deps /app/. ./
-
-# (Opcionalno) ne-root korisnik
-USER node
+# app source (JS varijanta)
+COPY src ./src
 
 EXPOSE 8080
-# Healthcheck očekuje /hc (promijeni po potrebi)
-HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-  CMD wget -qO- http://127.0.0.1:8080/hc || exit 1
-
-# Entry file: podesivo build arg-om; default je server.js
-ARG START_FILE=server.js
-ENV START_FILE=$START_FILE
-
-CMD ["sh","-lc","node \"$START_FILE\""]
+CMD ["node","src/server.js"]
