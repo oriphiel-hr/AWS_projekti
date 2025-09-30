@@ -30,38 +30,6 @@ jobs:
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}name: Backend - Reuse existing Task Definition (ECR→ECS)
-
-on:
-  push:
-    branches: [ "main" ]
-    paths:
-      - "uslugar/backend/**"
-      - ".github/workflows/backend-uslugar-ecs.yml"
-
-env:
-  AWS_REGION: eu-north-1
-  ECR_REPO_BACKEND: uslugar
-  ECS_CLUSTER: apps-cluster
-  ECS_SERVICE: uslugar-service-2gk1f1mv
-  CONTAINER_NAME: uslugar
-  # subneti/SG za one-off Fargate task (schema apply)
-  MIGRATE_SUBNETS: subnet-0a00f97768705bbcf,subnet-0546fb6cc0ad2cc37
-  MIGRATE_SG: sg-084c1e49c9c77aff1
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: write
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
       - id: ecr-login
