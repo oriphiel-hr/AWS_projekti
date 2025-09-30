@@ -2,56 +2,58 @@
 # Stage 1: deps + prisma gen
 # ==========================
 FROM node:20-bookworm-slim AS deps
-
 WORKDIR /app
+
+# OpenSSL potreban za Prisma engine
+RUN apt-get update && apt-get install -y --no-install-recommends openssl \
+ && rm -rf /var/lib/apt/lists/*
 
 # Keširanje ovisnosti
 COPY package*.json ./
-# Samo production deps (runtime)
+# Samo production deps (prisma je u dependencies!)
 RUN npm ci --omit=dev
 
-# Prisma schema + generate (treba za @prisma/client)
+# Prisma schema + generate (treba za @prisma/client i CLI)
 COPY prisma ./prisma
 ENV PRISMA_CLI_NO_UPDATE_NOTIFIER=1
+# Ako želiš eksplicitno pinati OpenSSL ABI (bookworm je OpenSSL 3)
+ENV PRISMA_OPENSSL_VERSION=3.0.x
 RUN npx prisma generate
+
+# Kopiraj aplikacijski kod (JS projekt)
+COPY . .
 
 # ==========================
 # Stage 2: runtime
 # ==========================
 FROM node:20-bookworm-slim AS runtime
-
 WORKDIR /app
+
 ENV NODE_ENV=production \
     PORT=8080 \
-    PRISMA_CLI_NO_UPDATE_NOTIFIER=1
+    PRISMA_CLI_NO_UPDATE_NOTIFIER=1 \
+    PRISMA_OPENSSL_VERSION=3.0.x
 
-# Healthcheck alat
-RUN apt-get update && apt-get install -y --no-install-recommends wget \
+# OpenSSL i wget (za healthcheck)
+RUN apt-get update && apt-get install -y --no-install-recommends openssl wget \
  && rm -rf /var/lib/apt/lists/*
 
-# Samo što treba za runtime
-COPY --from=deps /app/package*.json ./
+# Samo što treba za runtime (node_modules + prisma + kod)
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/prisma ./prisma
-
-# Kopiraj aplikacijski kod (server.js, src/, itd.)
-COPY . .
+COPY --from=deps /app/package*.json ./
+COPY --from=deps /app/. ./
 
 # (Opcionalno) ne-root korisnik
 USER node
 
 EXPOSE 8080
-
 # Healthcheck očekuje /hc (promijeni po potrebi)
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
   CMD wget -qO- http://127.0.0.1:8080/hc || exit 1
 
-# Entry file je konfigurabilan build arg-om
-# Primjeri:
-#   docker build -f Dockerfile.prod --build-arg START_FILE=server.js -t image .
-#   docker build -f Dockerfile.prod --build-arg START_FILE=src/server.js -t image .
+# Entry file: podesivo build arg-om; default je server.js
 ARG START_FILE=server.js
 ENV START_FILE=$START_FILE
 
-# Koristimo shell formu da ENV radi u CMD-u
 CMD ["sh","-lc","node \"$START_FILE\""]
