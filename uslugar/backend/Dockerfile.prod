@@ -1,23 +1,54 @@
-# uslugar/backend/Dockerfile.prod
-FROM node:20-bookworm-slim
+# ---------------------------
+# Stage 1: build + prisma gen
+# ---------------------------
+FROM node:20-bookworm-slim AS builder
 
 WORKDIR /app
 
-# OpenSSL za Prisma na Debian bookworm (OpenSSL 3)
-RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
-ENV PRISMA_OPENSSL_VERSION=3.0.x
-
-# 1) package*.json iz trenutnog konteksta (uslugar/backend)
+# Brže keširanje layera
 COPY package*.json ./
 RUN npm ci
 
-# 2) kopiraj sav kod iz trenutnog konteksta
-COPY . .
+# Prisma schema + generate
+COPY prisma ./prisma
+# Isključi update poruke u CI-u
+ENV PRISMA_CLI_NO_UPDATE_NOTIFIER=1
+RUN npx prisma generate
 
-# 3) generiraj Prisma klijent (glibc), pa makni dev deps
-RUN npx prisma generate --schema=prisma/schema.prisma \
- && npm prune --omit=dev
+# TypeScript build (pretpostavlja tsconfig.json i src/)
+COPY tsconfig.json ./
+COPY src ./src
+RUN npm run build
 
-ENV NODE_ENV=production
-CMD ["node", "src/server.js"]
+# Ukloni dev-deps za production node_modules
+RUN npm prune --omit=dev
 
+# ---------------------------
+# Stage 2: runtime (production)
+# ---------------------------
+FROM node:20-bookworm-slim AS runtime
+
+WORKDIR /app
+ENV NODE_ENV=production \
+    PORT=8080 \
+    PRISMA_CLI_NO_UPDATE_NOTIFIER=1
+
+# Healthcheck alat
+RUN apt-get update && apt-get install -y --no-install-recommends wget \
+ && rm -rf /var/lib/apt/lists/*
+
+# Samo što je potrebno u runtimeu
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/dist ./dist
+
+# (Opcionalno) ne-root korisnik
+USER node
+
+EXPOSE 8080
+# Healthcheck očekuje da app sluša na /hc
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+  CMD wget -qO- http://127.0.0.1:8080/hc || exit 1
+
+CMD ["node", "dist/main.js"]
