@@ -28,9 +28,11 @@ app.use(cors());
 app.use(express.json());
 app.use(morgan('dev'));
 
-app.get('/api/health', (req, res) =>
-  res.json({ ok: true, ts: new Date().toISOString() })
-);
+// ✅ health prije auth-a i prije ostalih ruta
+app.get('/api/health', (_req, res) => {
+  res.status(200).json({ ok: true, ts: new Date().toISOString() });
+});
+
 
 app.use('/api/auth', authRouter);
 app.use('/api/jobs', jobsRouter);
