@@ -15,7 +15,7 @@ ENV PRISMA_GENERATE_SKIP_AUTOINSTALL=1
 ENV PRISMA_OPENSSL_VERSION=3.0.x
 
 # Generiraj Prisma Client
-RUN npx prisma generate --schema=./prisma
+RUN npx prisma generate --schema=./prisma/schema.prisma
 
 # Default: pomoć; u CI/one-off zadatku override-at će se "command"
 CMD ["sh","-lc","npx prisma --help"]
