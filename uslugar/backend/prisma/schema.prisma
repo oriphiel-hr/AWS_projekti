@@ -3,12 +3,17 @@ generator client {
   binaryTargets = ["native"]
 }
 
-
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
+/* ===== ENUMS ===== */
+enum Role { USER PROVIDER ADMIN }
+enum JobStatus { OPEN ASSIGNED CLOSED CANCELLED }
+enum OfferStatus { PENDING ACCEPTED REJECTED }
+
+/* ===== MODELS ===== */
 model User {
   id           String   @id @default(cuid())
   email        String   @unique
@@ -17,6 +22,8 @@ model User {
   role         Role     @default(USER)
   phone        String?
   city         String?
+  lat          Float?
+  lng          Float?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -25,6 +32,10 @@ model User {
   offers          Offer[]
   reviewsGiven    Review[] @relation("reviewsGiven")
   reviewsReceived Review[] @relation("reviewsReceived")
+  messagesSent    Message[] @relation("messagesSent")
+  messagesRecv    Message[] @relation("messagesRecv")
+
+  subscriptions   Subscription[]
 }
 
 model ProviderProfile {
@@ -32,17 +43,19 @@ model ProviderProfile {
   user        User     @relation(fields: [userId], references: [id])
   userId      String   @unique
   bio         String?
-  categories  Category[] @relation("ProviderCategories") // ⬅️ bez references
+  categories  Category[] @relation("ProviderCategories")
   portfolio   Json?
   ratingAvg   Float    @default(0)
   ratingCount Int      @default(0)
   serviceArea String?
+
+  @@index([ratingAvg])
 }
 
 model Category {
   id        String @id @default(cuid())
   name      String @unique
-  providers ProviderProfile[] @relation("ProviderCategories") // ⬅️ par na suprotnoj strani
+  providers ProviderProfile[] @relation("ProviderCategories")
   jobs      Job[]
 }
 
@@ -53,6 +66,8 @@ model Job {
   budgetMin   Int?
   budgetMax   Int?
   city        String?
+  lat         Float?
+  lng         Float?
   status      JobStatus @default(OPEN)
   user        User     @relation(fields: [userId], references: [id])
   userId      String
@@ -60,48 +75,83 @@ model Job {
   categoryId  String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  offers      Offer[]
+
+  offers          Offer[]
   acceptedOfferId String?
+  attachments     Attachment[]
+
+  @@index([status, categoryId])
 }
 
 model Offer {
-  id        String   @id @default(cuid())
+  id        String      @id @default(cuid())
   amount    Int
   message   String?
   status    OfferStatus @default(PENDING)
   job       Job     @relation(fields: [jobId], references: [id])
   jobId     String
-  user      User    @relation(fields: [userId], references: [id])
+  user      User    @relation(fields: [userId], references: [id]) // provider user
   userId    String
   createdAt DateTime @default(now())
+
+  @@index([jobId, status])
+  @@index([userId])
 }
 
 model Review {
-  id        String   @id @default(cuid())
-  rating    Int
-  comment   String?
-  from      User     @relation("reviewsGiven", fields: [fromUserId], references: [id])
-  fromUserId String
-  to        User     @relation("reviewsReceived", fields: [toUserId], references: [id])
-  toUserId   String
+  id          String   @id @default(cuid())
+  rating      Int
+  comment     String?
+  fromUser    User     @relation("reviewsGiven", fields: [fromUserId], references: [id])
+  fromUserId  String
+  toUser      User     @relation("reviewsReceived", fields: [toUserId], references: [id])
+  toUserId    String
+  job         Job?     @relation(fields: [jobId], references: [id])
+  jobId       String?
+  createdAt   DateTime @default(now())
+}
+
+model Attachment {
+  id        String @id @default(cuid())
+  job       Job    @relation(fields: [jobId], references: [id])
+  jobId     String
+  url       String
+  kind      String? // image/pdf
   createdAt DateTime @default(now())
 }
 
-enum Role {
-  USER
-  PROVIDER
-  ADMIN
+model Message {
+  id        String @id @default(cuid())
+  from      User   @relation("messagesSent", fields: [fromId], references: [id])
+  fromId    String
+  to        User   @relation("messagesRecv", fields: [toId], references: [id])
+  toId      String
+  job       Job?   @relation(fields: [jobId], references: [id])
+  jobId     String?
+  body      String
+  sentAt    DateTime @default(now())
+
+  @@index([fromId, toId, sentAt])
 }
 
-enum JobStatus {
-  OPEN
-  IN_PROGRESS
-  COMPLETED
-  CANCELLED
+model Plan {
+  id          String  @id @default(cuid())
+  name        String  @unique
+  monthlyCents Int
+  monthlyOffers Int   @default(10) // “credits”
+  createdAt   DateTime @default(now())
 }
 
-enum OfferStatus {
-  PENDING
-  ACCEPTED
-  REJECTED
+model Subscription {
+  id        String @id @default(cuid())
+  user      User   @relation(fields: [userId], references: [id])
+  userId    String
+  plan      Plan   @relation(fields: [planId], references: [id])
+  planId    String
+  credits   Int    @default(0)
+  active    Boolean @default(true)
+  startedAt DateTime @default(now())
+  endsAt    DateTime?
+
+  @@index([userId, active])
 }

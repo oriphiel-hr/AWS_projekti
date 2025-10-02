@@ -1,24 +1,10 @@
-FROM node:20-bookworm-slim AS base
+# … tvoj bazni image
 WORKDIR /app
-
-# System deps koje pomažu Prismi
-RUN apt-get update -y && apt-get install -y --no-install-recommends openssl ca-certificates \
-  && rm -rf /var/lib/apt/lists/*
-
-ENV NODE_ENV=production
-ENV PRISMA_GENERATE_SKIP_AUTOINSTALL=1
-ENV PRISMA_OPENSSL_VERSION=3.0.x
-
-# samo package datoteke radi boljeg cache-a
 COPY package*.json ./
-RUN npm ci --omit=dev
-
-# Prisma schema i generiranje klijenta u imageu
+RUN npm ci --only=production
 COPY prisma ./prisma
-RUN npx prisma generate
-
-# app source (JS varijanta)
 COPY src ./src
-
-EXPOSE 8080
-CMD ["node","src/server.js"]
+COPY docker-entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+ENV NODE_ENV=production
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
