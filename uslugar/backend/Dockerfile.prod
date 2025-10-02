@@ -1,39 +1,10 @@
-# uslugar/backend/Dockerfile.prod
-# --- deps/builder ---
-FROM node:20-alpine AS deps
+# … tvoj bazni image
 WORKDIR /app
-ARG APP_DIR=uslugar/backend
-COPY ${APP_DIR}/package*.json ./
-# ako koristiš npm 9/10: --omit=optional ako treba manji image
-RUN npm ci
-
-# Prisma client (ako ga koristiš)
-COPY ${APP_DIR}/prisma ./prisma
-RUN npx prisma generate
-
-# Kod
-COPY ${APP_DIR} ./
-# Ako je TS, build; ako nije, ovo će proći bez greške
-RUN npm run build || true
-
-# --- runtime ---
-FROM node:20-alpine AS runner
-WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production
+COPY prisma ./prisma
+COPY src ./src
+COPY docker-entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
 ENV NODE_ENV=production
-
-# Prod node_modules (iz buildera)
-COPY --from=deps /app/node_modules ./node_modules
-# Prisma schema (client je već generiran)
-COPY --from=deps /app/prisma ./prisma
-# package*.json (da ostanu meta-info)
-COPY uslugar/backend/package*.json ./
-
-# Ako imaš build (dist), koristi ga; inače kopiraj src i vozi direktno
-COPY --from=deps /app/dist ./dist
-COPY --from=deps /app/src  ./src
-
-EXPOSE 8080
-# Ako imaš dist build:
-# CMD ["node","dist/server.js"]
-# Ako nemaš build (čisti JS):
-CMD ["node","src/server.js"]
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
