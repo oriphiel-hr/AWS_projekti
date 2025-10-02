@@ -24,6 +24,20 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
+      
+      # (opcionalno, ali preporučeno) osiguraj Node 20
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # 🔐 Osiguraj package-lock.json prije docker builda
+      - name: Ensure package-lock.json (backend)
+        working-directory: uslugar/backend
+        run: |
+          if [ ! -f package-lock.json ]; then
+            npm i --package-lock-only
+          fi
+          ls -l package-lock.json || true      
 
       - uses: aws-actions/configure-aws-credentials@v4
         with:
