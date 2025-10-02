@@ -1,0 +1,98 @@
+name: Prisma - Build/Push & Migrate (ECR→ECS)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - "uslugar/backend/prisma/**"
+      - "uslugar/backend/Dockerfile.prisma"
+      - ".github/workflows/prisma-uslugar.yml"
+
+env:
+  AWS_REGION: eu-north-1
+  ECR_REPO_PRISMA: uslugar-prisma-tasks
+  ECS_CLUSTER: apps-cluster
+  MIGRATE_SUBNETS: subnet-0a00f97768705bbcf,subnet-0546fb6cc0ad2cc37
+  MIGRATE_SG: sg-084c1e49c9c77aff1
+
+jobs:
+  prisma:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Ensure ECR repo exists
+        run: |
+          aws ecr describe-repositories --repository-names "${{ env.ECR_REPO_PRISMA }}" >/dev/null 2>&1 ||           aws ecr create-repository --repository-names "${{ env.ECR_REPO_PRISMA }}" >/dev/null
+
+      - name: Build & Push prisma-tasks image
+        env:
+          ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -f uslugar/backend/Dockerfile.prisma             -t $ECR_REGISTRY/${{ env.ECR_REPO_PRISMA }}:$IMAGE_TAG             uslugar/backend
+          docker push $ECR_REGISTRY/${{ env.ECR_REPO_PRISMA }}:$IMAGE_TAG
+          echo "PRISMA_IMAGE_URI=$ECR_REGISTRY/${{ env.ECR_REPO_PRISMA }}:$IMAGE_TAG" >> $GITHUB_ENV
+
+      - name: Run Prisma migrate (one-off Fargate task)
+        env:
+          SUBNETS: ${{ env.MIGRATE_SUBNETS }}
+          SECGRP:  ${{ env.MIGRATE_SG }}
+          ASSIGN_PUBLIC_IP: ENABLED
+        run: |
+          set -euo pipefail
+          cat > prisma-td.json <<JSON
+          {
+            "family": "uslugar-prisma-oneoff",
+            "networkMode": "awsvpc",
+            "cpu": "256",
+            "memory": "512",
+            "requiresCompatibilities": ["FARGATE"],
+            "executionRoleArn": "${{ secrets.AWS_ECS_TASK_EXEC_ROLE_ARN }}",
+            "taskRoleArn": "${{ secrets.AWS_ECS_TASK_ROLE_ARN }}",
+            "containerDefinitions": [
+              {
+                "name": "prisma",
+                "image": "${{ env.PRISMA_IMAGE_URI }}",
+                "essential": true,
+                "environment": [
+                  { "name": "PRISMA_OPENSSL_VERSION", "value": "3.0.x" }
+                ],
+                "secrets": [
+                  { "name": "DATABASE_URL", "valueFrom": "${{ secrets.DB_SECRET_ARN }}:DATABASE_URL::" }
+                ],
+                "logConfiguration": {
+                  "logDriver": "awslogs",
+                  "options": {
+                    "awslogs-region": "${{ env.AWS_REGION }}",
+                    "awslogs-group": "/ecs/uslugar/prisma",
+                    "awslogs-stream-prefix": "oneoff"
+                  }
+                ],
+                "command": ["sh","-lc","npx prisma migrate deploy --schema=./prisma && npx prisma migrate status --schema=./prisma"]
+              }
+            ]
+          }
+          JSON
+
+          TD_ARN=$(aws ecs register-task-definition --cli-input-json file://prisma-td.json --query "taskDefinition.taskDefinitionArn" --output text)
+          TASK_ARN=$(aws ecs run-task             --cluster "${{ env.ECS_CLUSTER }}"             --launch-type FARGATE             --task-definition "$TD_ARN"             --network-configuration "awsvpcConfiguration={subnets=[${SUBNETS}],securityGroups=[${SECGRP}],assignPublicIp=${ASSIGN_PUBLIC_IP}}"             --query "tasks[0].taskArn" --output text)
+
+          echo "Task: $TASK_ARN"
+          aws ecs wait tasks-stopped --cluster "${{ env.ECS_CLUSTER }}" --tasks "$TASK_ARN"
+
+          EXIT=$(aws ecs describe-tasks --cluster "${{ env.ECS_CLUSTER }}" --tasks "$TASK_ARN"             --query "tasks[0].containers[0].exitCode" --output text)
+          echo "Exit code: $EXIT"
+          test "$EXIT" = "0"
