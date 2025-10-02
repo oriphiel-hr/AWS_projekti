@@ -37,8 +37,8 @@ jobs:
 
       - name: Ensure ECR repos
         run: |
-          aws ecr describe-repositories --repository-names "${{ env.ECR_REPO_BACKEND }}" >/dev/null 2>&1 ||             aws ecr create-repository --repository-names "${{ env.ECR_REPO_BACKEND }}" >/dev/null
-          aws ecr describe-repositories --repository-names "${{ env.ECR_REPO_PRISMA }}" >/dev/null 2>&1 ||             aws ecr create-repository --repository-names "${{ env.ECR_REPO_PRISMA }}" >/dev/null
+          aws ecr describe-repositories --repository-name "${{ env.ECR_REPO_BACKEND }}" >/dev/null 2>&1 ||             aws ecr create-repository --repository-name "${{ env.ECR_REPO_BACKEND }}" >/dev/null
+          aws ecr describe-repositories --repository-name "${{ env.ECR_REPO_PRISMA }}" >/dev/null 2>&1 ||             aws ecr create-repository --repository-name "${{ env.ECR_REPO_PRISMA }}" >/dev/null
 
       - name: Build & Push app image (uses prisma image by SHA or latest)
         env:
