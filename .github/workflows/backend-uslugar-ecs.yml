@@ -3,7 +3,7 @@ name: Backend - Reuse existing Task Definition (ECR→ECS)
 on:
   workflow_dispatch:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
     paths:
       - "uslugar/backend/**"
       - "!uslugar/backend/prisma/**"
@@ -26,8 +26,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      
-      # (opcionalno, ali preporučeno) osiguraj Node 20
+
+      # (opcionalno) pinaj Node 20 da npm radi sigurno
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -39,7 +39,7 @@ jobs:
           if [ ! -f package-lock.json ]; then
             npm i --package-lock-only
           fi
-          ls -l package-lock.json || true      
+          ls -l package-lock.json || true
 
       - uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -49,37 +49,62 @@ jobs:
       - id: ecr-login
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Ensure ECR repos
+      # Ako nemaš CreateRepository dozvolu, ovo samo upozori umjesto da puca
+      - name: Ensure ECR repos (describe or warn)
         run: |
-          aws ecr describe-repositories --repository-name "${{ env.ECR_REPO_BACKEND }}" >/dev/null 2>&1 ||             aws ecr create-repository --repository-name "${{ env.ECR_REPO_BACKEND }}" >/dev/null
-          aws ecr describe-repositories --repository-name "${{ env.ECR_REPO_PRISMA }}" >/dev/null 2>&1 ||             aws ecr create-repository --repository-name "${{ env.ECR_REPO_PRISMA }}" >/dev/null
+          set -e
+          for NAME in "${{ env.ECR_REPO_BACKEND }}" "${{ env.ECR_REPO_PRISMA }}"; do
+            if ! aws ecr describe-repositories --repository-names "$NAME" >/dev/null 2>&1; then
+              echo "::warning::ECR repo '$NAME' ne postoji ili rola nema ecr:CreateRepository. Kreiraj ga ručno u eu-north-1."
+            fi
+          done
 
-      - name: Build & Push app image (uses prisma image by SHA or latest)
+      # ✅ OVO JE TVOJ TRAŽENI KORAK — povuci SHA/:latest ili izgradi lokalno i pushaj :latest
+      - name: Build & Push app image (uses prisma image by SHA or builds locally)
         env:
           ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
           set -euo pipefail
-          PRISMA_IMAGE_SHA="$ECR_REGISTRY/${{ env.ECR_REPO_PRISMA }}:${{ github.sha }}"
-          PRISMA_IMAGE_LATEST="$ECR_REGISTRY/${{ env.ECR_REPO_PRISMA }}:latest"
+          PRISMA_SHA="$ECR_REGISTRY/${{ env.ECR_REPO_PRISMA }}:${{ github.sha }}"
+          PRISMA_LATEST="$ECR_REGISTRY/${{ env.ECR_REPO_PRISMA }}:latest"
 
-          if docker pull "$PRISMA_IMAGE_SHA" ; then
-            USE_PRISMA_IMAGE="$PRISMA_IMAGE_SHA"
+          # 1) probaj pull po SHA
+          if docker pull "$PRISMA_SHA" ; then
+            USE_PRISMA_IMAGE="$PRISMA_SHA"
+
+          # 2) probaj pull :latest
+          elif docker pull "$PRISMA_LATEST" ; then
+            USE_PRISMA_IMAGE="$PRISMA_LATEST"
+
+          # 3) nema slike → izgradi lokalno i (po želji) pushaj :latest
           else
-            echo "No prisma image for this SHA, falling back to :latest"
-            docker pull "$PRISMA_IMAGE_LATEST" || true
-            USE_PRISMA_IMAGE="$PRISMA_IMAGE_LATEST"
+            echo "Prisma image not found; building locally…"
+            docker build -f uslugar/backend/Dockerfile.prisma \
+              -t "$PRISMA_LATEST" \
+              uslugar/backend
+            # push latest da postoji fallback idući put (ako rola ima pravo)
+            docker push "$PRISMA_LATEST" || true
+            USE_PRISMA_IMAGE="$PRISMA_LATEST"
           fi
 
-          docker build -f uslugar/backend/Dockerfile.prod             --build-arg PRISMA_IMAGE="$USE_PRISMA_IMAGE"             -t $ECR_REGISTRY/${{ env.ECR_REPO_BACKEND }}:$IMAGE_TAG             uslugar/backend
+          # Izgradi backend s definiranim PRISMA_IMAGE
+          docker build -f uslugar/backend/Dockerfile.prod \
+            --build-arg PRISMA_IMAGE="$USE_PRISMA_IMAGE" \
+            -t $ECR_REGISTRY/${{ env.ECR_REPO_BACKEND }}:$IMAGE_TAG \
+            uslugar/backend
 
           docker push $ECR_REGISTRY/${{ env.ECR_REPO_BACKEND }}:$IMAGE_TAG
           echo "IMAGE_URI=$ECR_REGISTRY/${{ env.ECR_REPO_BACKEND }}:$IMAGE_TAG" >> $GITHUB_ENV
 
       - name: Read current Task Definition
         run: |
-          TD_ARN=$(aws ecs describe-services             --cluster "${{ env.ECS_CLUSTER }}"             --services "${{ env.ECS_SERVICE }}"             --query "services[0].taskDefinition" --output text)
-          aws ecs describe-task-definition --task-definition "$TD_ARN"             --query "taskDefinition" --output json > td.json
+          TD_ARN=$(aws ecs describe-services \
+            --cluster "${{ env.ECS_CLUSTER }}" \
+            --services "${{ env.ECS_SERVICE }}" \
+            --query "services[0].taskDefinition" --output text)
+          aws ecs describe-task-definition --task-definition "$TD_ARN" \
+            --query "taskDefinition" --output json > td.json
 
           jq 'del(.status,.requiresAttributes,.compatibilities,.revision,.registeredAt,.registeredBy,.deregisteredAt,.taskDefinitionArn,.tags,.inferenceAccelerators)' td.json > td_clean.json
 
@@ -93,10 +118,16 @@ jobs:
 
       - name: Register new TD revision
         run: |
-          NEW_TD_ARN=$(aws ecs register-task-definition             --cli-input-json file://td_new.json             --query "taskDefinition.taskDefinitionArn" --output text)
+          NEW_TD_ARN=$(aws ecs register-task-definition \
+            --cli-input-json file://td_new.json \
+            --query "taskDefinition.taskDefinitionArn" --output text)
           echo "NEW_TD_ARN=$NEW_TD_ARN" >> $GITHUB_ENV
           echo "Registered: $NEW_TD_ARN"
 
       - name: Update service to new TD
         run: |
-          aws ecs update-service             --cluster "${{ env.ECS_CLUSTER }}"             --service "${{ env.ECS_SERVICE }}"             --task-definition "${NEW_TD_ARN}"             --query "service.taskDefinition" --output text
+          aws ecs update-service \
+            --cluster "${{ env.ECS_CLUSTER }}" \
+            --service "${{ env.ECS_SERVICE }}" \
+            --task-definition "${NEW_TD_ARN}" \
+            --query "service.taskDefinition" --output text

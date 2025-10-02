@@ -22,10 +22,11 @@ jobs:
     permissions:
       id-token: write
       contents: read
+
     steps:
       - uses: actions/checkout@v4
-      
-      # (opcionalno, ali preporučeno) osiguraj Node 20
+
+      # (opcionalno, ali preporučeno) Node 20
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -37,7 +38,7 @@ jobs:
           if [ ! -f package-lock.json ]; then
             npm i --package-lock-only
           fi
-          ls -l package-lock.json || true      
+          ls -l package-lock.json || true
 
       - uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -49,15 +50,22 @@ jobs:
 
       - name: Ensure ECR repo exists
         run: |
-          aws ecr describe-repositories --repository-names "${{ env.ECR_REPO_PRISMA }}" >/dev/null 2>&1 ||           aws ecr create-repository --repository-names "${{ env.ECR_REPO_PRISMA }}" >/dev/null
+          aws ecr describe-repositories --repository-names "${{ env.ECR_REPO_PRISMA }}" >/dev/null 2>&1 || \
+          aws ecr create-repository --repository-name "${{ env.ECR_REPO_PRISMA }}" >/dev/null
 
-      - name: Build & Push prisma-tasks image
+      - name: Build & Push prisma-tasks image (SHA + latest)
         env:
           ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          docker build -f uslugar/backend/Dockerfile.prisma             -t $ECR_REGISTRY/${{ env.ECR_REPO_PRISMA }}:$IMAGE_TAG    -t $ECR_REGISTRY/${{ env.ECR_REPO_PRISMA }}:latest         uslugar/backend
+          docker build -f uslugar/backend/Dockerfile.prisma \
+            -t $ECR_REGISTRY/${{ env.ECR_REPO_PRISMA }}:$IMAGE_TAG \
+            -t $ECR_REGISTRY/${{ env.ECR_REPO_PRISMA }}:latest \
+            uslugar/backend
+
           docker push $ECR_REGISTRY/${{ env.ECR_REPO_PRISMA }}:$IMAGE_TAG
+          docker push $ECR_REGISTRY/${{ env.ECR_REPO_PRISMA }}:latest
+
           echo "PRISMA_IMAGE_URI=$ECR_REGISTRY/${{ env.ECR_REPO_PRISMA }}:$IMAGE_TAG" >> $GITHUB_ENV
 
       - name: Run Prisma migrate (one-off Fargate task)
@@ -102,11 +110,17 @@ jobs:
           JSON
 
           TD_ARN=$(aws ecs register-task-definition --cli-input-json file://prisma-td.json --query "taskDefinition.taskDefinitionArn" --output text)
-          TASK_ARN=$(aws ecs run-task             --cluster "${{ env.ECS_CLUSTER }}"             --launch-type FARGATE             --task-definition "$TD_ARN"             --network-configuration "awsvpcConfiguration={subnets=[${SUBNETS}],securityGroups=[${SECGRP}],assignPublicIp=${ASSIGN_PUBLIC_IP}}"             --query "tasks[0].taskArn" --output text)
+          TASK_ARN=$(aws ecs run-task \
+            --cluster "${{ env.ECS_CLUSTER }}" \
+            --launch-type FARGATE \
+            --task-definition "$TD_ARN" \
+            --network-configuration "awsvpcConfiguration={subnets=[${SUBNETS}],securityGroups=[${SECGRP}],assignPublicIp=${ASSIGN_PUBLIC_IP}}" \
+            --query "tasks[0].taskArn" --output text)
 
           echo "Task: $TASK_ARN"
           aws ecs wait tasks-stopped --cluster "${{ env.ECS_CLUSTER }}" --tasks "$TASK_ARN"
 
-          EXIT=$(aws ecs describe-tasks --cluster "${{ env.ECS_CLUSTER }}" --tasks "$TASK_ARN"             --query "tasks[0].containers[0].exitCode" --output text)
+          EXIT=$(aws ecs describe-tasks --cluster "${{ env.ECS_CLUSTER }}" --tasks "$TASK_ARN" \
+            --query "tasks[0].containers[0].exitCode" --output text)
           echo "Exit code: $EXIT"
           test "$EXIT" = "0"
