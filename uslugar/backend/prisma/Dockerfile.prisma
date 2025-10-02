@@ -8,8 +8,10 @@ RUN apt-get update -y && apt-get install -y --no-install-recommends     openssl 
 COPY package*.json ./
 # Ako postoji lock -> ci; inače -> install (trebaju devDeps za Prisma CLI)
 RUN if [ -f package-lock.json ]; then \
+	RUN ls -la
       npm ci --ignore-scripts; \
     else \
+	RUN ls -la
       npm install --ignore-scripts; \
     fi
 
