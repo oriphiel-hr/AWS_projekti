@@ -1,4 +1,4 @@
-name: Prisma - Build/Push & Migrate (ECR→ECS)
+name: Prisma - Build/Push & Migrate (ECR→ECS) 
 
 on:
   workflow_dispatch:
