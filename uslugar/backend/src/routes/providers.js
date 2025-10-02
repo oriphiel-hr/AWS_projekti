@@ -4,19 +4,6 @@ import { auth } from '../lib/auth.js';
 
 const r = Router();
 
-r.get("/", async (req, res) => {
-  const { categoryId, city } = req.query;
-  const providers = await prisma.providerProfile.findMany({
-    where: {
-      ...(categoryId ? { categories: { some: { id: categoryId } } } : {}),
-      ...(city ? { user: { city } } : {})
-    },
-    include: { user: true, categories: true },
-    orderBy: [{ ratingAvg: "desc" }]
-  });
-  res.json(providers);
-});
-
 // get provider profile
 r.get('/:userId', async (req, res, next) => {
   try {

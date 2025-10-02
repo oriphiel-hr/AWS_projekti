@@ -1,48 +1,30 @@
-import { Router } from "express";
-import prisma from "../services/prisma.js";
-import { auth } from "../services/auth.js";
+import { Router } from 'express';
+import { prisma } from '../lib/prisma.js';
+import { auth } from '../lib/auth.js';
 
 const r = Router();
 
-// only job owner & accepted provider may leave review (each one review)
-r.post("/", auth, async (req, res) => {
-  const { toUserId, jobId, rating, comment } = req.body;
-
-  const job = await prisma.job.findUnique({
-    where: { id: jobId }, include: { offers: true }
-  });
-  if (!job || job.status !== "ASSIGNED" && job.status !== "CLOSED") {
-    return res.status(400).send("Job not in reviewable state");
-  }
-  const accepted = job.acceptedOfferId
-    ? await prisma.offer.findUnique({ where: { id: job.acceptedOfferId } })
-    : null;
-  if (!accepted) return res.status(400).send("No accepted offer");
-
-  // rule: reviewer must be job owner OR accepted provider
-  const allowed = (req.user.id === job.userId && toUserId === accepted.userId)
-               || (req.user.id === accepted.userId && toUserId === job.userId);
-  if (!allowed) return res.status(403).send("Forbidden");
-
-  const review = await prisma.review.create({
-    data: { fromUserId: req.user.id, toUserId, jobId, rating, comment }
-  });
-
-  // recalc provider aggregates
-  const { _avg, _count } = await prisma.review.aggregate({
-    where: { toUserId },
-    _avg: { rating: true },
-    _count: { rating: true }
-  });
-  const prof = await prisma.providerProfile.findUnique({ where: { userId: toUserId } });
-  if (prof) {
-    await prisma.providerProfile.update({
-      where: { id: prof.id },
-      data: { ratingAvg: _avg.rating ?? 0, ratingCount: _count.rating }
+r.post('/', auth(true, ['USER']), async (req, res, next) => {
+  try {
+    const { toUserId, rating, comment } = req.body;
+    if (!toUserId || !rating) return res.status(400).json({ error: 'Missing fields' });
+    const review = await prisma.review.create({
+      data: { toUserId, rating: Number(rating), comment: comment || '', fromUserId: req.user.id }
     });
-  }
 
-  res.json(review);
+    // update aggregates
+    const aggr = await prisma.review.aggregate({
+      where: { toUserId },
+      _avg: { rating: true },
+      _count: { rating: true }
+    });
+    await prisma.providerProfile.updateMany({
+      where: { userId: toUserId },
+      data: { ratingAvg: aggr._avg.rating || 0, ratingCount: aggr._count.rating }
+    });
+
+    res.status(201).json(review);
+  } catch (e) { next(e); }
 });
 
 export default r;
