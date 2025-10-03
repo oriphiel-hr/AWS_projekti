@@ -30,7 +30,7 @@ jobs:
         with:
           node-version: 20
 
-      # Lock prije docker builda (da npm ci ne padne)
+      # Osiguraj package-lock.json prije docker builda
       - name: Ensure package-lock.json (backend)
         working-directory: uslugar/backend
         run: |
@@ -78,26 +78,33 @@ jobs:
           AWS_ECS_TASK_ROLE_ARN: ${{ secrets.AWS_ECS_TASK_ROLE_ARN }}
         run: |
           set -euo pipefail
+
           echo "Using PRISMA_IMAGE_URI=${PRISMA_IMAGE_URI}"
 
-          # 1) Container JSON (command koristi eksplicitni schema path)
-          CONTAINER=$(printf '{"name":"prisma","image":"%s","essential":true,"environment":[{"name":"PRISMA_OPENSSL_VERSION","value":"3.0.x"}],"secrets":[{"name":"DATABASE_URL","valueFrom":"%s:DATABASE_URL::"}],"logConfiguration":{"logDriver":"awslogs","options":{"awslogs-region":"%s","awslogs-group":"/ecs/uslugar/prisma","awslogs-stream-prefix":"oneoff"}},"command":["sh","-lc","npx prisma migrate deploy --schema=./prisma/schema.prisma && npx prisma migrate status --schema=./prisma/schema.prisma"]}' \
+          # executionRoleArn je obavezan jer koristimo container secrets/ECR/logs
+          if [ -z "${AWS_ECS_TASK_EXEC_ROLE_ARN:-}" ]; then
+            echo "::error::AWS_ECS_TASK_EXEC_ROLE_ARN je obavezan kada koristiš container secrets. Dodaj ga u repo secrets."
+            exit 1
+          fi
+
+          # (preporučeno) kreiraj log group ako ne postoji
+          if ! aws logs describe-log-groups --log-group-name-prefix "/ecs/uslugar/prisma" \
+               --query "logGroups[?logGroupName=='/ecs/uslugar/prisma'] | length(@)" --output text | grep -q "^1$"; then
+            aws logs create-log-group --log-group-name "/ecs/uslugar/prisma" --region "${AWS_REGION}" || true
+            aws logs put-retention-policy --log-group-name "/ecs/uslugar/prisma" --retention-in-days 30 || true
+          fi
+
+          # 1) Container JSON (eksplicitni schema path)
+          CONTAINER=$(printf '{"name":"prisma","image":"%s","essential":true,"environment":[{"name":"PRISMA_OPENSSL_VERSION","value":"3.0.x"}],"secrets":[{"name":"DATABASE_URL","valueFrom":"%s:DATABASE_URL::"}],"logConfiguration":{"logDriver":"awslogs","options":{"awslogs-region":"%s","awslogs-group":"/ecs/uslugar/prisma","awslogs-stream-prefix":"oneoff"}},"command":["sh","-lc","npx prisma migrate deploy --schema=./prisma/schema.prisma && npx prisma migrate status --schema=./prisma/schema.prisma"]]}' \
             "$PRISMA_IMAGE_URI" "$DB_SECRET_ARN" "$AWS_REGION")
 
-          # 2) (opcionalno) dodaj role ako postoje
-          ROLES=""
-          if [ -n "${AWS_ECS_TASK_EXEC_ROLE_ARN:-}" ]; then
-            ROLES=$(printf '"executionRoleArn":"%s",' "$AWS_ECS_TASK_EXEC_ROLE_ARN")
-          fi
+          # 2) Uvijek dodaj executionRoleArn; taskRoleArn po potrebi
+          ROLES=$(printf '"executionRoleArn":"%s",' "$AWS_ECS_TASK_EXEC_ROLE_ARN")
           if [ -n "${AWS_ECS_TASK_ROLE_ARN:-}" ]; then
-            if [ -n "$ROLES" ]; then
-              ROLES=$(printf '%s"taskRoleArn":"%s",' "$ROLES" "$AWS_ECS_TASK_ROLE_ARN")
-            else
-              ROLES=$(printf '"taskRoleArn":"%s",' "$AWS_ECS_TASK_ROLE_ARN")
-            fi
+            ROLES=$(printf '%s"taskRoleArn":"%s",' "$ROLES" "$AWS_ECS_TASK_ROLE_ARN")
           fi
 
-          # 3) Task Definition JSON (bez heredoc-a)
+          # 3) Task Definition JSON
           printf '{"family":"uslugar-prisma-oneoff","networkMode":"awsvpc","cpu":"256","memory":"512","requiresCompatibilities":["FARGATE"],%s"containerDefinitions":[%s]}\n' \
             "$ROLES" "$CONTAINER" > prisma-td.json
 
