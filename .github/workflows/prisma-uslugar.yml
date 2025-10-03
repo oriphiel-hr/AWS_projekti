@@ -66,6 +66,7 @@ jobs:
 
           echo "PRISMA_IMAGE_URI=$ECR_REGISTRY/${{ env.ECR_REPO_PRISMA }}:$IMAGE_TAG" >> $GITHUB_ENV
 
+      # Heredoc bez jq/Pythona — JSON se generira s uvjetnim linijama za role
       - name: Run Prisma migrate (one-off Fargate task)
         env:
           SUBNETS: ${{ env.MIGRATE_SUBNETS }}
@@ -79,7 +80,17 @@ jobs:
           set -euo pipefail
           echo "Using PRISMA_IMAGE_URI=${PRISMA_IMAGE_URI}"
 
-          # Sastavi JSON heredocom (varijable se interpoliraju)
+          # Pripremi opcionalne role linije (svaka završava zarezom jer nakon njih uvijek ide containerDefinitions)
+          EXEC_ROLE_LINE=""
+          TASK_ROLE_LINE=""
+          if [ -n "${AWS_ECS_TASK_EXEC_ROLE_ARN:-}" ]; then
+            EXEC_ROLE_LINE="\"executionRoleArn\": \"${AWS_ECS_TASK_EXEC_ROLE_ARN}\","
+          fi
+          if [ -n "${AWS_ECS_TASK_ROLE_ARN:-}" ]; then
+            TASK_ROLE_LINE="\"taskRoleArn\": \"${AWS_ECS_TASK_ROLE_ARN}\","
+          fi
+
+          # Sastavi čist JSON
           cat > prisma-td.json <<EOF
           {
             "family": "uslugar-prisma-oneoff",
@@ -87,8 +98,8 @@ jobs:
             "cpu": "256",
             "memory": "512",
             "requiresCompatibilities": ["FARGATE"],
-            "executionRoleArn": "${AWS_ECS_TASK_EXEC_ROLE_ARN}",
-            "taskRoleArn": "${AWS_ECS_TASK_ROLE_ARN}",
+            ${EXEC_ROLE_LINE}
+            ${TASK_ROLE_LINE}
             "containerDefinitions": [
               {
                 "name": "prisma",
@@ -114,12 +125,6 @@ jobs:
           }
           EOF
 
-          # Ukloni role ako su prazne (čisti JSON, bez Pythona)
-          jq '
-            if (.executionRoleArn // "") == "" then del(.executionRoleArn) else . end
-            | if (.taskRoleArn // "") == "" then del(.taskRoleArn) else . end
-          ' prisma-td.json > prisma-td.tmp && mv prisma-td.tmp prisma-td.json
-
           echo "----- prisma-td.json -----"
           cat prisma-td.json
           echo "--------------------------"
@@ -128,11 +133,16 @@ jobs:
             --cli-input-json file://prisma-td.json \
             --query "taskDefinition.taskDefinitionArn" --output text)
 
+          # Pripremi network-configuration (stringovi u navodnicima)
+          # SUBNETS je CSV; pretvori u listu s navodnicima
+          SUBLIST=$(printf '%s\n' "$SUBNETS" | tr ',' ' ' | awk '{for(i=1;i<=NF;i++)printf "\"%s\"%s",$i,(i<NF?",":"");print ""}')
+          NETCFG="awsvpcConfiguration={subnets=[${SUBLIST}],securityGroups=[\"${SECGRP}\"],assignPublicIp=\"${ASSIGN_PUBLIC_IP}\"}"
+
           TASK_ARN=$(aws ecs run-task \
             --cluster "${{ env.ECS_CLUSTER }}" \
             --launch-type FARGATE \
             --task-definition "$TD_ARN" \
-            --network-configuration "awsvpcConfiguration={subnets=[${SUBNETS}],securityGroups=[${SECGRP}],assignPublicIp=${ASSIGN_PUBLIC_IP}}" \
+            --network-configuration "$NETCFG" \
             --query "tasks[0].taskArn" --output text)
 
           echo "Task: $TASK_ARN"
