@@ -66,7 +66,6 @@ jobs:
 
           echo "PRISMA_IMAGE_URI=$ECR_REGISTRY/${{ env.ECR_REPO_PRISMA }}:$IMAGE_TAG" >> $GITHUB_ENV
 
-      # 🔄 Heredoc bez jq; sve varijable se interpoliraju u JSON
       - name: Run Prisma migrate (one-off Fargate task)
         env:
           SUBNETS: ${{ env.MIGRATE_SUBNETS }}
@@ -80,6 +79,7 @@ jobs:
           set -euo pipefail
           echo "Using PRISMA_IMAGE_URI=${PRISMA_IMAGE_URI}"
 
+          # Sastavi JSON heredocom (varijable se interpoliraju)
           cat > prisma-td.json <<EOF
           {
             "family": "uslugar-prisma-oneoff",
@@ -114,17 +114,11 @@ jobs:
           }
           EOF
 
-          # Ako su role prazne, ukloni ta polja da JSON bude valjan za ECS
-          if [ -z "${AWS_ECS_TASK_EXEC_ROLE_ARN:-}" ] || [ -z "${AWS_ECS_TASK_ROLE_ARN:-}" ]; then
-            python3 - "$PWD/prisma-td.json" <<'PY'
-import json,sys
-p=sys.argv[1]
-with open(p) as f: j=json.load(f)
-if not j.get("executionRoleArn"): j.pop("executionRoleArn", None)
-if not j.get("taskRoleArn"): j.pop("taskRoleArn", None)
-with open(p,"w") as f: json.dump(j,f)
-PY
-          fi
+          # Ukloni role ako su prazne (čisti JSON, bez Pythona)
+          jq '
+            if (.executionRoleArn // "") == "" then del(.executionRoleArn) else . end
+            | if (.taskRoleArn // "") == "" then del(.taskRoleArn) else . end
+          ' prisma-td.json > prisma-td.tmp && mv prisma-td.tmp prisma-td.json
 
           echo "----- prisma-td.json -----"
           cat prisma-td.json
