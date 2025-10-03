@@ -68,48 +68,69 @@ jobs:
 
           echo "PRISMA_IMAGE_URI=$ECR_REGISTRY/${{ env.ECR_REPO_PRISMA }}:$IMAGE_TAG" >> $GITHUB_ENV
 
+      # 🔄 ZAMIJENJENI KORAK – koristi jq da sastavi ispravan JSON
       - name: Run Prisma migrate (one-off Fargate task)
         env:
           SUBNETS: ${{ env.MIGRATE_SUBNETS }}
           SECGRP:  ${{ env.MIGRATE_SG }}
           ASSIGN_PUBLIC_IP: ENABLED
+          AWS_REGION: ${{ env.AWS_REGION }}
+          DB_SECRET_ARN: ${{ secrets.DB_SECRET_ARN }}
+          AWS_ECS_TASK_EXEC_ROLE_ARN: ${{ secrets.AWS_ECS_TASK_EXEC_ROLE_ARN }}
+          AWS_ECS_TASK_ROLE_ARN: ${{ secrets.AWS_ECS_TASK_ROLE_ARN }}
         run: |
           set -euo pipefail
-          cat > prisma-td.json <<JSON
-          {
-            "family": "uslugar-prisma-oneoff",
-            "networkMode": "awsvpc",
-            "cpu": "256",
-            "memory": "512",
-            "requiresCompatibilities": ["FARGATE"],
-            "executionRoleArn": "${{ secrets.AWS_ECS_TASK_EXEC_ROLE_ARN }}",
-            "taskRoleArn": "${{ secrets.AWS_ECS_TASK_ROLE_ARN }}",
-            "containerDefinitions": [
-              {
-                "name": "prisma",
-                "image": "${{ env.PRISMA_IMAGE_URI }}",
-                "essential": true,
-                "environment": [
-                  { "name": "PRISMA_OPENSSL_VERSION", "value": "3.0.x" }
-                ],
-                "secrets": [
-                  { "name": "DATABASE_URL", "valueFrom": "${{ secrets.DB_SECRET_ARN }}:DATABASE_URL::" }
-                ],
-                "logConfiguration": {
-                  "logDriver": "awslogs",
-                  "options": {
-                    "awslogs-region": "${{ env.AWS_REGION }}",
-                    "awslogs-group": "/ecs/uslugar/prisma",
-                    "awslogs-stream-prefix": "oneoff"
-                  }
-                ],
-                "command": ["sh","-lc","npx prisma migrate deploy --schema=./prisma && npx prisma migrate status --schema=./prisma"]
-              }
-            ]
-          }
-          JSON
 
-          TD_ARN=$(aws ecs register-task-definition --cli-input-json file://prisma-td.json --query "taskDefinition.taskDefinitionArn" --output text)
+          echo "Using PRISMA_IMAGE_URI=${PRISMA_IMAGE_URI}"
+
+          sudo apt-get update -y && sudo apt-get install -y jq
+
+          jq -n \
+            --arg img "${PRISMA_IMAGE_URI}" \
+            --arg region "${AWS_REGION}" \
+            --arg dbarn "${DB_SECRET_ARN}" \
+            --arg execRole "${AWS_ECS_TASK_EXEC_ROLE_ARN:-}" \
+            --arg taskRole "${AWS_ECS_TASK_ROLE_ARN:-}" \
+            '{
+              family: "uslugar-prisma-oneoff",
+              networkMode: "awsvpc",
+              cpu: "256",
+              memory: "512",
+              requiresCompatibilities: ["FARGATE"],
+              executionRoleArn: ($execRole | select(length>0)),
+              taskRoleArn: ($taskRole | select(length>0)),
+              containerDefinitions: [
+                {
+                  name: "prisma",
+                  image: $img,
+                  essential: true,
+                  environment: [
+                    { name: "PRISMA_OPENSSL_VERSION", value: "3.0.x" }
+                  ],
+                  secrets: [
+                    { name: "DATABASE_URL", valueFrom: ($dbarn + ":DATABASE_URL::") }
+                  ],
+                  logConfiguration: {
+                    logDriver: "awslogs",
+                    options: {
+                      "awslogs-region": $region,
+                      "awslogs-group": "/ecs/uslugar/prisma",
+                      "awslogs-stream-prefix": "oneoff"
+                    }
+                  ],
+                  command: ["sh","-lc","npx prisma migrate deploy --schema=./prisma && npx prisma migrate status --schema=./prisma"]
+                }
+              ]
+            }' > prisma-td.json
+
+          echo "----- prisma-td.json -----"
+          cat prisma-td.json
+          echo "--------------------------"
+
+          TD_ARN=$(aws ecs register-task-definition \
+            --cli-input-json file://prisma-td.json \
+            --query "taskDefinition.taskDefinitionArn" --output text)
+
           TASK_ARN=$(aws ecs run-task \
             --cluster "${{ env.ECS_CLUSTER }}" \
             --launch-type FARGATE \
