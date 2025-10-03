@@ -26,12 +26,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # (opcionalno, ali preporučeno) Node 20
       - uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      # Osiguraj package-lock.json prije docker builda
       - name: Ensure package-lock.json (backend)
         working-directory: uslugar/backend
         run: |
@@ -68,7 +66,7 @@ jobs:
 
           echo "PRISMA_IMAGE_URI=$ECR_REGISTRY/${{ env.ECR_REPO_PRISMA }}:$IMAGE_TAG" >> $GITHUB_ENV
 
-      # 🔄 koristi čist JSON + jq patch (bez riskantnog shell quoting-a)
+      # 🔄 Heredoc bez jq; sve varijable se interpoliraju u JSON
       - name: Run Prisma migrate (one-off Fargate task)
         env:
           SUBNETS: ${{ env.MIGRATE_SUBNETS }}
@@ -82,32 +80,30 @@ jobs:
           set -euo pipefail
           echo "Using PRISMA_IMAGE_URI=${PRISMA_IMAGE_URI}"
 
-          sudo apt-get update -y >/dev/null
-          sudo apt-get install -y jq >/dev/null
-
-          # 1) ČIST JSON ŠABLON (bez interpolacije varijabli)
-          cat > prisma-td.json <<'JSON'
+          cat > prisma-td.json <<EOF
           {
             "family": "uslugar-prisma-oneoff",
             "networkMode": "awsvpc",
             "cpu": "256",
             "memory": "512",
             "requiresCompatibilities": ["FARGATE"],
+            "executionRoleArn": "${AWS_ECS_TASK_EXEC_ROLE_ARN}",
+            "taskRoleArn": "${AWS_ECS_TASK_ROLE_ARN}",
             "containerDefinitions": [
               {
                 "name": "prisma",
-                "image": "REPLACE_IMAGE",
+                "image": "${PRISMA_IMAGE_URI}",
                 "essential": true,
                 "environment": [
                   { "name": "PRISMA_OPENSSL_VERSION", "value": "3.0.x" }
                 ],
                 "secrets": [
-                  { "name": "DATABASE_URL", "valueFrom": "REPLACE_DB_ARN:DATABASE_URL::" }
+                  { "name": "DATABASE_URL", "valueFrom": "${DB_SECRET_ARN}:DATABASE_URL::" }
                 ],
                 "logConfiguration": {
                   "logDriver": "awslogs",
                   "options": {
-                    "awslogs-region": "REPLACE_REGION",
+                    "awslogs-region": "${AWS_REGION}",
                     "awslogs-group": "/ecs/uslugar/prisma",
                     "awslogs-stream-prefix": "oneoff"
                   }
@@ -116,32 +112,24 @@ jobs:
               }
             ]
           }
-          JSON
+          EOF
 
-          # 2) UPIŠI VARIJABLE U JSON
-          jq \
-            --arg img    "$PRISMA_IMAGE_URI" \
-            --arg region "$AWS_REGION" \
-            --arg dbarn  "$DB_SECRET_ARN" \
-            '
-              .containerDefinitions[0].image = $img
-              | .containerDefinitions[0].secrets[0].valueFrom = ($dbarn + ":DATABASE_URL::")
-              | .containerDefinitions[0].logConfiguration.options["awslogs-region"] = $region
-            ' prisma-td.json > prisma-td.tmp && mv prisma-td.tmp prisma-td.json
-
-          # (opcionalno) Dodaj role samo ako su zadane
-          if [ -n "${AWS_ECS_TASK_EXEC_ROLE_ARN:-}" ]; then
-            jq --arg v "$AWS_ECS_TASK_EXEC_ROLE_ARN" '.executionRoleArn = $v' prisma-td.json > t && mv t prisma-td.json
-          fi
-          if [ -n "${AWS_ECS_TASK_ROLE_ARN:-}" ]; then
-            jq --arg v "$AWS_ECS_TASK_ROLE_ARN" '.taskRoleArn = $v' prisma-td.json > t && mv t prisma-td.json
+          # Ako su role prazne, ukloni ta polja da JSON bude valjan za ECS
+          if [ -z "${AWS_ECS_TASK_EXEC_ROLE_ARN:-}" ] || [ -z "${AWS_ECS_TASK_ROLE_ARN:-}" ]; then
+            python3 - "$PWD/prisma-td.json" <<'PY'
+import json,sys
+p=sys.argv[1]
+with open(p) as f: j=json.load(f)
+if not j.get("executionRoleArn"): j.pop("executionRoleArn", None)
+if not j.get("taskRoleArn"): j.pop("taskRoleArn", None)
+with open(p,"w") as f: json.dump(j,f)
+PY
           fi
 
           echo "----- prisma-td.json -----"
           cat prisma-td.json
           echo "--------------------------"
 
-          # 3) Register + run one-off
           TD_ARN=$(aws ecs register-task-definition \
             --cli-input-json file://prisma-td.json \
             --query "taskDefinition.taskDefinitionArn" --output text)
