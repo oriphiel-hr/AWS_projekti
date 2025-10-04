@@ -122,7 +122,10 @@ jobs:
               },
               "command": [
                 "sh","-lc",
-                "npx prisma migrate deploy --schema=./prisma/schema.prisma && npx prisma migrate status --schema=./prisma/schema.prisma"
+                "printf 'DROP TYPE IF EXISTS \"Role\"; DROP TYPE IF EXISTS \"JobStatus\"; DROP TYPE IF EXISTS \"OfferStatus\";' \
+                | npx prisma db execute --schema=./prisma/schema.prisma --stdin \
+                && npx prisma migrate deploy --schema=./prisma/schema.prisma \
+                && npx prisma migrate status --schema=./prisma/schema.prisma"
               ]
             }
           ]
