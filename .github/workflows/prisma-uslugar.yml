@@ -76,17 +76,30 @@ jobs:
           DB_SECRET_ARN: ${{ secrets.DB_SECRET_ARN }}
           AWS_ECS_TASK_EXEC_ROLE_ARN: ${{ secrets.AWS_ECS_TASK_EXEC_ROLE_ARN }}
           AWS_ECS_TASK_ROLE_ARN: ${{ secrets.AWS_ECS_TASK_ROLE_ARN }}
+          ECS_CLUSTER: ${{ env.ECS_CLUSTER }}
         run: |
           set -euo pipefail
 
           if [ -z "${AWS_ECS_TASK_EXEC_ROLE_ARN:-}" ]; then
-            echo "AWS_ECS_TASK_EXEC_ROLE_ARN je obavezan (treba za 'secrets')."
+            echo "AWS_ECS_TASK_EXEC_ROLE_ARN je obavezan (potreban za 'secrets' i awslogs)."
             exit 1
           fi
 
-          echo "Using PRISMA_IMAGE_URI=$PRISMA_IMAGE_URI"
+          echo "Using PRISMA_IMAGE_URI=${PRISMA_IMAGE_URI}"
 
-          # container-definitions JSON (s varijablama)
+          sudo apt-get update -y >/dev/null
+          sudo apt-get install -y jq >/dev/null
+
+          # Osiguraj CloudWatch log group (ako ne postoji)
+          LG_EXISTS=$(aws logs describe-log-groups \
+            --log-group-name-prefix "/ecs/uslugar/prisma" \
+            --query "logGroups[?logGroupName=='/ecs/uslugar/prisma'] | length(@)" \
+            --output text || echo 0)
+          if [ "${LG_EXISTS}" = "0" ]; then
+            aws logs create-log-group --log-group-name "/ecs/uslugar/prisma" || true
+          fi
+
+          # container-definitions (validan JSON)
           cat > container.json <<EOF
           [
             {
@@ -107,7 +120,10 @@ jobs:
                   "awslogs-stream-prefix": "oneoff"
                 }
               },
-              "command": ["sh","-lc","npx prisma migrate deploy --schema=./prisma/schema.prisma && npx prisma migrate status --schema=./prisma/schema.prisma"]
+              "command": [
+                "sh","-lc",
+                "npx prisma migrate deploy --schema=./prisma/schema.prisma && npx prisma migrate status --schema=./prisma/schema.prisma"
+              ]
             }
           ]
           EOF
@@ -116,7 +132,7 @@ jobs:
           cat container.json
           echo "-------------------------"
 
-          # Registriraj TD bez --cli-input-json (izbjegava parse greške)
+          # Registracija Task Definition-a (bez --cli-input-json da izbjegnemo YAML/JSON escaping)
           TD_ARN=$(aws ecs register-task-definition \
             --family uslugar-prisma-oneoff \
             --network-mode awsvpc \
@@ -128,22 +144,56 @@ jobs:
             --container-definitions file://container.json \
             --query "taskDefinition.taskDefinitionArn" \
             --output text)
-
           echo "TD_ARN=$TD_ARN"
 
-          # Pokreni one-off task (network config inline)
+          # Network config u zasebnom JSON-u (sigurno quotanje)
+          cat > netcfg.json <<EOF
+          {
+            "awsvpcConfiguration": {
+              "subnets": ["${SUBNETS//,/\",\"}"],
+              "securityGroups": ["${SECGRP}"],
+              "assignPublicIp": "${ASSIGN_PUBLIC_IP}"
+            }
+          }
+          EOF
+
+          echo "----- netcfg.json -----"
+          cat netcfg.json
+          echo "-----------------------"
+
           TASK_ARN=$(aws ecs run-task \
-            --cluster "${{ env.ECS_CLUSTER }}" \
+            --cluster "$ECS_CLUSTER" \
             --launch-type FARGATE \
             --task-definition "$TD_ARN" \
-            --network-configuration "awsvpcConfiguration={subnets=[${SUBNETS}],securityGroups=[${SECGRP}],assignPublicIp=${ASSIGN_PUBLIC_IP}}" \
+            --network-configuration file://netcfg.json \
             --query "tasks[0].taskArn" --output text)
-
           echo "Task: $TASK_ARN"
-          aws ecs wait tasks-stopped --cluster "${{ env.ECS_CLUSTER }}" --tasks "$TASK_ARN"
 
-          EXIT=$(aws ecs describe-tasks \
-            --cluster "${{ env.ECS_CLUSTER }}" --tasks "$TASK_ARN" \
-            --query "tasks[0].containers[0].exitCode" --output text)
-          echo "Exit code: $EXIT"
-          test "$EXIT" = "0"
+          aws ecs wait tasks-stopped --cluster "$ECS_CLUSTER" --tasks "$TASK_ARN"
+
+          # Detaljna dijagnostika
+          DESC=$(aws ecs describe-tasks --cluster "$ECS_CLUSTER" --tasks "$TASK_ARN")
+          STATUS=$(echo "$DESC" | jq -r '.tasks[0].lastStatus')
+          STOPPED_REASON=$(echo "$DESC" | jq -r '.tasks[0].stoppedReason // empty')
+          CSTAT=$(echo "$DESC" | jq -r '.tasks[0].containers[0].lastStatus')
+          EXIT=$(echo "$DESC" | jq -r '.tasks[0].containers[0].exitCode // empty')
+          CREASON=$(echo "$DESC" | jq -r '.tasks[0].containers[0].reason // empty')
+
+          echo "Task status: $STATUS ; container: $CSTAT ; exitCode: ${EXIT:-<none>} ; reason: ${CREASON:-<none>} ; stoppedReason: ${STOPPED_REASON:-<none>}"
+
+          if [ "${EXIT:-}" = "0" ]; then
+            echo "✅ Prisma migrations OK"
+            exit 0
+          fi
+
+          # Pokušaj dohvatiti CloudWatch logove (oneoff/<container>/<taskId>)
+          TASK_ID="${TASK_ARN##*/}"
+          STREAM="oneoff/prisma/${TASK_ID}"
+          echo "Trying to fetch CloudWatch logs: /ecs/uslugar/prisma :: ${STREAM}"
+          aws logs get-log-events \
+            --log-group-name "/ecs/uslugar/prisma" \
+            --log-stream-name "$STREAM" \
+            --limit 100 --output text || true
+
+          echo "❌ Prisma migrate failed."
+          exit 1
