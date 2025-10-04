@@ -106,7 +106,7 @@ jobs:
                   "awslogs-group": "/ecs/uslugar/prisma",
                   "awslogs-stream-prefix": "oneoff"
                 }
-              ],
+              },
               "command": ["sh","-lc","npx prisma migrate deploy --schema=./prisma/schema.prisma && npx prisma migrate status --schema=./prisma/schema.prisma"]
             }
           ]
