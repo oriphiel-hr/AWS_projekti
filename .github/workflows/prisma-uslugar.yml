@@ -122,7 +122,7 @@ jobs:
               },
               "command": [
                 "sh","-lc",
-                "printf 'DROP TYPE IF EXISTS \"Role\"; DROP TYPE IF EXISTS \"JobStatus\"; DROP TYPE IF EXISTS \"OfferStatus\";' \
+                "printf 'DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;' \
                 | npx prisma db execute --schema=./prisma/schema.prisma --stdin \
                 && npx prisma migrate deploy --schema=./prisma/schema.prisma \
                 && npx prisma migrate status --schema=./prisma/schema.prisma"
