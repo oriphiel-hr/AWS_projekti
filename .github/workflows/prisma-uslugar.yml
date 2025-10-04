@@ -1,4 +1,4 @@
-name: Prisma - Build/Push & Migrate (ECR→ECS) 
+name: Prisma - Build/Push & Migrate (ECR→ECS)
 
 on:
   workflow_dispatch:
@@ -30,7 +30,6 @@ jobs:
         with:
           node-version: 20
 
-      # Osiguraj package-lock.json prije docker builda
       - name: Ensure package-lock.json (backend)
         working-directory: uslugar/backend
         run: |
@@ -68,6 +67,7 @@ jobs:
           echo "PRISMA_IMAGE_URI=$ECR_REGISTRY/${{ env.ECR_REPO_PRISMA }}:$IMAGE_TAG" >> $GITHUB_ENV
 
       - name: Run Prisma migrate (one-off Fargate task)
+        shell: bash
         env:
           SUBNETS: ${{ env.MIGRATE_SUBNETS }}
           SECGRP:  ${{ env.MIGRATE_SG }}
@@ -79,75 +79,71 @@ jobs:
         run: |
           set -euo pipefail
 
-          echo "Using PRISMA_IMAGE_URI=${PRISMA_IMAGE_URI}"
-
-          # executionRoleArn je obavezan jer koristimo container secrets/ECR/logs
           if [ -z "${AWS_ECS_TASK_EXEC_ROLE_ARN:-}" ]; then
-            echo "::error::AWS_ECS_TASK_EXEC_ROLE_ARN je obavezan kada koristiš container secrets. Dodaj ga u repo secrets."
+            echo "AWS_ECS_TASK_EXEC_ROLE_ARN je obavezan (treba za 'secrets')."
             exit 1
           fi
 
-          # (preporučeno) kreiraj log group ako ne postoji
-          if ! aws logs describe-log-groups --log-group-name-prefix "/ecs/uslugar/prisma" \
-               --query "logGroups[?logGroupName=='/ecs/uslugar/prisma'] | length(@)" --output text | grep -q "^1$"; then
-            aws logs create-log-group --log-group-name "/ecs/uslugar/prisma" --region "${AWS_REGION}" || true
-            aws logs put-retention-policy --log-group-name "/ecs/uslugar/prisma" --retention-in-days 30 || true
-          fi
+          echo "Using PRISMA_IMAGE_URI=$PRISMA_IMAGE_URI"
 
-          # 1) Container JSON (eksplicitni schema path)
-          CONTAINER=$(printf '{"name":"prisma","image":"%s","essential":true,"environment":[{"name":"PRISMA_OPENSSL_VERSION","value":"3.0.x"}],"secrets":[{"name":"DATABASE_URL","valueFrom":"%s:DATABASE_URL::"}],"logConfiguration":{"logDriver":"awslogs","options":{"awslogs-region":"%s","awslogs-group":"/ecs/uslugar/prisma","awslogs-stream-prefix":"oneoff"}},"command":["sh","-lc","npx prisma migrate deploy --schema=./prisma/schema.prisma && npx prisma migrate status --schema=./prisma/schema.prisma"]]}' \
-            "$PRISMA_IMAGE_URI" "$DB_SECRET_ARN" "$AWS_REGION")
+          # container-definitions JSON (s varijablama)
+          cat > container.json <<EOF
+          [
+            {
+              "name": "prisma",
+              "image": "${PRISMA_IMAGE_URI}",
+              "essential": true,
+              "environment": [
+                { "name": "PRISMA_OPENSSL_VERSION", "value": "3.0.x" }
+              ],
+              "secrets": [
+                { "name": "DATABASE_URL", "valueFrom": "${DB_SECRET_ARN}:DATABASE_URL::" }
+              ],
+              "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                  "awslogs-region": "${AWS_REGION}",
+                  "awslogs-group": "/ecs/uslugar/prisma",
+                  "awslogs-stream-prefix": "oneoff"
+                }
+              ],
+              "command": ["sh","-lc","npx prisma migrate deploy --schema=./prisma/schema.prisma && npx prisma migrate status --schema=./prisma/schema.prisma"]
+            }
+          ]
+          EOF
 
-          # 2) Uvijek dodaj executionRoleArn; taskRoleArn po potrebi
-          ROLES=$(printf '"executionRoleArn":"%s",' "$AWS_ECS_TASK_EXEC_ROLE_ARN")
-          if [ -n "${AWS_ECS_TASK_ROLE_ARN:-}" ]; then
-            ROLES=$(printf '%s"taskRoleArn":"%s",' "$ROLES" "$AWS_ECS_TASK_ROLE_ARN")
-          fi
+          echo "----- container.json -----"
+          cat container.json
+          echo "-------------------------"
 
-          # 3) Task Definition JSON
-          printf '{"family":"uslugar-prisma-oneoff","networkMode":"awsvpc","cpu":"256","memory":"512","requiresCompatibilities":["FARGATE"],%s"containerDefinitions":[%s]}\n' \
-            "$ROLES" "$CONTAINER" > prisma-td.json
-
-          echo "----- prisma-td.json -----"
-          cat prisma-td.json
-          echo "--------------------------"
-
-          # 4) Network config iz CSV SUBNETS -> JSON
-          IFS=',' read -r -a _subs <<< "${SUBNETS}"
-          SUBNET_ARRAY_JSON="["
-          for i in "${!_subs[@]}"; do
-            s="${_subs[$i]}"
-            if [ $i -gt 0 ]; then SUBNET_ARRAY_JSON="${SUBNET_ARRAY_JSON}, "; fi
-            SUBNET_ARRAY_JSON="${SUBNET_ARRAY_JSON}\"${s}\""
-          done
-          SUBNET_ARRAY_JSON="${SUBNET_ARRAY_JSON}]"
-
-          printf '{"awsvpcConfiguration":{"subnets":%s,"securityGroups":["%s"],"assignPublicIp":"%s"}}\n' \
-            "$SUBNET_ARRAY_JSON" "$SECGRP" "$ASSIGN_PUBLIC_IP" > netcfg.json
-
-          echo "----- netcfg.json -----"
-          cat netcfg.json
-          echo "-----------------------"
-
-          # 5) Register + run
+          # Registriraj TD bez --cli-input-json (izbjegava parse greške)
           TD_ARN=$(aws ecs register-task-definition \
-            --cli-input-json file://prisma-td.json \
-            --query "taskDefinition.taskDefinitionArn" --output text)
-          echo "Registered TD: $TD_ARN"
+            --family uslugar-prisma-oneoff \
+            --network-mode awsvpc \
+            --cpu "256" \
+            --memory "512" \
+            --requires-compatibilities FARGATE \
+            --execution-role-arn "$AWS_ECS_TASK_EXEC_ROLE_ARN" \
+            ${AWS_ECS_TASK_ROLE_ARN:+--task-role-arn "$AWS_ECS_TASK_ROLE_ARN"} \
+            --container-definitions file://container.json \
+            --query "taskDefinition.taskDefinitionArn" \
+            --output text)
 
+          echo "TD_ARN=$TD_ARN"
+
+          # Pokreni one-off task (network config inline)
           TASK_ARN=$(aws ecs run-task \
             --cluster "${{ env.ECS_CLUSTER }}" \
             --launch-type FARGATE \
             --task-definition "$TD_ARN" \
-            --network-configuration file://netcfg.json \
+            --network-configuration "awsvpcConfiguration={subnets=[${SUBNETS}],securityGroups=[${SECGRP}],assignPublicIp=${ASSIGN_PUBLIC_IP}}" \
             --query "tasks[0].taskArn" --output text)
 
           echo "Task: $TASK_ARN"
           aws ecs wait tasks-stopped --cluster "${{ env.ECS_CLUSTER }}" --tasks "$TASK_ARN"
 
           EXIT=$(aws ecs describe-tasks \
-            --cluster "${{ env.ECS_CLUSTER }}" \
-            --tasks "$TASK_ARN" \
+            --cluster "${{ env.ECS_CLUSTER }}" --tasks "$TASK_ARN" \
             --query "tasks[0].containers[0].exitCode" --output text)
           echo "Exit code: $EXIT"
           test "$EXIT" = "0"
