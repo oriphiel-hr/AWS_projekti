@@ -193,7 +193,7 @@ jobs:
           aws logs get-log-events \
             --log-group-name "/ecs/uslugar/prisma" \
             --log-stream-name "$STREAM" \
-            --limit 100 --output text || true
+            --limit 200 --output text || true
 
           echo "❌ Prisma migrate failed."
           exit 1
