@@ -1,0 +1,89 @@
+name: Frontend - Build & Deploy (Hostinger)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - "uslugar/frontend/**"
+      - ".github/workflows/frontend-uslugar.yml"
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  FRONTEND_DIR: uslugar/frontend
+  BUILD_CMD: npm ci && npm run build
+  # Promijeni po potrebi: 'dist' (Vite), 'build' (CRA), 'out' (Next export)
+  DIST_DIR: dist
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: ${{ env.FRONTEND_DIR }}/package-lock.json
+
+      - name: Build frontend
+        working-directory: ${{ env.FRONTEND_DIR }}
+        run: $BUILD_CMD
+
+      - name: Assert build output exists
+        working-directory: ${{ env.FRONTEND_DIR }}
+        run: |
+          test -d "$DIST_DIR" || { echo "❌ Build output dir '$DIST_DIR' ne postoji"; exit 1; }
+          echo "✅ Pronađen $DIST_DIR"
+
+      # ───────────── Deploy na Hostinger preko FTPS (mirroring) ─────────────
+      # Sync-a lokalni build folder na remote i briše viškove
+      - name: Deploy via FTPS to Hostinger (mirror & delete)
+        uses: SamKirkland/FTP-Deploy-Action@v4
+        with:
+          server: ${{ secrets.HOSTINGER_HOST }}
+          username: ${{ secrets.HOSTINGER_USERNAME }}
+          password: ${{ secrets.HOSTINGER_PASSWORD }}
+          protocol: ftps
+          port: 21
+          local-dir: ${{ env.FRONTEND_DIR }}/${{ env.DIST_DIR }}/
+          server-dir: ${{ secrets.HOSTINGER_SERVER_DIR || 'public_html/' }}
+          # ⚠️ Briše sve na odredištu što nije u lokalnom buildu
+          dangerous-clean-slate: true
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            **/.DS_Store
+
+      # ───────────── (Opcionalno) alternativni SFTP deploy preko SSH ključa ─────────────
+      # Odkomentiraj OVAJ blok i izbriši FTPS blok iznad ako želiš SFTP.
+      # Potrebni secret-i:
+      #   HOSTINGER_SSH_PRIVATE_KEY (privatni ključ u PEM formatu)
+      #   HOSTINGER_USERNAME, HOSTINGER_HOST
+      # (opcionalno) HOSTINGER_SSH_PORT (default 22), HOSTINGER_SERVER_DIR
+      #
+      # - name: Deploy via SFTP (alternative)
+      #   if: ${{ false }} # promijeni u 'always()' kad želiš koristiti SFTP varijantu
+      #   uses: wlixcc/SFTP-Deploy-Action@v1.2.4
+      #   with:
+      #     username: ${{ secrets.HOSTINGER_USERNAME }}
+      #     server: ${{ secrets.HOSTINGER_HOST }}
+      #     ssh_private_key: ${{ secrets.HOSTINGER_SSH_PRIVATE_KEY }}
+      #     port: ${{ secrets.HOSTINGER_SSH_PORT || 22 }}
+      #     local_path: ${{ env.FRONTEND_DIR }}/${{ env.DIST_DIR }}/*
+      #     remote_path: ${{ secrets.HOSTINGER_SERVER_DIR || 'public_html/' }}
+      #     sftp_only: true
+      #     delete_remote_files: true
+
+      # ───────────── (Opcionalno) smoke check tvoje produkcijske stranice ─────────────
+      # - name: Smoke check
+      #   run: |
+      #     curl -I --max-time 20 https://uslugar.oriph.io/ | sed -n '1,10p'
