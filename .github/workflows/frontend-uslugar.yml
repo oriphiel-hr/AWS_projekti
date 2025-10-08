@@ -46,7 +46,7 @@ jobs:
       # ───────────── Deploy na Hostinger preko FTPS (mirroring) ─────────────
       # Sync-a lokalni build folder na remote i briše viškove
       - name: Deploy via FTPS to Hostinger (mirror & delete)
-        uses: SamKirkland/FTP-Deploy-Action@v4
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
           server: ${{ secrets.HOSTINGER_HOST }}
           username: ${{ secrets.HOSTINGER_USERNAME }}
