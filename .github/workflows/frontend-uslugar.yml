@@ -15,9 +15,8 @@ permissions:
 env:
   FRONTEND_DIR: uslugar/frontend
   BUILD_CMD: npm ci && npm run build
-  # Promijeni po potrebi: 'dist' (Vite), 'build' (CRA), 'out' (Next export)
+  # Default candidates the detector will try (can leave DIST_DIR=dist if you want)
   DIST_DIR: dist
-  # Defaultiraj na public_html/ ako secret nije postavljen
   SERVER_DIR: ${{ secrets.HOSTINGER_SERVER_DIR != '' && secrets.HOSTINGER_SERVER_DIR || 'public_html/' }}
 
 jobs:
@@ -28,7 +27,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Assert/create lockfile so caching has something to hash
       - name: Ensure package-lock.json (frontend)
         run: |
           test -f "${{ env.FRONTEND_DIR }}/package-lock.json" || (
@@ -42,18 +40,59 @@ jobs:
           cache: npm
           cache-dependency-path: ${{ env.FRONTEND_DIR }}/package-lock.json
 
+      - name: Show package.json scripts (debug)
+        working-directory: ${{ env.FRONTEND_DIR }}
+        run: |
+          node -e "console.log(require('./package.json').scripts)"
+
       - name: Build frontend
         working-directory: ${{ env.FRONTEND_DIR }}
         run: $BUILD_CMD
 
-      - name: Assert build output exists
+      - name: List build artifacts (debug)
         working-directory: ${{ env.FRONTEND_DIR }}
         run: |
-          test -d "$DIST_DIR" || { echo "❌ Build output dir '$DIST_DIR' ne postoji"; exit 1; }
-          echo "✅ Pronađen $DIST_DIR"
+          echo "Root files:" && ls -la
+          echo "dist/:" && ls -la dist || true
+          echo "build/:" && ls -la build || true
+          echo "out/:" && ls -la out || true
 
-      # ───────────── Deploy na Hostinger preko FTPS (mirroring) ─────────────
-      # Sync-a lokalni build folder na remote i briše viškove
+      - name: Detect build output directory
+        id: detect
+        working-directory: ${{ env.FRONTEND_DIR }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          name="$(node -e "console.log(require('./package.json').name || '')" || true)"
+          candidates=()
+          # 1) user-provided env
+          candidates+=("${DIST_DIR}")
+          # 2) common frameworks
+          candidates+=("dist" "build" "out" "public")
+          # 3) Angular variants
+          [ -n "$name" ] && candidates+=("dist/$name")
+          # 4) first subdir in dist/
+          if [ -d dist ]; then
+            first_sub="$(ls -d dist/* 2>/dev/null | head -n1 || true)"
+            [ -n "$first_sub" ] && candidates+=("$first_sub")
+          fi
+          found=""
+          for d in "${candidates[@]}"; do
+            if [ -d "$d" ]; then
+              # prefer directory that has an index.html (pure static)
+              if [ -f "$d/index.html" ]; then found="$d"; break; fi
+              # otherwise any non-empty dir
+              if [ "$(find "$d" -type f | wc -l)" -gt 0 ]; then found="$d"; break; fi
+            fi
+          done
+          if [ -z "$found" ]; then
+            echo "❌ Nije pronađen build output (pokušano: ${candidates[*]})."
+            echo "   Ako koristiš CRA postavi DIST_DIR=build; za Next export DIST_DIR=out."
+            exit 1
+          fi
+          echo "✅ Detektiran build output: $found"
+          echo "dir=$found" >> "$GITHUB_OUTPUT"
+
       - name: Deploy via FTPS to Hostinger (mirror & delete)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
@@ -62,37 +101,11 @@ jobs:
           password: ${{ secrets.HOSTINGER_PASSWORD }}
           protocol: ftps
           port: 21
-          local-dir: ${{ env.FRONTEND_DIR }}/${{ env.DIST_DIR }}/
+          local-dir: ${{ env.FRONTEND_DIR }}/${{ steps.detect.outputs.dir }}/
           server-dir: ${{ env.SERVER_DIR }}
-          # ⚠️ Briše sve na odredištu što nije u lokalnom buildu
           dangerous-clean-slate: true
           exclude: |
             **/.git*
             **/.git*/**
             **/node_modules/**
             **/.DS_Store
-
-      # ───────────── (Opcionalno) alternativni SFTP deploy preko SSH ključa ─────────────
-      # Odkomentiraj OVAJ blok i izbriši FTPS blok iznad ako želiš SFTP.
-      # Potrebni secret-i:
-      #   HOSTINGER_SSH_PRIVATE_KEY (privatni ključ u PEM formatu)
-      #   HOSTINGER_USERNAME, HOSTINGER_HOST
-      # (opcionalno) HOSTINGER_SSH_PORT (default 22), HOSTINGER_SERVER_DIR
-      #
-      # - name: Deploy via SFTP (alternative)
-      #   if: ${{ false }} # promijeni u 'always()' kad želiš koristiti SFTP varijantu
-      #   uses: wlixcc/SFTP-Deploy-Action@v1.2.4
-      #   with:
-      #     username: ${{ secrets.HOSTINGER_USERNAME }}
-      #     server: ${{ secrets.HOSTINGER_HOST }}
-      #     ssh_private_key: ${{ secrets.HOSTINGER_SSH_PRIVATE_KEY }}
-      #     port: ${{ secrets.HOSTINGER_SSH_PORT != '' && secrets.HOSTINGER_SSH_PORT || 22 }}
-      #     local_path: ${{ env.FRONTEND_DIR }}/${{ env.DIST_DIR }}/*
-      #     remote_path: ${{ env.SERVER_DIR }}
-      #     sftp_only: true
-      #     delete_remote_files: true
-
-      # ───────────── (Opcionalno) smoke check tvoje produkcijske stranice ─────────────
-      # - name: Smoke check
-      #   run: |
-      #     curl -I --max-time 20 https://uslugar.oriph.io/ | sed -n '1,10p'
