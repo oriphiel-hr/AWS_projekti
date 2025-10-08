@@ -14,19 +14,20 @@ permissions:
 
 env:
   FRONTEND_DIR: uslugar/frontend
+  # default; može se prepisati ako treba
   BUILD_CMD: npm ci && npm run build
-  # Default candidates the detector will try (can leave DIST_DIR=dist if you want)
+  # fallback vrijednost; detektor će pronaći stvarni izlaz
   DIST_DIR: dist
   SERVER_DIR: ${{ secrets.HOSTINGER_SERVER_DIR != '' && secrets.HOSTINGER_SERVER_DIR || 'public_html/' }}
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # osiguraj lockfile (za caching)
       - name: Ensure package-lock.json (frontend)
         run: |
           test -f "${{ env.FRONTEND_DIR }}/package-lock.json" || (
@@ -40,22 +41,64 @@ jobs:
           cache: npm
           cache-dependency-path: ${{ env.FRONTEND_DIR }}/package-lock.json
 
-      - name: Show package.json scripts (debug)
+      - name: Detect framework
+        id: fw
         working-directory: ${{ env.FRONTEND_DIR }}
+        shell: bash
         run: |
-          node -e "console.log(require('./package.json').scripts)"
+          set -euo pipefail
+          FW=$(node -e 'const p=require("./package.json");const d={...p.dependencies,...p.devDependencies};
+            if (d?.next) process.stdout.write("next");
+            else if (d?.vite) process.stdout.write("vite");
+            else if (d?.["react-scripts"]) process.stdout.write("cra");
+            else if (d?.["@angular/cli"]) process.stdout.write("angular");
+            else process.stdout.write("unknown");')
+          echo "framework=$FW" >> "$GITHUB_OUTPUT"
+          echo "Detected framework: $FW"
 
-      - name: Build frontend
+      - name: Build frontend (framework-aware)
         working-directory: ${{ env.FRONTEND_DIR }}
-        run: $BUILD_CMD
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "${{ steps.fw.outputs.framework }}" in
+            next)
+              # Pokušaj napraviti statički export (za FTP hosting)
+              if npm run -s | grep -qE '^ *export *'; then
+                echo "Next.js detected → build + export"
+                npm ci
+                npm run build
+                npm run export
+              else
+                echo "Next.js detected, ali nema 'export' skripte."
+                echo "Dodaj u package.json:  \"export\": \"next export\"  i/ili u next.config.js:  module.exports={ output:'export' }"
+                echo "Pokušavam ipak: npm ci && npm run build && npx next export"
+                npm ci
+                npm run build
+                npx next export || true
+              fi
+              ;;
+            cra)
+              echo "CRA detected → npm ci && npm run build"
+              npm ci
+              npm run build
+              ;;
+            angular|vite|unknown)
+              echo "Using default BUILD_CMD: '${BUILD_CMD}'"
+              eval "${BUILD_CMD}"
+              ;;
+          esac
 
       - name: List build artifacts (debug)
         working-directory: ${{ env.FRONTEND_DIR }}
         run: |
-          echo "Root files:" && ls -la
-          echo "dist/:" && ls -la dist || true
-          echo "build/:" && ls -la build || true
-          echo "out/:" && ls -la out || true
+          echo "== tree (top) =="; ls -la
+          echo "== dist =="; ls -la dist || true
+          echo "== build =="; ls -la build || true
+          echo "== out =="; ls -la out || true
+          echo "== .next =="; ls -la .next || true
+          echo "== dist/* =="
+          ls -la dist/* 2>/dev/null || true
 
       - name: Detect build output directory
         id: detect
@@ -63,33 +106,51 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          name="$(node -e "console.log(require('./package.json').name || '')" || true)"
+          name="$(node -e "console.log((require('./package.json').name)||'')" || true)"
+          fw="${{ steps.fw.outputs.framework }}"
           candidates=()
-          # 1) user-provided env
-          candidates+=("${DIST_DIR}")
-          # 2) common frameworks
-          candidates+=("dist" "build" "out" "public")
-          # 3) Angular variants
+
+          # prefer based on framework
+          if [ "$fw" = "next" ]; then
+            candidates+=("out")     # static export (ideal za FTP/S3)
+            candidates+=(".next")   # SSR build → ne radi na čistom FTP hostingu
+          fi
+
+          # env + common
+          candidates+=("${DIST_DIR}" "dist" "build" "out" "public")
           [ -n "$name" ] && candidates+=("dist/$name")
-          # 4) first subdir in dist/
+
+          # first subdir in dist/
           if [ -d dist ]; then
             first_sub="$(ls -d dist/* 2>/dev/null | head -n1 || true)"
             [ -n "$first_sub" ] && candidates+=("$first_sub")
           fi
+
+          echo "Trying candidates: ${candidates[*]}"
+
           found=""
           for d in "${candidates[@]}"; do
             if [ -d "$d" ]; then
-              # prefer directory that has an index.html (pure static)
+              # prefer directory that has index.html
               if [ -f "$d/index.html" ]; then found="$d"; break; fi
-              # otherwise any non-empty dir
-              if [ "$(find "$d" -type f | wc -l)" -gt 0 ]; then found="$d"; break; fi
+              # otherwise any non-empty dir (but avoid .next unless no alternative)
+              if [ "$d" != ".next" ] && [ "$(find "$d" -type f | wc -l)" -gt 0 ]; then found="$d"; break; fi
             fi
           done
+
+          if [ -z "$found" ] && [ -d ".next" ]; then
+            echo "⚠️ Nađen je .next (SSR), ali to se ne može deployati preko čistog FTP-a."
+            echo "  Rješenja: (a) dodaj next export (static) → deployaj 'out/',"
+            echo "            (b) deployaj kao Docker/Node app (VPS) ili koristi Vercel."
+            exit 1
+          fi
+
           if [ -z "$found" ]; then
-            echo "❌ Nije pronađen build output (pokušano: ${candidates[*]})."
+            echo "❌ Nije pronađen build output."
             echo "   Ako koristiš CRA postavi DIST_DIR=build; za Next export DIST_DIR=out."
             exit 1
           fi
+
           echo "✅ Detektiran build output: $found"
           echo "dir=$found" >> "$GITHUB_OUTPUT"
 
@@ -103,6 +164,7 @@ jobs:
           port: 21
           local-dir: ${{ env.FRONTEND_DIR }}/${{ steps.detect.outputs.dir }}/
           server-dir: ${{ env.SERVER_DIR }}
+          # ⚠️ briše sve što nije u lokalnom buildu
           dangerous-clean-slate: true
           exclude: |
             **/.git*
