@@ -17,6 +17,8 @@ env:
   BUILD_CMD: npm ci && npm run build
   # Promijeni po potrebi: 'dist' (Vite), 'build' (CRA), 'out' (Next export)
   DIST_DIR: dist
+  # Defaultiraj na public_html/ ako secret nije postavljen
+  SERVER_DIR: ${{ secrets.HOSTINGER_SERVER_DIR != '' && secrets.HOSTINGER_SERVER_DIR || 'public_html/' }}
 
 jobs:
   build-and-deploy:
@@ -25,6 +27,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      # Assert/create lockfile so caching has something to hash
+      - name: Ensure package-lock.json (frontend)
+        run: |
+          test -f "${{ env.FRONTEND_DIR }}/package-lock.json" || (
+            cd "${{ env.FRONTEND_DIR }}" && npm i --package-lock-only
+          )
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -54,7 +63,7 @@ jobs:
           protocol: ftps
           port: 21
           local-dir: ${{ env.FRONTEND_DIR }}/${{ env.DIST_DIR }}/
-          server-dir: ${{ secrets.HOSTINGER_SERVER_DIR || 'public_html/' }}
+          server-dir: ${{ env.SERVER_DIR }}
           # ⚠️ Briše sve na odredištu što nije u lokalnom buildu
           dangerous-clean-slate: true
           exclude: |
@@ -77,9 +86,9 @@ jobs:
       #     username: ${{ secrets.HOSTINGER_USERNAME }}
       #     server: ${{ secrets.HOSTINGER_HOST }}
       #     ssh_private_key: ${{ secrets.HOSTINGER_SSH_PRIVATE_KEY }}
-      #     port: ${{ secrets.HOSTINGER_SSH_PORT || 22 }}
+      #     port: ${{ secrets.HOSTINGER_SSH_PORT != '' && secrets.HOSTINGER_SSH_PORT || 22 }}
       #     local_path: ${{ env.FRONTEND_DIR }}/${{ env.DIST_DIR }}/*
-      #     remote_path: ${{ secrets.HOSTINGER_SERVER_DIR || 'public_html/' }}
+      #     remote_path: ${{ env.SERVER_DIR }}
       #     sftp_only: true
       #     delete_remote_files: true
 
