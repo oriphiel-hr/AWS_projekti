@@ -1,5 +1,5 @@
 # Uses Prisma client generated in a separate image
-ARG PRISMA_IMAGE
+ARG PRISMA_IMAGE=alpine:3.20
 FROM ${PRISMA_IMAGE} AS prisma-src
 
 FROM node:20-bookworm-slim AS runner
