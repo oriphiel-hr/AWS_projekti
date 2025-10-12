@@ -26,15 +26,31 @@ const app = express()
 const prisma = new PrismaClient()
 const PORT = process.env.PORT || 4000
 
-// --- CORS ----------------------------------------------------------
+// === UNIVERZALNI CORS – STAVLJENO ODMAH NAKON create app ===================
 const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS || 'https://uslugar.oriph.io')
-  .split(',')
-  .map(s => s.trim())
+  .split(',').map(s => s.trim())
 
+app.use((req, res, next) => {
+  const origin = req.headers.origin
+  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin)
+  }
+  res.setHeader('Vary', 'Origin')
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+  // res.setHeader('Access-Control-Allow-Credentials', 'true') // uključi samo ako koristiš cookies
+
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204) // preflight završi odmah
+  }
+  next()
+})
+// ===========================================================================
+
+// (opcionalno) dodatni CORS sloj preko paketa – neće smetati
 app.use(cors({
   origin(origin, cb) {
-    // dopusti server-to-server/no-origin zahtjeve (cron, health, itd.)
-    if (!origin) return cb(null, true)
+    if (!origin) return cb(null, true)                     // server-to-server/no-origin
     if (ALLOWED_ORIGINS.includes(origin)) return cb(null, true)
     return cb(new Error('Not allowed by CORS'))
   },
@@ -42,19 +58,17 @@ app.use(cors({
   allowedHeaders: ['Content-Type','Authorization'],
   credentials: false,
 }))
-
-// generički preflight
 app.options('*', cors())
-
-// eksplicitni preflight za /api/* (ako nešto presretne ranije)
 app.options('/api/*', (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', req.headers.origin || ALLOWED_ORIGINS[0])
+  const origin = req.headers.origin
+  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin)
+  }
   res.setHeader('Vary', 'Origin')
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
   return res.sendStatus(204)
 })
-// ------------------------------------------------------------------
 
 // ostali middlewares
 app.use(express.json())
@@ -74,7 +88,7 @@ app.use('/api/providers', providersRouter)
 app.use('/api/reviews', reviewsRouter)
 app.use('/api/admin', adminRouter)
 
-// basic error handler (jedan jedini!)
+// basic error handler
 app.use((err, _req, res, _next) => {
   console.error(err)
   res.status(err.status || 500).json({ error: err.message || 'Server error' })
