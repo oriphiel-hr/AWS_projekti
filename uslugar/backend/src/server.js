@@ -9,6 +9,8 @@ import jobsRouter from './routes/jobs.js';
 import offersRouter from './routes/offers.js';
 import providersRouter from './routes/providers.js';
 import reviewsRouter from './routes/reviews.js';
+import adminRouter from './routes/admin.js';
+
 
 // Učitaj .env samo izvan produkcije (i ne pucaj ako dotenv nije instaliran lokalno)
 if (process.env.NODE_ENV !== 'production') {
@@ -39,6 +41,7 @@ app.use('/api/jobs', jobsRouter);
 app.use('/api/offers', offersRouter);
 app.use('/api/providers', providersRouter);
 app.use('/api/reviews', reviewsRouter);
+app.use('/api/admin', adminRouter);
 
 // basic error handler
 app.use((err, req, res, next) => {
