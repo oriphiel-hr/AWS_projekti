@@ -1,4 +1,4 @@
-name: Frontend - Build & Deploy (Hostinger) 
+name: Frontend - Build & Deploy (Hostinger)
 
 on:
   workflow_dispatch:
