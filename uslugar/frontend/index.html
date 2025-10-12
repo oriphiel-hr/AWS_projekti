@@ -3,10 +3,37 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<link rel="stylesheet" href="assets/css/style.css">
     <title>Uslugar</title>
   </head>
   <body>
     <div id="root"></div>
+	<!-- NAV: dodaj još jedan tab -->
+    <li><a href="#crud" id="nav-crud">Podaci (CRUD)</a></li>
+	<!-- SECTION: mjesto gdje se rendera CRUD aplikacija -->
+	<section id="crud" class="tab-section" style="display:none;">
+	  <div id="crud-app"></div>
+	</section>
+	<!-- pri dnu prije </body> uvezi skriptu -->
+	<script src="assets/js/crud.js"></script>
+	<script>
+	  // prosta logika za tabove (primjer – prilagodi tvom kodu)
+	  document.querySelectorAll('nav a[href^="#"]').forEach(a=>{
+		a.addEventListener('click', e=>{
+		  e.preventDefault();
+		  const id = a.getAttribute('href').slice(1);
+		  document.querySelectorAll('.tab-section').forEach(s=>s.style.display='none');
+		  document.getElementById(id).style.display = 'block';
+		  history.replaceState(null, '', `#${id}`);
+		  if (id === 'crud' && window.CrudApp) window.CrudApp.init(); // lazy init
+		});
+	  });
+	  // otvori zadnji hash ili default
+	  const start = location.hash?.slice(1) || 'home';
+	  const link = document.querySelector(`nav a[href="#${start}"]`) || document.getElementById('nav-crud');
+	  link.click();
+	</script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
+
