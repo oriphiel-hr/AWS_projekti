@@ -15,7 +15,7 @@ permissions:
 env:
   FRONTEND_DIR: uslugar/frontend
   BUILD_CMD: npm ci && npm run build
-  DIST_DIR: dist
+  DIST_DIR: uslugar/frontend/dist
   # ➜ default na ispravnu mapu s TRAILING SLASH
   SERVER_DIR: ${{ secrets.HOSTINGER_SERVER_DIR && secrets.HOSTINGER_SERVER_DIR || 'public_html/uslugar/' }}
 
