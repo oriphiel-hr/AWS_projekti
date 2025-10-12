@@ -18,7 +18,7 @@ env:
   BUILD_CMD: npm ci && npm run build
   # fallback vrijednost; detektor će pronaći stvarni izlaz
   DIST_DIR: dist
-  SERVER_DIR: ${{ secrets.HOSTINGER_SERVER_DIR && secrets.HOSTINGER_SERVER_DIR || 'public_html' }}
+  SERVER_DIR: ${{ env.SERVER_DIR }}/
 
 jobs:
   build-and-deploy:
