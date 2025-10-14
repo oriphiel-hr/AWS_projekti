@@ -1,0 +1,4 @@
+[
+  {"Field":"host-header","HostHeaderConfig":{"Values":["uslugar.oriph.io"]}},
+  {"Field":"path-pattern","PathPatternConfig":{"Values":["/api/*"]}}
+]

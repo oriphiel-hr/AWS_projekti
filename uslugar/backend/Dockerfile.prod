@@ -1,21 +1,39 @@
-# Uses Prisma client generated in a separate image
-ARG PRISMA_IMAGE=alpine:3.20
-FROM ${PRISMA_IMAGE} AS prisma-src
-
-FROM node:20-bookworm-slim AS runner
+# ---------- PRISMA CLIENT BUILD (generira node_modules/.prisma + @prisma/*) ----------
+FROM node:20-alpine AS prisma-src
 WORKDIR /app
 
-# Production deps
+# 1) deps (uklj. dev → trebamo Prisma CLI za generate)
+COPY package*.json ./
+RUN npm ci
+
+# 2) schema (i po potrebi migrations)
+COPY prisma ./prisma
+# Ako tvoj schema.ts referencira codegen iz src/, odkomentiraj sljedeću liniju:
+# COPY src ./src
+
+# 3) generate
+RUN npx prisma generate
+# --------------------------------------------------------------------------------------
+
+# ------------------------------- RUNTIME (production) --------------------------------
+FROM node:20-bookworm-slim AS runner
+WORKDIR /app
 ENV NODE_ENV=production
+
+# prod deps
 COPY package*.json ./
 RUN npm ci --omit=dev
 
-# App source (JS)
+# app source
 COPY src ./src
+# (opcionalno) ako želiš imati i /prisma u runtime-u (npr. za migrate deploy):
+# COPY prisma ./prisma
 
-# Copy generated Prisma Client from prisma image
-COPY --from=prisma-src /app/node_modules/@prisma ./node_modules/@prisma
+# kopiraj generirani Prisma client iz build stage-a
 COPY --from=prisma-src /app/node_modules/.prisma  ./node_modules/.prisma
+COPY --from=prisma-src /app/node_modules/@prisma ./node_modules/@prisma
 
-EXPOSE 8080
+# tvoj server sluša na 4000 (prethodno si tako postavio u serveru)
+EXPOSE 4000
 CMD ["node","src/server.js"]
+# --------------------------------------------------------------------------------------

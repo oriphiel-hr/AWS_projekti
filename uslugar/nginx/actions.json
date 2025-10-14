@@ -1,0 +1,6 @@
+[
+  {
+    "Type":"forward",
+    "ForwardConfig":{"TargetGroups":[{"TargetGroupArn":"arn:aws:elasticloadbalancing:eu-north-1:666203386231:targetgroup/tg-uslugar/859f66e47cddd24d","Weight":1}]}
+  }
+]
