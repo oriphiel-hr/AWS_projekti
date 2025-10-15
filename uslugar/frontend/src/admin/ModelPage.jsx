@@ -1,6 +1,6 @@
 /* src/admin/ModelPage.jsx */
 import React, { useEffect, useMemo, useState } from 'react'
-import api from '../api'
+import api from '@/api'
 
 function Textarea({label, value, onChange, placeholder}){
   return (
