@@ -1,6 +1,9 @@
 // assets/js/crud.js
 (function () {
-  const API_BASE = 'https://uslugar.api.oriph.io/api';
+// koristi Vite env kad postoji, a baza dodaje /api/admin
+const API_BASE = `${(import.meta?.env?.VITE_API_URL || '').replace(/\/+$/,'')}/api/admin`;
+// sad će pozivi ići na .../api/admin/users, .../api/admin/categories
+
 
   /**
    * OPTION CACHE za <select> iz relacija
