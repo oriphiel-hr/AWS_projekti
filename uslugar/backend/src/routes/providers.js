@@ -22,13 +22,37 @@ r.get('/:userId', async (req, res, next) => {
 // update provider profile
 r.put('/me', auth(true, ['PROVIDER']), async (req, res, next) => {
   try {
-    const { bio, serviceArea, categoryIds = [] } = req.body;
+    const { 
+      bio, 
+      serviceArea, 
+      categoryIds = [], 
+      specialties = [], 
+      experience, 
+      website, 
+      isAvailable = true,
+      portfolio 
+    } = req.body;
+    
     const prof = await prisma.providerProfile.upsert({
       where: { userId: req.user.id },
-      create: { userId: req.user.id, bio: bio || '', serviceArea: serviceArea || '' },
+      create: { 
+        userId: req.user.id, 
+        bio: bio || '', 
+        serviceArea: serviceArea || '',
+        specialties: Array.isArray(specialties) ? specialties : [],
+        experience: experience ? parseInt(experience) : null,
+        website: website || null,
+        isAvailable: Boolean(isAvailable),
+        portfolio: portfolio || null
+      },
       update: {
         bio: bio || undefined,
         serviceArea: serviceArea || undefined,
+        specialties: Array.isArray(specialties) ? specialties : undefined,
+        experience: experience ? parseInt(experience) : undefined,
+        website: website || undefined,
+        isAvailable: isAvailable !== undefined ? Boolean(isAvailable) : undefined,
+        portfolio: portfolio || undefined,
         categories: { set: [], connect: categoryIds.map(id => ({ id })) }
       }
     });
