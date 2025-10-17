@@ -4,6 +4,9 @@ import express from 'express'
 import cors from 'cors'
 import morgan from 'morgan'
 import { PrismaClient } from '@prisma/client'
+import { createServer } from 'http'
+import path from 'path'
+import { fileURLToPath } from 'url'
 
 import authRouter from './routes/auth.js'
 import jobsRouter from './routes/jobs.js'
@@ -11,6 +14,14 @@ import offersRouter from './routes/offers.js'
 import providersRouter from './routes/providers.js'
 import reviewsRouter from './routes/reviews.js'
 import adminRouter from './routes/admin.js'
+import uploadRouter from './routes/upload.js'
+import notificationsRouter from './routes/notifications.js'
+import chatRouter from './routes/chat.js'
+import subscriptionsRouter from './routes/subscriptions.js'
+import { initSocket } from './lib/socket.js'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 import usersRouter from './routes/users.js'
 import categoriesRouter from './routes/categories.js'
 
@@ -82,6 +93,9 @@ app.get('/api/health', (_req, res) =>
   res.status(200).json({ ok: true, ts: new Date().toISOString() })
 )
 
+// Serve uploads directory
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')))
+
 // API mount
 app.use('/api/auth', authRouter)
 app.use('/api/jobs', jobsRouter)
@@ -91,6 +105,10 @@ app.use('/api/reviews', reviewsRouter)
 app.use('/api/admin', adminRouter)
 app.use('/api/users', usersRouter)
 app.use('/api/categories', categoriesRouter)
+app.use('/api/upload', uploadRouter)
+app.use('/api/notifications', notificationsRouter)
+app.use('/api/chat', chatRouter)
+app.use('/api/subscriptions', subscriptionsRouter)
 
 // basic error handler
 app.use((err, _req, res, _next) => {
@@ -98,12 +116,23 @@ app.use((err, _req, res, _next) => {
   res.status(err.status || 500).json({ error: err.message || 'Server error' })
 })
 
-// graceful shutdown (Prisma) + start
-const server = app.listen(PORT, () => {
+// Create HTTP server and initialize Socket.io
+const httpServer = createServer(app)
+const io = initSocket(httpServer)
+
+// graceful shutdown (Prisma + Socket.io) + start
+const server = httpServer.listen(PORT, () => {
   console.log(`✅ API listening on :${PORT}`)
+  console.log(`✅ Socket.io ready for real-time chat`)
+  console.log(`✅ New features enabled: Upload, Notifications, Chat, Subscriptions, Geolocation`)
 })
 const shutdown = async () => {
-  try { await prisma.$disconnect() } finally { server.close(() => process.exit(0)) }
+  try { 
+    io.close()
+    await prisma.$disconnect() 
+  } finally { 
+    server.close(() => process.exit(0)) 
+  }
 }
 process.on('SIGTERM', shutdown)
 process.on('SIGINT', shutdown)

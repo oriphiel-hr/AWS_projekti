@@ -1,0 +1,24 @@
+# Database
+DATABASE_URL="postgresql://user:password@localhost:5432/uslugar?schema=public"
+
+# JWT Secret
+JWT_SECRET="your-secret-key-change-in-production"
+
+# CORS Origins (comma-separated)
+CORS_ORIGINS="http://localhost:5173,http://localhost:3000,https://uslugar.oriph.io"
+
+# Frontend URL (za email linkove)
+FRONTEND_URL="http://localhost:5173"
+
+# SMTP Email Configuration (za notifikacije)
+SMTP_HOST="smtp.gmail.com"
+SMTP_PORT=587
+SMTP_USER="your-email@gmail.com"
+SMTP_PASS="your-app-password"
+
+# Server Port
+PORT=4000
+
+# Node Environment
+NODE_ENV="development"
+

@@ -1,30 +1,26 @@
 import multer from 'multer';
 import path from 'path';
-import { fileURLToPath } from 'url';
+import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Kreiranje uploads direktorija ako ne postoji
-const uploadsDir = path.join(__dirname, '../../uploads');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
+// Kreiraj 'uploads' direktorij ako ne postoji
+const uploadDir = './uploads';
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// Konfiguracija multer-a za file upload
+// Storage konfiguracija
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, uploadsDir);
+    cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    // Generiranje jedinstvenog imena datoteke
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+    const uniqueName = `${uuidv4()}${path.extname(file.originalname)}`;
+    cb(null, uniqueName);
   }
 });
 
-// Filter za dozvoljene tipove datoteka
+// File filter - samo slike
 const fileFilter = (req, file, cb) => {
   const allowedTypes = /jpeg|jpg|png|gif|webp/;
   const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
@@ -33,36 +29,31 @@ const fileFilter = (req, file, cb) => {
   if (mimetype && extname) {
     return cb(null, true);
   } else {
-    cb(new Error('Samo slike su dozvoljene (JPEG, JPG, PNG, GIF, WEBP)'));
+    cb(new Error('Only images are allowed (jpeg, jpg, png, gif, webp)'));
   }
 };
 
-// Konfiguracija multer-a
+// Multer konfiguracija
 export const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
+    fileSize: 5 * 1024 * 1024 // 5MB limit
   },
   fileFilter: fileFilter
 });
 
-// Middleware za upload više slika
-export const uploadMultiple = upload.array('images', 10); // Maksimalno 10 slika
-
-// Middleware za upload jedne slike
-export const uploadSingle = upload.single('image');
-
-// Funkcija za brisanje datoteke
+// Helper za brisanje fajlova
 export const deleteFile = (filename) => {
-  const filePath = path.join(uploadsDir, filename);
+  const filePath = path.join(uploadDir, filename);
   if (fs.existsSync(filePath)) {
     fs.unlinkSync(filePath);
-    return true;
   }
-  return false;
 };
 
-// Funkcija za dohvaćanje URL-a datoteke
-export const getFileUrl = (filename) => {
-  return `/uploads/${filename}`;
+// Helper za dobivanje URL-a slike
+export const getImageUrl = (req, filename) => {
+  if (!filename) return null;
+  const protocol = req.protocol;
+  const host = req.get('host');
+  return `${protocol}://${host}/uploads/${filename}`;
 };

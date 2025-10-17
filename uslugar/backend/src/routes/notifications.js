@@ -7,68 +7,57 @@ const r = Router();
 // Get user notifications
 r.get('/', auth(true), async (req, res, next) => {
   try {
-    const { page = 1, limit = 20, unreadOnly = false } = req.query;
-    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const notifications = await prisma.notification.findMany({
+      where: { userId: req.user.id },
+      orderBy: { createdAt: 'desc' },
+      take: 50 // Last 50 notifications
+    });
+    res.json(notifications);
+  } catch (e) {
+    next(e);
+  }
+});
 
-    const where = {
-      userId: req.user.id,
-      ...(unreadOnly === 'true' ? { isRead: false } : {})
-    };
-
-    const [notifications, total] = await Promise.all([
-      prisma.notification.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take: parseInt(limit),
-        include: {
-          job: {
-            select: {
-              id: true,
-              title: true,
-              status: true
-            }
-          }
-        }
-      }),
-      prisma.notification.count({ where })
-    ]);
-
-    res.json({
-      notifications,
-      pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
-        total,
-        pages: Math.ceil(total / parseInt(limit))
+// Get unread count
+r.get('/unread-count', auth(true), async (req, res, next) => {
+  try {
+    const count = await prisma.notification.count({
+      where: {
+        userId: req.user.id,
+        isRead: false
       }
     });
-  } catch (e) { next(e); }
+    res.json({ count });
+  } catch (e) {
+    next(e);
+  }
 });
 
 // Mark notification as read
-r.put('/:id/read', auth(true), async (req, res, next) => {
+r.patch('/:id/read', auth(true), async (req, res, next) => {
   try {
     const { id } = req.params;
-    
-    const notification = await prisma.notification.updateMany({
-      where: {
-        id,
-        userId: req.user.id
-      },
+    const notification = await prisma.notification.findUnique({
+      where: { id }
+    });
+
+    if (!notification || notification.userId !== req.user.id) {
+      return res.status(404).json({ error: 'Notification not found' });
+    }
+
+    await prisma.notification.update({
+      where: { id },
       data: { isRead: true }
     });
 
-    if (notification.count === 0) {
-      return res.status(404).json({ error: 'Notifikacija nije pronađena' });
-    }
-
-    res.json({ success: true });
-  } catch (e) { next(e); }
+    res.json({ message: 'Notification marked as read' });
+  } catch (e) {
+    next(e);
+  }
 });
 
-// Mark all notifications as read
-r.put('/read-all', auth(true), async (req, res, next) => {
+// Mark all as read
+r.patch('/mark-all-read', auth(true), async (req, res, next) => {
   try {
     await prisma.notification.updateMany({
       where: {
@@ -78,42 +67,29 @@ r.put('/read-all', auth(true), async (req, res, next) => {
       data: { isRead: true }
     });
 
-    res.json({ success: true });
-  } catch (e) { next(e); }
+    res.json({ message: 'All notifications marked as read' });
+  } catch (e) {
+    next(e);
+  }
 });
 
 // Delete notification
 r.delete('/:id', auth(true), async (req, res, next) => {
   try {
     const { id } = req.params;
-    
-    const notification = await prisma.notification.deleteMany({
-      where: {
-        id,
-        userId: req.user.id
-      }
+    const notification = await prisma.notification.findUnique({
+      where: { id }
     });
 
-    if (notification.count === 0) {
-      return res.status(404).json({ error: 'Notifikacija nije pronađena' });
+    if (!notification || notification.userId !== req.user.id) {
+      return res.status(404).json({ error: 'Notification not found' });
     }
 
-    res.json({ success: true });
-  } catch (e) { next(e); }
-});
-
-// Get notification count
-r.get('/count', auth(true), async (req, res, next) => {
-  try {
-    const count = await prisma.notification.count({
-      where: {
-        userId: req.user.id,
-        isRead: false
-      }
-    });
-
-    res.json({ count });
-  } catch (e) { next(e); }
+    await prisma.notification.delete({ where: { id } });
+    res.json({ message: 'Notification deleted' });
+  } catch (e) {
+    next(e);
+  }
 });
 
 export default r;

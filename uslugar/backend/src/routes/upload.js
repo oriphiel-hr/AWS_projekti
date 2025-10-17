@@ -1,70 +1,51 @@
 import { Router } from 'express';
-import { uploadMultiple, uploadSingle, deleteFile, getFileUrl } from '../lib/upload.js';
+import { upload, getImageUrl, deleteFile } from '../lib/upload.js';
 import { auth } from '../lib/auth.js';
 
 const r = Router();
 
-// Upload više slika
-r.post('/multiple', auth(true), uploadMultiple, (req, res, next) => {
-  try {
-    if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ error: 'Nema datoteka za upload' });
-    }
-
-    const fileUrls = req.files.map(file => ({
-      filename: file.filename,
-      originalName: file.originalname,
-      url: getFileUrl(file.filename),
-      size: file.size
-    }));
-
-    res.json({
-      success: true,
-      files: fileUrls,
-      message: `Uspješno uploadano ${req.files.length} datoteka`
-    });
-  } catch (error) {
-    next(error);
-  }
-});
-
-// Upload jedne slike
-r.post('/single', auth(true), uploadSingle, (req, res, next) => {
+// Upload single image
+r.post('/single', auth(true), upload.single('image'), (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ error: 'Nema datoteke za upload' });
+      return res.status(400).json({ error: 'No file uploaded' });
     }
-
-    const fileData = {
-      filename: req.file.filename,
-      originalName: req.file.originalname,
-      url: getFileUrl(req.file.filename),
-      size: req.file.size
-    };
-
+    const imageUrl = getImageUrl(req, req.file.filename);
     res.json({
-      success: true,
-      file: fileData,
-      message: 'Uspješno uploadana datoteka'
+      filename: req.file.filename,
+      url: imageUrl,
+      size: req.file.size
     });
-  } catch (error) {
-    next(error);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
   }
 });
 
-// Brisanje datoteke
-r.delete('/:filename', auth(true), (req, res, next) => {
+// Upload multiple images (max 10)
+r.post('/multiple', auth(true), upload.array('images', 10), (req, res) => {
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ error: 'No files uploaded' });
+    }
+    const images = req.files.map(file => ({
+      filename: file.filename,
+      url: getImageUrl(req, file.filename),
+      size: file.size
+    }));
+    res.json({ images });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Delete image
+r.delete('/:filename', auth(true), (req, res) => {
   try {
     const { filename } = req.params;
-    const deleted = deleteFile(filename);
-    
-    if (deleted) {
-      res.json({ success: true, message: 'Datoteka uspješno obrisana' });
-    } else {
-      res.status(404).json({ error: 'Datoteka nije pronađena' });
-    }
-  } catch (error) {
-    next(error);
+    deleteFile(filename);
+    res.json({ message: 'File deleted successfully' });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
   }
 });
 
