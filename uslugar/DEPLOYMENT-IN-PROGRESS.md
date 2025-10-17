@@ -1,147 +1,151 @@
-# 🚀 AWS ECS Deployment - U TIJEKU
+# 🚀 Backend Deployment U Tijeku
 
-**Commit:** `dfa0734`  
-**Message:** "Backend: Add route registration logging - Force AWS ECS deployment"  
-**Push Time:** Upravo izvršen  
-**Expected Duration:** 5-10 minuta
-
----
-
-## 📊 GitHub Actions Workflow
-
-**Status:** 🟡 **TRIGGERED - U TIJEKU**
-
-**Link za praćenje:**
-```
-https://github.com/oriphiel-hr/AWS_projekti/actions
-```
-
-### Što će se desiti:
-
-1. ⏱️ **0-3 min:** Docker build backend-a
-2. ⏱️ **3-5 min:** Push na AWS ECR
-3. ⏱️ **5-7 min:** Register novi Task Definition
-4. ⏱️ **7-9 min:** ECS Rolling deployment
-5. ✅ **9-10 min:** Novi task LIVE!
+**Status:** 🟡 **DEPLOYMENT POKRENUT**  
+**Commit:** `6a5dfd6`  
+**Vrijeme:** 2025-10-17 ~13:03 UTC  
 
 ---
 
-## 🔍 Kako Pratiti Progress
+## 📊 Što se dogodilo:
 
-### GitHub Actions:
-1. Otvori: https://github.com/oriphiel-hr/AWS_projekti/actions
-2. Klikni na najnoviji workflow run
-3. Prati korake:
-   - ✅ Build & Push app image
-   - ✅ Register new TD revision
-   - ✅ Update service to new TD
+### Problem pronađen:
+- ✅ Backend JE pokrenut na AWS
+- ❌ ALI koristi **staru verziju** bez `categories` route-a
+- ❌ Prvi push možda nije triggerovao GitHub Actions (path filter)
 
-### AWS Console:
-1. ECS → Clusters → `apps-cluster`
-2. Services → `uslugar-service-2gk1f1mv`
-3. **Deployments** tab → Vidjeti ćeš "In progress"
-4. **Tasks** tab → Vidjeti ćeš novi task kako se pokreće
+### Rješenje:
+1. ✅ Modificirao `uslugar/backend/src/server.js` (dodao komentar)
+2. ✅ Commit `6a5dfd6` - "Force trigger: Update server.js..."
+3. ✅ Push na GitHub
+4. 🟡 **GitHub Actions workflow bi trebao biti ODMAH pokrenut**
 
 ---
 
-## ✅ VERIFIKACIJA (nakon 10 minuta)
+## ⏱️ Timeline - Očekivanja:
 
-### 1. Provjeri CloudWatch Logs
+| Vrijeme | Što se događa |
+|---------|---------------|
+| **13:03** | ✅ Push commit 6a5dfd6 |
+| **13:03-13:05** | 🟡 GitHub Actions: Preuzimanje koda, setup |
+| **13:05-13:08** | 🟡 Docker build (backend image sa SVIM routes) |
+| **13:08-13:10** | 🟡 Push na AWS ECR |
+| **13:10-13:12** | 🟡 ECS service update |
+| **13:12-13:15** | 🟡 ECS pokretanje novog task-a |
+| **13:15+** | ✅ **Backend TREBAO bi biti live sa novim kodom!** |
 
-**Novi backend će imati DODATNU log liniju:**
+**Ukupno vrijeme:** ~10-12 minuta od pusha
+
+---
+
+## 📺 Prati Progress:
+
+### 1. GitHub Actions
+**Link:** https://github.com/oriphiel-hr/AWS_projekti/actions
+
+**Što tražiš:**
+- Najnoviji workflow run
+- Commit: "Force trigger: Update server.js..."
+- SHA: `6a5dfd6`
+
+**Statusi:**
+- 🟡 **Žuto (In Progress)** → Čekaj, sve je OK
+- ✅ **Zeleno (Success)** → Deployment uspješan! Idi na test
+- ❌ **Crveno (Failed)** → Screenshot error loga
+
+### 2. CloudWatch Logs (nakon 10 min)
+**AWS Console** → CloudWatch → `/ecs/uslugar`
+
+**Traži NOVI log stream** (kreiran oko 13:12-13:15)
+
+**Očekuješ vidjeti:**
 ```
 ✅ API listening on :8080
 ✅ Socket.io ready for real-time chat
 ✅ New features enabled: Upload, Notifications, Chat, Subscriptions, Geolocation
-✅ Routes registered: /api/jobs, /api/categories, /api/admin, /api/users  ← NOVO!
 ```
 
-**Ako vidiš ovu liniju = NOVI KOD JE LIVE!** 🎉
-
-### 2. Test API Endpoints
-
-Otvori u browseru (CTRL+SHIFT+R za force refresh bez cache):
-
+**I zatim API pozivi:**
 ```
-✅ https://uslugar.api.oriph.io/api/health
-   → {"ok":true,"ts":"..."}
-
-✅ https://uslugar.api.oriph.io/api/categories
-   → [] (prazan array - ALI NE 404!)
-
-✅ https://uslugar.api.oriph.io/api/jobs  
-   → [] ili array poslova
+GET /api/health → 200 OK
+GET /api/jobs → 200 ili 304
+GET /api/categories → 200 OK (ovo je KLJUČNO!)
 ```
-
-### 3. Test Frontend
-
-Otvori: `https://uslugar.oriph.io`
-
-**F12 → Console:**
-
-**Prije (staro):**
-```
-❌ GET /api/categories 404
-❌ GET /api/admin/jobs 404
-```
-
-**Poslije (novo):**
-```
-✅ GET /api/categories 200 (ili 304)
-✅ GET /api/jobs 200 (ili 304)
-```
-
-**Admin panel:**
-- Klikni "Podaci (CRUD)" tab
-- Vidjeti ćeš podatke iz baze (ne greške!)
 
 ---
 
-## ⏰ TIMELINE
+## ✅ TEST (Nakon 13:15)
 
-| Vrijeme | Status |
-|---------|--------|
-| **12:35** | ✅ Code change commit-ovan |
-| **12:35** | ✅ Push na GitHub uspješan |
-| **12:35** | 🟡 GitHub Actions workflow POKRENUO SE |
-| **12:40** | ⏱️ Očekuje se: Docker build završen |
-| **12:42** | ⏱️ Očekuje se: ECR push završen |
-| **12:43** | ⏱️ Očekuje se: ECS deployment započeo |
-| **12:45** | ✅ **OČEKUJE SE: NOVI BACKEND LIVE!** |
+### Brzi API Test
 
----
+Otvori u browseru (NOVI tabovi da izbjegneš cache):
 
-## 🚨 Ako nešto ne radi
+**1. Health Check:**
+```
+https://uslugar.api.oriph.io/api/health
+```
+Očekuješ: `{"ok":true,"ts":"..."}`
 
-### GitHub Actions Failed (❌):
-1. Klikni na workflow
-2. Klikni na failed step
-3. Screenshot error log
-4. Javi mi - popravio ću!
+**2. Categories (KLJUČNI TEST!):**
+```
+https://uslugar.api.oriph.io/api/categories
+```
+Očekuješ: `[]` ili `[{id, name, ...}]`  
+**NE OČEKUJEŠ:** `404` ili `Cannot GET`
 
-### Deployment Success ali API još daje 404:
-1. Pričekaj još 2 minute (task se možda još startuje)
-2. Provjeri CloudWatch logs - traži "Routes registered" liniju
-3. Ako nema te linije = stari task još radi
-4. Force restart: ECS → Task → Stop (novi će automatski pokrenuti)
-
-### Frontend još pokazuje greške:
-1. CTRL+SHIFT+R (force refresh bez cache)
-2. Provjeri Network tab (F12) - vidi response od API-ja
-3. Provjeri da API zaista vraća 200, ne 404
+**3. Jobs:**
+```
+https://uslugar.api.oriph.io/api/jobs
+```
+Očekuješ: `[]` ili array poslova
 
 ---
 
-## 📞 Javi Mi Nakon 10 Minuta
+### Frontend Test
 
-Molim te javi:
+**Otvori:** https://uslugar.oriph.io
 
-1. ✅ / ❌ GitHub Actions status
-2. ✅ / ❌ `/api/categories` - radi ili 404?
-3. ✅ / ❌ CloudWatch - vidiš li "Routes registered"?
-4. ✅ / ❌ Frontend - radi bez 404 grešaka?
+**F12 → Console**
+
+**PRIJE (stara verzija):**
+```
+❌ GET /api/categories → 404
+❌ GET /api/admin/jobs → 404
+```
+
+**NAKON (nova verzija):**
+```
+✅ GET /api/categories → 200 OK
+✅ GET /api/jobs → 200 ili 304
+✅ Dropdown kategorija ima opcije
+✅ Admin panel radi (sa auth)
+```
 
 ---
 
-**DEPLOYMENT JE POKRENUO! Pričekaj 5-10 minuta...** ⏱️🚀
+## 🎯 Što Mi Javi (Nakon 13:15):
 
+1. **GitHub Actions status** - Screenshot ili link
+2. **API test rezultati:**
+   - `/api/health` → ?
+   - `/api/categories` → ? (Ovo je NAJVAŽNIJE!)
+   - `/api/jobs` → ?
+3. **Frontend** - Vidiš li dropdown opcije za kategorije?
+4. **CloudWatch logs** - NOVI log stream (ako ima)
+
+---
+
+## 🆘 Ako i Dalje Ne Radi (Nakon 13:20):
+
+Ako nakon 13:20 još uvijek dobijaš 404 za `/api/categories`:
+
+1. **Provjeri GitHub Actions** - Je li workflow SUCCESS ✅?
+2. **Ako DA** - Možda ECS koristi cached image
+3. **Rješenje** - Force ECS task restart (javi mi i pokazat ću kako)
+
+---
+
+**Vrijeme:** Pričekaj do **13:15-13:20**, zatim testiraj i javi! 🚀
+
+---
+
+**Updated:** 2025-10-17 13:03 UTC
