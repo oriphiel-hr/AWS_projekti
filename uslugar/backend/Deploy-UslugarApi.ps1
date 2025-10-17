@@ -82,7 +82,11 @@ if (-not $container) {
   Write-Warning "Container '$ContainerName' nije nađen u task definiciji. Mijenjam image prvog container-a."
   $container = $TaskDef.containerDefinitions[0]
 }
-$container.image = $ImageUri
+if ($ForceLatest) {
+  $container.image = "$EcrDomain/${Repo}:latest"
+} else {
+  $container.image = $ImageUri
+}
 
 # 8) Save effective taskdef and register new revision
 $EffectiveJson = $TaskDef | ConvertTo-Json -Depth 100
