@@ -2,19 +2,27 @@ import nodemailer from 'nodemailer';
 
 // Kreiraj transporter (koristimo Gmail kao primjer)
 // U produkciji koristite profesionalni SMTP servis (SendGrid, AWS SES, itd.)
-const transporter = nodemailer.createTransporter({
-  host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: process.env.SMTP_PORT || 587,
-  secure: false, // true for 465, false for other ports
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS
+const createTransporter = () => {
+  if (!process.env.SMTP_USER) {
+    console.warn('SMTP not configured - email notifications disabled');
+    return null;
   }
-});
+  return nodemailer.createTransporter({
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port: process.env.SMTP_PORT || 587,
+    secure: false, // true for 465, false for other ports
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS
+    }
+  });
+};
+
+const transporter = createTransporter();
 
 // Template funkcije za različite tipove emailova
 export const sendJobNotification = async (toEmail, jobTitle, jobUrl) => {
-  if (!process.env.SMTP_USER) {
+  if (!transporter) {
     console.log('SMTP not configured, skipping email:', toEmail, jobTitle);
     return; // Skip if not configured
   }
@@ -38,7 +46,7 @@ export const sendJobNotification = async (toEmail, jobTitle, jobUrl) => {
 };
 
 export const sendOfferNotification = async (toEmail, jobTitle, providerName, offerAmount) => {
-  if (!process.env.SMTP_USER) {
+  if (!transporter) {
     console.log('SMTP not configured, skipping email:', toEmail);
     return;
   }
@@ -62,7 +70,7 @@ export const sendOfferNotification = async (toEmail, jobTitle, providerName, off
 };
 
 export const sendOfferAcceptedNotification = async (toEmail, jobTitle, customerName) => {
-  if (!process.env.SMTP_USER) {
+  if (!transporter) {
     console.log('SMTP not configured, skipping email:', toEmail);
     return;
   }
@@ -85,7 +93,7 @@ export const sendOfferAcceptedNotification = async (toEmail, jobTitle, customerN
 };
 
 export const sendReviewNotification = async (toEmail, rating, comment, reviewerName) => {
-  if (!process.env.SMTP_USER) {
+  if (!transporter) {
     console.log('SMTP not configured, skipping email:', toEmail);
     return;
   }
@@ -109,5 +117,6 @@ export const sendReviewNotification = async (toEmail, rating, comment, reviewerN
   }
 };
 
-export default transporter;
+export { transporter, createTransporter };
+export default { transporter, createTransporter };
 
