@@ -11,8 +11,8 @@ import offersRouter from './routes/offers.js'
 import providersRouter from './routes/providers.js'
 import reviewsRouter from './routes/reviews.js'
 import adminRouter from './routes/admin.js'
-import categoriesRouter from './routes/categories.js'
 import usersRouter from './routes/users.js'
+import categoriesRouter from './routes/categories.js'
 
 // .env samo izvan produkcije
 if (process.env.NODE_ENV !== 'production') {
@@ -89,8 +89,8 @@ app.use('/api/offers', offersRouter)
 app.use('/api/providers', providersRouter)
 app.use('/api/reviews', reviewsRouter)
 app.use('/api/admin', adminRouter)
-app.use('/api/categories', categoriesRouter)
 app.use('/api/users', usersRouter)
+app.use('/api/categories', categoriesRouter)
 
 // basic error handler
 app.use((err, _req, res, _next) => {
