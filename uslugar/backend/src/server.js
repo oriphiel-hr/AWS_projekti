@@ -125,6 +125,7 @@ const server = httpServer.listen(PORT, () => {
   console.log(`✅ API listening on :${PORT}`)
   console.log(`✅ Socket.io ready for real-time chat`)
   console.log(`✅ New features enabled: Upload, Notifications, Chat, Subscriptions, Geolocation`)
+  console.log(`✅ Routes registered: /api/jobs, /api/categories, /api/admin, /api/users`)
 })
 const shutdown = async () => {
   try { 
