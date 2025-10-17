@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Layout from './Layout'
 import ModelPage from './ModelPage'
 
+// Model nazivi u PascalCase kako backend očekuje
 export const MODELS = ['User','ProviderProfile','Category','Job','Offer','Review']
 
 export default function AdminRouter(){

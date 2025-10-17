@@ -35,7 +35,7 @@ export default function ModelPage({ model }){
       const params = { skip, take }
       if(where) params.where = where
       if(include) params.include = include
-      const { data } = await api.get(`/api/admin/${model}`, { params })
+      const { data } = await api.get(`/admin/${model}`, { params })
       setItems(data.items || [])
       setTotal(data.total || 0)
     }catch(e){
@@ -64,9 +64,9 @@ export default function ModelPage({ model }){
     try{
       const body = JSON.parse(rawJson)
       if(editItem?.id){
-        await api.put(`/api/admin/${model}/${encodeURIComponent(editItem.id)}`, body)
+        await api.put(`/admin/${model}/${encodeURIComponent(editItem.id)}`, body)
       }else{
-        await api.post(`/api/admin/${model}`, body)
+        await api.post(`/admin/${model}`, body)
       }
       setEditItem(null); await load()
     }catch(e){
@@ -77,7 +77,7 @@ export default function ModelPage({ model }){
     if(!confirm('Obrisati zapis?')) return
     setLoading(true); setError('')
     try{
-      await api.delete(`/api/admin/${model}/${encodeURIComponent(id)}`)
+      await api.delete(`/admin/${model}/${encodeURIComponent(id)}`)
       await load()
     }catch(e){
       setError(e?.response?.data?.error || e?.message || String(e))

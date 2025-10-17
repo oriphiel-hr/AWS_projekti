@@ -9,13 +9,15 @@ export default function CrudTab({ active = false }) {
       if (!window.CrudApp) {
         // >>> GLOBALNA KONFIGURACIJA ZA public/assets/js/crud.js <<<
         // npr. VITE_API_URL= https://uslugar.api.oriph.io
-        window.API_ORIGIN = (import.meta.env?.VITE_API_URL || '').replace(/\/+$/, '');
-        window.API_PREFIX = '/api/admin'; // ADMIN API!
+        // Dodaj /api prefix jer crud.js očekuje full URL
+        const baseUrl = (import.meta.env?.VITE_API_URL || '').replace(/\/+$/, '');
+        window.API_ORIGIN = baseUrl ? `${baseUrl}/api` : '';
+        window.API_PREFIX = '/admin'; // ADMIN API (bez /api jer je već u API_ORIGIN)
 
         await new Promise((resolve, reject) => {
           const s = document.createElement('script');
-          // dodaj ?v=2 da izbjegnemo cache stare skripte
-          s.src = '/assets/js/crud.js?v=2';   // served from public/
+          // dodaj ?v=3 da izbjegnemo cache stare skripte
+          s.src = '/assets/js/crud.js?v=3';   // served from public/
           s.async = true;
           s.onload = resolve;
           s.onerror = () => reject(new Error('Ne mogu učitati /assets/js/crud.js'));
