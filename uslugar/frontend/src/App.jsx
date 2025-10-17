@@ -45,17 +45,17 @@ export default function App(){
       if (!params[key]) delete params[key];
     });
     
-    api.get('/api/jobs', { params }).then(r => setJobs(r.data)).catch(() => setJobs([]));
+    api.get('/jobs', { params }).then(r => setJobs(r.data)).catch(() => setJobs([]));
   }, [q, tab, filters]);
 
   useEffect(() => {
     // Dohvati kategorije
-    api.get('/api/categories').then(r => setCategories(r.data)).catch(() => setCategories([]));
+    api.get('/categories').then(r => setCategories(r.data)).catch(() => setCategories([]));
   }, []);
 
   const handleJobSubmit = async (jobData) => {
     try {
-      const response = await api.post('/api/jobs', jobData);
+      const response = await api.post('/jobs', jobData);
       setJobs(prev => [response.data, ...prev]);
       setShowJobForm(false);
       alert('Posao uspješno objavljen!');

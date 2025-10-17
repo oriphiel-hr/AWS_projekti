@@ -1,7 +1,10 @@
 // assets/js/crud.js
 (function () {
-// koristi Vite env kad postoji, a baza dodaje /api/admin
-const API_BASE = `${(import.meta?.env?.VITE_API_URL || '').replace(/\/+$/,'')}/api/admin`;
+// Koristi global window.API_ORIGIN ako je postavljen (iz CrudTab.jsx)
+// ili default na relativni path /api/admin
+const API_ORIGIN = (window.API_ORIGIN || '').replace(/\/+$/, '');
+const API_PREFIX = window.API_PREFIX || '/api/admin';
+const API_BASE = API_ORIGIN ? `${API_ORIGIN}${API_PREFIX}` : API_PREFIX;
 // sad će pozivi ići na .../api/admin/users, .../api/admin/categories
 
 
