@@ -11,9 +11,8 @@ import offersRouter from './routes/offers.js'
 import providersRouter from './routes/providers.js'
 import reviewsRouter from './routes/reviews.js'
 import adminRouter from './routes/admin.js'
-import uploadRouter from './routes/upload.js'
 import categoriesRouter from './routes/categories.js'
-import notificationsRouter from './routes/notifications.js'
+import usersRouter from './routes/users.js'
 
 // .env samo izvan produkcije
 if (process.env.NODE_ENV !== 'production') {
@@ -77,9 +76,6 @@ app.options('/api/*', (req, res) => {
 app.use(express.json())
 app.use(morgan('dev'))
 
-// Statičko serviranje uploadanih datoteka
-app.use('/uploads', express.static('uploads'))
-
 // ✅ health
 app.get('/health', (_req, res) => res.status(200).send('ok'))
 app.get('/api/health', (_req, res) =>
@@ -93,9 +89,8 @@ app.use('/api/offers', offersRouter)
 app.use('/api/providers', providersRouter)
 app.use('/api/reviews', reviewsRouter)
 app.use('/api/admin', adminRouter)
-app.use('/api/upload', uploadRouter)
 app.use('/api/categories', categoriesRouter)
-app.use('/api/notifications', notificationsRouter)
+app.use('/api/users', usersRouter)
 
 // basic error handler
 app.use((err, _req, res, _next) => {
