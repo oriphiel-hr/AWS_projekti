@@ -4,7 +4,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile.prisma
-    image: uslugar/prisma-tasks:latest
+    image: 666203386231.dkr.ecr.eu-north-1.amazonaws.com/uslugar-prisma-tasks:latest
     env_file:
       - .env
     working_dir: /app
