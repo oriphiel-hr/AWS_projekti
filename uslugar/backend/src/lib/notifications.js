@@ -1,70 +1,10 @@
 import { prisma } from './prisma.js';
-import nodemailer from 'nodemailer';
+import { sendJobNotification, sendOfferNotification, sendOfferAcceptedNotification } from './email.js';
 
-// Email transporter konfiguracija
-const createTransporter = () => {
-  return nodemailer.createTransporter({
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
-    port: process.env.SMTP_PORT || 587,
-    secure: false,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS
-    }
-  });
-};
-
-// Kreiranje notifikacije u bazi
-export const createNotification = async (userId, title, message, type, jobId = null, offerId = null) => {
-  try {
-    const notification = await prisma.notification.create({
-      data: {
-        userId,
-        title,
-        message,
-        type,
-        jobId,
-        offerId
-      }
-    });
-    return notification;
-  } catch (error) {
-    console.error('Error creating notification:', error);
-    return null;
-  }
-};
-
-// Slanje email notifikacije
-export const sendEmailNotification = async (userEmail, title, message, htmlContent = null) => {
-  try {
-    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-      console.log('SMTP not configured, skipping email notification');
-      return false;
-    }
-
-    const transporter = createTransporter();
-    
-    const mailOptions = {
-      from: process.env.SMTP_USER,
-      to: userEmail,
-      subject: `Uslugar - ${title}`,
-      text: message,
-      html: htmlContent || `<p>${message}</p>`
-    };
-
-    await transporter.sendMail(mailOptions);
-    console.log(`Email sent to ${userEmail}: ${title}`);
-    return true;
-  } catch (error) {
-    console.error('Error sending email notification:', error);
-    return false;
-  }
-};
-
-// Notifikacija za novi posao
+// Notify providers about new job
 export const notifyNewJob = async (job, categoryId) => {
   try {
-    // Pronađi sve pružatelje u toj kategoriji
+    // Find all providers in this category
     const providers = await prisma.providerProfile.findMany({
       where: {
         categories: {
@@ -73,139 +13,152 @@ export const notifyNewJob = async (job, categoryId) => {
         isAvailable: true
       },
       include: {
-        user: true
+        user: {
+          select: { id: true, email: true, fullName: true }
+        }
       }
     });
 
-    const title = 'Novi posao u vašoj kategoriji';
-    const message = `Novi posao "${job.title}" je objavljen u kategoriji.`;
-
-    // Kreiraj notifikacije za sve pružatelje
+    // Create notifications and send emails
     for (const provider of providers) {
-      await createNotification(
-        provider.userId,
-        title,
-        message,
-        'NEW_JOB',
-        job.id
-      );
+      // Create in-app notification
+      await prisma.notification.create({
+        data: {
+          title: 'Novi posao u vašoj kategoriji',
+          message: `Novi posao: ${job.title}`,
+          type: 'NEW_JOB',
+          userId: provider.user.id,
+          jobId: job.id
+        }
+      });
 
-      // Pošalji email
-      await sendEmailNotification(
-        provider.user.email,
-        title,
-        message
-      );
+      // Send email notification
+      const jobUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/jobs/${job.id}`;
+      await sendJobNotification(provider.user.email, job.title, jobUrl);
     }
 
     console.log(`Notified ${providers.length} providers about new job: ${job.title}`);
   } catch (error) {
-    console.error('Error notifying about new job:', error);
+    console.error('Error notifying providers:', error);
   }
 };
 
-// Notifikacija za novu ponudu
+// Notify user about new offer
 export const notifyNewOffer = async (offer, job) => {
   try {
-    const title = 'Nova ponuda za vaš posao';
-    const message = `Dobili ste novu ponudu za posao "${job.title}".`;
-
-    await createNotification(
-      job.userId,
-      title,
-      message,
-      'NEW_OFFER',
-      job.id,
-      offer.id
-    );
-
-    // Pošalji email vlasniku posla
-    const jobOwner = await prisma.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: { id: job.userId }
     });
 
-    if (jobOwner) {
-      await sendEmailNotification(
-        jobOwner.email,
-        title,
-        message
-      );
-    }
+    const provider = await prisma.user.findUnique({
+      where: { id: offer.userId }
+    });
 
-    console.log(`Notified job owner about new offer for job: ${job.title}`);
+    if (!user || !provider) return;
+
+    // Create in-app notification
+    await prisma.notification.create({
+      data: {
+        title: 'Nova ponuda',
+        message: `${provider.fullName} je poslao ponudu za: ${job.title}`,
+        type: 'NEW_OFFER',
+        userId: user.id,
+        jobId: job.id,
+        offerId: offer.id
+      }
+    });
+
+    // Send email notification
+    await sendOfferNotification(user.email, job.title, provider.fullName, offer.amount);
+
+    console.log(`Notified user ${user.email} about new offer`);
   } catch (error) {
     console.error('Error notifying about new offer:', error);
   }
 };
 
-// Notifikacija za prihvaćenu ponudu
+// Notify provider about accepted offer
 export const notifyAcceptedOffer = async (offer, job) => {
   try {
-    const title = 'Vaša ponuda je prihvaćena';
-    const message = `Vaša ponuda za posao "${job.title}" je prihvaćena.`;
-
-    await createNotification(
-      offer.userId,
-      title,
-      message,
-      'OFFER_ACCEPTED',
-      job.id,
-      offer.id
-    );
-
-    // Pošalji email pružatelju
     const provider = await prisma.user.findUnique({
       where: { id: offer.userId }
     });
 
-    if (provider) {
-      await sendEmailNotification(
-        provider.email,
-        title,
-        message
-      );
-    }
+    const customer = await prisma.user.findUnique({
+      where: { id: job.userId }
+    });
 
-    console.log(`Notified provider about accepted offer for job: ${job.title}`);
+    if (!provider || !customer) return;
+
+    // Create in-app notification
+    await prisma.notification.create({
+      data: {
+        title: 'Ponuda prihvaćena',
+        message: `${customer.fullName} je prihvatio vašu ponudu za: ${job.title}`,
+        type: 'OFFER_ACCEPTED',
+        userId: provider.id,
+        jobId: job.id,
+        offerId: offer.id
+      }
+    });
+
+    // Send email notification
+    await sendOfferAcceptedNotification(provider.email, job.title, customer.fullName);
+
+    console.log(`Notified provider ${provider.email} about accepted offer`);
   } catch (error) {
     console.error('Error notifying about accepted offer:', error);
   }
 };
 
-// Notifikacija za završeni posao
-export const notifyCompletedJob = async (job) => {
+// Notify about job completion
+export const notifyJobCompleted = async (jobId) => {
   try {
-    const title = 'Posao je završen';
-    const message = `Posao "${job.title}" je označen kao završen.`;
-
-    // Notifikacija za vlasnika posla
-    await createNotification(
-      job.userId,
-      title,
-      message,
-      'JOB_COMPLETED',
-      job.id
-    );
-
-    // Notifikacija za pružatelja (ako postoji prihvaćena ponuda)
-    if (job.acceptedOfferId) {
-      const offer = await prisma.offer.findUnique({
-        where: { id: job.acceptedOfferId }
-      });
-
-      if (offer) {
-        await createNotification(
-          offer.userId,
-          title,
-          message,
-          'JOB_COMPLETED',
-          job.id
-        );
+    const job = await prisma.job.findUnique({
+      where: { id: jobId },
+      include: {
+        user: true,
+        offers: {
+          where: { status: 'ACCEPTED' },
+          include: { user: true }
+        }
       }
-    }
+    });
 
-    console.log(`Notified users about completed job: ${job.title}`);
+    if (!job) return;
+
+    // Notify customer
+    await prisma.notification.create({
+      data: {
+        title: 'Posao završen',
+        message: `Posao "${job.title}" je označen kao završen`,
+        type: 'JOB_COMPLETED',
+        userId: job.userId,
+        jobId: job.id
+      }
+    });
+
+    // Notify provider
+    if (job.offers.length > 0) {
+      const provider = job.offers[0].user;
+      await prisma.notification.create({
+        data: {
+          title: 'Posao završen',
+          message: `Posao "${job.title}" je označen kao završen`,
+          type: 'JOB_COMPLETED',
+          userId: provider.id,
+          jobId: job.id
+        }
+      });
+    }
   } catch (error) {
-    console.error('Error notifying about completed job:', error);
+    console.error('Error notifying about job completion:', error);
   }
+};
+
+export default {
+  notifyNewJob,
+  notifyNewOffer,
+  notifyAcceptedOffer,
+  notifyJobCompleted
 };

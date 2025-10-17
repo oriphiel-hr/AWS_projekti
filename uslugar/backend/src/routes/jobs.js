@@ -8,16 +8,58 @@ const r = Router();
 // list jobs with filters
 r.get('/', async (req, res, next) => {
   try {
-    const { q, categoryId, city } = req.query;
-    const jobs = await prisma.job.findMany({
-      where: {
-        status: 'OPEN',
-        ...(categoryId ? { categoryId } : {}),
-        ...(city ? { city } : {}),
-        ...(q ? { OR: [{ title: { contains: q, mode: 'insensitive' } }, { description: { contains: q, mode: 'insensitive' } }] } : {})
+    const { q, categoryId, city, latitude, longitude, distance = 50, urgency, jobSize, minBudget, maxBudget } = req.query;
+    
+    const whereClause = {
+      status: 'OPEN',
+      ...(categoryId ? { categoryId } : {}),
+      ...(city ? { city: { contains: city, mode: 'insensitive' } } : {}),
+      ...(urgency ? { urgency } : {}),
+      ...(jobSize ? { jobSize } : {}),
+      ...(minBudget ? { budgetMax: { gte: parseInt(minBudget) } } : {}),
+      ...(maxBudget ? { budgetMin: { lte: parseInt(maxBudget) } } : {}),
+      ...(q ? { OR: [{ title: { contains: q, mode: 'insensitive' } }, { description: { contains: q, mode: 'insensitive' } }] } : {})
+    };
+    
+    let jobs = await prisma.job.findMany({
+      where: whereClause,
+      include: { 
+        category: true, 
+        offers: {
+          include: {
+            user: {
+              select: { id: true, fullName: true, email: true }
+            }
+          }
+        },
+        user: {
+          select: { id: true, fullName: true, email: true, phone: true }
+        }
       },
-      include: { category: true, offers: true }
+      orderBy: { createdAt: 'desc' }
     });
+    
+    // Filter by distance if coordinates provided
+    if (latitude && longitude) {
+      const userLat = parseFloat(latitude);
+      const userLon = parseFloat(longitude);
+      const maxDistance = parseFloat(distance);
+      
+      jobs = jobs.filter(job => {
+        if (!job.latitude || !job.longitude) return false;
+        const R = 6371; // Earth radius in km
+        const dLat = (job.latitude - userLat) * Math.PI / 180;
+        const dLon = (job.longitude - userLon) * Math.PI / 180;
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                  Math.cos(userLat * Math.PI / 180) * Math.cos(job.latitude * Math.PI / 180) *
+                  Math.sin(dLon/2) * Math.sin(dLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        const dist = R * c;
+        job.distance = Math.round(dist * 10) / 10; // Round to 1 decimal
+        return dist <= maxDistance;
+      }).sort((a, b) => a.distance - b.distance);
+    }
+    
     res.json(jobs);
   } catch (e) { next(e); }
 });

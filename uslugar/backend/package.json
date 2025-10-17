@@ -6,7 +6,9 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "NODE_ENV=development node src/server.js",
+    "dev": "node src/server.js",
+    "dev:win": "set NODE_ENV=development && node src/server.js",
+    "dev:unix": "NODE_ENV=development node src/server.js",
     "prisma:generate": "prisma generate --schema=prisma/schema.prisma",
     "migrate:deploy": "prisma migrate deploy --schema=prisma/schema.prisma",
     "migrate:dev": "prisma migrate dev --schema=prisma/schema.prisma",
