@@ -23,6 +23,18 @@ r.get('/', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+// get current user info (requires auth) - MORA biti prije /:id rute!
+r.get('/me', auth(true), async (req, res, next) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      include: { providerProfile: true }
+    });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    res.json(user);
+  } catch (e) { next(e); }
+});
+
 // get single user (basic info)
 r.get('/:id', async (req, res, next) => {
   try {
@@ -38,18 +50,6 @@ r.get('/:id', async (req, res, next) => {
         city: true,
         createdAt: true
       }
-    });
-    if (!user) return res.status(404).json({ error: 'User not found' });
-    res.json(user);
-  } catch (e) { next(e); }
-});
-
-// get current user info (requires auth)
-r.get('/me', auth(true), async (req, res, next) => {
-  try {
-    const user = await prisma.user.findUnique({
-      where: { id: req.user.id },
-      include: { providerProfile: true }
     });
     if (!user) return res.status(404).json({ error: 'User not found' });
     res.json(user);
