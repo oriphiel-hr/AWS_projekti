@@ -1,5 +1,5 @@
 # ---------- PRISMA CLIENT BUILD (generira node_modules/.prisma + @prisma/*) ----------
-FROM node:20-alpine AS prisma-src
+FROM node:20-bookworm-slim AS prisma-src
 WORKDIR /app
 
 # 1) deps (uklj. dev → trebamo Prisma CLI za generate)
