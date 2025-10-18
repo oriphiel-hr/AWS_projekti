@@ -87,8 +87,8 @@ jobs:
             USE_PRISMA_IMAGE="$PRISMA_LATEST"
           fi
 
-          # Izgradi backend s definiranim PRISMA_IMAGE
-          docker build -f uslugar/backend/Dockerfile.prod \
+          # Izgradi backend s definiranim PRISMA_IMAGE (bez cache za Prisma fix)
+          docker build --no-cache -f uslugar/backend/Dockerfile.prod \
             --build-arg PRISMA_IMAGE="$USE_PRISMA_IMAGE" \
             -t $ECR_REGISTRY/${{ env.ECR_REPO_BACKEND }}:$IMAGE_TAG \
             uslugar/backend
