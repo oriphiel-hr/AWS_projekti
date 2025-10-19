@@ -13,7 +13,10 @@ const MODEL_EXAMPLES = {
     city: "Zagreb",
     latitude: 45.8150,
     longitude: 15.9819,
-    isVerified: false
+    isVerified: false,
+    legalStatusId: "cls4_doo (za firme koje traže usluge)",
+    taxId: "98765432109",
+    companyName: "Firma d.o.o."
   },
   ProviderProfile: {
     userId: "cm...(User ID)",
@@ -113,7 +116,7 @@ const WHERE_EXAMPLES = {
 
 // INCLUDE primjeri za relacije
 const INCLUDE_EXAMPLES = {
-  User: { providerProfile: true, jobs: true },
+  User: { providerProfile: true, jobs: true, legalStatus: true },
   ProviderProfile: { user: true, categories: true, legalStatus: true },
   Category: { parent: true, children: true, providers: true },
   Job: { user: true, category: true, offers: true },
@@ -123,7 +126,7 @@ const INCLUDE_EXAMPLES = {
   ChatRoom: { participants: true, messages: true, job: true },
   ChatMessage: { sender: true, room: true },
   Subscription: {},
-  LegalStatus: { providers: true }
+  LegalStatus: { users: true, providers: true }
 }
 
 function Textarea({label, value, onChange, placeholder}){
