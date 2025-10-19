@@ -117,6 +117,82 @@ export const sendReviewNotification = async (toEmail, rating, comment, reviewerN
   }
 };
 
+export const sendVerificationEmail = async (toEmail, fullName, verificationToken) => {
+  if (!transporter) {
+    console.log('SMTP not configured, skipping verification email:', toEmail);
+    return;
+  }
+
+  const verificationUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/#verify?token=${verificationToken}`;
+
+  try {
+    await transporter.sendMail({
+      from: `"Uslugar" <${process.env.SMTP_USER}>`,
+      to: toEmail,
+      subject: 'Potvrdite vašu email adresu - Uslugar',
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+        </head>
+        <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background-color: #f8f9fa; padding: 30px; border-radius: 10px;">
+            <h1 style="color: #333; margin-bottom: 20px;">Dobrodošli na Uslugar!</h1>
+            
+            <p style="font-size: 16px; color: #555;">Poštovani/a <strong>${fullName}</strong>,</p>
+            
+            <p style="font-size: 16px; color: #555; line-height: 1.6;">
+              Hvala što ste se registrirali na Uslugar platformu! 
+              Da biste aktivirali svoj račun, molimo potvrdite vašu email adresu klikom na button ispod.
+            </p>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${verificationUrl}" 
+                 style="background-color: #4CAF50; 
+                        color: white; 
+                        padding: 15px 40px; 
+                        text-decoration: none; 
+                        border-radius: 5px; 
+                        font-size: 18px;
+                        font-weight: bold;
+                        display: inline-block;">
+                Potvrdi email adresu
+              </a>
+            </div>
+            
+            <p style="font-size: 14px; color: #888; margin-top: 30px;">
+              Ako button ne radi, kopirajte i zalijepite sljedeći link u vaš browser:
+            </p>
+            <p style="font-size: 12px; color: #0066cc; word-break: break-all;">
+              ${verificationUrl}
+            </p>
+            
+            <p style="font-size: 14px; color: #888; margin-top: 30px;">
+              <strong>Link istječe za 24 sata.</strong>
+            </p>
+            
+            <p style="font-size: 14px; color: #888; margin-top: 20px;">
+              Ako niste zatražili registraciju, ignorirajte ovu poruku.
+            </p>
+            
+            <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
+            
+            <p style="font-size: 12px; color: #999; text-align: center;">
+              Uslugar - Platforma za pronalaženje lokalnih pružatelja usluga
+            </p>
+          </div>
+        </body>
+        </html>
+      `
+    });
+    console.log('[OK] Verification email sent to:', toEmail);
+  } catch (error) {
+    console.error('Error sending verification email:', error);
+    throw error; // Throw da register endpoint zna da je email failed
+  }
+};
+
 export { transporter, createTransporter };
 export default { transporter, createTransporter };
 

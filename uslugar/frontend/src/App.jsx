@@ -6,6 +6,7 @@ import JobForm from './components/JobForm';
 import ProviderCard from './components/ProviderCard';
 import UserRegister from './pages/UserRegister';
 import ProviderRegister from './pages/ProviderRegister';
+import VerifyEmail from './pages/VerifyEmail';
 
 function useAuth() {
   const [token, setToken] = useState(localStorage.getItem('token'));
@@ -17,10 +18,10 @@ function useAuth() {
 export default function App(){
   const { token, saveToken, logout } = useAuth();
 
-  // TAB: 'user' | 'admin' | 'register-user' | 'register-provider'
+  // TAB: 'user' | 'admin' | 'register-user' | 'register-provider' | 'verify'
   const [tab, setTab] = useState(() => {
-    const hash = window.location.hash?.slice(1);
-    return ['admin', 'register-user', 'register-provider'].includes(hash) ? hash : 'user';
+    const hash = window.location.hash?.slice(1).split('?')[0];
+    return ['admin', 'register-user', 'register-provider', 'verify'].includes(hash) ? hash : 'user';
   });
 
   // USER tab state
@@ -256,6 +257,12 @@ export default function App(){
             saveToken(token);
             setTab('user');
           }} />
+        </section>
+      )}
+
+      {tab === 'verify' && (
+        <section id="verify" className="tab-section">
+          <VerifyEmail />
         </section>
       )}
     </div>

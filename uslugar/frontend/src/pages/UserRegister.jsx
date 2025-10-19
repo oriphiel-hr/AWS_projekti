@@ -16,6 +16,7 @@ export default function UserRegister({ onSuccess }) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [isCompany, setIsCompany] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   const handleChange = (e) => {
     setFormData(prev => ({
@@ -40,16 +41,14 @@ export default function UserRegister({ onSuccess }) {
       }
 
       const response = await api.post('/auth/register', dataToSend);
-      const { token, user } = response.data;
+      const { token, user, message } = response.data;
       
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
+      // Prikaži success message umjesto auto-login
+      setSuccess(true);
       
-      if (onSuccess) {
-        onSuccess(token, user);
-      } else {
-        window.location.reload();
-      }
+      // Opciono spremi token (ali ne login automatski)
+      localStorage.setItem('pendingVerification', formData.email);
+      
     } catch (err) {
       console.error('Registration error:', err);
       setError(err.response?.data?.error || 'Greška pri registraciji');
@@ -57,6 +56,43 @@ export default function UserRegister({ onSuccess }) {
       setLoading(false);
     }
   };
+
+  // Success screen
+  if (success) {
+    return (
+      <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-lg p-8">
+        <div className="text-center">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100 mb-6">
+            <svg className="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 19v-8.93a2 2 0 01.89-1.664l7-4.666a2 2 0 012.22 0l7 4.666A2 2 0 0121 10.07V19M3 19a2 2 0 002 2h14a2 2 0 002-2M3 19l6.75-4.5M21 19l-6.75-4.5M3 10l6.75 4.5M21 10l-6.75 4.5m0 0l-1.14.76a2 2 0 01-2.22 0l-1.14-.76" />
+            </svg>
+          </div>
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">Registracija uspješna!</h2>
+          <p className="text-lg text-gray-600 mb-6">
+            Poslali smo vam email na adresu:
+          </p>
+          <p className="text-xl font-semibold text-blue-600 mb-6">
+            {formData.email}
+          </p>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+            <p className="text-sm text-blue-900 mb-2">
+              📧 <strong>Provjerite svoj email inbox</strong>
+            </p>
+            <p className="text-sm text-gray-700">
+              Kliknite na link u email-u da aktivirate svoj račun. 
+              Link vrijedi 24 sata.
+            </p>
+          </div>
+          <button
+            onClick={() => window.location.href = '/#user'}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-200"
+          >
+            Povratak na početnu
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-lg p-8">
