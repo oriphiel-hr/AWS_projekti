@@ -360,8 +360,11 @@ export default function ModelPage({ model }){
                   return (
                     <td 
                       key={c} 
-                      className="p-3 align-top border-b"
-                      style={{ maxWidth: isLong || isObject ? '300px' : 'auto' }}
+                      className="p-3 align-top border-b whitespace-nowrap"
+                      style={{ 
+                        maxWidth: isLong || isObject ? '400px' : 'none',
+                        minWidth: '120px'
+                      }}
                     >
                       <div className="group relative">
                         <div className={isLong || isObject ? "truncate" : ""}>
