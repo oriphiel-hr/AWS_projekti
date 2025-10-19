@@ -20,6 +20,9 @@ FROM node:20-bookworm-slim AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
+# Install OpenSSL 3.0 for Prisma
+RUN apt-get update -y && apt-get install -y openssl libssl3 && rm -rf /var/lib/apt/lists/*
+
 # prod deps
 COPY package*.json ./
 RUN npm ci --omit=dev
