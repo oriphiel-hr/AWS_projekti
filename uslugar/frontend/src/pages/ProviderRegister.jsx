@@ -19,6 +19,7 @@ export default function ProviderRegister({ onSuccess }) {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   const handleChange = (e) => {
     setFormData(prev => ({
@@ -65,14 +66,10 @@ export default function ProviderRegister({ onSuccess }) {
         await api.put('/providers/me', profileData);
       }
       
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
+      // Prikaži success message
+      setSuccess(true);
+      localStorage.setItem('pendingVerification', formData.email);
       
-      if (onSuccess) {
-        onSuccess(token, user);
-      } else {
-        window.location.href = '/#user';
-      }
     } catch (err) {
       console.error('Registration error:', err);
       setError(err.response?.data?.error || 'Greška pri registraciji');
@@ -80,6 +77,45 @@ export default function ProviderRegister({ onSuccess }) {
       setLoading(false);
     }
   };
+
+  // Success screen
+  if (success) {
+    return (
+      <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-lg p-8">
+        <div className="text-center">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100 mb-6">
+            <svg className="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">Registracija uspješna!</h2>
+          <p className="text-lg text-gray-600 mb-6">
+            Poslali smo vam email na adresu:
+          </p>
+          <p className="text-xl font-semibold text-green-600 mb-6">
+            {formData.email}
+          </p>
+          <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-6">
+            <p className="text-sm text-green-900 mb-2">
+              📧 <strong>Provjerite svoj email inbox</strong>
+            </p>
+            <p className="text-sm text-gray-700 mb-3">
+              Kliknite na aktivacijski link da potvrdite email i započnete nuditi usluge.
+            </p>
+            <p className="text-xs text-gray-600">
+              Link vrijedi 24 sata.
+            </p>
+          </div>
+          <button
+            onClick={() => window.location.href = '/#user'}
+            className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-200"
+          >
+            Povratak na početnu
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-lg p-8">
