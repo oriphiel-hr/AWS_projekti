@@ -33,9 +33,9 @@ export default function Layout({ user, onLogout }){
       </header>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+      <div className="w-full px-4 py-6">
         <div className="flex min-h-[70vh] bg-white border rounded-lg shadow overflow-hidden">
-          <aside className="w-64 border-r bg-gray-50 p-4">
+          <aside className="w-64 flex-shrink-0 border-r bg-gray-50 p-4">
             <div className="text-xs uppercase tracking-wide font-semibold text-gray-500 mb-3">Modeli</div>
             <nav className="space-y-1">
               {MODELS.map(m => (
@@ -55,7 +55,7 @@ export default function Layout({ user, onLogout }){
               ))}
             </nav>
           </aside>
-          <main className="flex-1 p-6">
+          <main className="flex-1 p-6 overflow-auto">
             <Outlet />
           </main>
         </div>
