@@ -39,11 +39,19 @@ r.post('/register', async (req, res, next) => {
       await prisma.providerProfile.create({ data: { userId: user.id, bio: '', serviceArea: city || '' } });
     }
     
-    // Pokušaj poslati verification email (ne blokiraj registraciju ako ne uspije)
+    // Pošalji verification email - OBAVEZNO
     try {
       await sendVerificationEmail(email, fullName, verificationToken);
     } catch (emailError) {
-      console.error('Failed to send verification email, but user created:', emailError);
+      console.error('Failed to send verification email:', emailError);
+      
+      // Izbriši user-a ako email nije poslan (rollback)
+      await prisma.user.delete({ where: { id: user.id } });
+      
+      return res.status(500).json({ 
+        error: 'Greška pri slanju verifikacijskog email-a. Pokušajte ponovno.',
+        details: process.env.NODE_ENV === 'development' ? emailError.message : undefined
+      });
     }
     
     const token = signToken({ id: user.id, email: user.email, role: user.role, name: user.fullName });

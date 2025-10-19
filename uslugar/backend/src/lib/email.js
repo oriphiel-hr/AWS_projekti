@@ -119,8 +119,9 @@ export const sendReviewNotification = async (toEmail, rating, comment, reviewerN
 
 export const sendVerificationEmail = async (toEmail, fullName, verificationToken) => {
   if (!transporter) {
-    console.log('SMTP not configured, skipping verification email:', toEmail);
-    return;
+    const error = new Error('SMTP nije konfiguriran. Email verifikacija zahtijeva SMTP postavke.');
+    console.error('SMTP not configured - cannot send verification email to:', toEmail);
+    throw error;
   }
 
   const verificationUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/#verify?token=${verificationToken}`;
