@@ -335,15 +335,15 @@ export default function ModelPage({ model }){
       )}
 
       <div className="overflow-x-auto border rounded">
-        <table className="w-full border-collapse">
+        <table className="border-collapse" style={{ minWidth: '100%', width: 'max-content' }}>
           <thead className="bg-gray-100 sticky top-0">
             <tr>
               {cols.map(c => (
-                <th key={c} className="text-left p-3 border-b font-semibold text-gray-700 whitespace-nowrap">
+                <th key={c} className="text-left p-3 border-b font-semibold text-gray-700 whitespace-nowrap min-w-32">
                   {c}
                 </th>
               ))}
-              <th className="text-left p-3 border-b font-semibold text-gray-700 whitespace-nowrap sticky right-0 bg-gray-100">
+              <th className="text-left p-3 border-b font-semibold text-gray-700 whitespace-nowrap sticky right-0 bg-gray-100 min-w-32">
                 Akcije
               </th>
             </tr>
