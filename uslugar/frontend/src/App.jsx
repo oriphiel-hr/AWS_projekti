@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import api from '@/api'
 import { AdminRouter } from './admin';
-import CrudTab from './components/CrudTab';
 import JobCard from './components/JobCard';
 import JobForm from './components/JobForm';
 import ProviderCard from './components/ProviderCard';
+import UserRegister from './pages/UserRegister';
+import ProviderRegister from './pages/ProviderRegister';
 
 function useAuth() {
   const [token, setToken] = useState(localStorage.getItem('token'));
@@ -16,10 +17,10 @@ function useAuth() {
 export default function App(){
   const { token, saveToken, logout } = useAuth();
 
-  // TAB: 'user' | 'admin' | 'crud'
+  // TAB: 'user' | 'admin' | 'register-user' | 'register-provider'
   const [tab, setTab] = useState(() => {
     const hash = window.location.hash?.slice(1);
-    return hash === 'admin' || hash === 'crud' ? hash : 'user';
+    return ['admin', 'register-user', 'register-provider'].includes(hash) ? hash : 'user';
   });
 
   // USER tab state
@@ -108,20 +109,29 @@ export default function App(){
           className={'px-3 py-2 border rounded ' + (tab==='user' ? 'bg-gray-900 text-white' : '')}
           onClick={() => setTab('user')}
         >
-          Korisničko
+          Poslovi
         </button>
+        {!token && (
+          <>
+            <button
+              className={'px-3 py-2 border rounded ' + (tab==='register-user' ? 'bg-blue-600 text-white' : 'border-blue-600 text-blue-600')}
+              onClick={() => setTab('register-user')}
+            >
+              Registracija korisnika
+            </button>
+            <button
+              className={'px-3 py-2 border rounded ' + (tab==='register-provider' ? 'bg-green-600 text-white' : 'border-green-600 text-green-600')}
+              onClick={() => setTab('register-provider')}
+            >
+              Registracija providera
+            </button>
+          </>
+        )}
         <button
-          className={'px-3 py-2 border rounded ' + (tab==='admin' ? 'bg-gray-900 text-white' : '')}
+          className={'px-3 py-2 border rounded ml-auto ' + (tab==='admin' ? 'bg-gray-900 text-white' : '')}
           onClick={() => setTab('admin')}
         >
-          Admin
-        </button>
-        <button
-          id="nav-crud"
-          className={'px-3 py-2 border rounded ' + (tab==='crud' ? 'bg-gray-900 text-white' : '')}
-          onClick={() => setTab('crud')}
-        >
-          Podaci (CRUD)
+          Admin Panel
         </button>
       </div>
 
@@ -231,8 +241,23 @@ export default function App(){
         </section>
       )}
 
-      {/* ⬇️ Treći tab koji diže vanilla CRUD kad je aktivan */}
-      <CrudTab active={tab === 'crud'} />
+      {tab === 'register-user' && (
+        <section id="register-user" className="tab-section">
+          <UserRegister onSuccess={(token, user) => {
+            saveToken(token);
+            setTab('user');
+          }} />
+        </section>
+      )}
+
+      {tab === 'register-provider' && (
+        <section id="register-provider" className="tab-section">
+          <ProviderRegister onSuccess={(token, user) => {
+            saveToken(token);
+            setTab('user');
+          }} />
+        </section>
+      )}
     </div>
   );
 }
