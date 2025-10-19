@@ -4,7 +4,18 @@ import { prisma } from '../lib/prisma.js';
 import { auth } from '../lib/auth.js';
 
 // Dozvoljeni modeli (prema Prisma schemi)
-const ALLOWED_MODELS = ['User','ProviderProfile','Category','Job','Offer','Review'];
+const ALLOWED_MODELS = [
+  'User',
+  'ProviderProfile',
+  'Category',
+  'Job',
+  'Offer',
+  'Review',
+  'Notification',
+  'ChatRoom',
+  'ChatMessage',
+  'Subscription'
+];
 
 /**
  * Vrati Prisma delegata npr. prisma.user, prisma.job ...
