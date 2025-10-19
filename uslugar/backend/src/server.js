@@ -87,7 +87,7 @@ app.options('/api/*', (req, res) => {
 app.use(express.json())
 app.use(morgan('dev'))
 
-// ✅ health
+// Health check endpoints
 app.get('/health', (_req, res) => res.status(200).send('ok'))
 app.get('/api/health', (_req, res) =>
   res.status(200).json({ ok: true, ts: new Date().toISOString() })
@@ -122,10 +122,10 @@ const io = initSocket(httpServer)
 
 // graceful shutdown (Prisma + Socket.io) + start
 const server = httpServer.listen(PORT, () => {
-  console.log(`✅ API listening on :${PORT}`)
-  console.log(`✅ Socket.io ready for real-time chat`)
-  console.log(`✅ New features enabled: Upload, Notifications, Chat, Subscriptions, Geolocation`)
-  console.log(`✅ Routes registered: /api/jobs, /api/categories, /api/admin, /api/users`)
+  console.log(`[OK] API listening on :${PORT}`)
+  console.log(`[OK] Socket.io ready for real-time chat`)
+  console.log(`[OK] New features enabled: Upload, Notifications, Chat, Subscriptions, Geolocation`)
+  console.log(`[OK] Routes registered: /api/jobs, /api/categories, /api/admin, /api/users`)
 })
 const shutdown = async () => {
   try { 
