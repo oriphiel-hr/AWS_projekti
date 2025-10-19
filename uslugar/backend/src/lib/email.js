@@ -7,10 +7,14 @@ const createTransporter = () => {
     console.warn('SMTP not configured - email notifications disabled');
     return null;
   }
+  
+  const port = parseInt(process.env.SMTP_PORT || '587');
+  const isSSL = port === 465;
+  
   return nodemailer.createTransporter({
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
-    port: process.env.SMTP_PORT || 587,
-    secure: false, // true for 465, false for other ports
+    port: port,
+    secure: isSSL, // true for 465 (SSL), false for 587 (TLS)
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS
