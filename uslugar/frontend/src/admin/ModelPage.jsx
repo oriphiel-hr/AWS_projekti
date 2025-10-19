@@ -334,25 +334,55 @@ export default function ModelPage({ model }){
         </div>
       )}
 
-      <div className="overflow-x-auto">
-        <table className="min-w-full border border-gray-200 rounded overflow-hidden">
-          <thead className="bg-gray-100">
+      <div className="overflow-x-auto border rounded">
+        <table className="w-full border-collapse">
+          <thead className="bg-gray-100 sticky top-0">
             <tr>
-              {cols.map(c => <th key={c} className="text-left p-2 border-b">{c}</th>)}
-              <th className="text-left p-2 border-b">Akcije</th>
+              {cols.map(c => (
+                <th key={c} className="text-left p-3 border-b font-semibold text-gray-700 whitespace-nowrap">
+                  {c}
+                </th>
+              ))}
+              <th className="text-left p-3 border-b font-semibold text-gray-700 whitespace-nowrap sticky right-0 bg-gray-100">
+                Akcije
+              </th>
             </tr>
           </thead>
           <tbody>
             {items.map(it => (
-              <tr key={it.id} className="odd:bg-white even:bg-gray-50">
-                {cols.map(c => (
-                  <td key={c} className="p-2 align-top border-b">
-                    {typeof it[c] === 'object' ? JSON.stringify(it[c]) : String(it[c])}
-                  </td>
-                ))}
-                <td className="p-2 border-b">
-                  <button onClick={()=>openEdit(it)} className="px-2 py-1 bg-blue-600 text-white rounded mr-2">Edit</button>
-                  <button onClick={()=>remove(it.id)} className="px-2 py-1 bg-rose-600 text-white rounded">Delete</button>
+              <tr key={it.id} className="odd:bg-white even:bg-gray-50 hover:bg-blue-50">
+                {cols.map(c => {
+                  const value = it[c]
+                  const isLong = typeof value === 'string' && value.length > 50
+                  const isObject = typeof value === 'object' && value !== null
+                  const displayValue = isObject ? JSON.stringify(value) : String(value)
+                  
+                  return (
+                    <td 
+                      key={c} 
+                      className="p-3 align-top border-b"
+                      style={{ maxWidth: isLong || isObject ? '300px' : 'auto' }}
+                    >
+                      <div className="group relative">
+                        <div className={isLong || isObject ? "truncate" : ""}>
+                          {displayValue}
+                        </div>
+                        {(isLong || isObject) && (
+                          <div className="hidden group-hover:block absolute z-10 bg-gray-900 text-white text-xs rounded p-2 shadow-lg max-w-md break-all left-0 top-full mt-1">
+                            {displayValue}
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                  )
+                })}
+                <td className="p-3 border-b whitespace-nowrap sticky right-0 bg-white">
+                  <button onClick={()=>openEdit(it)} className="px-3 py-1 bg-blue-600 text-white text-sm rounded mr-2 hover:bg-blue-700">
+                    Edit
+                  </button>
+                  <button onClick={()=>remove(it.id)} className="px-3 py-1 bg-rose-600 text-white text-sm rounded hover:bg-rose-700">
+                    Delete
+                  </button>
                 </td>
               </tr>
             ))}
