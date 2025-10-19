@@ -33,21 +33,25 @@ model User {
 }
 
 model ProviderProfile {
-  id          String   @id @default(cuid())
-  user        User     @relation(fields: [userId], references: [id])
-  userId      String   @unique
-  bio         String?
-  categories  Category[] @relation("ProviderCategories")
-  portfolio   Json?    // Portfolio slike i radovi
-  ratingAvg   Float    @default(0)
-  ratingCount Int      @default(0)
-  serviceArea String?
-  specialties String[] // Specijalizacije pružatelja
-  experience  Int?     // Godine iskustva
-  website     String?  // Website pružatelja
-  isAvailable Boolean  @default(true) // Dostupnost za nove poslove
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             String        @id @default(cuid())
+  user           User          @relation(fields: [userId], references: [id])
+  userId         String        @unique
+  bio            String?
+  categories     Category[]    @relation("ProviderCategories")
+  portfolio      Json?         // Portfolio slike i radovi
+  ratingAvg      Float         @default(0)
+  ratingCount    Int           @default(0)
+  serviceArea    String?
+  specialties    String[]      // Specijalizacije pružatelja
+  experience     Int?          // Godine iskustva
+  website        String?       // Website pružatelja
+  isAvailable    Boolean       @default(true) // Dostupnost za nove poslove
+  legalStatus    LegalStatus?  @relation(fields: [legalStatusId], references: [id])
+  legalStatusId  String?       // Pravni status (obrt, d.o.o., itd.)
+  taxId          String?       // OIB (porezni broj)
+  companyName    String?       // Naziv obrta/firme
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 }
 
 model Category {
@@ -202,4 +206,16 @@ enum JobSize {
   MEDIUM
   LARGE
   EXTRA_LARGE
+}
+
+// Pravni statusi pružatelja usluga
+model LegalStatus {
+  id          String   @id @default(cuid())
+  code        String   @unique // INDIVIDUAL, SOLE_TRADER, COMPANY, etc.
+  name        String   // Naziv na hrvatskom
+  description String?  // Detaljan opis
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  
+  providers   ProviderProfile[]
 }

@@ -17,7 +17,8 @@ export const MODELS = [
   'Notification',
   'ChatRoom',
   'ChatMessage',
-  'Subscription'
+  'Subscription',
+  'LegalStatus'
 ]
 
 export default function AdminRouter(){

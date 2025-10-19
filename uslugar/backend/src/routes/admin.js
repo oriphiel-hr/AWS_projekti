@@ -14,7 +14,8 @@ const ALLOWED_MODELS = [
   'Notification',
   'ChatRoom',
   'ChatMessage',
-  'Subscription'
+  'Subscription',
+  'LegalStatus'
 ];
 
 /**

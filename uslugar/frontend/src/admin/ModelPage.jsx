@@ -21,7 +21,10 @@ const MODEL_EXAMPLES = {
     specialties: ["Specijalizacija 1", "Specijalizacija 2"],
     experience: 5,
     website: "https://example.com",
-    isAvailable: true
+    isAvailable: true,
+    legalStatusId: "cls2_sole_trader (LegalStatus ID)",
+    taxId: "12345678901",
+    companyName: "Vodoinstalater Marić obrt"
   },
   Category: {
     name: "Naziv kategorije",
@@ -84,6 +87,12 @@ const MODEL_EXAMPLES = {
     status: "ACTIVE",
     credits: 10,
     expiresAt: "2026-01-01T00:00:00.000Z"
+  },
+  LegalStatus: {
+    code: "SOLE_TRADER",
+    name: "Obrtnik",
+    description: "Registrirani obrt - fizička osoba s OIB-om",
+    isActive: true
   }
 }
 
@@ -98,13 +107,14 @@ const WHERE_EXAMPLES = {
   Notification: { isRead: false, type: "NEW_JOB" },
   ChatRoom: { jobId: { not: null } },
   ChatMessage: { senderId: "cm...(User ID)" },
-  Subscription: { status: "ACTIVE", plan: "PREMIUM" }
+  Subscription: { status: "ACTIVE", plan: "PREMIUM" },
+  LegalStatus: { isActive: true }
 }
 
 // INCLUDE primjeri za relacije
 const INCLUDE_EXAMPLES = {
   User: { providerProfile: true, jobs: true },
-  ProviderProfile: { user: true, categories: true },
+  ProviderProfile: { user: true, categories: true, legalStatus: true },
   Category: { parent: true, children: true, providers: true },
   Job: { user: true, category: true, offers: true },
   Offer: { user: true, job: true },
@@ -112,7 +122,8 @@ const INCLUDE_EXAMPLES = {
   Notification: { user: true },
   ChatRoom: { participants: true, messages: true, job: true },
   ChatMessage: { sender: true, room: true },
-  Subscription: {}
+  Subscription: {},
+  LegalStatus: { providers: true }
 }
 
 function Textarea({label, value, onChange, placeholder}){
