@@ -1,5 +1,8 @@
 import nodemailer from 'nodemailer';
 
+// ESM compatibility fix
+const createTransporterFn = nodemailer.default || nodemailer;
+
 // Kreiraj transporter (koristimo Gmail kao primjer)
 // U produkciji koristite profesionalni SMTP servis (SendGrid, AWS SES, itd.)
 const createTransporter = () => {
@@ -11,7 +14,7 @@ const createTransporter = () => {
   const port = parseInt(process.env.SMTP_PORT || '587');
   const isSSL = port === 465;
   
-  return nodemailer.createTransporter({
+  return createTransporterFn.createTransporter({
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
     port: port,
     secure: isSSL, // true for 465 (SSL), false for 587 (TLS)
