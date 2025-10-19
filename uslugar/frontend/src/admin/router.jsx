@@ -7,7 +7,18 @@ import Login from './Login'
 import api from '../api'
 
 // Model nazivi u PascalCase kako backend očekuje
-export const MODELS = ['User','ProviderProfile','Category','Job','Offer','Review']
+export const MODELS = [
+  'User',
+  'ProviderProfile',
+  'Category',
+  'Job',
+  'Offer',
+  'Review',
+  'Notification',
+  'ChatRoom',
+  'ChatMessage',
+  'Subscription'
+]
 
 export default function AdminRouter(){
   const [isAuthenticated, setIsAuthenticated] = useState(false);
