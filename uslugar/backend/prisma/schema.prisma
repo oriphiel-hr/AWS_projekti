@@ -9,18 +9,22 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  passwordHash String
-  fullName     String
-  role         Role     @default(USER)
-  phone        String?
-  city         String?
-  latitude     Float?   // Geolokacija
-  longitude    Float?   // Geolokacija
-  isVerified   Boolean  @default(false) // Verifikacija korisnika
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id             String        @id @default(cuid())
+  email          String        @unique
+  passwordHash   String
+  fullName       String
+  role           Role          @default(USER)
+  phone          String?
+  city           String?
+  latitude       Float?        // Geolokacija
+  longitude      Float?        // Geolokacija
+  isVerified     Boolean       @default(false) // Verifikacija korisnika
+  legalStatus    LegalStatus?  @relation("UserLegalStatus", fields: [legalStatusId], references: [id])
+  legalStatusId  String?       // Pravni status (za firme koje traže usluge)
+  taxId          String?       // OIB
+  companyName    String?       // Naziv firme
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
   providerProfile ProviderProfile?
   jobs            Job[]
@@ -217,5 +221,6 @@ model LegalStatus {
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   
+  users       User[]   @relation("UserLegalStatus")
   providers   ProviderProfile[]
 }
