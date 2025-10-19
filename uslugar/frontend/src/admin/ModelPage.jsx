@@ -170,12 +170,20 @@ export default function ModelPage({ model }){
     load() 
   }, [skip, take])
 
+  // Generiraj kolone čak i kad nema podataka (iz prve stavke ili default polja)
   const cols = useMemo(() => {
-    if(items.length === 0) return []
+    if(items.length === 0) {
+      // Ako nema podataka, vrati default kolone za model
+      const defaults = MODEL_EXAMPLES[model] || {}
+      return Object.keys(defaults).length > 0 ? Object.keys(defaults) : ['id']
+    }
     const set = new Set()
     items.forEach(it => Object.keys(it).forEach(k => set.add(k)))
     return Array.from(set)
-  }, [items])
+  }, [items, model])
+  
+  const totalPages = Math.ceil(total / take)
+  const currentPage = Math.floor(skip / take) + 1
 
   function openCreate(){
     const example = MODEL_EXAMPLES[model] || {}
@@ -225,22 +233,42 @@ export default function ModelPage({ model }){
 
   return (
     <div className="space-y-4">
-      <div className="flex items-end gap-3">
-        <h2 className="text-xl font-semibold">{model}</h2>
-        <div className="ml-auto text-sm text-gray-700">Ukupno: <b>{total}</b></div>
+      {/* Header sa brojem zapisa */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">{model}</h2>
+          <p className="text-sm text-gray-600 mt-1">
+            Ukupno <span className="font-semibold text-gray-900">{total}</span> zapisa
+            {total > 0 && (
+              <span className="ml-2">
+                | Prikazujem {skip + 1}-{Math.min(skip + take, total)} od {total}
+              </span>
+            )}
+          </p>
+        </div>
+        <button onClick={openCreate} className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-medium">
+          + Kreiraj novi
+        </button>
       </div>
 
+      {/* Controls */}
       <div className="flex flex-wrap items-end gap-3">
         <label className="block">
-          <div className="text-sm text-gray-600 mb-1">take</div>
-          <input type="number" value={take} onChange={e=>setTake(Number(e.target.value)||25)} min={1} max={100} className="border rounded p-2 w-28"/>
+          <div className="text-sm font-medium text-gray-700 mb-1">Zapisa po stranici</div>
+          <select 
+            value={take} 
+            onChange={e=>setTake(Number(e.target.value))} 
+            className="border rounded-lg p-2 w-32 bg-white"
+          >
+            <option value={10}>10</option>
+            <option value={25}>25</option>
+            <option value={50}>50</option>
+            <option value={100}>100</option>
+          </select>
         </label>
-        <label className="block">
-          <div className="text-sm text-gray-600 mb-1">skip</div>
-          <input type="number" value={skip} onChange={e=>setSkip(Number(e.target.value)||0)} min={0} className="border rounded p-2 w-28"/>
-        </label>
-        <button onClick={load} className="px-3 py-2 bg-gray-900 text-white rounded">Reload</button>
-        <button onClick={openCreate} className="px-3 py-2 bg-emerald-600 text-white rounded">+ Create</button>
+        <button onClick={load} className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800">
+          🔄 Reload
+        </button>
       </div>
 
       <details className="border rounded p-3 bg-gray-50">
@@ -349,49 +377,141 @@ export default function ModelPage({ model }){
             </tr>
           </thead>
           <tbody>
-            {items.map(it => (
-              <tr key={it.id} className="odd:bg-white even:bg-gray-50 hover:bg-blue-50">
-                {cols.map(c => {
-                  const value = it[c]
-                  const isLong = typeof value === 'string' && value.length > 50
-                  const isObject = typeof value === 'object' && value !== null
-                  const displayValue = isObject ? JSON.stringify(value) : String(value)
-                  
-                  return (
-                    <td 
-                      key={c} 
-                      className="p-3 align-top border-b whitespace-nowrap"
-                      style={{ 
-                        maxWidth: isLong || isObject ? '400px' : 'none',
-                        minWidth: '120px'
-                      }}
+            {items.length === 0 ? (
+              <tr>
+                <td colSpan={cols.length + 1} className="p-8 text-center">
+                  <div className="flex flex-col items-center justify-center text-gray-500">
+                    <svg className="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                    </svg>
+                    <p className="text-lg font-medium mb-2">Nema zapisa</p>
+                    <p className="text-sm mb-4">Još nema podataka za model {model}</p>
+                    <button 
+                      onClick={openCreate}
+                      className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
                     >
-                      <div className="group relative">
-                        <div className={isLong || isObject ? "truncate" : ""}>
-                          {displayValue}
-                        </div>
-                        {(isLong || isObject) && (
-                          <div className="hidden group-hover:block absolute z-10 bg-gray-900 text-white text-xs rounded p-2 shadow-lg max-w-md break-all left-0 top-full mt-1">
-                            {displayValue}
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                  )
-                })}
-                <td className="p-3 border-b whitespace-nowrap sticky right-0 bg-white">
-                  <button onClick={()=>openEdit(it)} className="px-3 py-1 bg-blue-600 text-white text-sm rounded mr-2 hover:bg-blue-700">
-                    Edit
-                  </button>
-                  <button onClick={()=>remove(it.id)} className="px-3 py-1 bg-rose-600 text-white text-sm rounded hover:bg-rose-700">
-                    Delete
-                  </button>
+                      + Kreiraj prvi zapis
+                    </button>
+                  </div>
                 </td>
               </tr>
-            ))}
+            ) : (
+              items.map(it => (
+                <tr key={it.id} className="odd:bg-white even:bg-gray-50 hover:bg-blue-50">
+                  {cols.map(c => {
+                    const value = it[c]
+                    const isLong = typeof value === 'string' && value.length > 50
+                    const isObject = typeof value === 'object' && value !== null
+                    const displayValue = isObject ? JSON.stringify(value) : String(value)
+                    
+                    return (
+                      <td 
+                        key={c} 
+                        className="p-3 align-top border-b whitespace-nowrap"
+                        style={{ 
+                          maxWidth: isLong || isObject ? '400px' : 'none',
+                          minWidth: '120px'
+                        }}
+                      >
+                        <div className="group relative">
+                          <div className={isLong || isObject ? "truncate" : ""}>
+                            {displayValue}
+                          </div>
+                          {(isLong || isObject) && (
+                            <div className="hidden group-hover:block absolute z-10 bg-gray-900 text-white text-xs rounded p-2 shadow-lg max-w-md break-all left-0 top-full mt-1">
+                              {displayValue}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                    )
+                  })}
+                  <td className="p-3 border-b whitespace-nowrap sticky right-0 bg-white">
+                    <button onClick={()=>openEdit(it)} className="px-3 py-1 bg-blue-600 text-white text-sm rounded mr-2 hover:bg-blue-700">
+                      Edit
+                    </button>
+                    <button onClick={()=>remove(it.id)} className="px-3 py-1 bg-rose-600 text-white text-sm rounded hover:bg-rose-700">
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
+
+      {/* Pagination */}
+      {total > 0 && (
+        <div className="flex items-center justify-between border-t pt-4">
+          <div className="text-sm text-gray-700">
+            Stranica <span className="font-semibold">{currentPage}</span> od <span className="font-semibold">{totalPages}</span>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setSkip(Math.max(0, skip - take))}
+              disabled={skip === 0}
+              className="px-4 py-2 border rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              ← Prethodna
+            </button>
+            
+            {/* Page numbers */}
+            <div className="flex gap-1">
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let pageNum;
+                if (totalPages <= 5) {
+                  pageNum = i + 1;
+                } else if (currentPage <= 3) {
+                  pageNum = i + 1;
+                } else if (currentPage >= totalPages - 2) {
+                  pageNum = totalPages - 4 + i;
+                } else {
+                  pageNum = currentPage - 2 + i;
+                }
+                
+                return (
+                  <button
+                    key={i}
+                    onClick={() => setSkip((pageNum - 1) * take)}
+                    className={`w-10 h-10 rounded-lg ${
+                      pageNum === currentPage
+                        ? 'bg-indigo-600 text-white font-semibold'
+                        : 'border hover:bg-gray-50'
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              onClick={() => setSkip(skip + take)}
+              disabled={skip + take >= total}
+              className="px-4 py-2 border rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Sljedeća →
+            </button>
+          </div>
+          
+          <div className="text-sm text-gray-600">
+            Idi na stranicu:
+            <input
+              type="number"
+              min={1}
+              max={totalPages}
+              value={currentPage}
+              onChange={(e) => {
+                const page = Math.max(1, Math.min(totalPages, Number(e.target.value) || 1))
+                setSkip((page - 1) * take)
+              }}
+              className="ml-2 w-16 border rounded px-2 py-1 text-center"
+            />
+          </div>
+        </div>
+      )}
 
       {/* Modal */}
       {editItem !== null && (
