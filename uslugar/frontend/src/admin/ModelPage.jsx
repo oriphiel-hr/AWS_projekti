@@ -157,7 +157,18 @@ export default function ModelPage({ model }){
       setLoading(false)
     }
   }
-  useEffect(() => { load() }, [model, skip, take])
+  useEffect(() => { 
+    // Reset WHERE i INCLUDE kad se promijeni model
+    setWhere('')
+    setInclude('')
+    setSkip(0)
+    load() 
+  }, [model])
+  
+  // Reload kad se promijeni skip ili take
+  useEffect(() => { 
+    load() 
+  }, [skip, take])
 
   const cols = useMemo(() => {
     if(items.length === 0) return []
@@ -233,12 +244,18 @@ export default function ModelPage({ model }){
       </div>
 
       <details className="border rounded p-3 bg-gray-50">
-        <summary className="cursor-pointer font-medium">Napredna pretraga (where/include JSON)</summary>
+        <summary className="cursor-pointer font-medium">
+          Napredna pretraga (where/include JSON) 
+          <span className="ml-2 px-2 py-0.5 bg-indigo-100 text-indigo-800 text-xs rounded font-semibold">
+            Model: {model}
+          </span>
+        </summary>
         
         {/* Info box */}
         <div className="bg-blue-50 border border-blue-200 rounded p-3 mt-3 mb-3">
           <p className="text-sm text-blue-900">
             <strong>💡 Savjet:</strong> Koristi <strong>where</strong> za filtriranje zapisa i <strong>include</strong> za učitavanje povezanih relacija.
+            Primjeri su specifični za <strong>{model}</strong> model.
           </p>
           <div className="mt-2 flex gap-2">
             <button 
@@ -293,7 +310,29 @@ export default function ModelPage({ model }){
         </div>
       </details>
 
-      {error && <div className="text-red-600 whitespace-pre-wrap">{error}</div>}
+      {error && (
+        <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
+          <div className="flex items-start">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-red-800">Greška</h3>
+              <div className="mt-2 text-sm text-red-700 whitespace-pre-wrap font-mono">
+                {error}
+              </div>
+              {error.includes('Unknown argument') && (
+                <div className="mt-2 text-sm text-red-600">
+                  <strong>💡 Tip:</strong> Provjerite da koristite WHERE/INCLUDE primjer za <strong>{model}</strong> model.
+                  Kliknite "Where primjer" ili "Include primjer" za točan template.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="overflow-x-auto">
         <table className="min-w-full border border-gray-200 rounded overflow-hidden">
