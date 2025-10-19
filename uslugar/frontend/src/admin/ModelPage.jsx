@@ -2,6 +2,91 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import api from '@/api'
 
+// JSON primjeri za svaki model
+const MODEL_EXAMPLES = {
+  User: {
+    email: "korisnik@example.com",
+    passwordHash: "$2a$10$...(generiraj bcrypt hash)",
+    fullName: "Ime Prezime",
+    role: "USER",
+    phone: "+385 91 234 5678",
+    city: "Zagreb",
+    latitude: 45.8150,
+    longitude: 15.9819,
+    isVerified: false
+  },
+  ProviderProfile: {
+    userId: "cm...(User ID)",
+    bio: "Profesionalni opis",
+    specialties: ["Specijalizacija 1", "Specijalizacija 2"],
+    experience: 5,
+    website: "https://example.com",
+    isAvailable: true
+  },
+  Category: {
+    name: "Naziv kategorije",
+    description: "Opis kategorije",
+    parentId: null,
+    isActive: true
+  },
+  Job: {
+    title: "Naziv posla",
+    description: "Detaljan opis posla",
+    budgetMin: 200,
+    budgetMax: 500,
+    city: "Zagreb",
+    latitude: 45.8150,
+    longitude: 15.9819,
+    status: "OPEN",
+    urgency: "NORMAL",
+    jobSize: "MEDIUM",
+    deadline: "2025-12-31T23:59:59.000Z",
+    images: [],
+    userId: "cm...(User ID)",
+    categoryId: "cm...(Category ID)"
+  },
+  Offer: {
+    amount: 350,
+    message: "Poruka uz ponudu",
+    status: "PENDING",
+    isNegotiable: true,
+    estimatedDays: 3,
+    jobId: "cm...(Job ID)",
+    userId: "cm...(Provider User ID)"
+  },
+  Review: {
+    rating: 5,
+    comment: "Odličan servis!",
+    fromUserId: "cm...(User ID)",
+    toUserId: "cm...(Provider User ID)"
+  },
+  Notification: {
+    title: "Naslov notifikacije",
+    message: "Sadržaj notifikacije",
+    type: "SYSTEM",
+    isRead: false,
+    userId: "cm...(User ID)",
+    jobId: null,
+    offerId: null
+  },
+  ChatRoom: {
+    name: "Naziv chat sobe",
+    jobId: "cm...(Job ID - opcionalno)"
+  },
+  ChatMessage: {
+    content: "Sadržaj poruke",
+    senderId: "cm...(User ID)",
+    roomId: "cm...(ChatRoom ID)"
+  },
+  Subscription: {
+    userId: "cm...(User ID)",
+    plan: "BASIC",
+    status: "ACTIVE",
+    credits: 10,
+    expiresAt: "2026-01-01T00:00:00.000Z"
+  }
+}
+
 function Textarea({label, value, onChange, placeholder}){
   return (
     <label className="block">
@@ -54,10 +139,17 @@ export default function ModelPage({ model }){
   }, [items])
 
   function openCreate(){
-    setEditItem({}); setRawJson('{}')
+    const example = MODEL_EXAMPLES[model] || {}
+    setEditItem({})
+    setRawJson(JSON.stringify(example, null, 2))
   }
   function openEdit(it){
-    setEditItem(it); setRawJson(JSON.stringify(it, null, 2))
+    setEditItem(it)
+    setRawJson(JSON.stringify(it, null, 2))
+  }
+  function loadExample(){
+    const example = MODEL_EXAMPLES[model] || {}
+    setRawJson(JSON.stringify(example, null, 2))
   }
   async function save(){
     setLoading(true); setError('')
@@ -161,18 +253,43 @@ export default function ModelPage({ model }){
               <h3 className="text-lg font-semibold">{editItem?.id ? 'Uredi' : 'Kreiraj'} {model}</h3>
               <button onClick={()=>setEditItem(null)} className="px-2 py-1">✕</button>
             </div>
-            <p className="text-sm text-gray-600 mb-2">
-              Unesi JSON. Za update možeš poslati samo polja koja mijenjaš. Primjer: {'{"fullName":"Novi"}'}
-            </p>
+            
+            {/* Info box */}
+            <div className="bg-blue-50 border border-blue-200 rounded p-3 mb-3">
+              <p className="text-sm text-blue-900">
+                <strong>💡 Savjet:</strong> {editItem?.id 
+                  ? 'Za update možeš poslati samo polja koja mijenjaš. Primjer: {"fullName":"Novo Ime"}'
+                  : 'Popuni JSON sa svim potrebnim poljima. Klikni "Učitaj primjer" za template.'
+                }
+              </p>
+              {!editItem?.id && (
+                <button 
+                  onClick={loadExample}
+                  className="mt-2 px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+                >
+                  📋 Učitaj primjer za {model}
+                </button>
+              )}
+            </div>
+
             <textarea
               value={rawJson}
               onChange={e=>setRawJson(e.target.value)}
               className="w-full border rounded p-2 font-mono text-sm"
               rows={18}
+              placeholder="Unesi JSON..."
             />
-            <div className="mt-3 flex justify-end gap-2">
-              <button onClick={()=>setEditItem(null)} className="px-3 py-2 border rounded">Odustani</button>
-              <button onClick={save} className="px-3 py-2 bg-emerald-600 text-white rounded" disabled={loading}>Spremi</button>
+            
+            <div className="mt-3 flex justify-between items-center">
+              <div className="text-xs text-gray-500">
+                Format: JSON | Provjeri sintaksu prije spremanja
+              </div>
+              <div className="flex gap-2">
+                <button onClick={()=>setEditItem(null)} className="px-3 py-2 border rounded hover:bg-gray-50">Odustani</button>
+                <button onClick={save} className="px-3 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700" disabled={loading}>
+                  {loading ? 'Spremam...' : 'Spremi'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
