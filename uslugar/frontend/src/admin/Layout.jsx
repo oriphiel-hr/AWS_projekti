@@ -3,26 +3,63 @@ import React from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { MODELS } from './router'
 
-export default function Layout(){
+export default function Layout({ user, onLogout }){
   return (
-    <div className="flex min-h-[70vh] border rounded overflow-hidden">
-      <aside className="w-56 border-r bg-gray-50 p-3 space-y-1">
-        <div className="text-xs uppercase tracking-wide text-gray-500 mb-2">Tablice</div>
-        {MODELS.map(m => (
-          <NavLink
-            key={m}
-            to={`/admin/${m}`}
-            className={({isActive}) =>
-              `block px-3 py-2 rounded ${isActive ? 'bg-gray-900 text-white' : 'hover:bg-gray-200'}`
-            }
-          >
-            {m}
-          </NavLink>
-        ))}
-      </aside>
-      <main className="flex-1 p-4">
-        <Outlet />
-      </main>
+    <div className="min-h-screen bg-gray-100">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <h1 className="text-2xl font-bold text-gray-900">Uslugar Admin</h1>
+            </div>
+            <div className="flex items-center space-x-4">
+              <div className="text-sm text-gray-700">
+                <span className="font-medium">{user?.fullName}</span>
+                <span className="text-gray-500 ml-2">({user?.email})</span>
+              </div>
+              <button
+                onClick={onLogout}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                Odjava
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+        <div className="flex min-h-[70vh] bg-white border rounded-lg shadow overflow-hidden">
+          <aside className="w-64 border-r bg-gray-50 p-4">
+            <div className="text-xs uppercase tracking-wide font-semibold text-gray-500 mb-3">Modeli</div>
+            <nav className="space-y-1">
+              {MODELS.map(m => (
+                <NavLink
+                  key={m}
+                  to={`/admin/${m}`}
+                  className={({isActive}) =>
+                    `block px-4 py-2 rounded-lg text-sm font-medium transition ${
+                      isActive 
+                        ? 'bg-indigo-600 text-white shadow-sm' 
+                        : 'text-gray-700 hover:bg-gray-200'
+                    }`
+                  }
+                >
+                  {m}
+                </NavLink>
+              ))}
+            </nav>
+          </aside>
+          <main className="flex-1 p-6">
+            <Outlet />
+          </main>
+        </div>
+      </div>
     </div>
   )
 }
