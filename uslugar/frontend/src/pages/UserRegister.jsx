@@ -51,7 +51,10 @@ export default function UserRegister({ onSuccess }) {
       
     } catch (err) {
       console.error('Registration error:', err);
-      setError(err.response?.data?.error || 'Greška pri registraciji');
+      const errorMsg = err.response?.data?.error || 'Greška pri registraciji';
+      const errorDetails = err.response?.data?.details;
+      
+      setError(errorDetails ? `${errorMsg}\n\nDetalji: ${errorDetails}` : errorMsg);
     } finally {
       setLoading(false);
     }
