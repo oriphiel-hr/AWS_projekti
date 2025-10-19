@@ -87,6 +87,34 @@ const MODEL_EXAMPLES = {
   }
 }
 
+// WHERE primjeri za filtriranje
+const WHERE_EXAMPLES = {
+  User: { role: "PROVIDER", city: "Zagreb" },
+  ProviderProfile: { isAvailable: true },
+  Category: { isActive: true },
+  Job: { status: "OPEN", urgency: "HIGH" },
+  Offer: { status: "PENDING" },
+  Review: { rating: { gte: 4 } },
+  Notification: { isRead: false, type: "NEW_JOB" },
+  ChatRoom: { jobId: { not: null } },
+  ChatMessage: { senderId: "cm...(User ID)" },
+  Subscription: { status: "ACTIVE", plan: "PREMIUM" }
+}
+
+// INCLUDE primjeri za relacije
+const INCLUDE_EXAMPLES = {
+  User: { providerProfile: true, jobs: true },
+  ProviderProfile: { user: true, categories: true },
+  Category: { parent: true, children: true, providers: true },
+  Job: { user: true, category: true, offers: true },
+  Offer: { user: true, job: true },
+  Review: { from: true, to: true },
+  Notification: { user: true },
+  ChatRoom: { participants: true, messages: true, job: true },
+  ChatMessage: { sender: true, room: true },
+  Subscription: {}
+}
+
 function Textarea({label, value, onChange, placeholder}){
   return (
     <label className="block">
@@ -151,6 +179,14 @@ export default function ModelPage({ model }){
     const example = MODEL_EXAMPLES[model] || {}
     setRawJson(JSON.stringify(example, null, 2))
   }
+  function loadWhereExample(){
+    const example = WHERE_EXAMPLES[model] || {}
+    setWhere(JSON.stringify(example, null, 2))
+  }
+  function loadIncludeExample(){
+    const example = INCLUDE_EXAMPLES[model] || {}
+    setInclude(JSON.stringify(example, null, 2))
+  }
   async function save(){
     setLoading(true); setError('')
     try{
@@ -198,22 +234,62 @@ export default function ModelPage({ model }){
 
       <details className="border rounded p-3 bg-gray-50">
         <summary className="cursor-pointer font-medium">Napredna pretraga (where/include JSON)</summary>
-        <div className="grid md:grid-cols-2 gap-3 mt-3">
-          <Textarea
-            label="where (JSON)"
-            value={where}
-            onChange={setWhere}
-            placeholder='{"email":{"contains":"@gmail.com"}}'
-          />
-          <Textarea
-            label="include (JSON)"
-            value={include}
-            onChange={setInclude}
-            placeholder='{"offers":true}'
-          />
+        
+        {/* Info box */}
+        <div className="bg-blue-50 border border-blue-200 rounded p-3 mt-3 mb-3">
+          <p className="text-sm text-blue-900">
+            <strong>💡 Savjet:</strong> Koristi <strong>where</strong> za filtriranje zapisa i <strong>include</strong> za učitavanje povezanih relacija.
+          </p>
+          <div className="mt-2 flex gap-2">
+            <button 
+              onClick={loadWhereExample}
+              className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+            >
+              📋 Where primjer za {model}
+            </button>
+            <button 
+              onClick={loadIncludeExample}
+              className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+            >
+              📋 Include primjer za {model}
+            </button>
+          </div>
         </div>
-        <div className="mt-2">
-          <button onClick={load} className="px-3 py-2 bg-gray-900 text-white rounded">Primijeni</button>
+
+        <div className="grid md:grid-cols-2 gap-3">
+          <div>
+            <Textarea
+              label="where (JSON) - Filtriranje"
+              value={where}
+              onChange={setWhere}
+              placeholder='{"email":{"contains":"@gmail.com"}}'
+            />
+            <div className="text-xs text-gray-500 mt-1">
+              Primjer: {"{"}"status":"OPEN", "city":"Zagreb"{"}"}
+            </div>
+          </div>
+          <div>
+            <Textarea
+              label="include (JSON) - Relacije"
+              value={include}
+              onChange={setInclude}
+              placeholder='{"offers":true}'
+            />
+            <div className="text-xs text-gray-500 mt-1">
+              Primjer: {"{"}"user":true, "category":true{"}"}
+            </div>
+          </div>
+        </div>
+        <div className="mt-3 flex gap-2">
+          <button onClick={load} className="px-3 py-2 bg-gray-900 text-white rounded hover:bg-gray-800">
+            🔍 Primijeni pretragu
+          </button>
+          <button 
+            onClick={() => {setWhere(''); setInclude(''); load()}} 
+            className="px-3 py-2 border rounded hover:bg-gray-100"
+          >
+            🔄 Resetuj filtere
+          </button>
         </div>
       </details>
 
