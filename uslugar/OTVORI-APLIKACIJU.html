@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uslugar - Preusmjeravanje</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .container {
+            background: white;
+            padding: 3rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+            max-width: 500px;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 1rem;
+        }
+        p {
+            color: #666;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+        .button {
+            display: inline-block;
+            background: #10b981;
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            margin: 0.5rem;
+        }
+        .button:hover {
+            background: #059669;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        }
+        .button.secondary {
+            background: #3b82f6;
+        }
+        .button.secondary:hover {
+            background: #2563eb;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .info {
+            background: #f0f9ff;
+            border: 2px solid #3b82f6;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-top: 2rem;
+        }
+        .info strong {
+            color: #1e40af;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="spinner"></div>
+        <h1>🚀 Uslugar Aplikacija</h1>
+        <p>Development server je pokrenut i spreman!</p>
+        
+        <a href="http://localhost:5173" class="button" target="_blank">
+            📱 Otvori Development Server
+        </a>
+        
+        <a href="http://localhost:5173/dist" class="button secondary" target="_blank">
+            🏭 Otvori Production Build
+        </a>
+        
+        <div class="info">
+            <p style="margin: 0;">
+                <strong>Development Server:</strong><br>
+                <a href="http://localhost:5173" target="_blank">http://localhost:5173</a>
+            </p>
+            <p style="margin: 1rem 0 0 0; font-size: 0.9rem; color: #666;">
+                Sve izmjene u kodu će se automatski osvježavati!
+            </p>
+        </div>
+    </div>
+    
+    <script>
+        // Automatski preusmjeri nakon 2 sekunde
+        setTimeout(function() {
+            window.location.href = 'http://localhost:5173';
+        }, 2000);
+    </script>
+</body>
+</html>
+

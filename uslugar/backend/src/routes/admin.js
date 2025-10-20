@@ -2,6 +2,7 @@
 import { Router } from 'express';
 import { prisma } from '../lib/prisma.js';
 import { auth } from '../lib/auth.js';
+import { deleteUserWithRelations, deleteJobWithRelations, deleteChatRoomWithMessages } from '../lib/delete-helpers.js';
 
 // Dozvoljeni modeli (prema Prisma schemi)
 const ALLOWED_MODELS = [
@@ -91,6 +92,24 @@ r.put('/:model/:id', async (req, res, next) => {
 r.delete('/:model/:id', async (req, res, next) => {
   try {
     const { model, id } = req.params;
+    
+    // Special handling za modele sa relations (manual cascade delete)
+    if (model === 'User') {
+      await deleteUserWithRelations(id);
+      return res.status(204).end();
+    }
+    
+    if (model === 'Job') {
+      await deleteJobWithRelations(id);
+      return res.status(204).end();
+    }
+    
+    if (model === 'ChatRoom') {
+      await deleteChatRoomWithMessages(id);
+      return res.status(204).end();
+    }
+    
+    // Svi ostali modeli - obična delete operacija
     const delegate = getDelegate(model);
     await delegate.delete({ where: { id } });
     res.status(204).end();

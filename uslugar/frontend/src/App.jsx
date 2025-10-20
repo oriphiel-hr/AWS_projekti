@@ -7,6 +7,8 @@ import ProviderCard from './components/ProviderCard';
 import UserRegister from './pages/UserRegister';
 import ProviderRegister from './pages/ProviderRegister';
 import VerifyEmail from './pages/VerifyEmail';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 
 function useAuth() {
   const [token, setToken] = useState(localStorage.getItem('token'));
@@ -18,10 +20,10 @@ function useAuth() {
 export default function App(){
   const { token, saveToken, logout } = useAuth();
 
-  // TAB: 'user' | 'admin' | 'register-user' | 'register-provider' | 'verify'
+  // TAB: 'user' | 'admin' | 'register-user' | 'register-provider' | 'verify' | 'forgot-password' | 'reset-password'
   const [tab, setTab] = useState(() => {
     const hash = window.location.hash?.slice(1).split('?')[0];
-    return ['admin', 'register-user', 'register-provider', 'verify'].includes(hash) ? hash : 'user';
+    return ['admin', 'register-user', 'register-provider', 'verify', 'forgot-password', 'reset-password'].includes(hash) ? hash : 'user';
   });
 
   // USER tab state
@@ -90,10 +92,29 @@ export default function App(){
     console.log('Contact provider:', provider);
   };
 
-  // sync hash radi “deeplinka”
+  // sync hash radi "deeplinka"
   useEffect(() => {
-    if (tab) window.location.hash = tab;
+    const currentHash = window.location.hash?.slice(1).split('?')[0];
+    if (tab && currentHash !== tab) {
+      window.location.hash = '#' + tab;
+    }
   }, [tab]);
+
+  // Listen for hash changes (back/forward navigation, external links)
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash?.slice(1).split('?')[0];
+      const validTabs = ['admin', 'register-user', 'register-provider', 'verify', 'forgot-password', 'reset-password', 'user'];
+      if (validTabs.includes(hash)) {
+        setTab(hash);
+      } else if (!hash) {
+        setTab('user');
+      }
+    };
+    
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
@@ -263,6 +284,18 @@ export default function App(){
       {tab === 'verify' && (
         <section id="verify" className="tab-section">
           <VerifyEmail />
+        </section>
+      )}
+
+      {tab === 'forgot-password' && (
+        <section id="forgot-password" className="tab-section">
+          <ForgotPassword />
+        </section>
+      )}
+
+      {tab === 'reset-password' && (
+        <section id="reset-password" className="tab-section">
+          <ResetPassword />
         </section>
       )}
     </div>

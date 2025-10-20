@@ -87,7 +87,9 @@ export default function UserRegister({ onSuccess }) {
             </p>
           </div>
           <button
-            onClick={() => window.location.href = '/#user'}
+            onClick={() => {
+              window.location.hash = '#user';
+            }}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-200"
           >
             Povratak na početnu
