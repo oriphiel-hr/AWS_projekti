@@ -39,6 +39,14 @@ const app = express()
 const prisma = new PrismaClient()
 const PORT = process.env.PORT || 4000
 
+// Debug: Log SMTP configuration status
+console.log('[DEBUG] Environment check:');
+console.log('  NODE_ENV:', process.env.NODE_ENV);
+console.log('  SMTP_HOST:', process.env.SMTP_HOST ? 'SET' : 'NOT SET');
+console.log('  SMTP_USER:', process.env.SMTP_USER ? 'SET (' + process.env.SMTP_USER + ')' : 'NOT SET');
+console.log('  SMTP_PORT:', process.env.SMTP_PORT || 'NOT SET');
+console.log('  FRONTEND_URL:', process.env.FRONTEND_URL || 'NOT SET');
+
 // === UNIVERZALNI CORS – STAVLJENO ODMAH NAKON create app ===================
 const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS || 'https://uslugar.oriph.io')
   .split(',').map(s => s.trim())

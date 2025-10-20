@@ -2,7 +2,8 @@ import { Router } from 'express';
 import { randomBytes } from 'crypto';
 import { prisma } from '../lib/prisma.js';
 import { hashPassword, verifyPassword, signToken } from '../lib/auth.js';
-import { sendVerificationEmail } from '../lib/email.js';
+import { sendVerificationEmail, sendPasswordResetEmail } from '../lib/email.js';
+import { deleteUserWithRelations } from '../lib/delete-helpers.js';
 
 const r = Router();
 
@@ -42,15 +43,18 @@ r.post('/register', async (req, res, next) => {
     // Pošalji verification email - OBAVEZNO
     try {
       await sendVerificationEmail(email, fullName, verificationToken);
+      console.log('[OK] Verification email sent to:', email);
     } catch (emailError) {
       console.error('Failed to send verification email:', emailError);
+      console.error('Email error details:', emailError.message);
       
       // Izbriši user-a ako email nije poslan (rollback)
-      await prisma.user.delete({ where: { id: user.id } });
+      // Koristimo helper jer može imati ProviderProfile
+      await deleteUserWithRelations(user.id);
       
       return res.status(500).json({ 
         error: 'Greška pri slanju verifikacijskog email-a. Pokušajte ponovno.',
-        details: process.env.NODE_ENV === 'development' ? emailError.message : undefined
+        details: process.env.NODE_ENV === 'development' ? emailError.message : 'SMTP configuration error'
       });
     }
     
@@ -131,6 +135,87 @@ r.post('/resend-verification', async (req, res, next) => {
     await sendVerificationEmail(email, user.fullName, verificationToken);
     
     res.json({ message: 'Verification email resent' });
+  } catch (e) { next(e); }
+});
+
+r.post('/forgot-password', async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email required' });
+    
+    const user = await prisma.user.findUnique({ where: { email } });
+    
+    // Security: Uvijek vrati success, čak i ako user ne postoji
+    // Ovo sprječava da napadač zna koji email-ovi postoje u sustavu
+    if (!user) {
+      console.log('Forgot password attempt for non-existent email:', email);
+      return res.json({ message: 'If that email exists, a password reset link has been sent.' });
+    }
+    
+    // Generiraj reset token (32 byte random hex)
+    const resetPasswordToken = randomBytes(32).toString('hex');
+    const resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000); // 1h
+    
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { resetPasswordToken, resetPasswordExpires }
+    });
+    
+    try {
+      await sendPasswordResetEmail(email, user.fullName, resetPasswordToken);
+      console.log('[OK] Password reset email sent to:', email);
+    } catch (emailError) {
+      console.error('Failed to send password reset email:', emailError);
+      return res.status(500).json({ 
+        error: 'Greška pri slanju email-a. Pokušajte ponovno.',
+        details: process.env.NODE_ENV === 'development' ? emailError.message : undefined
+      });
+    }
+    
+    res.json({ message: 'If that email exists, a password reset link has been sent.' });
+  } catch (e) { next(e); }
+});
+
+r.post('/reset-password', async (req, res, next) => {
+  try {
+    const { token, newPassword } = req.body;
+    if (!token || !newPassword) {
+      return res.status(400).json({ error: 'Token and new password required' });
+    }
+    
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    }
+    
+    const user = await prisma.user.findUnique({ where: { resetPasswordToken: token } });
+    if (!user) {
+      return res.status(404).json({ error: 'Invalid or expired reset token' });
+    }
+    
+    // Provjeri da li je token istekao
+    if (user.resetPasswordExpires && new Date() > user.resetPasswordExpires) {
+      return res.status(410).json({ error: 'Reset link has expired. Please request a new one.' });
+    }
+    
+    // Hash novu lozinku
+    const passwordHash = await hashPassword(newPassword);
+    
+    //Updateaj lozinku i clear reset token
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        passwordHash,
+        resetPasswordToken: null,
+        resetPasswordExpires: null
+      }
+    });
+    
+    console.log('[OK] Password reset successful for:', user.email);
+    
+    res.json({ 
+      message: 'Password successfully reset! You can now login with your new password.',
+      user: { email: user.email, fullName: user.fullName }
+    });
   } catch (e) { next(e); }
 });
 

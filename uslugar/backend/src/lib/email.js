@@ -1,9 +1,6 @@
 import nodemailer from 'nodemailer';
 
-// ESM compatibility fix
-const createTransporterFn = nodemailer.default || nodemailer;
-
-// Kreiraj transporter (koristimo Gmail kao primjer)
+// Kreiraj transporter (koristimo Hostinger SMTP)
 // U produkciji koristite profesionalni SMTP servis (SendGrid, AWS SES, itd.)
 const createTransporter = () => {
   if (!process.env.SMTP_USER) {
@@ -14,7 +11,7 @@ const createTransporter = () => {
   const port = parseInt(process.env.SMTP_PORT || '587');
   const isSSL = port === 465;
   
-  return createTransporterFn.createTransporter({
+  return nodemailer.createTransport({
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
     port: port,
     secure: isSSL, // true for 465 (SSL), false for 587 (TLS)
@@ -198,6 +195,86 @@ export const sendVerificationEmail = async (toEmail, fullName, verificationToken
   } catch (error) {
     console.error('Error sending verification email:', error);
     throw error; // Throw da register endpoint zna da je email failed
+  }
+};
+
+export const sendPasswordResetEmail = async (toEmail, fullName, resetToken) => {
+  if (!transporter) {
+    const error = new Error('SMTP nije konfiguriran. Password reset zahtijeva SMTP postavke.');
+    console.error('SMTP not configured - cannot send password reset email to:', toEmail);
+    throw error;
+  }
+
+  const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/#reset-password?token=${resetToken}`;
+
+  try {
+    await transporter.sendMail({
+      from: `"Uslugar" <${process.env.SMTP_USER}>`,
+      to: toEmail,
+      subject: 'Resetirajte vašu lozinku - Uslugar',
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+        </head>
+        <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background-color: #f8f9fa; padding: 30px; border-radius: 10px;">
+            <h1 style="color: #333; margin-bottom: 20px;">Resetiranje lozinke</h1>
+            
+            <p style="font-size: 16px; color: #555;">Poštovani/a <strong>${fullName}</strong>,</p>
+            
+            <p style="font-size: 16px; color: #555; line-height: 1.6;">
+              Zaprimili smo zahtjev za resetiranje vaše lozinke. 
+              Kliknite na button ispod da postavite novu lozinku.
+            </p>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${resetUrl}" 
+                 style="background-color: #2563EB; 
+                        color: white; 
+                        padding: 15px 40px; 
+                        text-decoration: none; 
+                        border-radius: 5px; 
+                        font-size: 18px;
+                        font-weight: bold;
+                        display: inline-block;">
+                Resetiraj lozinku
+              </a>
+            </div>
+            
+            <p style="font-size: 14px; color: #888; margin-top: 30px;">
+              Ako button ne radi, kopirajte i zalijepite sljedeći link u vaš browser:
+            </p>
+            <p style="font-size: 12px; color: #0066cc; word-break: break-all;">
+              ${resetUrl}
+            </p>
+            
+            <div style="background-color: #FEF3C7; border-left: 4px solid #F59E0B; padding: 15px; margin: 30px 0; border-radius: 5px;">
+              <p style="font-size: 14px; color: #92400E; margin: 0;">
+                <strong>Važno:</strong> Link istječe za 1 sat.
+              </p>
+            </div>
+            
+            <p style="font-size: 14px; color: #888; margin-top: 20px;">
+              Ako niste zatražili resetiranje lozinke, ignorirajte ovu poruku. 
+              Vaša lozinka ostaje nepromijenjena.
+            </p>
+            
+            <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
+            
+            <p style="font-size: 12px; color: #999; text-align: center;">
+              Uslugar - Platforma za pronalaženje lokalnih pružatelja usluga
+            </p>
+          </div>
+        </body>
+        </html>
+      `
+    });
+    console.log('[OK] Password reset email sent to:', toEmail);
+  } catch (error) {
+    console.error('Error sending password reset email:', error);
+    throw error;
   }
 };
 

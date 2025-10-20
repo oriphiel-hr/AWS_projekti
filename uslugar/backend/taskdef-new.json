@@ -10,7 +10,7 @@
   "containerDefinitions": [
     {
       "name": "uslugar",
-      "image": "666203386231.dkr.ecr.eu-north-1.amazonaws.com/uslugar:cc222832fa6453d1313b0e3b01a76fbfcb1b3210",
+      "image": "666203386231.dkr.ecr.eu-north-1.amazonaws.com/uslugar:7513d77",
       "cpu": 0,
       "portMappings": [
         {
@@ -34,23 +34,23 @@
         },
         {
           "name": "SMTP_HOST",
-          "valueFrom": "arn:aws:secretsmanager:eu-north-1:666203386231:secret:uslugar-smtp-secret-GYEwrb:SMTP_HOST::"
+          "valueFrom": "arn:aws:secretsmanager:eu-north-1:666203386231:secret:uslugar-smtp-config-5xXBg5:SMTP_HOST::"
         },
         {
           "name": "SMTP_PORT",
-          "valueFrom": "arn:aws:secretsmanager:eu-north-1:666203386231:secret:uslugar-smtp-secret-GYEwrb:SMTP_PORT::"
+          "valueFrom": "arn:aws:secretsmanager:eu-north-1:666203386231:secret:uslugar-smtp-config-5xXBg5:SMTP_PORT::"
         },
         {
           "name": "SMTP_USER",
-          "valueFrom": "arn:aws:secretsmanager:eu-north-1:666203386231:secret:uslugar-smtp-secret-GYEwrb:SMTP_USER::"
+          "valueFrom": "arn:aws:secretsmanager:eu-north-1:666203386231:secret:uslugar-smtp-config-5xXBg5:SMTP_USER::"
         },
         {
           "name": "SMTP_PASS",
-          "valueFrom": "arn:aws:secretsmanager:eu-north-1:666203386231:secret:uslugar-smtp-secret-GYEwrb:SMTP_PASS::"
+          "valueFrom": "arn:aws:secretsmanager:eu-north-1:666203386231:secret:uslugar-smtp-config-5xXBg5:SMTP_PASS::"
         },
         {
           "name": "FRONTEND_URL",
-          "valueFrom": "arn:aws:secretsmanager:eu-north-1:666203386231:secret:uslugar-smtp-secret-GYEwrb:FRONTEND_URL::"
+          "valueFrom": "arn:aws:secretsmanager:eu-north-1:666203386231:secret:uslugar-smtp-config-5xXBg5:FRONTEND_URL::"
         }
       ],
       "logConfiguration": {

@@ -67,7 +67,9 @@ export default function VerifyEmail() {
               <p className="text-sm text-gray-500 mb-6">Email: {userEmail}</p>
             )}
             <button
-              onClick={() => window.location.href = '/#user'}
+              onClick={() => {
+                window.location.hash = '#user';
+              }}
               className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-200"
             >
               Nastavite na platformu
@@ -107,7 +109,9 @@ export default function VerifyEmail() {
             </div>
 
             <button
-              onClick={() => window.location.href = '/#user'}
+              onClick={() => {
+                window.location.hash = '#user';
+              }}
               className="w-full border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold py-3 px-4 rounded-lg transition duration-200"
             >
               Povratak na početnu

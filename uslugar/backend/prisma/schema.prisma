@@ -9,24 +9,26 @@ datasource db {
 }
 
 model User {
-  id                 String        @id @default(cuid())
-  email              String        @unique
-  passwordHash       String
-  fullName           String
-  role               Role          @default(USER)
-  phone              String?
-  city               String?
-  latitude           Float?        // Geolokacija
-  longitude          Float?        // Geolokacija
-  isVerified         Boolean       @default(false) // Verifikacija korisnika
-  verificationToken  String?       @unique // Token za email verifikaciju
-  tokenExpiresAt     DateTime?     // Istek verifikacijskog tokena
-  legalStatus        LegalStatus?  @relation("UserLegalStatus", fields: [legalStatusId], references: [id])
-  legalStatusId      String?       // Pravni status (za firme koje traže usluge)
-  taxId              String?       // OIB
-  companyName        String?       // Naziv firme
-  createdAt          DateTime      @default(now())
-  updatedAt          DateTime      @updatedAt
+  id                    String        @id @default(cuid())
+  email                 String        @unique
+  passwordHash          String
+  fullName              String
+  role                  Role          @default(USER)
+  phone                 String?
+  city                  String?
+  latitude              Float?        // Geolokacija
+  longitude             Float?        // Geolokacija
+  isVerified            Boolean       @default(false) // Verifikacija korisnika
+  verificationToken     String?       @unique // Token za email verifikaciju
+  tokenExpiresAt        DateTime?     // Istek verifikacijskog tokena
+  resetPasswordToken    String?       @unique // Token za resetiranje lozinke
+  resetPasswordExpires  DateTime?     // Istek reset tokena (1h)
+  legalStatus           LegalStatus?  @relation("UserLegalStatus", fields: [legalStatusId], references: [id])
+  legalStatusId         String?       // Pravni status (za firme koje traže usluge)
+  taxId                 String?       // OIB
+  companyName           String?       // Naziv firme
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
 
   providerProfile ProviderProfile?
   jobs            Job[]
@@ -40,7 +42,7 @@ model User {
 
 model ProviderProfile {
   id             String        @id @default(cuid())
-  user           User          @relation(fields: [userId], references: [id])
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId         String        @unique
   bio            String?
   categories     Category[]    @relation("ProviderCategories")
@@ -87,7 +89,7 @@ model Job {
   jobSize        JobSize?  // Veličina posla
   deadline       DateTime? // Rok izvršenja
   images         String[]  // Slike posla
-  user           User      @relation(fields: [userId], references: [id])
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId         String
   category       Category  @relation(fields: [categoryId], references: [id])
   categoryId     String
@@ -105,9 +107,9 @@ model Offer {
   status      OfferStatus @default(PENDING)
   isNegotiable Boolean  @default(true) // Može li se pregovarati o cijeni
   estimatedDays Int?    // Procijenjeni broj dana za izvršenje
-  job         Job      @relation(fields: [jobId], references: [id])
+  job         Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
   jobId       String
-  user        User     @relation(fields: [userId], references: [id])
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId      String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -117,9 +119,9 @@ model Review {
   id         String   @id @default(cuid())
   rating     Int
   comment    String?
-  from       User     @relation("reviewsGiven", fields: [fromUserId], references: [id])
+  from       User     @relation("reviewsGiven", fields: [fromUserId], references: [id], onDelete: Cascade)
   fromUserId String
-  to         User     @relation("reviewsReceived", fields: [toUserId], references: [id])
+  to         User     @relation("reviewsReceived", fields: [toUserId], references: [id], onDelete: Cascade)
   toUserId   String
   createdAt  DateTime @default(now())
 }
@@ -151,7 +153,7 @@ model Notification {
   message   String
   type      NotificationType
   isRead    Boolean  @default(false)
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
   jobId     String?  // Povezano s poslom
   offerId   String?  // Povezano s ponudom
@@ -161,7 +163,7 @@ model Notification {
 model ChatRoom {
   id        String   @id @default(cuid())
   name      String?
-  job       Job?     @relation("jobChatRooms", fields: [jobId], references: [id])
+  job       Job?     @relation("jobChatRooms", fields: [jobId], references: [id], onDelete: Cascade)
   jobId     String?
   participants User[] @relation("participants")
   messages  ChatMessage[]
@@ -172,9 +174,9 @@ model ChatRoom {
 model ChatMessage {
   id        String   @id @default(cuid())
   content   String
-  sender    User     @relation("senderMessages", fields: [senderId], references: [id])
+  sender    User     @relation("senderMessages", fields: [senderId], references: [id], onDelete: Cascade)
   senderId  String
-  room      ChatRoom @relation(fields: [roomId], references: [id])
+  room      ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
   roomId    String
   createdAt DateTime @default(now())
 }
