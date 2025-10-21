@@ -36,6 +36,27 @@ export default function ProviderRegister({ onSuccess }) {
     setLoading(true);
 
     try {
+      // VALIDACIJA: Pravni status je OBAVEZAN za pružatelje
+      if (!formData.legalStatusId) {
+        setError('Pravni status je obavezan. Odaberite pravni oblik vašeg poslovanja.');
+        setLoading(false);
+        return;
+      }
+      
+      if (!formData.taxId) {
+        setError('OIB je obavezan za pružatelje usluga.');
+        setLoading(false);
+        return;
+      }
+      
+      // Provjeri da li je naziv firme obavezan (osim za freelancere)
+      const selectedStatus = legalStatuses.find(s => s.id === formData.legalStatusId);
+      if (selectedStatus?.code !== 'FREELANCER' && !formData.companyName) {
+        setError('Naziv firme/obrta je obavezan. Samo samostalni djelatnici mogu raditi pod svojim imenom.');
+        setLoading(false);
+        return;
+      }
+      
       // Prvo registriraj user-a kao PROVIDER
       const userData = {
         email: formData.email,
@@ -44,8 +65,8 @@ export default function ProviderRegister({ onSuccess }) {
         role: 'PROVIDER',
         phone: formData.phone,
         city: formData.city,
-        legalStatusId: formData.legalStatusId || undefined,
-        taxId: formData.taxId || undefined,
+        legalStatusId: formData.legalStatusId,
+        taxId: formData.taxId,
         companyName: formData.companyName || undefined
       };
 
@@ -328,45 +349,45 @@ export default function ProviderRegister({ onSuccess }) {
             )}
           </div>
 
-          {formData.legalStatusId && (
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  OIB <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="taxId"
-                  value={formData.taxId}
-                  onChange={handleChange}
-                  required
-                  maxLength={11}
-                  pattern="[0-9]{11}"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="12345678901"
-                />
-                <p className="text-xs text-gray-500 mt-1">11 brojeva</p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Naziv obrta/firme {legalStatuses.find(s => s.id === formData.legalStatusId)?.code !== 'FREELANCER' && <span className="text-red-500">*</span>}
-                </label>
-                <input
-                  type="text"
-                  name="companyName"
-                  value={formData.companyName}
-                  onChange={handleChange}
-                  required={legalStatuses.find(s => s.id === formData.legalStatusId)?.code !== 'FREELANCER'}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder={legalStatuses.find(s => s.id === formData.legalStatusId)?.code === 'FREELANCER' ? 'Opcionalno - možete raditi pod svojim imenom' : 'Vodoinstalater Horvat obrt'}
-                />
-                {legalStatuses.find(s => s.id === formData.legalStatusId)?.code === 'FREELANCER' && (
-                  <p className="text-xs text-gray-500 mt-1">Samostalni djelatnici mogu raditi pod svojim imenom i prezimenom</p>
-                )}
-              </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                OIB <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="taxId"
+                value={formData.taxId}
+                onChange={handleChange}
+                required
+                disabled={!formData.legalStatusId}
+                maxLength={11}
+                pattern="[0-9]{11}"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                placeholder={formData.legalStatusId ? "12345678901" : "Prvo odaberite pravni status"}
+              />
+              <p className="text-xs text-gray-500 mt-1">11 brojeva</p>
             </div>
-          )}
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Naziv obrta/firme {legalStatuses.find(s => s.id === formData.legalStatusId)?.code !== 'FREELANCER' && <span className="text-red-500">*</span>}
+              </label>
+              <input
+                type="text"
+                name="companyName"
+                value={formData.companyName}
+                onChange={handleChange}
+                required={formData.legalStatusId && legalStatuses.find(s => s.id === formData.legalStatusId)?.code !== 'FREELANCER'}
+                disabled={!formData.legalStatusId}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                placeholder={!formData.legalStatusId ? 'Prvo odaberite pravni status' : (legalStatuses.find(s => s.id === formData.legalStatusId)?.code === 'FREELANCER' ? 'Opcionalno - možete raditi pod svojim imenom' : 'Vodoinstalater Horvat obrt')}
+              />
+              {formData.legalStatusId && legalStatuses.find(s => s.id === formData.legalStatusId)?.code === 'FREELANCER' && (
+                <p className="text-xs text-gray-500 mt-1">Samostalni djelatnici mogu raditi pod svojim imenom i prezimenom</p>
+              )}
+            </div>
+          </div>
         </div>
 
         <button

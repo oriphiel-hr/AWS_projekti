@@ -43,6 +43,27 @@ export default function UpgradeToProvider() {
     setLoading(true);
 
     try {
+      // VALIDACIJA: Pravni status je OBAVEZAN za pružatelje
+      if (!formData.legalStatusId) {
+        setError('Pravni status je obavezan. Odaberite pravni oblik vašeg poslovanja.');
+        setLoading(false);
+        return;
+      }
+      
+      if (!formData.taxId) {
+        setError('OIB je obavezan za pružatelje usluga.');
+        setLoading(false);
+        return;
+      }
+      
+      // Provjeri da li je naziv firme obavezan (osim za freelancere)
+      const selectedStatus = legalStatuses.find(s => s.id === formData.legalStatusId);
+      if (selectedStatus?.code !== 'FREELANCER' && !formData.companyName) {
+        setError('Naziv firme/obrta je obavezan. Samo samostalni djelatnici mogu raditi pod svojim imenom.');
+        setLoading(false);
+        return;
+      }
+      
       const response = await api.post('/auth/upgrade-to-provider', formData);
       const { token, user: updatedUser } = response.data;
       
