@@ -234,17 +234,20 @@ export default function UpgradeToProvider() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Naziv firme/obrta <span className="text-red-500">*</span>
+                Naziv firme/obrta {legalStatuses.find(s => s.id === formData.legalStatusId)?.code !== 'FREELANCER' && <span className="text-red-500">*</span>}
               </label>
               <input
                 type="text"
                 name="companyName"
                 value={formData.companyName}
                 onChange={handleChange}
-                required
+                required={legalStatuses.find(s => s.id === formData.legalStatusId)?.code !== 'FREELANCER'}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder="Obrt Horvat"
+                placeholder={legalStatuses.find(s => s.id === formData.legalStatusId)?.code === 'FREELANCER' ? 'Opcionalno - možete raditi pod svojim imenom' : 'Obrt Horvat'}
               />
+              {legalStatuses.find(s => s.id === formData.legalStatusId)?.code === 'FREELANCER' && (
+                <p className="text-xs text-blue-600 mt-1">💡 Samostalni djelatnici mogu raditi pod svojim imenom i prezimenom</p>
+              )}
             </div>
           </div>
         </div>

@@ -339,7 +339,7 @@ export default function ProviderRegister({ onSuccess }) {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Naziv obrta/firme
+                  Naziv obrta/firme {legalStatuses.find(s => s.id === formData.legalStatusId)?.code !== 'FREELANCER' && '(opcionalno za samostalne djelatnike)'}
                 </label>
                 <input
                   type="text"
@@ -347,8 +347,11 @@ export default function ProviderRegister({ onSuccess }) {
                   value={formData.companyName}
                   onChange={handleChange}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="Vodoinstalater Horvat obrt"
+                  placeholder={legalStatuses.find(s => s.id === formData.legalStatusId)?.code === 'FREELANCER' ? 'Opcionalno - možete raditi pod svojim imenom' : 'Vodoinstalater Horvat obrt'}
                 />
+                {legalStatuses.find(s => s.id === formData.legalStatusId)?.code === 'FREELANCER' && (
+                  <p className="text-xs text-gray-500 mt-1">Samostalni djelatnici mogu raditi pod svojim imenom i prezimenom</p>
+                )}
               </div>
             </div>
           )}
