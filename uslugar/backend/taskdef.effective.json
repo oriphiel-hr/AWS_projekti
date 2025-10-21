@@ -2,7 +2,7 @@
     "containerDefinitions":  [
                                  {
                                      "name":  "uslugar",
-                                     "image":  "666203386231.dkr.ecr.eu-north-1.amazonaws.com/uslugar:ef36220",
+                                     "image":  "666203386231.dkr.ecr.eu-north-1.amazonaws.com/uslugar-api:ff14e36",
                                      "cpu":  0,
                                      "portMappings":  [
                                                           {
@@ -13,20 +13,12 @@
                                                           }
                                                       ],
                                      "essential":  true,
-                                     "command":  [
-                                                     "sh",
-                                                     "-lc",
-                                                     "set -e; npm i --omit=dev --no-audit --no-fund morgan cors \u003e/dev/null 2\u003e\u00261 || true; node src/server.js"
-                                                 ],
                                      "environment":  [
                                                          {
                                                              "name":  "PORT",
                                                              "value":  "8080"
                                                          }
                                                      ],
-                                     "environmentFiles":  [
-
-                                                          ],
                                      "mountPoints":  [
 
                                                      ],
@@ -37,10 +29,27 @@
                                                      {
                                                          "name":  "DATABASE_URL",
                                                          "valueFrom":  "arn:aws:secretsmanager:eu-north-1:666203386231:secret:uslugar-db-secret-FBWhyv:DATABASE_URL::"
+                                                     },
+                                                     {
+                                                         "name":  "SMTP_HOST",
+                                                         "valueFrom":  "arn:aws:secretsmanager:eu-north-1:666203386231:secret:uslugar-smtp-config-5xXBg5:SMTP_HOST::"
+                                                     },
+                                                     {
+                                                         "name":  "SMTP_PORT",
+                                                         "valueFrom":  "arn:aws:secretsmanager:eu-north-1:666203386231:secret:uslugar-smtp-config-5xXBg5:SMTP_PORT::"
+                                                     },
+                                                     {
+                                                         "name":  "SMTP_USER",
+                                                         "valueFrom":  "arn:aws:secretsmanager:eu-north-1:666203386231:secret:uslugar-smtp-config-5xXBg5:SMTP_USER::"
+                                                     },
+                                                     {
+                                                         "name":  "SMTP_PASS",
+                                                         "valueFrom":  "arn:aws:secretsmanager:eu-north-1:666203386231:secret:uslugar-smtp-config-5xXBg5:SMTP_PASS::"
+                                                     },
+                                                     {
+                                                         "name":  "FRONTEND_URL",
+                                                         "valueFrom":  "arn:aws:secretsmanager:eu-north-1:666203386231:secret:uslugar-smtp-config-5xXBg5:FRONTEND_URL::"
                                                      }
-                                                 ],
-                                     "ulimits":  [
-
                                                  ],
                                      "logConfiguration":  {
                                                               "logDriver":  "awslogs",
@@ -49,10 +58,7 @@
                                                                               "awslogs-create-group":  "true",
                                                                               "awslogs-region":  "eu-north-1",
                                                                               "awslogs-stream-prefix":  "ecs"
-                                                                          },
-                                                              "secretOptions":  [
-
-                                                                                ]
+                                                                          }
                                                           },
                                      "systemControls":  [
 
@@ -92,10 +98,7 @@
                                                                               "awslogs-create-group":  "true",
                                                                               "awslogs-region":  "eu-north-1",
                                                                               "awslogs-stream-prefix":  "ecs"
-                                                                          },
-                                                              "secretOptions":  [
-
-                                                                                ]
+                                                                          }
                                                           },
                                      "healthCheck":  {
                                                          "command":  [

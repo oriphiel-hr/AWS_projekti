@@ -11,6 +11,25 @@ r.post('/register', async (req, res, next) => {
   try {
     const { email, password, fullName, role = 'USER', phone, city, legalStatusId, taxId, companyName } = req.body;
     if (!email || !password || !fullName) return res.status(400).json({ error: 'Missing fields' });
+    
+    // VALIDACIJA: PROVIDER pravni status (opciono za sada - FAZA 1)
+    // TODO: Enable strict validation nakon što frontend implementira UI
+    if (role === 'PROVIDER' && legalStatusId) {
+      // Samo provjeri da li legal status postoji AKO je poslan
+      const legalStatus = await prisma.legalStatus.findUnique({ where: { id: legalStatusId } });
+      if (!legalStatus || !legalStatus.isActive) {
+        return res.status(400).json({ 
+          error: 'Nevažeći pravni status',
+          message: 'Odabrani pravni status ne postoji ili nije aktivan.'
+        });
+      }
+    }
+    
+    // Log warning ako PROVIDER nema legal status (za monitoring)
+    if (role === 'PROVIDER' && !legalStatusId) {
+      console.warn('[WARNING] PROVIDER registered without legal status:', email);
+    }
+    
     const exists = await prisma.user.findUnique({ where: { email } });
     if (exists) return res.status(409).json({ error: 'Email already in use' });
     
@@ -37,7 +56,16 @@ r.post('/register', async (req, res, next) => {
     const user = await prisma.user.create({ data: userData });
     
     if (role === 'PROVIDER') {
-      await prisma.providerProfile.create({ data: { userId: user.id, bio: '', serviceArea: city || '' } });
+      await prisma.providerProfile.create({ 
+        data: { 
+          userId: user.id, 
+          bio: '', 
+          serviceArea: city || '',
+          legalStatusId,
+          taxId,
+          companyName
+        } 
+      });
     }
     
     // Pošalji verification email - OBAVEZNO
@@ -215,6 +243,101 @@ r.post('/reset-password', async (req, res, next) => {
     res.json({ 
       message: 'Password successfully reset! You can now login with your new password.',
       user: { email: user.email, fullName: user.fullName }
+    });
+  } catch (e) { next(e); }
+});
+
+// Upgrade USER to PROVIDER
+r.post('/upgrade-to-provider', async (req, res, next) => {
+  try {
+    const { email, password, legalStatusId, taxId, companyName } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password required' });
+    }
+    
+    // VALIDACIJA: Pravni status (opciono za sada - FAZA 1)
+    // TODO: Enable strict validation nakon što frontend implementira UI
+    if (legalStatusId) {
+      // Samo provjeri da li legal status postoji AKO je poslan
+      const legalStatus = await prisma.legalStatus.findUnique({ where: { id: legalStatusId } });
+      if (!legalStatus || !legalStatus.isActive) {
+        return res.status(400).json({ 
+          error: 'Nevažeći pravni status',
+          message: 'Odabrani pravni status ne postoji ili nije aktivan.'
+        });
+      }
+    }
+    
+    // Log warning ako nema legal status (za monitoring)
+    if (!legalStatusId) {
+      console.warn('[WARNING] User upgrading to PROVIDER without legal status:', email);
+    }
+    
+    // Verify user credentials
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+    
+    const ok = await verifyPassword(password, user.passwordHash);
+    if (!ok) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+    
+    // Check if already a provider
+    if (user.role === 'PROVIDER') {
+      return res.status(400).json({ error: 'Already a provider' });
+    }
+    
+    // Upgrade to PROVIDER and add legal info
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: { 
+        role: 'PROVIDER',
+        legalStatusId,
+        taxId,
+        companyName
+      }
+    });
+    
+    // Create ProviderProfile if it doesn't exist
+    const existingProfile = await prisma.providerProfile.findUnique({ 
+      where: { userId: user.id } 
+    });
+    
+    if (!existingProfile) {
+      await prisma.providerProfile.create({
+        data: {
+          userId: user.id,
+          bio: '',
+          serviceArea: user.city || '',
+          legalStatusId,
+          taxId,
+          companyName
+        }
+      });
+    }
+    
+    console.log('[OK] User upgraded to PROVIDER:', user.email);
+    
+    // Generate new token with updated role
+    const token = signToken({ 
+      id: updatedUser.id, 
+      email: updatedUser.email, 
+      role: updatedUser.role, 
+      name: updatedUser.fullName 
+    });
+    
+    res.json({ 
+      message: 'Successfully upgraded to provider!',
+      token,
+      user: { 
+        id: updatedUser.id, 
+        email: updatedUser.email, 
+        role: updatedUser.role, 
+        fullName: updatedUser.fullName, 
+        isVerified: updatedUser.isVerified 
+      }
     });
   } catch (e) { next(e); }
 });

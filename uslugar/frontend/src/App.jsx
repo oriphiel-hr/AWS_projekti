@@ -6,6 +6,7 @@ import JobForm from './components/JobForm';
 import ProviderCard from './components/ProviderCard';
 import UserRegister from './pages/UserRegister';
 import ProviderRegister from './pages/ProviderRegister';
+import UpgradeToProvider from './pages/UpgradeToProvider';
 import VerifyEmail from './pages/VerifyEmail';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
@@ -20,10 +21,10 @@ function useAuth() {
 export default function App(){
   const { token, saveToken, logout } = useAuth();
 
-  // TAB: 'user' | 'admin' | 'register-user' | 'register-provider' | 'verify' | 'forgot-password' | 'reset-password'
+  // TAB: 'user' | 'admin' | 'register-user' | 'register-provider' | 'upgrade-to-provider' | 'verify' | 'forgot-password' | 'reset-password'
   const [tab, setTab] = useState(() => {
     const hash = window.location.hash?.slice(1).split('?')[0];
-    return ['admin', 'register-user', 'register-provider', 'verify', 'forgot-password', 'reset-password'].includes(hash) ? hash : 'user';
+    return ['admin', 'register-user', 'register-provider', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password'].includes(hash) ? hash : 'user';
   });
 
   // USER tab state
@@ -104,7 +105,7 @@ export default function App(){
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash?.slice(1).split('?')[0];
-      const validTabs = ['admin', 'register-user', 'register-provider', 'verify', 'forgot-password', 'reset-password', 'user'];
+      const validTabs = ['admin', 'register-user', 'register-provider', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'user'];
       if (validTabs.includes(hash)) {
         setTab(hash);
       } else if (!hash) {
@@ -148,6 +149,14 @@ export default function App(){
               Registracija providera
             </button>
           </>
+        )}
+        {token && (
+          <button
+            className={'px-3 py-2 border rounded ' + (tab==='upgrade-to-provider' ? 'bg-purple-600 text-white' : 'border-purple-600 text-purple-600')}
+            onClick={() => setTab('upgrade-to-provider')}
+          >
+            Postani pružatelj
+          </button>
         )}
         <button
           className={'px-3 py-2 border rounded ml-auto ' + (tab==='admin' ? 'bg-gray-900 text-white' : '')}
@@ -296,6 +305,12 @@ export default function App(){
       {tab === 'reset-password' && (
         <section id="reset-password" className="tab-section">
           <ResetPassword />
+        </section>
+      )}
+
+      {tab === 'upgrade-to-provider' && (
+        <section id="upgrade-to-provider" className="tab-section">
+          <UpgradeToProvider />
         </section>
       )}
     </div>
