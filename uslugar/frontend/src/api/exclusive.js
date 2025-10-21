@@ -1,5 +1,5 @@
 // USLUGAR EXCLUSIVE - API Client
-import api from './http';
+import api from '../api';
 
 // ============================================================
 // LEADS
