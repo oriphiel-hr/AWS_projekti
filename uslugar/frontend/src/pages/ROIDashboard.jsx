@@ -293,7 +293,7 @@ export default function ROIDashboard() {
           <div>
             <p className="font-semibold mb-1">Credits Balance</p>
             <p>Broj preostalih kredita za kupovinu novih leadova.</p>
-            <p className="text-yellow-600 mt-1">⚠️ Nadopunite ako je <5</p>
+              <p className="text-yellow-600 mt-1">⚠️ Nadopunite ako je &lt;5</p>
           </div>
         </div>
       </div>
