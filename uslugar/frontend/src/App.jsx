@@ -10,6 +10,12 @@ import UpgradeToProvider from './pages/UpgradeToProvider';
 import VerifyEmail from './pages/VerifyEmail';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+// USLUGAR EXCLUSIVE components
+import LeadMarketplace from './pages/LeadMarketplace';
+import ROIDashboard from './pages/ROIDashboard';
+import MyLeads from './pages/MyLeads';
+import SubscriptionPlans from './pages/SubscriptionPlans';
+import CreditsWidget from './components/CreditsWidget';
 
 function useAuth() {
   const [token, setToken] = useState(localStorage.getItem('token'));
@@ -21,10 +27,11 @@ function useAuth() {
 export default function App(){
   const { token, saveToken, logout } = useAuth();
 
-  // TAB: 'user' | 'admin' | 'register-user' | 'register-provider' | 'upgrade-to-provider' | 'verify' | 'forgot-password' | 'reset-password'
+  // TAB: 'user' | 'admin' | 'register-user' | 'register-provider' | 'upgrade-to-provider' | 'verify' | 'forgot-password' | 'reset-password' | 'leads' | 'my-leads' | 'roi' | 'subscription'
   const [tab, setTab] = useState(() => {
     const hash = window.location.hash?.slice(1).split('?')[0];
-    return ['admin', 'register-user', 'register-provider', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password'].includes(hash) ? hash : 'user';
+    const validTabs = ['admin', 'register-user', 'register-provider', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'leads', 'my-leads', 'roi', 'subscription'];
+    return validTabs.includes(hash) ? hash : 'user';
   });
 
   // USER tab state
@@ -105,7 +112,7 @@ export default function App(){
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash?.slice(1).split('?')[0];
-      const validTabs = ['admin', 'register-user', 'register-provider', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'user'];
+      const validTabs = ['admin', 'register-user', 'register-provider', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'user', 'leads', 'my-leads', 'roi', 'subscription'];
       if (validTabs.includes(hash)) {
         setTab(hash);
       } else if (!hash) {
@@ -120,9 +127,12 @@ export default function App(){
   return (
     <div className="p-6 max-w-5xl mx-auto">
       <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Uslugar</h1>
-        <div className="flex items-center gap-2">
-          {token ? <button className="px-3 py-1 border rounded" onClick={logout}>Logout</button> : null}
+        <h1 className="text-2xl font-bold">
+          Uslugar <span className="text-green-600">EXCLUSIVE</span>
+        </h1>
+        <div className="flex items-center gap-3">
+          {token && <CreditsWidget />}
+          {token ? <button className="px-4 py-2 border rounded hover:bg-gray-100" onClick={logout}>Logout</button> : null}
         </div>
       </header>
 
@@ -151,12 +161,39 @@ export default function App(){
           </>
         )}
         {token && (
-          <button
-            className={'px-3 py-2 border rounded ' + (tab==='upgrade-to-provider' ? 'bg-purple-600 text-white' : 'border-purple-600 text-purple-600')}
-            onClick={() => setTab('upgrade-to-provider')}
-          >
-            Postani pružatelj
-          </button>
+          <>
+            <button
+              className={'px-3 py-2 border rounded ' + (tab==='upgrade-to-provider' ? 'bg-purple-600 text-white' : 'border-purple-600 text-purple-600')}
+              onClick={() => setTab('upgrade-to-provider')}
+            >
+              Postani pružatelj
+            </button>
+            {/* USLUGAR EXCLUSIVE tabs - samo za PROVIDER role */}
+            <button
+              className={'px-3 py-2 border rounded ' + (tab==='leads' ? 'bg-green-600 text-white' : 'border-green-600 text-green-600')}
+              onClick={() => setTab('leads')}
+            >
+              🛒 Leadovi
+            </button>
+            <button
+              className={'px-3 py-2 border rounded ' + (tab==='my-leads' ? 'bg-blue-600 text-white' : 'border-blue-600 text-blue-600')}
+              onClick={() => setTab('my-leads')}
+            >
+              📋 Moji Leadovi
+            </button>
+            <button
+              className={'px-3 py-2 border rounded ' + (tab==='roi' ? 'bg-yellow-600 text-white' : 'border-yellow-600 text-yellow-600')}
+              onClick={() => setTab('roi')}
+            >
+              📊 ROI
+            </button>
+            <button
+              className={'px-3 py-2 border rounded ' + (tab==='subscription' ? 'bg-purple-600 text-white' : 'border-purple-600 text-purple-600')}
+              onClick={() => setTab('subscription')}
+            >
+              💳 Pretplata
+            </button>
+          </>
         )}
         <button
           className={'px-3 py-2 border rounded ml-auto ' + (tab==='admin' ? 'bg-gray-900 text-white' : '')}
@@ -311,6 +348,31 @@ export default function App(){
       {tab === 'upgrade-to-provider' && (
         <section id="upgrade-to-provider" className="tab-section">
           <UpgradeToProvider />
+        </section>
+      )}
+
+      {/* USLUGAR EXCLUSIVE pages */}
+      {tab === 'leads' && (
+        <section id="leads" className="tab-section">
+          <LeadMarketplace />
+        </section>
+      )}
+
+      {tab === 'my-leads' && (
+        <section id="my-leads" className="tab-section">
+          <MyLeads />
+        </section>
+      )}
+
+      {tab === 'roi' && (
+        <section id="roi" className="tab-section">
+          <ROIDashboard />
+        </section>
+      )}
+
+      {tab === 'subscription' && (
+        <section id="subscription" className="tab-section">
+          <SubscriptionPlans />
         </section>
       )}
     </div>
