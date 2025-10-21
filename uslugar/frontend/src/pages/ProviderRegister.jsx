@@ -291,22 +291,30 @@ export default function ProviderRegister({ onSuccess }) {
         </div>
 
         {/* Pravni status */}
-        <div className="space-y-4 bg-gray-50 p-4 rounded-lg">
-          <h3 className="text-lg font-semibold text-gray-900">Pravni status (opcionalno)</h3>
-          <p className="text-sm text-gray-600">Ako ste registrirani kao obrt/firma, unesite podatke</p>
+        <div className="space-y-4 bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
+          <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+            <svg className="w-5 h-5 text-yellow-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+            Pravni status (obavezno)
+          </h3>
+          <p className="text-sm text-gray-700">
+            <strong>Prema zakonu</strong>, svi pružatelji usluga moraju biti registrirani kao obrt, firma ili samostalni djelatnik.
+          </p>
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Pravni status
+              Pravni status <span className="text-red-500">*</span>
             </label>
             <select
               name="legalStatusId"
               value={formData.legalStatusId}
               onChange={handleChange}
+              required
               disabled={loadingStatuses}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent disabled:opacity-50"
             >
-              <option value="">Odaberi (opcionalno)</option>
+              <option value="">Odaberite pravni oblik</option>
               {legalStatuses
                 .filter(status => status.code !== 'INDIVIDUAL')
                 .map(status => (
@@ -324,28 +332,32 @@ export default function ProviderRegister({ onSuccess }) {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  OIB
+                  OIB <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   name="taxId"
                   value={formData.taxId}
                   onChange={handleChange}
+                  required
                   maxLength={11}
+                  pattern="[0-9]{11}"
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="12345678901"
                 />
+                <p className="text-xs text-gray-500 mt-1">11 brojeva</p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Naziv obrta/firme {legalStatuses.find(s => s.id === formData.legalStatusId)?.code !== 'FREELANCER' && '(opcionalno za samostalne djelatnike)'}
+                  Naziv obrta/firme {legalStatuses.find(s => s.id === formData.legalStatusId)?.code !== 'FREELANCER' && <span className="text-red-500">*</span>}
                 </label>
                 <input
                   type="text"
                   name="companyName"
                   value={formData.companyName}
                   onChange={handleChange}
+                  required={legalStatuses.find(s => s.id === formData.legalStatusId)?.code !== 'FREELANCER'}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder={legalStatuses.find(s => s.id === formData.legalStatusId)?.code === 'FREELANCER' ? 'Opcionalno - možete raditi pod svojim imenom' : 'Vodoinstalater Horvat obrt'}
                 />

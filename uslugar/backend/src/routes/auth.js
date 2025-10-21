@@ -12,10 +12,23 @@ r.post('/register', async (req, res, next) => {
     const { email, password, fullName, role = 'USER', phone, city, legalStatusId, taxId, companyName } = req.body;
     if (!email || !password || !fullName) return res.status(400).json({ error: 'Missing fields' });
     
-    // VALIDACIJA: PROVIDER pravni status (opciono za sada - FAZA 1)
-    // TODO: Enable strict validation nakon što frontend implementira UI
-    if (role === 'PROVIDER' && legalStatusId) {
-      // Samo provjeri da li legal status postoji AKO je poslan
+    // VALIDACIJA: PROVIDER pravni status (OBAVEZNO - prema zakonu)
+    if (role === 'PROVIDER') {
+      if (!legalStatusId) {
+        return res.status(400).json({ 
+          error: 'Pravni status je obavezan',
+          message: 'Prema zakonu, svi pružatelji usluga moraju biti registrirani kao obrt, firma ili samostalni djelatnik.'
+        });
+      }
+      
+      if (!taxId) {
+        return res.status(400).json({ 
+          error: 'OIB je obavezan',
+          message: 'Pružatelji usluga moraju unijeti svoj OIB.'
+        });
+      }
+      
+      // Provjeri da li legal status postoji i da je aktivan
       const legalStatus = await prisma.legalStatus.findUnique({ where: { id: legalStatusId } });
       if (!legalStatus || !legalStatus.isActive) {
         return res.status(400).json({ 
@@ -23,11 +36,22 @@ r.post('/register', async (req, res, next) => {
           message: 'Odabrani pravni status ne postoji ili nije aktivan.'
         });
       }
-    }
-    
-    // Log warning ako PROVIDER nema legal status (za monitoring)
-    if (role === 'PROVIDER' && !legalStatusId) {
-      console.warn('[WARNING] PROVIDER registered without legal status:', email);
+      
+      // Zabrani fizičku osobu kao pružatelja
+      if (legalStatus.code === 'INDIVIDUAL') {
+        return res.status(400).json({ 
+          error: 'Nevažeći pravni status',
+          message: 'Pružatelji usluga ne mogu biti registrirani kao fizička osoba bez djelatnosti.'
+        });
+      }
+      
+      // Provjeri naziv firme (obavezno osim za freelancere)
+      if (legalStatus.code !== 'FREELANCER' && !companyName) {
+        return res.status(400).json({ 
+          error: 'Naziv firme/obrta je obavezan',
+          message: 'Unesite naziv vaše firme ili obrta. Samostalni djelatnici mogu raditi pod svojim imenom.'
+        });
+      }
     }
     
     const exists = await prisma.user.findUnique({ where: { email } });
@@ -255,22 +279,47 @@ r.post('/upgrade-to-provider', async (req, res, next) => {
       return res.status(400).json({ error: 'Email and password required' });
     }
     
-    // VALIDACIJA: Pravni status (opciono za sada - FAZA 1)
-    // TODO: Enable strict validation nakon što frontend implementira UI
-    if (legalStatusId) {
-      // Samo provjeri da li legal status postoji AKO je poslan
-      const legalStatus = await prisma.legalStatus.findUnique({ where: { id: legalStatusId } });
-      if (!legalStatus || !legalStatus.isActive) {
-        return res.status(400).json({ 
-          error: 'Nevažeći pravni status',
-          message: 'Odabrani pravni status ne postoji ili nije aktivan.'
-        });
-      }
+    // VALIDACIJA: Pravni status (OBAVEZNO - prema zakonu)
+    if (!legalStatusId) {
+      return res.status(400).json({ 
+        error: 'Pravni status je obavezan',
+        message: 'Prema zakonu, svi pružatelji usluga moraju biti registrirani kao obrt, firma ili samostalni djelatnik.',
+        requiredFields: ['legalStatusId', 'taxId']
+      });
     }
     
-    // Log warning ako nema legal status (za monitoring)
-    if (!legalStatusId) {
-      console.warn('[WARNING] User upgrading to PROVIDER without legal status:', email);
+    if (!taxId) {
+      return res.status(400).json({ 
+        error: 'OIB je obavezan',
+        message: 'Pružatelji usluga moraju unijeti svoj OIB.',
+        requiredFields: ['taxId']
+      });
+    }
+    
+    // Provjeri da li legal status postoji i da je aktivan
+    const legalStatus = await prisma.legalStatus.findUnique({ where: { id: legalStatusId } });
+    if (!legalStatus || !legalStatus.isActive) {
+      return res.status(400).json({ 
+        error: 'Nevažeći pravni status',
+        message: 'Odabrani pravni status ne postoji ili nije aktivan.'
+      });
+    }
+    
+    // Zabrani fizičku osobu kao pružatelja
+    if (legalStatus.code === 'INDIVIDUAL') {
+      return res.status(400).json({ 
+        error: 'Nevažeći pravni status',
+        message: 'Pružatelji usluga ne mogu biti registrirani kao fizička osoba bez djelatnosti.'
+      });
+    }
+    
+    // Provjeri naziv firme (obavezno osim za freelancere)
+    if (legalStatus.code !== 'FREELANCER' && !companyName) {
+      return res.status(400).json({ 
+        error: 'Naziv firme/obrta je obavezan',
+        message: 'Unesite naziv vaše firme ili obrta. Samostalni djelatnici mogu raditi pod svojim imenom.',
+        requiredFields: ['companyName']
+      });
     }
     
     // Verify user credentials
