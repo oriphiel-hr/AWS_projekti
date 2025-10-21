@@ -4,25 +4,63 @@ import { auth } from '../lib/auth.js';
 
 const r = Router();
 
-// Subscription plans
+// USLUGAR EXCLUSIVE - Subscription plans sa kreditima za ekskluzivne leadove
 const PLANS = {
   BASIC: {
     name: 'Basic',
-    price: 0,
-    credits: 5, // 5 odgovora mjesečno
-    features: ['5 ponuda mjesečno', 'Osnovni profil', 'Email notifikacije']
+    price: 39, // EUR mjesečno
+    credits: 10, // 10 ekskluzivnih leadova
+    creditsPerLead: 1, // 1 lead = 1 kredit (prosječno 10€ per lead)
+    avgLeadPrice: 10, // EUR
+    features: [
+      '10 ekskluzivnih leadova mjesečno',
+      '1 lead = 1 izvođač (bez konkurencije)',
+      'Refund ako klijent ne odgovori',
+      'ROI statistika',
+      'Email notifikacije',
+      'Mini CRM za leadove'
+    ],
+    savings: 'Ušteda 10€ vs pay-per-lead'
   },
   PREMIUM: {
     name: 'Premium',
-    price: 19.99,
-    credits: 50, // 50 odgovora mjesečno
-    features: ['50 ponuda mjesečno', 'Premium profil', 'Prioritetna podrška', 'Analitika']
+    price: 89, // EUR mjesečno
+    credits: 25, // 25 ekskluzivnih leadova
+    creditsPerLead: 1,
+    avgLeadPrice: 10,
+    features: [
+      '25 ekskluzivnih leadova mjesečno',
+      '1 lead = 1 izvođač (bez konkurencije)',
+      'Refund ako klijent ne odgovori',
+      'AI prioritet - viđeni prvi',
+      'ROI statistika + analitika',
+      'SMS + Email notifikacije',
+      'Mini CRM za leadove',
+      'Prioritetna podrška'
+    ],
+    savings: 'Ušteda 161€ vs pay-per-lead (36% popust)',
+    popular: true
   },
   PRO: {
     name: 'Pro',
-    price: 49.99,
-    credits: -1, // Neograničeno
-    features: ['Neograničene ponude', 'Pro profil', 'VIP podrška', 'Napredna analitika', 'Featured listing']
+    price: 149, // EUR mjesečno
+    credits: 50, // 50 ekskluzivnih leadova
+    creditsPerLead: 1,
+    avgLeadPrice: 10,
+    features: [
+      '50 ekskluzivnih leadova mjesečno',
+      '1 lead = 1 izvođač (bez konkurencije)',
+      'Refund ako klijent ne odgovori',
+      'AI prioritet - viđeni prvi',
+      'Premium kvaliteta leadova (80+ score)',
+      'ROI statistika + napredna analitika',
+      'SMS + Email + Push notifikacije',
+      'CRM + izvještaji',
+      'VIP podrška 24/7',
+      'Featured profil',
+      'White-label opcija'
+    ],
+    savings: 'Ušteda 351€ vs pay-per-lead (47% popust)'
   }
 };
 
@@ -33,14 +71,26 @@ r.get('/me', auth(true, ['PROVIDER']), async (req, res, next) => {
       where: { userId: req.user.id }
     });
 
-    // Create default BASIC subscription if doesn't exist
+    // Create default subscription if doesn't exist (FREE TRIAL)
     if (!subscription) {
       subscription = await prisma.subscription.create({
         data: {
           userId: req.user.id,
-          plan: 'BASIC',
+          plan: 'TRIAL',
           status: 'ACTIVE',
-          credits: PLANS.BASIC.credits
+          credits: 0,
+          creditsBalance: 2, // 2 besplatna leada za probati
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 dana trial
+        }
+      });
+      
+      // Notify o trial-u
+      await prisma.notification.create({
+        data: {
+          title: 'Dobrodošli u Uslugar EXCLUSIVE!',
+          message: 'Dobili ste 2 besplatna leada da probate našu platformu. Nadogradite pretplatu za više.',
+          type: 'SYSTEM',
+          userId: req.user.id
         }
       });
     }
@@ -71,10 +121,10 @@ r.get('/plans', async (req, res) => {
   res.json(PLANS);
 });
 
-// Subscribe to a plan
+// Subscribe to a plan (USLUGAR EXCLUSIVE)
 r.post('/subscribe', auth(true, ['PROVIDER']), async (req, res, next) => {
   try {
-    const { plan } = req.body;
+    const { plan, paymentIntentId } = req.body;
 
     if (!['BASIC', 'PREMIUM', 'PRO'].includes(plan)) {
       return res.status(400).json({ error: 'Invalid plan' });
@@ -84,39 +134,62 @@ r.post('/subscribe', auth(true, ['PROVIDER']), async (req, res, next) => {
     const expiresAt = new Date();
     expiresAt.setMonth(expiresAt.getMonth() + 1); // 1 mjesec
 
+    // TODO: Integrate payment gateway here (Stripe/CorvusPay)
+    // Za sada simuliramo uspješnu uplatu
+
+    // Dohvati postojeću pretplatu
+    const existingSubscription = await prisma.subscription.findUnique({
+      where: { userId: req.user.id }
+    });
+
     const subscription = await prisma.subscription.upsert({
       where: { userId: req.user.id },
       create: {
         userId: req.user.id,
         plan,
         status: 'ACTIVE',
-        credits: planDetails.credits,
+        credits: planDetails.credits, // Legacy
+        creditsBalance: planDetails.credits, // EXCLUSIVE - novi krediti
         expiresAt
       },
       update: {
         plan,
         status: 'ACTIVE',
-        credits: planDetails.credits,
+        creditsBalance: existingSubscription 
+          ? existingSubscription.creditsBalance + planDetails.credits 
+          : planDetails.credits, // Dodaj kredite na postojeće
         expiresAt
       }
     });
 
-    // TODO: Integrate payment gateway here (Stripe, PayPal, etc.)
-    // For now, we just activate the subscription
+    // Kreiraj credit transaction
+    await prisma.creditTransaction.create({
+      data: {
+        userId: req.user.id,
+        type: 'SUBSCRIPTION',
+        amount: planDetails.credits,
+        balance: subscription.creditsBalance,
+        description: `${planDetails.name} subscription - ${planDetails.credits} credits`
+      }
+    });
 
     // Create notification
     await prisma.notification.create({
       data: {
-        title: 'Pretplata aktivirana',
-        message: `Uspješno ste se pretplatili na ${planDetails.name} plan!`,
+        title: 'Pretplata aktivirana!',
+        message: `Uspješno ste se pretplatili na ${planDetails.name} plan! Dodano ${planDetails.credits} kredita.`,
         type: 'SYSTEM',
         userId: req.user.id
       }
     });
 
+    console.log(`[SUBSCRIPTION] User ${req.user.id} subscribed to ${plan}. Credits: ${subscription.creditsBalance}`);
+
     res.json({
+      success: true,
       subscription,
-      planDetails
+      planDetails,
+      message: `Welcome to ${planDetails.name}! You have ${subscription.creditsBalance} credits.`
     });
   } catch (e) {
     next(e);
