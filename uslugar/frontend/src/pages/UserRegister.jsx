@@ -227,8 +227,11 @@ export default function UserRegister({ onSuccess }) {
                 value={formData.companyName}
                 onChange={handleChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Građevina d.o.o."
+                placeholder={legalStatuses.find(s => s.id === formData.legalStatusId)?.code === 'FREELANCER' ? 'Opcionalno - možete raditi pod svojim imenom' : 'Građevina d.o.o.'}
               />
+              {legalStatuses.find(s => s.id === formData.legalStatusId)?.code === 'FREELANCER' && (
+                <p className="text-xs text-blue-600 mt-1">💡 Samostalni djelatnici mogu raditi pod svojim imenom</p>
+              )}
             </div>
 
             <div>
