@@ -40,6 +40,38 @@ const app = express()
 const prisma = new PrismaClient()
 const PORT = process.env.PORT || 4000
 
+// Auto-seed Legal Statuses if missing
+async function ensureLegalStatuses() {
+  try {
+    const count = await prisma.legalStatus.count();
+    if (count >= 6) {
+      console.log('✅ Legal statuses already exist:', count);
+      return;
+    }
+    
+    console.log('🌱 Initializing legal statuses...');
+    const statuses = [
+      {id:'cls1_individual',code:'INDIVIDUAL',name:'Fizička osoba',description:'Privatna osoba bez registrirane djelatnosti',isActive:true},
+      {id:'cls2_sole_trader',code:'SOLE_TRADER',name:'Obrtnik',description:'Registrirani obrt - fizička osoba s OIB-om',isActive:true},
+      {id:'cls3_pausal',code:'PAUSAL',name:'Paušalni obrt',description:'Obrt s paušalnim oporezivanjem',isActive:true},
+      {id:'cls4_doo',code:'DOO',name:'d.o.o.',description:'Društvo s ograničenom odgovornošću',isActive:true},
+      {id:'cls5_jdoo',code:'JDOO',name:'j.d.o.o.',description:'Jednostavno društvo s ograničenom odgovornošću',isActive:true},
+      {id:'cls6_freelancer',code:'FREELANCER',name:'Samostalni djelatnik',description:'Freelancer s paušalnim oporezivanjem',isActive:true}
+    ];
+    
+    for (const s of statuses) {
+      await prisma.legalStatus.upsert({
+        where: { id: s.id },
+        update: s,
+        create: s
+      });
+    }
+    console.log('✅ Legal statuses initialized successfully!');
+  } catch (error) {
+    console.error('⚠️  Failed to initialize legal statuses:', error.message);
+  }
+}
+
 // Debug: Log SMTP configuration status
 console.log('[DEBUG] Environment check:');
 console.log('  NODE_ENV:', process.env.NODE_ENV);
@@ -129,6 +161,9 @@ app.use((err, _req, res, _next) => {
 // Create HTTP server and initialize Socket.io
 const httpServer = createServer(app)
 const io = initSocket(httpServer)
+
+// Initialize database (seed legal statuses if missing)
+await ensureLegalStatuses()
 
 // graceful shutdown (Prisma + Socket.io) + start
 const server = httpServer.listen(PORT, () => {
