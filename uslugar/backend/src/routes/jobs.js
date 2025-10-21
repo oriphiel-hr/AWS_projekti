@@ -64,8 +64,8 @@ r.get('/', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-// create job
-r.post('/', auth(true, ['USER']), async (req, res, next) => {
+// create job (USER or PROVIDER can create jobs)
+r.post('/', auth(true, ['USER', 'PROVIDER']), async (req, res, next) => {
   try {
     const { 
       title, 
@@ -109,8 +109,8 @@ r.post('/', auth(true, ['USER']), async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-// accept offer
-r.post('/:jobId/accept/:offerId', auth(true, ['USER']), async (req, res, next) => {
+// accept offer (USER or PROVIDER can accept offers on their jobs)
+r.post('/:jobId/accept/:offerId', auth(true, ['USER', 'PROVIDER']), async (req, res, next) => {
   try {
     const { jobId, offerId } = req.params;
     const job = await prisma.job.findUnique({ where: { id: jobId } });

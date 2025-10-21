@@ -24,6 +24,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 import usersRouter from './routes/users.js'
 import categoriesRouter from './routes/categories.js'
+import legalStatusesRouter from './routes/legal-statuses.js'
 
 // .env samo izvan produkcije
 if (process.env.NODE_ENV !== 'production') {
@@ -113,6 +114,7 @@ app.use('/api/reviews', reviewsRouter)
 app.use('/api/admin', adminRouter)
 app.use('/api/users', usersRouter)
 app.use('/api/categories', categoriesRouter)
+app.use('/api/legal-statuses', legalStatusesRouter)
 app.use('/api/upload', uploadRouter)
 app.use('/api/notifications', notificationsRouter)
 app.use('/api/chat', chatRouter)

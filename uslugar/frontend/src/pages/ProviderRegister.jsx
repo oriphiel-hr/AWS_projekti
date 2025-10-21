@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import api from '../api';
+import { useLegalStatuses } from '../hooks/useLegalStatuses';
 
 export default function ProviderRegister({ onSuccess }) {
+  const { legalStatuses, loading: loadingStatuses } = useLegalStatuses();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -301,16 +303,21 @@ export default function ProviderRegister({ onSuccess }) {
               name="legalStatusId"
               value={formData.legalStatusId}
               onChange={handleChange}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              disabled={loadingStatuses}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent disabled:opacity-50"
             >
               <option value="">Odaberi (opcionalno)</option>
-              <option value="cls1_individual">Fizička osoba</option>
-              <option value="cls2_sole_trader">Obrtnik</option>
-              <option value="cls3_pausal">Paušalni obrt</option>
-              <option value="cls4_doo">d.o.o.</option>
-              <option value="cls5_jdoo">j.d.o.o.</option>
-              <option value="cls6_freelancer">Samostalni djelatnik</option>
+              {legalStatuses
+                .filter(status => status.code !== 'INDIVIDUAL')
+                .map(status => (
+                  <option key={status.id} value={status.id}>
+                    {status.name} - {status.description}
+                  </option>
+                ))}
             </select>
+            {loadingStatuses && (
+              <p className="text-xs text-gray-500 mt-1">Učitavanje pravnih statusa...</p>
+            )}
           </div>
 
           {formData.legalStatusId && (
