@@ -12,61 +12,55 @@ async function main() {
   }
   console.log('Seeded categories.');
   
-  // Seed Legal Statuses (Hrvatski pravni oblici)
+  // Seed Legal Statuses (Hrvatski pravni oblici) - IDeve moraju biti isti kao u migraciji!
   const legalStatuses = [
     {
-      code: 'OBRT',
-      name: 'Obrt',
-      description: 'Obrtništvo - samostalna djelatnost fizičke osobe',
+      id: 'cls1_individual',
+      code: 'INDIVIDUAL',
+      name: 'Fizička osoba',
+      description: 'Privatna osoba bez registrirane djelatnosti',
       isActive: true
     },
     {
+      id: 'cls2_sole_trader',
+      code: 'SOLE_TRADER',
+      name: 'Obrtnik',
+      description: 'Registrirani obrt - fizička osoba s OIB-om',
+      isActive: true
+    },
+    {
+      id: 'cls3_pausal',
+      code: 'PAUSAL',
+      name: 'Paušalni obrt',
+      description: 'Obrt s paušalnim oporezivanjem',
+      isActive: true
+    },
+    {
+      id: 'cls4_doo',
       code: 'DOO',
       name: 'd.o.o.',
       description: 'Društvo s ograničenom odgovornošću',
       isActive: true
     },
     {
+      id: 'cls5_jdoo',
       code: 'JDOO',
       name: 'j.d.o.o.',
       description: 'Jednostavno društvo s ograničenom odgovornošću',
       isActive: true
     },
     {
-      code: 'DD',
-      name: 'd.d.',
-      description: 'Dioničko društvo',
-      isActive: true
-    },
-    {
-      code: 'ZDR',
-      name: 'Zadruga',
-      description: 'Zadruga - gospodarski subjekt',
-      isActive: true
-    },
-    {
-      code: 'VD',
-      name: 'v.d.',
-      description: 'Javno trgovačko društvo (vl. društvo)',
-      isActive: true
-    },
-    {
-      code: 'KD',
-      name: 'k.d.',
-      description: 'Komanditno društvo',
-      isActive: true
-    },
-    {
-      code: 'PAUSALAC',
-      name: 'Paušalno oporezivanje',
-      description: 'Samostalna djelatnost - paušalno oporezivanje',
+      id: 'cls6_freelancer',
+      code: 'FREELANCER',
+      name: 'Samostalni djelatnik',
+      description: 'Freelancer s paušalnim oporezivanjem',
       isActive: true
     }
   ];
   
   for (const status of legalStatuses) {
     await prisma.legalStatus.upsert({
-      where: { code: status.code },
+      where: { id: status.id },
       update: status,
       create: status
     });
