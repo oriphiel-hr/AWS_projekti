@@ -25,6 +25,10 @@ const __dirname = path.dirname(__filename)
 import usersRouter from './routes/users.js'
 import categoriesRouter from './routes/categories.js'
 import legalStatusesRouter from './routes/legal-statuses.js'
+// USLUGAR EXCLUSIVE routes
+import exclusiveLeadsRouter from './routes/exclusive-leads.js'
+import providerROIRouter from './routes/provider-roi.js'
+import clientVerificationRouter from './routes/client-verification.js'
 
 // .env samo izvan produkcije
 if (process.env.NODE_ENV !== 'production') {
@@ -151,6 +155,10 @@ app.use('/api/upload', uploadRouter)
 app.use('/api/notifications', notificationsRouter)
 app.use('/api/chat', chatRouter)
 app.use('/api/subscriptions', subscriptionsRouter)
+// USLUGAR EXCLUSIVE API routes
+app.use('/api/exclusive/leads', exclusiveLeadsRouter)
+app.use('/api/exclusive/roi', providerROIRouter)
+app.use('/api/verification', clientVerificationRouter)
 
 // basic error handler
 app.use((err, _req, res, _next) => {
@@ -169,8 +177,9 @@ await ensureLegalStatuses()
 const server = httpServer.listen(PORT, () => {
   console.log(`[OK] API listening on :${PORT}`)
   console.log(`[OK] Socket.io ready for real-time chat`)
-  console.log(`[OK] New features enabled: Upload, Notifications, Chat, Subscriptions, Geolocation`)
-  console.log(`[OK] Routes registered: /api/jobs, /api/categories, /api/admin, /api/users`)
+  console.log(`[OK] USLUGAR EXCLUSIVE features: Exclusive Leads, Credits, ROI Dashboard, AI Scoring`)
+  console.log(`[OK] Subscription plans: TRIAL (2 free), BASIC (39€), PREMIUM (89€), PRO (149€)`)
+  console.log(`[OK] All routes registered successfully`)
 })
 const shutdown = async () => {
   try { 
