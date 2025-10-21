@@ -156,9 +156,30 @@ export const notifyJobCompleted = async (jobId) => {
   }
 };
 
+// Generic notification helper - USLUGAR EXCLUSIVE
+export const notifyClient = async (userId, notification) => {
+  try {
+    await prisma.notification.create({
+      data: {
+        userId,
+        ...notification
+      }
+    });
+    console.log(`Notified user ${userId}: ${notification.title}`);
+  } catch (error) {
+    console.error('Error sending notification:', error);
+  }
+};
+
+export const notifyProvider = async (providerId, notification) => {
+  return notifyClient(providerId, notification);
+};
+
 export default {
   notifyNewJob,
   notifyNewOffer,
   notifyAcceptedOffer,
-  notifyJobCompleted
+  notifyJobCompleted,
+  notifyClient,
+  notifyProvider
 };
