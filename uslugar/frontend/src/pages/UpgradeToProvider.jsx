@@ -154,6 +154,9 @@ export default function UpgradeToProvider() {
               <strong>Važno:</strong> Prema zakonu, pružatelji usluga moraju imati pravni oblik (obrt, d.o.o., itd.). 
               Potrebno je unijeti podatke o pravnom statusu, OIB i naziv firme/obrta.
             </p>
+            <p className="text-xs text-blue-600 mt-2">
+              💡 Vaše ime i prezime iz profila odnosi se na vas kao odgovornu osobu (vlasnik/direktor).
+            </p>
           </div>
         </div>
       </div>

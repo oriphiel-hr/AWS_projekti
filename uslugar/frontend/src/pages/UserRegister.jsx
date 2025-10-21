@@ -121,7 +121,7 @@ export default function UserRegister({ onSuccess }) {
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Puno ime <span className="text-red-500">*</span>
+              Ime i prezime <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -130,8 +130,11 @@ export default function UserRegister({ onSuccess }) {
               onChange={handleChange}
               required
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Ime Prezime"
+              placeholder="Ana Horvat"
             />
+            <p className="text-xs text-gray-500 mt-1">
+              {isCompany ? 'Ime i prezime odgovorne osobe (vlasnik/direktor)' : 'Vaše ime i prezime'}
+            </p>
           </div>
 
           <div>
