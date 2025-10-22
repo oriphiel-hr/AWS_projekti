@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import api from '../api';
 import { useLegalStatuses } from '../hooks/useLegalStatuses';
+import { validateOIB } from '../utils/validators';
 
 export default function UserRegister({ onSuccess }) {
   const { legalStatuses, loading: loadingStatuses } = useLegalStatuses();
@@ -19,12 +20,24 @@ export default function UserRegister({ onSuccess }) {
   const [loading, setLoading] = useState(false);
   const [isCompany, setIsCompany] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [oibError, setOibError] = useState('');
 
   const handleChange = (e) => {
+    const { name, value } = e.target;
+    
     setFormData(prev => ({
       ...prev,
-      [e.target.name]: e.target.value
+      [name]: value
     }));
+
+    // Validacija OIB-a u realnom vremenu
+    if (name === 'taxId') {
+      if (value && !validateOIB(value)) {
+        setOibError('OIB nije validan. Provjerite kontrolnu znamenku.');
+      } else {
+        setOibError('');
+      }
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -43,6 +56,14 @@ export default function UserRegister({ onSuccess }) {
         
         if (!formData.taxId) {
           setError('OIB je obavezan za firme/obrte.');
+          setLoading(false);
+          return;
+        }
+        
+        // Validacija OIB-a prije slanja
+        if (formData.taxId && !validateOIB(formData.taxId)) {
+          setError('OIB nije validan. Molimo provjerite uneseni broj.');
+          setOibError('OIB nije validan. Provjerite kontrolnu znamenku.');
           setLoading(false);
           return;
         }
@@ -291,10 +312,16 @@ export default function UserRegister({ onSuccess }) {
                   disabled={!formData.legalStatusId}
                   maxLength={11}
                   pattern="[0-9]{11}"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed ${
+                    oibError ? 'border-red-500' : 'border-gray-300'
+                  }`}
                   placeholder={formData.legalStatusId ? "12345678901" : "Prvo odaberite pravni status"}
                 />
-                <p className="text-xs text-gray-500 mt-1">11 brojeva</p>
+                {oibError ? (
+                  <p className="text-xs text-red-600 mt-1">✗ {oibError}</p>
+                ) : (
+                  <p className="text-xs text-gray-500 mt-1">11 brojeva</p>
+                )}
               </div>
 
               <div>

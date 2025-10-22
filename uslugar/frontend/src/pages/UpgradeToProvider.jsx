@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
 import { useLegalStatuses } from '../hooks/useLegalStatuses';
+import { validateOIB } from '../utils/validators';
 
 export default function UpgradeToProvider() {
   const { legalStatuses, loading: loadingStatuses } = useLegalStatuses();
@@ -15,6 +16,7 @@ export default function UpgradeToProvider() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [user, setUser] = useState(null);
+  const [oibError, setOibError] = useState('');
 
   useEffect(() => {
     // Auto-fill email if user is logged in
@@ -31,10 +33,21 @@ export default function UpgradeToProvider() {
   }, []);
 
   const handleChange = (e) => {
+    const { name, value } = e.target;
+    
     setFormData(prev => ({
       ...prev,
-      [e.target.name]: e.target.value
+      [name]: value
     }));
+
+    // Validacija OIB-a u realnom vremenu
+    if (name === 'taxId') {
+      if (value && !validateOIB(value)) {
+        setOibError('OIB nije validan. Provjerite kontrolnu znamenku.');
+      } else {
+        setOibError('');
+      }
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -52,6 +65,14 @@ export default function UpgradeToProvider() {
       
       if (!formData.taxId) {
         setError('OIB je obavezan za pružatelje usluga.');
+        setLoading(false);
+        return;
+      }
+      
+      // Validacija OIB-a prije slanja
+      if (formData.taxId && !validateOIB(formData.taxId)) {
+        setError('OIB nije validan. Molimo provjerite uneseni broj.');
+        setOibError('OIB nije validan. Provjerite kontrolnu znamenku.');
         setLoading(false);
         return;
       }
@@ -250,10 +271,16 @@ export default function UpgradeToProvider() {
                 required
                 maxLength={11}
                 pattern="[0-9]{11}"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${
+                  oibError ? 'border-red-500' : 'border-gray-300'
+                }`}
                 placeholder="12345678901"
               />
-              <p className="text-xs text-gray-500 mt-1">11 brojeva</p>
+              {oibError ? (
+                <p className="text-xs text-red-600 mt-1">✗ {oibError}</p>
+              ) : (
+                <p className="text-xs text-gray-500 mt-1">11 brojeva</p>
+              )}
             </div>
 
             <div>
