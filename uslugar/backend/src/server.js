@@ -29,6 +29,8 @@ import legalStatusesRouter from './routes/legal-statuses.js'
 import exclusiveLeadsRouter from './routes/exclusive-leads.js'
 import providerROIRouter from './routes/provider-roi.js'
 import clientVerificationRouter from './routes/client-verification.js'
+import leadQueueRouter from './routes/lead-queue.js'
+import { startQueueScheduler } from '../lib/queueScheduler.js'
 
 // .env samo izvan produkcije
 if (process.env.NODE_ENV !== 'production') {
@@ -159,6 +161,7 @@ app.use('/api/subscriptions', subscriptionsRouter)
 app.use('/api/exclusive/leads', exclusiveLeadsRouter)
 app.use('/api/exclusive/roi', providerROIRouter)
 app.use('/api/verification', clientVerificationRouter)
+app.use('/api/lead-queue', leadQueueRouter)
 
 // basic error handler
 app.use((err, _req, res, _next) => {
@@ -173,11 +176,15 @@ const io = initSocket(httpServer)
 // Initialize database (seed legal statuses if missing)
 await ensureLegalStatuses()
 
+// Start Queue Scheduler (checks expired offers every hour)
+startQueueScheduler()
+
 // graceful shutdown (Prisma + Socket.io) + start
 const server = httpServer.listen(PORT, () => {
   console.log(`[OK] API listening on :${PORT}`)
   console.log(`[OK] Socket.io ready for real-time chat`)
-  console.log(`[OK] USLUGAR EXCLUSIVE features: Exclusive Leads, Credits, ROI Dashboard, AI Scoring`)
+  console.log(`[OK] USLUGAR EXCLUSIVE features: Exclusive Leads, Credits, ROI Dashboard, AI Scoring, Queue Model`)
+  console.log(`[OK] Queue Scheduler: Active (checks expired leads every hour)`)
   console.log(`[OK] Subscription plans: TRIAL (2 free), BASIC (39€), PREMIUM (89€), PRO (149€)`)
   console.log(`[OK] All routes registered successfully`)
 })
