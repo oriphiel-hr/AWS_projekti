@@ -63,21 +63,34 @@ model ProviderProfile {
   legalStatusId  String?       // Pravni status (obrt, d.o.o., itd.)
   taxId          String?       // OIB (porezni broj)
   companyName    String?       // Naziv obrta/firme
+  
+  // USLUGAR EXCLUSIVE - Licence i limiti kategorija
+  maxCategories  Int           @default(5) // Max broj kategorija koje smije odabrati
+  licenses       ProviderLicense[] // Licence koje posjeduje
+  nkdCodes       String[]      // NKD kodovi koje firma pokriva
+  
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 }
 
 model Category {
-  id          String @id @default(cuid())
-  name        String @unique
-  description String?
-  parentId    String? // Za hijerarhijske kategorije
-  parent      Category? @relation("CategoryHierarchy", fields: [parentId], references: [id])
-  children    Category[] @relation("CategoryHierarchy")
-  providers   ProviderProfile[] @relation("ProviderCategories")
-  jobs        Job[]
-  isActive    Boolean @default(true)
-  createdAt   DateTime @default(now())
+  id                String @id @default(cuid())
+  name              String @unique
+  description       String?
+  parentId          String? // Za hijerarhijske kategorije
+  parent            Category? @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children          Category[] @relation("CategoryHierarchy")
+  providers         ProviderProfile[] @relation("ProviderCategories")
+  jobs              Job[]
+  
+  // USLUGAR EXCLUSIVE - NKD i licence
+  nkdCode           String? // NKD kod djelatnosti (npr. "43.21" za električne instalacije)
+  requiresLicense   Boolean @default(false) // Zahtijeva li djelatnost licencu
+  licenseType       String? // Tip licence (npr. "Elektrotehnička licenca")
+  licenseAuthority  String? // Tijelo koje izdaje dozvolu (npr. "Hrvatska komora inženjera")
+  
+  isActive          Boolean @default(true)
+  createdAt         DateTime @default(now())
 }
 
 model Job {
@@ -115,6 +128,7 @@ model Job {
   chatRooms           ChatRoom[] @relation("jobChatRooms")
   leadPurchases       LeadPurchase[]
   creditTransactions  CreditTransaction[] @relation("JobTransactions")
+  leadQueue           LeadQueue[] @relation("JobQueue")
 }
 
 model Offer {
@@ -332,6 +346,51 @@ model ClientVerification {
   updatedAt       DateTime  @updatedAt
 }
 
+// Licence pružatelja (za licencirane djelatnosti)
+model ProviderLicense {
+  id              String          @id @default(cuid())
+  provider        ProviderProfile @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  providerId      String
+  licenseType     String          // Tip licence (npr. "Elektrotehnička licenca")
+  licenseNumber   String          // Broj dozvole
+  issuingAuthority String         // Tijelo koje je izdalo
+  issuedAt        DateTime        // Datum izdavanja
+  expiresAt       DateTime?       // Datum isteka (ako vrijedi)
+  documentUrl     String?         // URL skeniranog dokumenta
+  isVerified      Boolean         @default(false) // Verificirana od strane admina
+  verifiedAt      DateTime?
+  verifiedBy      String?         // Admin koji je verificirao
+  notes           String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  
+  @@index([providerId])
+  @@index([isVerified])
+}
+
+// USLUGAR EXCLUSIVE - Queue model za distribuciju leadova
+// Umjesto broadcastinga na 6+ providera, leadovi idu u queue
+model LeadQueue {
+  id              String    @id @default(cuid())
+  job             Job       @relation("JobQueue", fields: [jobId], references: [id], onDelete: Cascade)
+  jobId           String
+  providerId      String    // Provider u queueu
+  position        Int       // Pozicija u queueu (1, 2, 3...)
+  status          LeadQueueStatus @default(WAITING)
+  offeredAt       DateTime? // Kada je lead ponuđen provideru
+  respondedAt     DateTime? // Kada je provider odgovorio
+  expiresAt       DateTime? // Rok za odgovor (npr. 24h)
+  response        QueueResponse? // Odgovor providera
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  @@unique([jobId, providerId]) // Provider može biti samo jednom u queue za job
+  @@index([jobId, position])
+  @@index([providerId, status])
+  @@index([status])
+}
+
 // ============================================================
 // USLUGAR EXCLUSIVE - Enumovi
 // ============================================================
@@ -361,4 +420,20 @@ enum CreditTransactionType {
   BONUS           // Bonus krediti
   SUBSCRIPTION    // Krediti iz pretplate
   ADMIN_ADJUST    // Admin prilagodba
+}
+
+// USLUGAR EXCLUSIVE - Queue statusi i odgovori
+enum LeadQueueStatus {
+  WAITING     // Čeka svoj red
+  OFFERED     // Ponuđen provideru (trenutni u redu)
+  ACCEPTED    // Provider prihvatio
+  DECLINED    // Provider odbio
+  EXPIRED     // Isteklo vrijeme za odgovor
+  SKIPPED     // Preskočen (išli na sljedećeg)
+}
+
+enum QueueResponse {
+  INTERESTED      // Zainteresiran za lead
+  NOT_INTERESTED  // Nije zainteresiran
+  NO_RESPONSE     // Nije odgovorio
 }
