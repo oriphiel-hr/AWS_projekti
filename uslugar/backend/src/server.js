@@ -30,7 +30,7 @@ import exclusiveLeadsRouter from './routes/exclusive-leads.js'
 import providerROIRouter from './routes/provider-roi.js'
 import clientVerificationRouter from './routes/client-verification.js'
 import leadQueueRouter from './routes/lead-queue.js'
-import { startQueueScheduler } from '../lib/queueScheduler.js'
+import { startQueueScheduler } from './lib/queueScheduler.js'
 
 // .env samo izvan produkcije
 if (process.env.NODE_ENV !== 'production') {

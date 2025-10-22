@@ -42,8 +42,8 @@ COPY run-migration.js ./run-migration.js
 COPY --from=prisma-src /app/node_modules/.prisma  ./node_modules/.prisma
 COPY --from=prisma-src /app/node_modules/@prisma ./node_modules/@prisma
 
-# Create startup script that runs migrations, seeds, then starts server
-RUN echo '#!/bin/sh\nset -e\necho "🔄 Running database migrations..."\nLC_ALL=C.UTF-8 npx prisma migrate deploy > /tmp/migrate.log 2>&1 || cat /tmp/migrate.log\necho "✅ Migrations complete."\necho "🌱 Seeding categories with NKD codes..."\nif [ -f "prisma/seeds/seed-categories.js" ]; then\n  node prisma/seeds/seed-categories.js > /tmp/seed.log 2>&1 || echo "⚠️  Seed warnings (may already exist)"\nfi\necho "✅ Database ready."\necho "🚀 Starting server..."\nexec node src/server.js' > /app/start.sh && chmod +x /app/start.sh
+# Create startup script that runs migrations then starts server
+RUN echo '#!/bin/sh\nset -e\necho "🔄 Running database migrations..."\nLC_ALL=C.UTF-8 npx prisma migrate deploy > /tmp/migrate.log 2>&1 || cat /tmp/migrate.log\necho "✅ Migrations complete."\necho "🚀 Starting server..."\nexec node src/server.js' > /app/start.sh && chmod +x /app/start.sh
 
 # tvoj server sluša na 8080
 EXPOSE 4000
