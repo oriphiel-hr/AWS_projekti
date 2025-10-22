@@ -403,9 +403,9 @@ export default function ProviderRegister({ onSuccess }) {
       <div className="mt-6 text-center text-sm text-gray-600">
         <p>
           Već imate račun?{' '}
-          <button className="text-green-600 hover:underline font-medium">
+          <a href="#login" className="text-green-600 hover:underline font-medium">
             Prijavite se
-          </button>
+          </a>
         </p>
       </div>
     </div>

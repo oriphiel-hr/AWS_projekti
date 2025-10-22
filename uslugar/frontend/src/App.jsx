@@ -4,6 +4,7 @@ import { AdminRouter } from './admin';
 import JobCard from './components/JobCard';
 import JobForm from './components/JobForm';
 import ProviderCard from './components/ProviderCard';
+import Login from './pages/Login';
 import UserRegister from './pages/UserRegister';
 import ProviderRegister from './pages/ProviderRegister';
 import UpgradeToProvider from './pages/UpgradeToProvider';
@@ -27,10 +28,10 @@ function useAuth() {
 export default function App(){
   const { token, saveToken, logout } = useAuth();
 
-  // TAB: 'user' | 'admin' | 'register-user' | 'register-provider' | 'upgrade-to-provider' | 'verify' | 'forgot-password' | 'reset-password' | 'leads' | 'my-leads' | 'roi' | 'subscription'
+  // TAB: 'user' | 'admin' | 'login' | 'register-user' | 'register-provider' | 'upgrade-to-provider' | 'verify' | 'forgot-password' | 'reset-password' | 'leads' | 'my-leads' | 'roi' | 'subscription'
   const [tab, setTab] = useState(() => {
     const hash = window.location.hash?.slice(1).split('?')[0];
-    const validTabs = ['admin', 'register-user', 'register-provider', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'leads', 'my-leads', 'roi', 'subscription'];
+    const validTabs = ['admin', 'login', 'register-user', 'register-provider', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'leads', 'my-leads', 'roi', 'subscription'];
     return validTabs.includes(hash) ? hash : 'user';
   });
 
@@ -112,7 +113,7 @@ export default function App(){
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash?.slice(1).split('?')[0];
-      const validTabs = ['admin', 'register-user', 'register-provider', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'user', 'leads', 'my-leads', 'roi', 'subscription'];
+      const validTabs = ['admin', 'login', 'register-user', 'register-provider', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'user', 'leads', 'my-leads', 'roi', 'subscription'];
       if (validTabs.includes(hash)) {
         setTab(hash);
       } else if (!hash) {
@@ -147,13 +148,19 @@ export default function App(){
         {!token && (
           <>
             <button
-              className={'px-3 py-2 border rounded ' + (tab==='register-user' ? 'bg-blue-600 text-white' : 'border-blue-600 text-blue-600')}
+              className={'px-3 py-2 border rounded ' + (tab==='login' ? 'bg-blue-600 text-white' : 'border-blue-600 text-blue-600')}
+              onClick={() => setTab('login')}
+            >
+              Prijava
+            </button>
+            <button
+              className={'px-3 py-2 border rounded ' + (tab==='register-user' ? 'bg-green-600 text-white' : 'border-green-600 text-green-600')}
               onClick={() => setTab('register-user')}
             >
               Registracija korisnika
             </button>
             <button
-              className={'px-3 py-2 border rounded ' + (tab==='register-provider' ? 'bg-green-600 text-white' : 'border-green-600 text-green-600')}
+              className={'px-3 py-2 border rounded ' + (tab==='register-provider' ? 'bg-purple-600 text-white' : 'border-purple-600 text-purple-600')}
               onClick={() => setTab('register-provider')}
             >
               Registracija providera
@@ -306,6 +313,15 @@ export default function App(){
       {tab === 'admin' && (
         <section id="admin" className="tab-section">
           <AdminRouter />
+        </section>
+      )}
+
+      {tab === 'login' && (
+        <section id="login" className="tab-section">
+          <Login onSuccess={(token, user) => {
+            saveToken(token);
+            setTab('user');
+          }} />
         </section>
       )}
 
