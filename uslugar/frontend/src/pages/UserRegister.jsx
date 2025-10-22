@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import api from '../api';
 import { useLegalStatuses } from '../hooks/useLegalStatuses';
-import { validateOIB } from '../utils/validators';
+import { validateOIB, validateEmail } from '../utils/validators';
 
 export default function UserRegister({ onSuccess }) {
   const { legalStatuses, loading: loadingStatuses } = useLegalStatuses();
@@ -21,6 +21,7 @@ export default function UserRegister({ onSuccess }) {
   const [isCompany, setIsCompany] = useState(false);
   const [success, setSuccess] = useState(false);
   const [oibError, setOibError] = useState('');
+  const [emailError, setEmailError] = useState('');
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -29,6 +30,15 @@ export default function UserRegister({ onSuccess }) {
       ...prev,
       [name]: value
     }));
+
+    // Validacija emaila u realnom vremenu
+    if (name === 'email') {
+      if (value && !validateEmail(value)) {
+        setEmailError('Email adresa nije valjana');
+      } else {
+        setEmailError('');
+      }
+    }
 
     // Validacija OIB-a u realnom vremenu
     if (name === 'taxId') {
@@ -46,6 +56,14 @@ export default function UserRegister({ onSuccess }) {
     setLoading(true);
 
     try {
+      // Validacija emaila prije slanja
+      if (!validateEmail(formData.email)) {
+        setError('Email adresa nije valjana');
+        setEmailError('Email adresa nije valjana');
+        setLoading(false);
+        return;
+      }
+
       // VALIDACIJA: Ako se registrira kao firma, svi podaci su OBAVEZNI
       if (isCompany) {
         if (!formData.legalStatusId) {
@@ -191,9 +209,14 @@ export default function UserRegister({ onSuccess }) {
               value={formData.email}
               onChange={handleChange}
               required
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                emailError ? 'border-red-500' : 'border-gray-300'
+              }`}
               placeholder="vas@email.com"
             />
+            {emailError && (
+              <p className="text-xs text-red-600 mt-1">✗ {emailError}</p>
+            )}
           </div>
 
           <div>
