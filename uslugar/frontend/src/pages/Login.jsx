@@ -1,16 +1,38 @@
 import React, { useState } from 'react';
 import api from '@/api';
+import { validateEmail } from '../utils/validators';
 
 export default function Login({ onSuccess }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [emailError, setEmailError] = useState('');
+
+  const handleEmailChange = (e) => {
+    const value = e.target.value;
+    setEmail(value);
+    
+    // Real-time email validacija
+    if (value && !validateEmail(value)) {
+      setEmailError('Email adresa nije valjana');
+    } else {
+      setEmailError('');
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
+
+    // Validacija emaila prije slanja
+    if (!validateEmail(email)) {
+      setError('Email adresa nije valjana');
+      setEmailError('Email adresa nije valjana');
+      setLoading(false);
+      return;
+    }
 
     try {
       const response = await api.post('/auth/login', {
@@ -57,11 +79,16 @@ export default function Login({ onSuccess }) {
               type="email"
               required
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              onChange={handleEmailChange}
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                emailError ? 'border-red-500' : 'border-gray-300'
+              }`}
               placeholder="vas@email.com"
               disabled={loading}
             />
+            {emailError && (
+              <p className="text-xs text-red-600 mt-1">✗ {emailError}</p>
+            )}
           </div>
 
           <div>
