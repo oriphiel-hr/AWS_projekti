@@ -15,6 +15,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import Pricing from './pages/Pricing';
 import Documentation from './pages/Documentation';
+import FAQ from './pages/FAQ';
 // USLUGAR EXCLUSIVE components
 import LeadMarketplace from './pages/LeadMarketplace';
 import ROIDashboard from './pages/ROIDashboard';
@@ -32,10 +33,10 @@ function useAuth() {
 export default function App(){
   const { token, saveToken, logout } = useAuth();
 
-  // TAB: 'user' | 'admin' | 'login' | 'register-user' | 'register-provider' | 'upgrade-to-provider' | 'verify' | 'forgot-password' | 'reset-password' | 'leads' | 'my-leads' | 'roi' | 'subscription' | 'pricing' | 'providers' | 'documentation'
+  // TAB: 'user' | 'admin' | 'login' | 'register-user' | 'register-provider' | 'upgrade-to-provider' | 'verify' | 'forgot-password' | 'reset-password' | 'leads' | 'my-leads' | 'roi' | 'subscription' | 'pricing' | 'providers' | 'documentation' | 'faq'
   const [tab, setTab] = useState(() => {
     const hash = window.location.hash?.slice(1).split('?')[0];
-    const validTabs = ['admin', 'login', 'register-user', 'register-provider', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'leads', 'my-leads', 'roi', 'subscription', 'pricing', 'providers', 'documentation'];
+    const validTabs = ['admin', 'login', 'register-user', 'register-provider', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'leads', 'my-leads', 'roi', 'subscription', 'pricing', 'providers', 'documentation', 'faq'];
     return validTabs.includes(hash) ? hash : 'user';
   });
 
@@ -222,6 +223,12 @@ export default function App(){
               onClick={() => setTab('documentation')}
             >
               📚 Dokumentacija
+            </button>
+            <button
+              className={'px-3 py-2 border rounded ' + (tab==='faq' ? 'bg-purple-600 text-white' : 'border-purple-600 text-purple-600')}
+              onClick={() => setTab('faq')}
+            >
+              ❓ FAQ
             </button>
           </>
         )}
@@ -612,6 +619,12 @@ export default function App(){
       {tab === 'documentation' && (
         <section id="documentation" className="tab-section">
           <Documentation />
+        </section>
+      )}
+
+      {tab === 'faq' && (
+        <section id="faq" className="tab-section">
+          <FAQ />
         </section>
       )}
 
