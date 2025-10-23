@@ -56,9 +56,10 @@ const Documentation = () => {
         { name: "Poruka uz ponudu", implemented: true },
         { name: "Status ponude (NA ČEKANJU, PRIHVAĆENA, ODBIJENA)", implemented: true },
         { name: "Mogućnost pregovaranja o cijeni", implemented: true },
+        { name: "Označavanje ponuda kao pregovorno", implemented: true },
         { name: "Procijenjeni broj dana za izvršenje", implemented: true },
         { name: "Pregled svih ponuda za posao", implemented: true },
-        { name: "Prihvaćanje/odbijanje ponuda", implemented: false }
+        { name: "Prihvaćanje/odbijanje ponuda", implemented: true }
       ]
     },
     {
@@ -87,6 +88,8 @@ const Documentation = () => {
         { name: "Područje rada", implemented: true },
         { name: "Status dostupnosti", implemented: true },
         { name: "Kategorije u kojima radi", implemented: true },
+        { name: "Odabir kategorija za primanje leadova", implemented: true },
+        { name: "Filtriranje leadova po kategorijama", implemented: true },
         { name: "Portfolio radova", implemented: false },
         { name: "Certifikati i licence", implemented: false },
         { name: "Pregled svih pružatelja", implemented: true },
