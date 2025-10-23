@@ -11,6 +11,7 @@ import UpgradeToProvider from './pages/UpgradeToProvider';
 import VerifyEmail from './pages/VerifyEmail';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import Pricing from './pages/Pricing';
 // USLUGAR EXCLUSIVE components
 import LeadMarketplace from './pages/LeadMarketplace';
 import ROIDashboard from './pages/ROIDashboard';
@@ -28,10 +29,10 @@ function useAuth() {
 export default function App(){
   const { token, saveToken, logout } = useAuth();
 
-  // TAB: 'user' | 'admin' | 'login' | 'register-user' | 'register-provider' | 'upgrade-to-provider' | 'verify' | 'forgot-password' | 'reset-password' | 'leads' | 'my-leads' | 'roi' | 'subscription'
+  // TAB: 'user' | 'admin' | 'login' | 'register-user' | 'register-provider' | 'upgrade-to-provider' | 'verify' | 'forgot-password' | 'reset-password' | 'leads' | 'my-leads' | 'roi' | 'subscription' | 'pricing'
   const [tab, setTab] = useState(() => {
     const hash = window.location.hash?.slice(1).split('?')[0];
-    const validTabs = ['admin', 'login', 'register-user', 'register-provider', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'leads', 'my-leads', 'roi', 'subscription'];
+    const validTabs = ['admin', 'login', 'register-user', 'register-provider', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'leads', 'my-leads', 'roi', 'subscription', 'pricing'];
     return validTabs.includes(hash) ? hash : 'user';
   });
 
@@ -113,7 +114,7 @@ export default function App(){
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash?.slice(1).split('?')[0];
-      const validTabs = ['admin', 'login', 'register-user', 'register-provider', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'user', 'leads', 'my-leads', 'roi', 'subscription'];
+      const validTabs = ['admin', 'login', 'register-user', 'register-provider', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'user', 'leads', 'my-leads', 'roi', 'subscription', 'pricing'];
       if (validTabs.includes(hash)) {
         setTab(hash);
       } else if (!hash) {
@@ -164,6 +165,12 @@ export default function App(){
               onClick={() => setTab('register-provider')}
             >
               Registracija providera
+            </button>
+            <button
+              className={'px-3 py-2 border rounded ' + (tab==='pricing' ? 'bg-orange-600 text-white' : 'border-orange-600 text-orange-600')}
+              onClick={() => setTab('pricing')}
+            >
+              💰 Cjenik
             </button>
           </>
         )}
@@ -306,6 +313,35 @@ export default function App(){
                 <p className="text-gray-400">Pokušajte promijeniti filtere ili objavite novi posao</p>
               </div>
             )}
+
+            {/* Pricing CTA Section */}
+            {!token && (
+              <div className="mt-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-8 text-white text-center">
+                <h3 className="text-3xl font-bold mb-4">
+                  🚀 Ekskluzivni Leadovi bez Konkurencije
+                </h3>
+                <p className="text-xl mb-6 opacity-90">
+                  1 lead = 1 izvođač | Refund ako klijent ne odgovori
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <button
+                    onClick={() => setTab('pricing')}
+                    className="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
+                  >
+                    💰 Pogledaj Cjenik
+                  </button>
+                  <button
+                    onClick={() => setTab('register-provider')}
+                    className="bg-green-500 text-white px-8 py-3 rounded-lg font-semibold hover:bg-green-600 transition-colors"
+                  >
+                    🎯 Registriraj se kao Pružatelj
+                  </button>
+                </div>
+                <div className="mt-6 text-sm opacity-75">
+                  <p>✓ Ekskluzivni leadovi ✓ Refund sistem ✓ ROI statistika</p>
+                </div>
+              </div>
+            )}
           </div>
         </section>
       )}
@@ -389,6 +425,12 @@ export default function App(){
       {tab === 'subscription' && (
         <section id="subscription" className="tab-section">
           <SubscriptionPlans />
+        </section>
+      )}
+
+      {tab === 'pricing' && (
+        <section id="pricing" className="tab-section">
+          <Pricing />
         </section>
       )}
     </div>
