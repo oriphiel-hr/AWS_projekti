@@ -5,7 +5,7 @@ import axios from 'axios'
 // Development: http://localhost:4000/api
 // Relative (same domain): /api
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+const API_BASE = import.meta.env.VITE_API_URL || 'http://project-alb-1092634149.eu-north-1.elb.amazonaws.com';
 
 // Remove trailing slash and ensure /api is present
 let baseURL = API_BASE.replace(/\/$/, '');
