@@ -64,7 +64,62 @@ export default function App(){
 
   useEffect(() => {
     // Dohvati kategorije
-    api.get('/categories').then(r => setCategories(r.data)).catch(() => setCategories([]));
+    api.get('/categories').then(r => setCategories(r.data)).catch(() => {
+      // Fallback na statičke kategorije ako API ne radi
+      setCategories([
+        { id: '1', name: 'Električar', description: 'Električne instalacije, popravak električnih uređaja, LED rasvjeta', requiresLicense: true },
+        { id: '2', name: 'Vodoinstalater', description: 'Vodovodne instalacije, kanalizacija, popravak sanitarija', requiresLicense: true },
+        { id: '3', name: 'Plinoinstalatér', description: 'Plinske instalacije, priključci, servis plinskih uređaja', requiresLicense: true },
+        { id: '4', name: 'Stolar', description: 'Izrada namještaja, ugradnja kuhinja, vrata, prozori', requiresLicense: false },
+        { id: '5', name: 'Keramičar', description: 'Polaganje pločica, keramike, kamena', requiresLicense: false },
+        { id: '6', name: 'Zidar', description: 'Zidanje, betoniranje, fasadni radovi', requiresLicense: false },
+        { id: '7', name: 'Moler-Slikar', description: 'Bojanje, gletovanje, tapetiranje, dekorativne tehnike', requiresLicense: false },
+        { id: '8', name: 'Parketar', description: 'Postavljanje parketa, laminata, vinila', requiresLicense: false },
+        { id: '9', name: 'Krovopokrivač', description: 'Postavljanje krovova, popravak oluka, izolacija', requiresLicense: false },
+        { id: '10', name: 'Fasader', description: 'Fasade, demit fasade, termoizolacija', requiresLicense: false },
+        { id: '11', name: 'Klima uređaji', description: 'Ugradnja, servis i popravak klima uređaja', requiresLicense: true },
+        { id: '12', name: 'Ventilacija', description: 'Ventilacijski sustavi, rekuperacija', requiresLicense: false },
+        { id: '13', name: 'Grijanje', description: 'Centralna grijanja, radijatori, podno grijanje', requiresLicense: false },
+        { id: '14', name: 'Vrtlar', description: 'Uređenje vrta, održavanje zelenih površina', requiresLicense: false },
+        { id: '15', name: 'Kamenarske usluge', description: 'Obrada kamena, spomeinci, pločnici', requiresLicense: false },
+        { id: '16', name: 'Ograđivanje', description: 'Ograde, kapije, montaža panelnih ograda', requiresLicense: false },
+        { id: '17', name: 'Bazenski radovi', description: 'Izgradnja i održavanje bazena', requiresLicense: false },
+        { id: '18', name: 'Terase i pergole', description: 'Izrada terasa, nadstrešnica, pergola', requiresLicense: false },
+        { id: '19', name: 'Čišćenje', description: 'Redovito čišćenje, dubinsko pranje', requiresLicense: false },
+        { id: '20', name: 'Čišćenje fasada', description: 'Pranje fasada, uklanjanje grafita', requiresLicense: false },
+        { id: '21', name: 'Dimnjačar', description: 'Čišćenje dimnjaka, kontrola ventilacije', requiresLicense: true },
+        { id: '22', name: 'Selidbe', description: 'Seldbeni radovi, pakiranje, transport', requiresLicense: false },
+        { id: '23', name: 'Transport robe', description: 'Prijevoz tereta, kombi prijevoz', requiresLicense: false },
+        { id: '24', name: 'Autoelektričar', description: 'Popravak auto elektrointalacija, dijagnostika', requiresLicense: false },
+        { id: '25', name: 'Automehaničar', description: 'Servis vozila, popravci, održavanje', requiresLicense: false },
+        { id: '26', name: 'Autolimarija i farbanje', description: 'Limarski radovi, farbanje vozila', requiresLicense: false },
+        { id: '27', name: 'Vulkanizer', description: 'Montaža guma, popravak, balansiranje', requiresLicense: false },
+        { id: '28', name: 'Staklarski radovi', description: 'Ugradnja stakala, ogledala, zamjena prozora', requiresLicense: false },
+        { id: '29', name: 'Bravarski radovi', description: 'Kovana ograda, željezne konstrukcije', requiresLicense: false },
+        { id: '30', name: 'Podne obloge', description: 'Vinyl, linoleum, tepisi', requiresLicense: false },
+        { id: '31', name: 'Dezinsekcija i deratizacija', description: 'Suzbijanje štetočina, dezinfekcija', requiresLicense: true },
+        { id: '32', name: 'Popravak kućanskih aparata', description: 'Bijela tehnika, mali kućanski aparati', requiresLicense: false },
+        { id: '33', name: 'Računalni servisi', description: 'Popravak računala, instalacija softwarea', requiresLicense: false },
+        { id: '34', name: 'Soboslikarski radovi', description: 'Tapetiranje, dekorativne tehnike', requiresLicense: false },
+        { id: '35', name: 'Ugradnja rolled', description: 'Rolete, tende, komarnici', requiresLicense: false },
+        { id: '36', name: 'Fotografski servisi', description: 'Događaji, vjenčanja, portrati', requiresLicense: false },
+        { id: '37', name: 'Video produkcija', description: 'Snimanje, montaža, drone snimanje', requiresLicense: false },
+        { id: '38', name: 'Event usluge', description: 'Organizacija događanja, catering, dekor', requiresLicense: false },
+        { id: '39', name: 'Frizerske usluge', description: 'Šišanje, farbanje, fen frizure', requiresLicense: false },
+        { id: '40', name: 'Kozmetičke usluge', description: 'Njega lica, depilacija, manikura', requiresLicense: false },
+        { id: '41', name: 'Masažne usluge', description: 'Opuštajuće masaže, sportske masaže', requiresLicense: false },
+        { id: '42', name: 'Veterinarske usluge', description: 'Kućni posjet veterinara, cijepljenja', requiresLicense: true },
+        { id: '43', name: 'Šetanje pasa', description: 'Šetanje kućnih ljubimaca, čuvanje', requiresLicense: false },
+        { id: '44', name: 'Tutorstvo', description: 'Instrukcije, poduka, online nastava', requiresLicense: false },
+        { id: '45', name: 'Prevodilački servisi', description: 'Prevođenje dokumenata, sudsko tumačenje', requiresLicense: false },
+        { id: '46', name: 'Računovodstvene usluge', description: 'Knjigovodstvo, porezi, fiskalizacija', requiresLicense: false },
+        { id: '47', name: 'Pravne usluge', description: 'Pravno savjetovanje, sastavljanje ugovora', requiresLicense: true },
+        { id: '48', name: 'Dizalice i platforme', description: 'Ugradnja, servis i inspekcija dizala i platformi', requiresLicense: true },
+        { id: '49', name: 'Sigurnosni sustavi', description: 'Alarmi, protuprovalna zaštita, video nadzor', requiresLicense: true },
+        { id: '50', name: 'Limarski radovi', description: 'Krovni limovi, olučne konstrukcije', requiresLicense: false },
+        { id: '51', name: 'Gips-karton', description: 'Montaža gips-karton konstrukcija, pregradni zidovi', requiresLicense: false }
+      ]);
+    });
   }, []);
 
   const handleJobSubmit = async (jobData) => {
