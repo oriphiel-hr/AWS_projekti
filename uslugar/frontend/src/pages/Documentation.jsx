@@ -166,6 +166,23 @@ const Documentation = () => {
       ]
     },
     {
+      category: "Upravljanje Pretplatama",
+      items: [
+        { name: "Pregled trenutne pretplate", implemented: true },
+        { name: "Dostupni planovi (BASIC, PREMIUM, PRO)", implemented: true },
+        { name: "Nadogradnja pretplate", implemented: true },
+        { name: "Otkazivanje pretplate", implemented: true },
+        { name: "Status pretplate (ACTIVE, CANCELLED, EXPIRED)", implemented: true },
+        { name: "Automatsko isteka pretplate", implemented: true },
+        { name: "Notifikacije o isteku pretplate", implemented: true },
+        { name: "Povijest pretplata", implemented: true },
+        { name: "Trial period (7 dana)", implemented: true },
+        { name: "Besplatni krediti za trial", implemented: true },
+        { name: "Admin upravljanje pretplatama", implemented: true },
+        { name: "Automatsko vraćanje na BASIC plan", implemented: true }
+      ]
+    },
+    {
       category: "Pravni Status i Verifikacija",
       items: [
         { name: "Različiti pravni statusi (Osoba, Obrt, d.o.o., itd.)", implemented: true },
@@ -175,6 +192,64 @@ const Documentation = () => {
         { name: "Email verifikacija", implemented: true },
         { name: "Verifikacija telefonskog broja", implemented: false },
         { name: "Dokumenti za verifikaciju", implemented: false }
+      ]
+    },
+    {
+      category: "Upravljanje Licencama",
+      items: [
+        { name: "Upload dokumenata licenci", implemented: true },
+        { name: "Verificiranje licenci od strane admina", implemented: true },
+        { name: "Praćenje isteka licenci", implemented: true },
+        { name: "Različiti tipovi licenci po kategorijama", implemented: true },
+        { name: "Tijela koja izdaju licence", implemented: true },
+        { name: "Broj licence i datum izdavanja", implemented: true },
+        { name: "Notifikacije o isteku licenci", implemented: false },
+        { name: "Automatska provjera valjanosti licenci", implemented: false },
+        { name: "Skener dokumenata za licence", implemented: false }
+      ]
+    },
+    {
+      category: "Verifikacija Klijenata i Trust Score",
+      items: [
+        { name: "Trust score sustav (0-100)", implemented: true },
+        { name: "Verificiranje telefona", implemented: true },
+        { name: "Verificiranje emaila", implemented: true },
+        { name: "Verificiranje OIB-a", implemented: true },
+        { name: "Verificiranje firme (sudski registar)", implemented: true },
+        { name: "Kvaliteta leadova na osnovu verifikacije", implemented: true },
+        { name: "Automatska verifikacija", implemented: false },
+        { name: "Dokument upload za verifikaciju", implemented: false },
+        { name: "Notifikacije o verifikaciji", implemented: false }
+      ]
+    },
+    {
+      category: "ROI Analitika i Statistike",
+      items: [
+        { name: "ROI dashboard za providere", implemented: true },
+        { name: "Konverzija leadova", implemented: true },
+        { name: "Ukupan prihod od leadova", implemented: true },
+        { name: "Prosječna vrijednost leada", implemented: true },
+        { name: "Ukupno potrošenih kredita", implemented: true },
+        { name: "Ukupno konvertiranih leadova", implemented: true },
+        { name: "Napredne analitike", implemented: true },
+        { name: "Mesečni/godišnji izvještaji", implemented: false },
+        { name: "Grafički prikaz statistika", implemented: false },
+        { name: "Usporedba s drugim providerima", implemented: false },
+        { name: "Predviđanje budućih performansi", implemented: false }
+      ]
+    },
+    {
+      category: "Povijest Transakcija i Krediti",
+      items: [
+        { name: "Detaljno praćenje kredita", implemented: true },
+        { name: "Različiti tipovi transakcija", implemented: true },
+        { name: "Povezivanje s poslovima", implemented: true },
+        { name: "Povezivanje s kupnjama leadova", implemented: true },
+        { name: "Stanje nakon svake transakcije", implemented: true },
+        { name: "Opisi transakcija", implemented: true },
+        { name: "Filtriranje transakcija po tipu", implemented: false },
+        { name: "Izvoz povijesti transakcija", implemented: false },
+        { name: "Notifikacije o transakcijama", implemented: false }
       ]
     },
     {
@@ -190,6 +265,10 @@ const Documentation = () => {
         { name: "Upravljanje chat sobama", implemented: true },
         { name: "Upravljanje pretplatama", implemented: true },
         { name: "Upravljanje pravnim statusima", implemented: true },
+        { name: "Upravljanje licencama", implemented: true },
+        { name: "Upravljanje verifikacijama klijenata", implemented: true },
+        { name: "Upravljanje transakcijama kredita", implemented: true },
+        { name: "Upravljanje ROI statistikama", implemented: true },
         { name: "Statistike platforme", implemented: false },
         { name: "Moderacija sadržaja", implemented: false }
       ]
@@ -198,12 +277,16 @@ const Documentation = () => {
       category: "Cjenik i Plaćanja",
       items: [
         { name: "Pregled cjenika", implemented: true },
-        { name: "Različiti paketi pretplate", implemented: true },
+        { name: "Različiti paketi pretplate (BASIC, PREMIUM, PRO)", implemented: true },
         { name: "Kreditni sustav", implemented: true },
         { name: "Povijest transakcija", implemented: true },
         { name: "Automatski refund kredita", implemented: true },
         { name: "Refund ako klijent ne odgovori u roku", implemented: true },
         { name: "Razlozi za refund (klijent ne odgovori, itd.)", implemented: true },
+        { name: "Otkazivanje pretplate", implemented: true },
+        { name: "Status pretplate (ACTIVE, CANCELLED, EXPIRED)", implemented: true },
+        { name: "Automatsko isteka pretplate", implemented: true },
+        { name: "Notifikacije o isteku pretplate", implemented: true },
         { name: "Online plaćanje", implemented: false },
         { name: "Fakturiranje", implemented: false },
         { name: "Povrat novca", implemented: false }
