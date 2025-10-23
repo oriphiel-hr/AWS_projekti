@@ -2,7 +2,7 @@
     "containerDefinitions":  [
                                  {
                                      "name":  "uslugar",
-                                     "image":  "666203386231.dkr.ecr.eu-north-1.amazonaws.com/uslugar-api:ff14e36",
+                                     "image":  "666203386231.dkr.ecr.eu-north-1.amazonaws.com/uslugar-backend:a83c281",
                                      "cpu":  0,
                                      "portMappings":  [
                                                           {
