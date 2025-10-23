@@ -151,6 +151,21 @@ const Documentation = () => {
       ]
     },
     {
+      category: "Refund i Povrat Kredita",
+      items: [
+        { name: "Automatski refund kredita", implemented: true },
+        { name: "Refund ako klijent ne odgovori u roku", implemented: true },
+        { name: "Razlozi za refund (klijent ne odgovori, itd.)", implemented: true },
+        { name: "Ručno zatraživanje refund-a", implemented: true },
+        { name: "Povijest refund transakcija", implemented: true },
+        { name: "Status refund-a (PENDING, PROCESSED, DENIED)", implemented: true },
+        { name: "Notifikacije o refund-u", implemented: true },
+        { name: "Admin odobravanje refund-a", implemented: false },
+        { name: "Automatski refund nakon 48h neaktivnosti", implemented: false },
+        { name: "Refund policy i uvjeti", implemented: false }
+      ]
+    },
+    {
       category: "Pravni Status i Verifikacija",
       items: [
         { name: "Različiti pravni statusi (Osoba, Obrt, d.o.o., itd.)", implemented: true },
@@ -186,6 +201,9 @@ const Documentation = () => {
         { name: "Različiti paketi pretplate", implemented: true },
         { name: "Kreditni sustav", implemented: true },
         { name: "Povijest transakcija", implemented: true },
+        { name: "Automatski refund kredita", implemented: true },
+        { name: "Refund ako klijent ne odgovori u roku", implemented: true },
+        { name: "Razlozi za refund (klijent ne odgovori, itd.)", implemented: true },
         { name: "Online plaćanje", implemented: false },
         { name: "Fakturiranje", implemented: false },
         { name: "Povrat novca", implemented: false }
