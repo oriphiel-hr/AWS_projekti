@@ -4,6 +4,8 @@ import { AdminRouter } from './admin';
 import JobCard from './components/JobCard';
 import JobForm from './components/JobForm';
 import ProviderCard from './components/ProviderCard';
+import ProviderProfile from './components/ProviderProfile';
+import ReviewList from './components/ReviewList';
 import Login from './pages/Login';
 import UserRegister from './pages/UserRegister';
 import ProviderRegister from './pages/ProviderRegister';
@@ -29,10 +31,10 @@ function useAuth() {
 export default function App(){
   const { token, saveToken, logout } = useAuth();
 
-  // TAB: 'user' | 'admin' | 'login' | 'register-user' | 'register-provider' | 'upgrade-to-provider' | 'verify' | 'forgot-password' | 'reset-password' | 'leads' | 'my-leads' | 'roi' | 'subscription' | 'pricing'
+  // TAB: 'user' | 'admin' | 'login' | 'register-user' | 'register-provider' | 'upgrade-to-provider' | 'verify' | 'forgot-password' | 'reset-password' | 'leads' | 'my-leads' | 'roi' | 'subscription' | 'pricing' | 'providers'
   const [tab, setTab] = useState(() => {
     const hash = window.location.hash?.slice(1).split('?')[0];
-    const validTabs = ['admin', 'login', 'register-user', 'register-provider', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'leads', 'my-leads', 'roi', 'subscription', 'pricing'];
+    const validTabs = ['admin', 'login', 'register-user', 'register-provider', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'leads', 'my-leads', 'roi', 'subscription', 'pricing', 'providers'];
     return validTabs.includes(hash) ? hash : 'user';
   });
 
@@ -43,6 +45,7 @@ export default function App(){
   const [q, setQ] = useState('');
   const [showJobForm, setShowJobForm] = useState(false);
   const [selectedJob, setSelectedJob] = useState(null);
+  const [selectedProvider, setSelectedProvider] = useState(null);
   const [filters, setFilters] = useState({
     categoryId: '',
     city: '',
@@ -76,6 +79,22 @@ export default function App(){
       });
   }, []);
 
+  useEffect(() => {
+    if (tab !== 'providers') return;
+    
+    // Dohvati providere s API-ja
+    console.log('🔄 Učitavam providere s API-ja...');
+    api.get('/providers')
+      .then(r => {
+        console.log('✅ Provideri uspješno učitani iz baze:', r.data);
+        setProviders(r.data);
+      })
+      .catch(err => {
+        console.log('❌ Greška pri učitavanju providera:', err);
+        setProviders([]);
+      });
+  }, [tab]);
+
   const handleJobSubmit = async (jobData) => {
     try {
       const response = await api.post('/jobs', jobData);
@@ -92,6 +111,14 @@ export default function App(){
     setSelectedJob(job);
   };
 
+  const handleViewProviderProfile = (provider) => {
+    setSelectedProvider(provider);
+  };
+
+  const handleCloseProviderProfile = () => {
+    setSelectedProvider(null);
+  };
+
   const handleMakeOffer = (job) => {
     if (!token) {
       alert('Morate se prijaviti da biste poslali ponudu');
@@ -101,10 +128,6 @@ export default function App(){
     console.log('Make offer for job:', job);
   };
 
-  const handleViewProviderProfile = (provider) => {
-    // TODO: Implementirati modal za pregled profila
-    console.log('View provider profile:', provider);
-  };
 
   const handleContactProvider = (provider) => {
     // TODO: Implementirati chat ili kontakt
@@ -123,7 +146,7 @@ export default function App(){
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash?.slice(1).split('?')[0];
-      const validTabs = ['admin', 'login', 'register-user', 'register-provider', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'user', 'leads', 'my-leads', 'roi', 'subscription', 'pricing'];
+      const validTabs = ['admin', 'login', 'register-user', 'register-provider', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'user', 'leads', 'my-leads', 'roi', 'subscription', 'pricing', 'providers', 'categories'];
       if (validTabs.includes(hash)) {
         setTab(hash);
       } else if (!hash) {
@@ -180,6 +203,12 @@ export default function App(){
               onClick={() => setTab('categories')}
             >
               🛠️ Kategorije ({categories.length})
+            </button>
+            <button
+              className={'px-3 py-2 border rounded ' + (tab==='providers' ? 'bg-blue-600 text-white' : 'border-blue-600 text-blue-600')}
+              onClick={() => setTab('providers')}
+            >
+              👥 Pružatelji ({providers.length})
             </button>
             <button
               className={'px-3 py-2 border rounded ' + (tab==='pricing' ? 'bg-orange-600 text-white' : 'border-orange-600 text-orange-600')}
@@ -530,10 +559,55 @@ export default function App(){
         </section>
       )}
 
+      {tab === 'providers' && (
+        <section id="providers" className="tab-section">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="text-center mb-8">
+              <h1 className="text-3xl font-bold text-gray-900 mb-4">
+                👥 Pružatelji Usluga
+              </h1>
+              <p className="text-lg text-gray-600 mb-2">
+                Dinamički učitano iz baze: <span className="font-semibold text-blue-600">{providers.length}</span> pružatelja
+              </p>
+              <p className="text-sm text-gray-500">
+                Kliknite na pružatelja da vidite profil i recenzije
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {providers.map(provider => (
+                <ProviderCard
+                  key={provider.id}
+                  provider={provider}
+                  onViewProfile={handleViewProviderProfile}
+                  onContact={handleContactProvider}
+                />
+              ))}
+            </div>
+            
+            {providers.length === 0 && (
+              <div className="text-center py-12">
+                <div className="text-gray-400 text-6xl mb-4">👥</div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Nema pružatelja usluga</h3>
+                <p className="text-gray-500">Trenutno nema registriranih pružatelja usluga.</p>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
       {tab === 'pricing' && (
         <section id="pricing" className="tab-section">
           <Pricing />
         </section>
+      )}
+
+      {/* Provider Profile Modal */}
+      {selectedProvider && (
+        <ProviderProfile
+          providerId={selectedProvider.user.id}
+          onClose={handleCloseProviderProfile}
+        />
       )}
     </div>
   );
