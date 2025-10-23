@@ -239,7 +239,7 @@ export default function App(){
                     </p>
                   </div>
                   <div className="bg-white bg-opacity-10 rounded-lg p-4">
-                    <h3 className="text-lg font-semibold mb-2">💰 Refund Garantija</h3>
+                    <h3 className="text-lg font-semibold mb-2">💰 Refund garancija</h3>
                     <p className="text-sm opacity-90">
                       Ako klijent ne odgovori u roku od 48 sati, automatski dobivate refund kredita.
                     </p>
