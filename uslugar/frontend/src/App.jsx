@@ -268,6 +268,102 @@ export default function App(){
             </div>
           )}
 
+          {/* Kategorije sekcija */}
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
+              🛠️ Dostupne Kategorije Usluga
+            </h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              {categories.map(category => (
+                <div 
+                  key={category.id} 
+                  className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                  onClick={() => setFilters(prev => ({ ...prev, categoryId: category.id }))}
+                >
+                  <div className="text-center">
+                    <div className="text-2xl mb-2">
+                      {category.name === 'Električar' && '⚡'}
+                      {category.name === 'Vodoinstalater' && '🚰'}
+                      {category.name === 'Plinoinstalatér' && '🔥'}
+                      {category.name === 'Stolar' && '🔨'}
+                      {category.name === 'Keramičar' && '🧱'}
+                      {category.name === 'Zidar' && '🧱'}
+                      {category.name === 'Moler-Slikar' && '🎨'}
+                      {category.name === 'Parketar' && '🪵'}
+                      {category.name === 'Krovopokrivač' && '🏠'}
+                      {category.name === 'Fasader' && '🏗️'}
+                      {category.name === 'Klima uređaji' && '❄️'}
+                      {category.name === 'Ventilacija' && '💨'}
+                      {category.name === 'Grijanje' && '🔥'}
+                      {category.name === 'Vrtlar' && '🌱'}
+                      {category.name === 'Kamenarske usluge' && '🗿'}
+                      {category.name === 'Ograđivanje' && '🚧'}
+                      {category.name === 'Bazenski radovi' && '🏊'}
+                      {category.name === 'Terase i pergole' && '🏡'}
+                      {category.name === 'Čišćenje' && '🧽'}
+                      {category.name === 'Čišćenje fasada' && '🏢'}
+                      {category.name === 'Dimnjačar' && '🏠'}
+                      {category.name === 'Selidbe' && '📦'}
+                      {category.name === 'Transport robe' && '🚚'}
+                      {category.name === 'Autoelektričar' && '🔧'}
+                      {category.name === 'Automehaničar' && '🔧'}
+                      {category.name === 'Autolimarija i farbanje' && '🎨'}
+                      {category.name === 'Vulkanizer' && '🛞'}
+                      {category.name === 'Staklarski radovi' && '🪟'}
+                      {category.name === 'Bravarski radovi' && '⚒️'}
+                      {category.name === 'Podne obloge' && '🏠'}
+                      {category.name === 'Dezinsekcija i deratizacija' && '🐛'}
+                      {category.name === 'Popravak kućanskih aparata' && '🔧'}
+                      {category.name === 'Računalni servisi' && '💻'}
+                      {category.name === 'Soboslikarski radovi' && '🎨'}
+                      {category.name === 'Ugradnja rolled' && '🪟'}
+                      {category.name === 'Fotografski servisi' && '📸'}
+                      {category.name === 'Video produkcija' && '🎬'}
+                      {category.name === 'Event usluge' && '🎉'}
+                      {category.name === 'Frizerske usluge' && '💇'}
+                      {category.name === 'Kozmetičke usluge' && '💄'}
+                      {category.name === 'Masažne usluge' && '💆'}
+                      {category.name === 'Veterinarske usluge' && '🐕'}
+                      {category.name === 'Šetanje pasa' && '🐕'}
+                      {category.name === 'Tutorstvo' && '📚'}
+                      {category.name === 'Prevodilački servisi' && '🌐'}
+                      {category.name === 'Računovodstvene usluge' && '📊'}
+                      {category.name === 'Pravne usluge' && '⚖️'}
+                      {category.name === 'Dizalice i platforme' && '🏗️'}
+                      {category.name === 'Sigurnosni sustavi' && '🔒'}
+                      {category.name === 'Limarski radovi' && '🔧'}
+                      {category.name === 'Gips-karton' && '🏠'}
+                      {!['Električar', 'Vodoinstalater', 'Plinoinstalatér', 'Stolar', 'Keramičar', 'Zidar', 'Moler-Slikar', 'Parketar', 'Krovopokrivač', 'Fasader', 'Klima uređaji', 'Ventilacija', 'Grijanje', 'Vrtlar', 'Kamenarske usluge', 'Ograđivanje', 'Bazenski radovi', 'Terase i pergole', 'Čišćenje', 'Čišćenje fasada', 'Dimnjačar', 'Selidbe', 'Transport robe', 'Autoelektričar', 'Automehaničar', 'Autolimarija i farbanje', 'Vulkanizer', 'Staklarski radovi', 'Bravarski radovi', 'Podne obloge', 'Dezinsekcija i deratizacija', 'Popravak kućanskih aparata', 'Računalni servisi', 'Soboslikarski radovi', 'Ugradnja rolled', 'Fotografski servisi', 'Video produkcija', 'Event usluge', 'Frizerske usluge', 'Kozmetičke usluge', 'Masažne usluge', 'Veterinarske usluge', 'Šetanje pasa', 'Tutorstvo', 'Prevodilački servisi', 'Računovodstvene usluge', 'Pravne usluge', 'Dizalice i platforme', 'Sigurnosni sustavi', 'Limarski radovi', 'Gips-karton'].includes(category.name) && '🛠️'}
+                    </div>
+                    <h3 className="font-semibold text-sm text-gray-800 mb-1">
+                      {category.name}
+                    </h3>
+                    <p className="text-xs text-gray-600 overflow-hidden" style={{
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical'
+                    }}>
+                      {category.description}
+                    </p>
+                    {category.requiresLicense && (
+                      <div className="mt-2">
+                        <span className="inline-block bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">
+                          🔐 Licencirano
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            {categories.length === 0 && (
+              <div className="text-center py-8">
+                <p className="text-gray-500">Učitavanje kategorija...</p>
+              </div>
+            )}
+          </div>
+
           <div className="mb-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-2xl font-bold text-gray-900">Poslovi</h2>
