@@ -219,6 +219,61 @@ export default function App(){
 
       {tab === 'user' && (
         <section id="user" className="tab-section">
+          {/* Hero CTA Section - na vrhu */}
+          {!token && (
+            <div className="mb-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-8 text-white">
+              <div className="text-center">
+                <h2 className="text-4xl font-bold mb-4">
+                  🚀 Ekskluzivni Leadovi bez Konkurencije
+                </h2>
+                <p className="text-xl mb-6 opacity-90">
+                  1 lead = 1 izvođač | Refund ako klijent ne odgovori
+                </p>
+                
+                {/* Dodatne informacije */}
+                <div className="grid md:grid-cols-3 gap-6 mb-8 text-left">
+                  <div className="bg-white bg-opacity-10 rounded-lg p-4">
+                    <h3 className="text-lg font-semibold mb-2">🎯 Ekskluzivnost</h3>
+                    <p className="text-sm opacity-90">
+                      Samo vi dobivate kontakt klijenta. Nema drugih izvođača koji konkuriraju za isti posao.
+                    </p>
+                  </div>
+                  <div className="bg-white bg-opacity-10 rounded-lg p-4">
+                    <h3 className="text-lg font-semibold mb-2">💰 Refund Garantija</h3>
+                    <p className="text-sm opacity-90">
+                      Ako klijent ne odgovori u roku od 48 sati, automatski dobivate refund kredita.
+                    </p>
+                  </div>
+                  <div className="bg-white bg-opacity-10 rounded-lg p-4">
+                    <h3 className="text-lg font-semibold mb-2">📊 ROI Praćenje</h3>
+                    <p className="text-sm opacity-90">
+                      Detaljne statistike o uspješnosti vaših leadova i povratu investicije.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <button
+                    onClick={() => setTab('pricing')}
+                    className="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
+                  >
+                    💰 Pogledaj Cjenik
+                  </button>
+                  <button
+                    onClick={() => setTab('register-provider')}
+                    className="bg-green-500 text-white px-8 py-3 rounded-lg font-semibold hover:bg-green-600 transition-colors"
+                  >
+                    🎯 Registriraj se kao Pružatelj
+                  </button>
+                </div>
+                
+                <div className="mt-6 text-sm opacity-75">
+                  <p>✓ Ekskluzivni leadovi ✓ Refund sistem ✓ ROI statistika ✓ AI prioritet</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="mb-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-2xl font-bold text-gray-900">Poslovi</h2>
@@ -311,35 +366,6 @@ export default function App(){
               <div className="text-center py-12">
                 <p className="text-gray-500 text-lg">Nema pronađenih poslova</p>
                 <p className="text-gray-400">Pokušajte promijeniti filtere ili objavite novi posao</p>
-              </div>
-            )}
-
-            {/* Pricing CTA Section */}
-            {!token && (
-              <div className="mt-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-8 text-white text-center">
-                <h3 className="text-3xl font-bold mb-4">
-                  🚀 Ekskluzivni Leadovi bez Konkurencije
-                </h3>
-                <p className="text-xl mb-6 opacity-90">
-                  1 lead = 1 izvođač | Refund ako klijent ne odgovori
-                </p>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <button
-                    onClick={() => setTab('pricing')}
-                    className="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
-                  >
-                    💰 Pogledaj Cjenik
-                  </button>
-                  <button
-                    onClick={() => setTab('register-provider')}
-                    className="bg-green-500 text-white px-8 py-3 rounded-lg font-semibold hover:bg-green-600 transition-colors"
-                  >
-                    🎯 Registriraj se kao Pružatelj
-                  </button>
-                </div>
-                <div className="mt-6 text-sm opacity-75">
-                  <p>✓ Ekskluzivni leadovi ✓ Refund sistem ✓ ROI statistika</p>
-                </div>
               </div>
             )}
           </div>
