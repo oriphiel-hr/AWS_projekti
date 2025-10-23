@@ -1,7 +1,7 @@
 {
   "containerOverrides": [
     {
-      "name": "uslugar",
+      "name": "prisma",
       "command": ["sh", "-lc", "node prisma/seeds/seed-categories.cjs"]
     }
   ]
