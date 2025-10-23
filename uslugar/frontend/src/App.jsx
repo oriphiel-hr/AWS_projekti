@@ -22,6 +22,9 @@ import ROIDashboard from './pages/ROIDashboard';
 import MyLeads from './pages/MyLeads';
 import SubscriptionPlans from './pages/SubscriptionPlans';
 import CreditsWidget from './components/CreditsWidget';
+// Navigation components
+import DropdownMenu from './components/DropdownMenu';
+import MobileMenu from './components/MobileMenu';
 
 function useAuth() {
   const [token, setToken] = useState(localStorage.getItem('token'));
@@ -54,6 +57,9 @@ export default function App(){
     budgetMin: '',
     budgetMax: ''
   });
+  
+  // Mobile menu state
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     if (tab !== 'user') return;
@@ -172,108 +178,300 @@ export default function App(){
         </div>
       </header>
 
-      {/* TABS */}
-      <div className="flex gap-2 mt-6 mb-4">
-        <button
-          className={'px-3 py-2 border rounded ' + (tab==='user' ? 'bg-gray-900 text-white' : '')}
-          onClick={() => setTab('user')}
-        >
-          Poslovi
-        </button>
-        {!token && (
-          <>
+      {/* NAVIGATION */}
+      <div className="mt-6 mb-4">
+        {/* Desktop Navigation */}
+        <div className="hidden lg:flex items-center gap-4">
+          {/* Main Navigation */}
+          <button
+            className={'px-3 py-2 border rounded ' + (tab==='user' ? 'bg-gray-900 text-white' : 'hover:bg-gray-100')}
+            onClick={() => setTab('user')}
+          >
+            🏠 Početna
+          </button>
+          <button
+            className={'px-3 py-2 border rounded ' + (tab==='pricing' ? 'bg-orange-600 text-white' : 'border-orange-600 text-orange-600 hover:bg-orange-50')}
+            onClick={() => setTab('pricing')}
+          >
+            💰 Cjenik
+          </button>
+          <button
+            className={'px-3 py-2 border rounded ' + (tab==='faq' ? 'bg-purple-600 text-white' : 'border-purple-600 text-purple-600 hover:bg-purple-50')}
+            onClick={() => setTab('faq')}
+          >
+            ❓ FAQ
+          </button>
+          <button
+            className={'px-3 py-2 border rounded ' + (tab==='documentation' ? 'bg-indigo-600 text-white' : 'border-indigo-600 text-indigo-600 hover:bg-indigo-50')}
+            onClick={() => setTab('documentation')}
+          >
+            📚 Dokumentacija
+          </button>
+
+          {/* Dropdown Menus */}
+          {!token && (
+            <>
+              <DropdownMenu title="👤 Korisnik" icon="👤">
+                <button
+                  className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"
+                  onClick={() => { setTab('login'); }}
+                >
+                  🔑 Prijava
+                </button>
+                <button
+                  className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"
+                  onClick={() => { setTab('register-user'); }}
+                >
+                  👤 Registracija korisnika
+                </button>
+                <button
+                  className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"
+                  onClick={() => { setTab('register-provider'); }}
+                >
+                  🏢 Registracija providera
+                </button>
+              </DropdownMenu>
+
+              <DropdownMenu title="🛠️ Usluge" icon="🛠️">
+                <button
+                  className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"
+                  onClick={() => { setTab('categories'); }}
+                >
+                  🛠️ Kategorije ({categories.length})
+                </button>
+                <button
+                  className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"
+                  onClick={() => { setTab('providers'); }}
+                >
+                  👥 Pružatelji ({providers.length})
+                </button>
+              </DropdownMenu>
+            </>
+          )}
+
+          {token && (
+            <>
+              <DropdownMenu title="🛒 Leadovi" icon="🛒">
+                <button
+                  className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"
+                  onClick={() => { setTab('leads'); }}
+                >
+                  🛒 Leadovi
+                </button>
+                <button
+                  className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"
+                  onClick={() => { setTab('my-leads'); }}
+                >
+                  📋 Moji Leadovi
+                </button>
+                <button
+                  className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"
+                  onClick={() => { setTab('roi'); }}
+                >
+                  📊 ROI
+                </button>
+                <button
+                  className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"
+                  onClick={() => { setTab('subscription'); }}
+                >
+                  💳 Pretplata
+                </button>
+              </DropdownMenu>
+
+              <button
+                className={'px-3 py-2 border rounded ' + (tab==='upgrade-to-provider' ? 'bg-purple-600 text-white' : 'border-purple-600 text-purple-600 hover:bg-purple-50')}
+                onClick={() => setTab('upgrade-to-provider')}
+              >
+                🏢 Postani pružatelj
+              </button>
+            </>
+          )}
+
+          {/* Admin Panel */}
+          <button
+            className={'px-3 py-2 border rounded ml-auto ' + (tab==='admin' ? 'bg-gray-900 text-white' : 'hover:bg-gray-100')}
+            onClick={() => setTab('admin')}
+          >
+            ⚙️ Admin Panel
+          </button>
+        </div>
+
+        {/* Mobile Navigation */}
+        <div className="lg:hidden flex items-center justify-between">
+          <div className="flex items-center gap-2">
             <button
-              className={'px-3 py-2 border rounded ' + (tab==='login' ? 'bg-blue-600 text-white' : 'border-blue-600 text-blue-600')}
-              onClick={() => setTab('login')}
+              className={'px-3 py-2 border rounded ' + (tab==='user' ? 'bg-gray-900 text-white' : 'hover:bg-gray-100')}
+              onClick={() => setTab('user')}
             >
-              Prijava
-            </button>
-            <button
-              className={'px-3 py-2 border rounded ' + (tab==='register-user' ? 'bg-green-600 text-white' : 'border-green-600 text-green-600')}
-              onClick={() => setTab('register-user')}
-            >
-              Registracija korisnika
-            </button>
-            <button
-              className={'px-3 py-2 border rounded ' + (tab==='register-provider' ? 'bg-purple-600 text-white' : 'border-purple-600 text-purple-600')}
-              onClick={() => setTab('register-provider')}
-            >
-              Registracija providera
-            </button>
-            <button
-              className={'px-3 py-2 border rounded ' + (tab==='categories' ? 'bg-green-600 text-white' : 'border-green-600 text-green-600')}
-              onClick={() => setTab('categories')}
-            >
-              🛠️ Kategorije ({categories.length})
-            </button>
-            <button
-              className={'px-3 py-2 border rounded ' + (tab==='providers' ? 'bg-blue-600 text-white' : 'border-blue-600 text-blue-600')}
-              onClick={() => setTab('providers')}
-            >
-              👥 Pružatelji ({providers.length})
+              🏠
             </button>
             <button
               className={'px-3 py-2 border rounded ' + (tab==='pricing' ? 'bg-orange-600 text-white' : 'border-orange-600 text-orange-600')}
               onClick={() => setTab('pricing')}
             >
-              💰 Cjenik
-            </button>
-            <button
-              className={'px-3 py-2 border rounded ' + (tab==='documentation' ? 'bg-indigo-600 text-white' : 'border-indigo-600 text-indigo-600')}
-              onClick={() => setTab('documentation')}
-            >
-              📚 Dokumentacija
+              💰
             </button>
             <button
               className={'px-3 py-2 border rounded ' + (tab==='faq' ? 'bg-purple-600 text-white' : 'border-purple-600 text-purple-600')}
               onClick={() => setTab('faq')}
             >
-              ❓ FAQ
-            </button>
-          </>
-        )}
-        {token && (
-          <>
-            <button
-              className={'px-3 py-2 border rounded ' + (tab==='upgrade-to-provider' ? 'bg-purple-600 text-white' : 'border-purple-600 text-purple-600')}
-              onClick={() => setTab('upgrade-to-provider')}
-            >
-              Postani pružatelj
-            </button>
-            {/* USLUGAR EXCLUSIVE tabs - samo za PROVIDER role */}
-            <button
-              className={'px-3 py-2 border rounded ' + (tab==='leads' ? 'bg-green-600 text-white' : 'border-green-600 text-green-600')}
-              onClick={() => setTab('leads')}
-            >
-              🛒 Leadovi
+              ❓
             </button>
             <button
-              className={'px-3 py-2 border rounded ' + (tab==='my-leads' ? 'bg-blue-600 text-white' : 'border-blue-600 text-blue-600')}
-              onClick={() => setTab('my-leads')}
+              className={'px-3 py-2 border rounded ' + (tab==='documentation' ? 'bg-indigo-600 text-white' : 'border-indigo-600 text-indigo-600')}
+              onClick={() => setTab('documentation')}
             >
-              📋 Moji Leadovi
+              📚
             </button>
-            <button
-              className={'px-3 py-2 border rounded ' + (tab==='roi' ? 'bg-yellow-600 text-white' : 'border-yellow-600 text-yellow-600')}
-              onClick={() => setTab('roi')}
-            >
-              📊 ROI
-            </button>
-            <button
-              className={'px-3 py-2 border rounded ' + (tab==='subscription' ? 'bg-purple-600 text-white' : 'border-purple-600 text-purple-600')}
-              onClick={() => setTab('subscription')}
-            >
-              💳 Pretplata
-            </button>
-          </>
-        )}
-        <button
-          className={'px-3 py-2 border rounded ml-auto ' + (tab==='admin' ? 'bg-gray-900 text-white' : '')}
-          onClick={() => setTab('admin')}
-        >
-          Admin Panel
-        </button>
+          </div>
+          
+          <button
+            onClick={() => setIsMobileMenuOpen(true)}
+            className="px-3 py-2 border rounded hover:bg-gray-100"
+          >
+            ☰
+          </button>
+        </div>
       </div>
+
+      {/* Mobile Menu */}
+      <MobileMenu 
+        isOpen={isMobileMenuOpen} 
+        onClose={() => setIsMobileMenuOpen(false)}
+      >
+        <div className="space-y-4">
+          {/* Main Navigation */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Glavno</h3>
+            <div className="space-y-1">
+              <button
+                className={'w-full text-left px-3 py-2 rounded ' + (tab==='user' ? 'bg-gray-900 text-white' : 'hover:bg-gray-100')}
+                onClick={() => { setTab('user'); setIsMobileMenuOpen(false); }}
+              >
+                🏠 Početna
+              </button>
+              <button
+                className={'w-full text-left px-3 py-2 rounded ' + (tab==='pricing' ? 'bg-orange-600 text-white' : 'hover:bg-gray-100')}
+                onClick={() => { setTab('pricing'); setIsMobileMenuOpen(false); }}
+              >
+                💰 Cjenik
+              </button>
+              <button
+                className={'w-full text-left px-3 py-2 rounded ' + (tab==='faq' ? 'bg-purple-600 text-white' : 'hover:bg-gray-100')}
+                onClick={() => { setTab('faq'); setIsMobileMenuOpen(false); }}
+              >
+                ❓ FAQ
+              </button>
+              <button
+                className={'w-full text-left px-3 py-2 rounded ' + (tab==='documentation' ? 'bg-indigo-600 text-white' : 'hover:bg-gray-100')}
+                onClick={() => { setTab('documentation'); setIsMobileMenuOpen(false); }}
+              >
+                📚 Dokumentacija
+              </button>
+            </div>
+          </div>
+
+          {/* User Section */}
+          {!token && (
+            <div>
+              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Korisnici</h3>
+              <div className="space-y-1">
+                <button
+                  className="w-full text-left px-3 py-2 rounded hover:bg-gray-100"
+                  onClick={() => { setTab('login'); setIsMobileMenuOpen(false); }}
+                >
+                  🔑 Prijava
+                </button>
+                <button
+                  className="w-full text-left px-3 py-2 rounded hover:bg-gray-100"
+                  onClick={() => { setTab('register-user'); setIsMobileMenuOpen(false); }}
+                >
+                  👤 Registracija korisnika
+                </button>
+                <button
+                  className="w-full text-left px-3 py-2 rounded hover:bg-gray-100"
+                  onClick={() => { setTab('register-provider'); setIsMobileMenuOpen(false); }}
+                >
+                  🏢 Registracija providera
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Services Section */}
+          {!token && (
+            <div>
+              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Usluge</h3>
+              <div className="space-y-1">
+                <button
+                  className="w-full text-left px-3 py-2 rounded hover:bg-gray-100"
+                  onClick={() => { setTab('categories'); setIsMobileMenuOpen(false); }}
+                >
+                  🛠️ Kategorije ({categories.length})
+                </button>
+                <button
+                  className="w-full text-left px-3 py-2 rounded hover:bg-gray-100"
+                  onClick={() => { setTab('providers'); setIsMobileMenuOpen(false); }}
+                >
+                  👥 Pružatelji ({providers.length})
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Provider Section */}
+          {token && (
+            <div>
+              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Leadovi</h3>
+              <div className="space-y-1">
+                <button
+                  className="w-full text-left px-3 py-2 rounded hover:bg-gray-100"
+                  onClick={() => { setTab('leads'); setIsMobileMenuOpen(false); }}
+                >
+                  🛒 Leadovi
+                </button>
+                <button
+                  className="w-full text-left px-3 py-2 rounded hover:bg-gray-100"
+                  onClick={() => { setTab('my-leads'); setIsMobileMenuOpen(false); }}
+                >
+                  📋 Moji Leadovi
+                </button>
+                <button
+                  className="w-full text-left px-3 py-2 rounded hover:bg-gray-100"
+                  onClick={() => { setTab('roi'); setIsMobileMenuOpen(false); }}
+                >
+                  📊 ROI
+                </button>
+                <button
+                  className="w-full text-left px-3 py-2 rounded hover:bg-gray-100"
+                  onClick={() => { setTab('subscription'); setIsMobileMenuOpen(false); }}
+                >
+                  💳 Pretplata
+                </button>
+                <button
+                  className="w-full text-left px-3 py-2 rounded hover:bg-gray-100"
+                  onClick={() => { setTab('upgrade-to-provider'); setIsMobileMenuOpen(false); }}
+                >
+                  🏢 Postani pružatelj
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Admin Section */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Admin</h3>
+            <div className="space-y-1">
+              <button
+                className={'w-full text-left px-3 py-2 rounded ' + (tab==='admin' ? 'bg-gray-900 text-white' : 'hover:bg-gray-100')}
+                onClick={() => { setTab('admin'); setIsMobileMenuOpen(false); }}
+              >
+                ⚙️ Admin Panel
+              </button>
+            </div>
+          </div>
+        </div>
+      </MobileMenu>
 
       {tab === 'user' && (
         <section id="user" className="tab-section">
