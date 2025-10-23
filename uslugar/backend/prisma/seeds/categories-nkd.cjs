@@ -14,6 +14,7 @@ const categoriesWithNKD = [
     requiresLicense: true,
     licenseType: 'Elektrotehnička licenca',
     licenseAuthority: 'Hrvatska komora inženjera elektrotehnike (HKIE)',
+    icon: '⚡',
     isActive: true
   },
   {

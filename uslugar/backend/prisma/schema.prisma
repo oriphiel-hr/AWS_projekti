@@ -88,6 +88,7 @@ model Category {
   requiresLicense   Boolean @default(false) // Zahtijeva li djelatnost licencu
   licenseType       String? // Tip licence (npr. "Elektrotehnička licenca")
   licenseAuthority  String? // Tijelo koje izdaje dozvolu (npr. "Hrvatska komora inženjera")
+  icon              String? // Emoji ili URL ikone za kategoriju
   
   isActive          Boolean @default(true)
   createdAt         DateTime @default(now())
