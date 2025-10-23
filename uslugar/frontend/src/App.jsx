@@ -176,6 +176,12 @@ export default function App(){
               Registracija providera
             </button>
             <button
+              className={'px-3 py-2 border rounded ' + (tab==='categories' ? 'bg-green-600 text-white' : 'border-green-600 text-green-600')}
+              onClick={() => setTab('categories')}
+            >
+              🛠️ Kategorije ({categories.length})
+            </button>
+            <button
               className={'px-3 py-2 border rounded ' + (tab==='pricing' ? 'bg-orange-600 text-white' : 'border-orange-600 text-orange-600')}
               onClick={() => setTab('pricing')}
             >
@@ -277,60 +283,6 @@ export default function App(){
             </div>
           )}
 
-          {/* Kategorije sekcija */}
-          <div className="mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
-              🛠️ Dostupne Kategorije Usluga
-              <span className="text-sm text-green-600 ml-2">
-                (Dinamički iz baze: {categories.length})
-              </span>
-            </h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-              {categories.map(category => (
-                <div 
-                  key={category.id} 
-                  className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
-                  onClick={() => setFilters(prev => ({ ...prev, categoryId: category.id }))}
-                >
-                  <div className="text-center">
-                 <div className="text-2xl mb-2">
-                   {category.icon || '🛠️'}
-                 </div>
-                    <h3 className="font-semibold text-sm text-gray-800 mb-1">
-                      {category.name}
-                    </h3>
-                    <p className="text-xs text-gray-600 overflow-hidden" style={{
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical'
-                    }}>
-                      {category.description}
-                    </p>
-                 {category.requiresLicense && (
-                   <div className="mt-2">
-                     <span className="inline-block bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">
-                       🔐 Licencirano
-                     </span>
-                     {category.licenseType && (
-                       <div className="mt-1">
-                         <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
-                           {category.licenseType}
-                         </span>
-                       </div>
-                     )}
-                   </div>
-                 )}
-                  </div>
-                </div>
-              ))}
-            </div>
-            
-            {categories.length === 0 && (
-              <div className="text-center py-8">
-                <p className="text-gray-500">Učitavanje kategorija...</p>
-              </div>
-            )}
-          </div>
 
           <div className="mb-6">
             <div className="flex justify-between items-center mb-4">
@@ -509,6 +461,72 @@ export default function App(){
       {tab === 'subscription' && (
         <section id="subscription" className="tab-section">
           <SubscriptionPlans />
+        </section>
+      )}
+
+      {tab === 'categories' && (
+        <section id="categories" className="tab-section">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="text-center mb-8">
+              <h1 className="text-3xl font-bold text-gray-900 mb-4">
+                🛠️ Dostupne Kategorije Usluga
+              </h1>
+              <p className="text-lg text-gray-600 mb-2">
+                Dinamički učitano iz baze: <span className="font-semibold text-green-600">{categories.length}</span> kategorija
+              </p>
+              <p className="text-sm text-gray-500">
+                Kliknite na kategoriju da vidite detalje ili filtrirate poslove
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              {categories.map(category => (
+                <div 
+                  key={category.id} 
+                  className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                  onClick={() => setFilters(prev => ({ ...prev, categoryId: category.id }))}
+                >
+                  <div className="text-center">
+                    <div className="text-2xl mb-2">
+                      {category.icon || '🛠️'}
+                    </div>
+                    <h3 className="font-semibold text-sm text-gray-800 mb-1">
+                      {category.name}
+                    </h3>
+                    <p className="text-xs text-gray-600 overflow-hidden" style={{
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical'
+                    }}>
+                      {category.description}
+                    </p>
+                    {category.requiresLicense && (
+                      <div className="mt-2">
+                        <span className="inline-block bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">
+                          🔐 Licencirano
+                        </span>
+                        {category.licenseType && (
+                          <div className="mt-1">
+                            <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+                              {category.licenseType}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            {categories.length === 0 && (
+              <div className="text-center py-12">
+                <div className="text-gray-400 text-6xl mb-4">🔄</div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Učitavanje kategorija...</h3>
+                <p className="text-gray-500">Molimo pričekajte dok se kategorije učitavaju iz baze podataka.</p>
+              </div>
+            )}
+          </div>
         </section>
       )}
 
