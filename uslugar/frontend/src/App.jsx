@@ -241,7 +241,7 @@ export default function App(){
                   <div className="bg-white bg-opacity-10 rounded-lg p-3">
                     <h3 className="text-base font-semibold mb-2">🎯 Za Pružatelje</h3>
                     <p className="text-sm opacity-90">
-                      Ekskluzivni leadovi bez konkurencije. Veća konverzija i profitabilnost.
+                      Samo vi dobivate kontakt klijenta. Nema drugih izvođača koji konkuriraju za isti posao. Ako klijent ne odgovori u roku od 48 sati, automatski dobivate refund kredita.
                     </p>
                   </div>
                 </div>
