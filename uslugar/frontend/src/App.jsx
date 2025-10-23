@@ -14,6 +14,7 @@ import VerifyEmail from './pages/VerifyEmail';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import Pricing from './pages/Pricing';
+import Documentation from './pages/Documentation';
 // USLUGAR EXCLUSIVE components
 import LeadMarketplace from './pages/LeadMarketplace';
 import ROIDashboard from './pages/ROIDashboard';
@@ -31,10 +32,10 @@ function useAuth() {
 export default function App(){
   const { token, saveToken, logout } = useAuth();
 
-  // TAB: 'user' | 'admin' | 'login' | 'register-user' | 'register-provider' | 'upgrade-to-provider' | 'verify' | 'forgot-password' | 'reset-password' | 'leads' | 'my-leads' | 'roi' | 'subscription' | 'pricing' | 'providers'
+  // TAB: 'user' | 'admin' | 'login' | 'register-user' | 'register-provider' | 'upgrade-to-provider' | 'verify' | 'forgot-password' | 'reset-password' | 'leads' | 'my-leads' | 'roi' | 'subscription' | 'pricing' | 'providers' | 'documentation'
   const [tab, setTab] = useState(() => {
     const hash = window.location.hash?.slice(1).split('?')[0];
-    const validTabs = ['admin', 'login', 'register-user', 'register-provider', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'leads', 'my-leads', 'roi', 'subscription', 'pricing', 'providers'];
+    const validTabs = ['admin', 'login', 'register-user', 'register-provider', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'leads', 'my-leads', 'roi', 'subscription', 'pricing', 'providers', 'documentation'];
     return validTabs.includes(hash) ? hash : 'user';
   });
 
@@ -146,7 +147,7 @@ export default function App(){
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash?.slice(1).split('?')[0];
-      const validTabs = ['admin', 'login', 'register-user', 'register-provider', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'user', 'leads', 'my-leads', 'roi', 'subscription', 'pricing', 'providers', 'categories'];
+      const validTabs = ['admin', 'login', 'register-user', 'register-provider', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'user', 'leads', 'my-leads', 'roi', 'subscription', 'pricing', 'providers', 'categories', 'documentation'];
       if (validTabs.includes(hash)) {
         setTab(hash);
       } else if (!hash) {
@@ -215,6 +216,12 @@ export default function App(){
               onClick={() => setTab('pricing')}
             >
               💰 Cjenik
+            </button>
+            <button
+              className={'px-3 py-2 border rounded ' + (tab==='documentation' ? 'bg-indigo-600 text-white' : 'border-indigo-600 text-indigo-600')}
+              onClick={() => setTab('documentation')}
+            >
+              📚 Dokumentacija
             </button>
           </>
         )}
@@ -599,6 +606,12 @@ export default function App(){
       {tab === 'pricing' && (
         <section id="pricing" className="tab-section">
           <Pricing />
+        </section>
+      )}
+
+      {tab === 'documentation' && (
+        <section id="documentation" className="tab-section">
+          <Documentation />
         </section>
       )}
 
