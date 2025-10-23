@@ -141,141 +141,20 @@ export default function Pricing() {
           </div>
         </div>
 
-        {/* FAQ Section */}
-        <div className="bg-white rounded-2xl shadow-lg p-8">
-          <h2 className="text-3xl font-bold text-gray-900 text-center mb-8">
-            Često Postavljana Pitanja
+        {/* FAQ Link */}
+        <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            Imate pitanja?
           </h2>
-          <div className="grid md:grid-cols-2 gap-8">
-            <div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                Što je ekskluzivan lead?
-              </h3>
-              <p className="text-gray-600">
-                Ekskluzivan lead znači da samo vi dobivate kontakt klijenta. Nema drugih izvođača koji konkuriraju za isti posao.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                Što ako klijent ne odgovori?
-              </h3>
-              <p className="text-gray-600">
-                Ako klijent ne odgovori u roku od 48 sati, automatski dobivate refund kredita.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                Koliko košta 1 kredit?
-              </h3>
-              <p className="text-gray-600">
-                1 kredit = 1 ekskluzivan lead. Cijena varira ovisno o planu koji odaberete.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                Što je AI quality score?
-              </h3>
-              <p className="text-gray-600">
-                AI quality score ocjenjuje kvalitetu leadova na temelju povijesti odgovora i uspješnosti.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                Mogu li otkazati pretplatu?
-              </h3>
-              <p className="text-gray-600">
-                Da, možete otkazati pretplatu bilo kada. Ne postoji ugovorna obveza.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                Kako funkcionira queue sustav?
-              </h3>
-              <p className="text-gray-600">
-                Leadovi se dodjeljuju redom providerima. Imate 24 sata da odgovorite na ponuđeni lead.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                Što je trust score?
-              </h3>
-              <p className="text-gray-600">
-                Trust score (0-100) pokazuje koliko je klijent verifikiran i pouzdan za rad.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                Trebam li licencu za svoju djelatnost?
-              </h3>
-              <p className="text-gray-600">
-                Neke kategorije zahtijevaju licencu. Možete upload-ovati dokumente licenci u svom profilu.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                Kako vidim svoju ROI statistiku?
-              </h3>
-              <p className="text-gray-600">
-                U ROI dashboard-u vidite konverziju leadova, ukupan prihod i prosječnu vrijednost leada.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                Mogu li pregovarati o cijeni?
-              </h3>
-              <p className="text-gray-600">
-                Da, možete označiti ponude kao "pregovorno" i razgovarati s klijentom o cijeni.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                Kako funkcionira recenziranje?
-              </h3>
-              <p className="text-gray-600">
-                Nakon završenog posla, klijent i pružatelj se mogu međusobno ocijeniti i komentirati.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                Što ako ne odgovorim na lead u roku?
-              </h3>
-              <p className="text-gray-600">
-                Lead se automatski prebacuje na sljedećeg providera u redu čekanja.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                Kako funkcionira chat sustav?
-              </h3>
-              <p className="text-gray-600">
-                Možete razgovarati s klijentom u real-time chatu vezanom uz konkretan posao.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                Mogu li filtrirati leadove po kategorijama?
-              </h3>
-              <p className="text-gray-600">
-                Da, možete odabrati kategorije koje vas zanimaju i primati samo relevantne leadove.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                Što je trial period?
-              </h3>
-              <p className="text-gray-600">
-                Novi korisnici dobivaju 7 dana besplatno s 2 kredita da probaju platformu.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                Kako se ažuriraju krediti?
-              </h3>
-              <p className="text-gray-600">
-                Krediti se dodaju mjesečno prema vašem planu ili možete kupiti dodatne.
-              </p>
-            </div>
-          </div>
+          <p className="text-xl text-gray-600 mb-6">
+            Pogledajte našu FAQ sekciju s odgovorima na najčešća pitanja
+          </p>
+          <a
+            href="#faq"
+            className="inline-block bg-purple-600 text-white py-3 px-8 rounded-lg font-semibold hover:bg-purple-700 transition-colors"
+          >
+            ❓ Pregledaj FAQ
+          </a>
         </div>
 
         {/* CTA Section */}
