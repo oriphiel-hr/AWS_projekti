@@ -187,6 +187,94 @@ export default function Pricing() {
                 Da, možete otkazati pretplatu bilo kada. Ne postoji ugovorna obveza.
               </p>
             </div>
+            <div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                Kako funkcionira queue sustav?
+              </h3>
+              <p className="text-gray-600">
+                Leadovi se dodjeljuju redom providerima. Imate 24 sata da odgovorite na ponuđeni lead.
+              </p>
+            </div>
+            <div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                Što je trust score?
+              </h3>
+              <p className="text-gray-600">
+                Trust score (0-100) pokazuje koliko je klijent verifikiran i pouzdan za rad.
+              </p>
+            </div>
+            <div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                Trebam li licencu za svoju djelatnost?
+              </h3>
+              <p className="text-gray-600">
+                Neke kategorije zahtijevaju licencu. Možete upload-ovati dokumente licenci u svom profilu.
+              </p>
+            </div>
+            <div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                Kako vidim svoju ROI statistiku?
+              </h3>
+              <p className="text-gray-600">
+                U ROI dashboard-u vidite konverziju leadova, ukupan prihod i prosječnu vrijednost leada.
+              </p>
+            </div>
+            <div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                Mogu li pregovarati o cijeni?
+              </h3>
+              <p className="text-gray-600">
+                Da, možete označiti ponude kao "pregovorno" i razgovarati s klijentom o cijeni.
+              </p>
+            </div>
+            <div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                Kako funkcionira recenziranje?
+              </h3>
+              <p className="text-gray-600">
+                Nakon završenog posla, klijent i pružatelj se mogu međusobno ocijeniti i komentirati.
+              </p>
+            </div>
+            <div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                Što ako ne odgovorim na lead u roku?
+              </h3>
+              <p className="text-gray-600">
+                Lead se automatski prebacuje na sljedećeg providera u redu čekanja.
+              </p>
+            </div>
+            <div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                Kako funkcionira chat sustav?
+              </h3>
+              <p className="text-gray-600">
+                Možete razgovarati s klijentom u real-time chatu vezanom uz konkretan posao.
+              </p>
+            </div>
+            <div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                Mogu li filtrirati leadove po kategorijama?
+              </h3>
+              <p className="text-gray-600">
+                Da, možete odabrati kategorije koje vas zanimaju i primati samo relevantne leadove.
+              </p>
+            </div>
+            <div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                Što je trial period?
+              </h3>
+              <p className="text-gray-600">
+                Novi korisnici dobivaju 7 dana besplatno s 2 kredita da probaju platformu.
+              </p>
+            </div>
+            <div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                Kako se ažuriraju krediti?
+              </h3>
+              <p className="text-gray-600">
+                Krediti se dodaju mjesečno prema vašem planu ili možete kupiti dodatne.
+              </p>
+            </div>
           </div>
         </div>
 
