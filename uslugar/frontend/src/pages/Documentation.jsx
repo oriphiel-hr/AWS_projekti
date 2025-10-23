@@ -1,0 +1,305 @@
+import React from 'react';
+
+const Documentation = () => {
+  const features = [
+    {
+      category: "Registracija i Autentifikacija",
+      items: [
+        { name: "Registracija korisnika", implemented: true },
+        { name: "Registracija pružatelja usluga", implemented: true },
+        { name: "Prijava korisnika", implemented: true },
+        { name: "Email verifikacija", implemented: true },
+        { name: "Resetiranje lozinke", implemented: true },
+        { name: "Zaboravljena lozinka", implemented: true },
+        { name: "JWT token autentifikacija", implemented: true },
+        { name: "Različite uloge korisnika (USER, PROVIDER, ADMIN)", implemented: true }
+      ]
+    },
+    {
+      category: "Upravljanje Kategorijama",
+      items: [
+        { name: "51 kategorija usluga iz 'Trebam hr' baze", implemented: true },
+        { name: "Dinamičko učitavanje kategorija iz baze", implemented: true },
+        { name: "Emoji ikone za kategorije", implemented: true },
+        { name: "Opisi kategorija", implemented: true },
+        { name: "NKD kodovi djelatnosti", implemented: true },
+        { name: "Oznake za licencirane djelatnosti", implemented: true },
+        { name: "Tipovi licenci (Elektrotehnička, Građevinska, itd.)", implemented: true },
+        { name: "Tijela koja izdaju licence", implemented: true },
+        { name: "Hijerarhijska struktura kategorija", implemented: false },
+        { name: "Filtriranje poslova po kategorijama", implemented: true }
+      ]
+    },
+    {
+      category: "Upravljanje Poslovima",
+      items: [
+        { name: "Objavljivanje novih poslova", implemented: true },
+        { name: "Detaljni opis posla", implemented: true },
+        { name: "Postavljanje budžeta (min-max)", implemented: true },
+        { name: "Lokacija posla (grad)", implemented: true },
+        { name: "Geolokacija (latitude/longitude)", implemented: true },
+        { name: "Slike posla", implemented: true },
+        { name: "Status posla (OTVOREN, U TIJEKU, ZAVRŠEN, OTKAZAN)", implemented: true },
+        { name: "Hitnost posla (NORMALNA, HITNA)", implemented: true },
+        { name: "Veličina posla (MALA, SREDNJA, VELIKA)", implemented: true },
+        { name: "Rok izvršenja", implemented: true },
+        { name: "Pretraživanje poslova", implemented: true },
+        { name: "Filtriranje po kategoriji, lokaciji, budžetu", implemented: true },
+        { name: "Pregled detalja posla", implemented: true }
+      ]
+    },
+    {
+      category: "Sustav Ponuda",
+      items: [
+        { name: "Slanje ponuda za poslove", implemented: true },
+        { name: "Iznos ponude", implemented: true },
+        { name: "Poruka uz ponudu", implemented: true },
+        { name: "Status ponude (NA ČEKANJU, PRIHVAĆENA, ODBIJENA)", implemented: true },
+        { name: "Mogućnost pregovaranja o cijeni", implemented: true },
+        { name: "Procijenjeni broj dana za izvršenje", implemented: true },
+        { name: "Pregled svih ponuda za posao", implemented: true },
+        { name: "Prihvaćanje/odbijanje ponuda", implemented: false }
+      ]
+    },
+    {
+      category: "Sustav Bodovanja i Recenzija",
+      items: [
+        { name: "Ocjenjivanje pružatelja usluga (1-5 zvjezdica)", implemented: true },
+        { name: "Komentiranje iskustva s pružateljem", implemented: true },
+        { name: "Bilateralno ocjenjivanje (korisnik ↔ pružatelj)", implemented: true },
+        { name: "Sprečavanje duplikata recenzija", implemented: true },
+        { name: "Uređivanje postojećih recenzija", implemented: true },
+        { name: "Brisanje recenzija", implemented: true },
+        { name: "Automatsko izračunavanje prosječne ocjene", implemented: true },
+        { name: "Brojanje ukupnog broja recenzija", implemented: true },
+        { name: "Prikaz recenzija na profilu pružatelja", implemented: true },
+        { name: "Admin upravljanje recenzijama", implemented: true }
+      ]
+    },
+    {
+      category: "Profili Pružatelja",
+      items: [
+        { name: "Detaljni profil pružatelja", implemented: true },
+        { name: "Biografija pružatelja", implemented: true },
+        { name: "Specijalizacije", implemented: true },
+        { name: "Godine iskustva", implemented: true },
+        { name: "Web stranica", implemented: true },
+        { name: "Područje rada", implemented: true },
+        { name: "Status dostupnosti", implemented: true },
+        { name: "Kategorije u kojima radi", implemented: true },
+        { name: "Portfolio radova", implemented: false },
+        { name: "Certifikati i licence", implemented: false },
+        { name: "Pregled svih pružatelja", implemented: true },
+        { name: "Filtriranje pružatelja", implemented: false }
+      ]
+    },
+    {
+      category: "Chat i Komunikacija",
+      items: [
+        { name: "Real-time chat između korisnika i pružatelja", implemented: true },
+        { name: "Chat sobe za svaki posao", implemented: true },
+        { name: "Povijest poruka", implemented: true },
+        { name: "Slanje slika u chatu", implemented: false },
+        { name: "Notifikacije za nove poruke", implemented: true },
+        { name: "Status poruke (poslana, pročitana)", implemented: false }
+      ]
+    },
+    {
+      category: "Notifikacije",
+      items: [
+        { name: "Notifikacije za nove ponude", implemented: true },
+        { name: "Notifikacije za prihvaćene ponude", implemented: true },
+        { name: "Notifikacije za nove poruke", implemented: true },
+        { name: "Notifikacije za nove poslove", implemented: false },
+        { name: "Email notifikacije", implemented: true },
+        { name: "In-app notifikacije", implemented: true },
+        { name: "Brojač nepročitanih notifikacija", implemented: true }
+      ]
+    },
+    {
+      category: "USLUGAR EXCLUSIVE Funkcionalnosti",
+      items: [
+        { name: "Ekskluzivni lead sustav", implemented: true },
+        { name: "Tržište leadova", implemented: true },
+        { name: "Kreditni sustav", implemented: true },
+        { name: "Cijene leadova (10-20 kredita)", implemented: true },
+        { name: "Kupnja leadova", implemented: true },
+        { name: "ROI dashboard", implemented: true },
+        { name: "Moji leadovi", implemented: true },
+        { name: "Red čekanja za leadove", implemented: true },
+        { name: "AI score kvalitete leadova", implemented: true },
+        { name: "Verifikacija klijenata", implemented: true },
+        { name: "Pretplata na leadove", implemented: true },
+        { name: "Statistike uspješnosti", implemented: true }
+      ]
+    },
+    {
+      category: "Queue Sustav za Distribuciju Leadova",
+      items: [
+        { name: "Red čekanja za leadove (LeadQueue)", implemented: true },
+        { name: "Pozicija u redu čekanja", implemented: true },
+        { name: "Statusi u redu (WAITING, OFFERED, ACCEPTED, DECLINED, EXPIRED, SKIPPED)", implemented: true },
+        { name: "Automatska distribucija leadova", implemented: true },
+        { name: "Rok za odgovor (24h)", implemented: true },
+        { name: "Odgovori providera (INTERESTED, NOT_INTERESTED, NO_RESPONSE)", implemented: true },
+        { name: "Preskakanje neaktivnih providera", implemented: true },
+        { name: "Queue scheduler (provjera svakih sat vremena)", implemented: true },
+        { name: "Notifikacije za nove leadove u redu", implemented: true },
+        { name: "Pregled mojih leadova u redu", implemented: true },
+        { name: "Statistike queue sustava", implemented: true },
+        { name: "Admin upravljanje queue sustavom", implemented: false }
+      ]
+    },
+    {
+      category: "Pravni Status i Verifikacija",
+      items: [
+        { name: "Različiti pravni statusi (Osoba, Obrt, d.o.o., itd.)", implemented: true },
+        { name: "OIB validacija", implemented: true },
+        { name: "Naziv firme", implemented: true },
+        { name: "Porezni broj", implemented: true },
+        { name: "Email verifikacija", implemented: true },
+        { name: "Verifikacija telefonskog broja", implemented: false },
+        { name: "Dokumenti za verifikaciju", implemented: false }
+      ]
+    },
+    {
+      category: "Admin Panel",
+      items: [
+        { name: "Upravljanje korisnicima", implemented: true },
+        { name: "Upravljanje pružateljima", implemented: true },
+        { name: "Upravljanje kategorijama", implemented: true },
+        { name: "Upravljanje poslovima", implemented: true },
+        { name: "Upravljanje ponudama", implemented: true },
+        { name: "Upravljanje recenzijama", implemented: true },
+        { name: "Upravljanje notifikacijama", implemented: true },
+        { name: "Upravljanje chat sobama", implemented: true },
+        { name: "Upravljanje pretplatama", implemented: true },
+        { name: "Upravljanje pravnim statusima", implemented: true },
+        { name: "Statistike platforme", implemented: false },
+        { name: "Moderacija sadržaja", implemented: false }
+      ]
+    },
+    {
+      category: "Cjenik i Plaćanja",
+      items: [
+        { name: "Pregled cjenika", implemented: true },
+        { name: "Različiti paketi pretplate", implemented: true },
+        { name: "Kreditni sustav", implemented: true },
+        { name: "Povijest transakcija", implemented: true },
+        { name: "Online plaćanje", implemented: false },
+        { name: "Fakturiranje", implemented: false },
+        { name: "Povrat novca", implemented: false }
+      ]
+    },
+    {
+      category: "Korisničko Iskustvo",
+      items: [
+        { name: "Responsive dizajn (mobilni, tablet, desktop)", implemented: true },
+        { name: "Intuitivno korisničko sučelje", implemented: true },
+        { name: "Brzo učitavanje stranica", implemented: true },
+        { name: "Pretraživanje u realnom vremenu", implemented: true },
+        { name: "Filtriranje i sortiranje", implemented: true },
+        { name: "Dark mode", implemented: false },
+        { name: "Lokalizacija (hrvatski jezik)", implemented: true },
+        { name: "Pristupačnost (accessibility)", implemented: false }
+      ]
+    }
+  ];
+
+  const getStatusColor = (implemented) => {
+    return implemented ? 'text-green-600 bg-green-100' : 'text-red-600 bg-red-100';
+  };
+
+  const getStatusText = (implemented) => {
+    return implemented ? '✓ Implementirano' : '✗ Nije implementirano';
+  };
+
+  const getImplementationStats = () => {
+    const totalItems = features.reduce((sum, category) => sum + category.items.length, 0);
+    const implementedItems = features.reduce((sum, category) => 
+      sum + category.items.filter(item => item.implemented).length, 0
+    );
+    const percentage = Math.round((implementedItems / totalItems) * 100);
+    
+    return { totalItems, implementedItems, percentage };
+  };
+
+  const stats = getImplementationStats();
+
+  return (
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="text-center mb-12">
+        <h1 className="text-4xl font-bold text-gray-900 mb-4">
+          📚 Uslugar - Dokumentacija Funkcionalnosti
+        </h1>
+        <p className="text-xl text-gray-600 mb-6">
+          Kompletna lista svih funkcionalnosti platforme za povezivanje korisnika i pružatelja usluga
+        </p>
+        
+        {/* Statistike implementacije */}
+        <div className="bg-gradient-to-r from-blue-50 to-green-50 rounded-lg p-6 mb-8">
+          <h2 className="text-2xl font-semibold text-gray-900 mb-4">Status Implementacije</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-blue-600">{stats.implementedItems}</div>
+              <div className="text-sm text-gray-600">Implementirane funkcionalnosti</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-gray-600">{stats.totalItems - stats.implementedItems}</div>
+              <div className="text-sm text-gray-600">Nije implementirano</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-green-600">{stats.percentage}%</div>
+              <div className="text-sm text-gray-600">Završeno</div>
+            </div>
+          </div>
+          <div className="mt-4">
+            <div className="w-full bg-gray-200 rounded-full h-3">
+              <div 
+                className="bg-gradient-to-r from-green-400 to-green-600 h-3 rounded-full transition-all duration-500"
+                style={{ width: `${stats.percentage}%` }}
+              ></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Kategorije funkcionalnosti */}
+      <div className="space-y-8">
+        {features.map((category, categoryIndex) => (
+          <div key={categoryIndex} className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
+            <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-900">{category.category}</h2>
+            </div>
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {category.items.map((item, itemIndex) => (
+                  <div key={itemIndex} className="flex items-center justify-between p-3 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors">
+                    <span className="text-gray-800 font-medium">{item.name}</span>
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(item.implemented)}`}>
+                      {getStatusText(item.implemented)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Footer informacije */}
+      <div className="mt-12 bg-gray-50 rounded-lg p-6 text-center">
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">O Uslugar Platformi</h3>
+        <p className="text-gray-600 mb-4">
+          Uslugar je sveobuhvatna platforma za povezivanje korisnika koji traže usluge s kvalificiranim pružateljima usluga. 
+          Platforma omogućuje jednostavno objavljivanje poslova, slanje ponuda, komunikaciju i ocjenjivanje usluga.
+        </p>
+        <div className="text-sm text-gray-500">
+          Posljednje ažuriranje: {new Date().toLocaleDateString('hr-HR')}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Documentation;
