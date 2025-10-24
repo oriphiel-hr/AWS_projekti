@@ -993,15 +993,7 @@ export default function ProviderProfile({ onSuccess }) {
                         />
                         <div className="flex-1">
                           <div className="flex items-center space-x-2">
-                            <span className="text-lg">
-                              {(() => {
-                                const icon = category.icon || getCategoryIcon(category.name);
-                                if (category.name === 'Električar') {
-                                  console.log(`🔍 ELEKTRIČAR DEBUG: Baza ikona: ${category.icon}, Mapa ikona: ${getCategoryIcon(category.name)}, Finalna: ${icon}`);
-                                }
-                                return icon;
-                              })()}
-                            </span>
+                            <span className="text-lg">{category.icon || getCategoryIcon(category.name)}</span>
                             <span className={`font-medium transition-colors duration-200 ${
                               formData.categoryIds.includes(category.id)
                                 ? 'text-blue-800 font-semibold'
