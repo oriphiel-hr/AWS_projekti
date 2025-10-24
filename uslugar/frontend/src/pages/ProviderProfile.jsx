@@ -79,20 +79,11 @@ export default function ProviderProfile({ onSuccess }) {
       // Ako je odgovor iz /fix-profile endpoint-a, ekstraktiraj profil
       const actualProfile = profileData.profile || profileData;
       
-      console.log('📊 Actual profile data:', actualProfile);
+      console.log('📊 Actual profile data:', JSON.stringify(actualProfile, null, 2));
       
       setProfile(actualProfile);
-      setFormData({
-        bio: actualProfile.bio || '',
-        specialties: actualProfile.specialties ? actualProfile.specialties.join(', ') : '',
-        experience: actualProfile.experience || '',
-        website: actualProfile.website || '',
-        serviceArea: actualProfile.serviceArea || '',
-        isAvailable: actualProfile.isAvailable !== false,
-        categoryIds: actualProfile.categories ? actualProfile.categories.map(c => c.id) : []
-      });
       
-      console.log('📝 Form data set:', {
+      const formDataToSet = {
         bio: actualProfile.bio || '',
         specialties: actualProfile.specialties ? actualProfile.specialties.join(', ') : '',
         experience: actualProfile.experience || '',
@@ -100,7 +91,11 @@ export default function ProviderProfile({ onSuccess }) {
         serviceArea: actualProfile.serviceArea || '',
         isAvailable: actualProfile.isAvailable !== false,
         categoryIds: actualProfile.categories ? actualProfile.categories.map(c => c.id) : []
-      });
+      };
+      
+      console.log('📝 Form data set:', JSON.stringify(formDataToSet, null, 2));
+      
+      setFormData(formDataToSet);
       
       // Poruka dobrodošlice
       setWelcomeMessage(`Dobrodošli, ${actualProfile.user?.fullName || 'Provider'}! 🎉`);
