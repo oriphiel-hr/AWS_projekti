@@ -79,8 +79,20 @@ export default function ProviderProfile({ onSuccess }) {
       // Ako je odgovor iz /fix-profile endpoint-a, ekstraktiraj profil
       const actualProfile = profileData.profile || profileData;
       
+      console.log('📊 Actual profile data:', actualProfile);
+      
       setProfile(actualProfile);
       setFormData({
+        bio: actualProfile.bio || '',
+        specialties: actualProfile.specialties ? actualProfile.specialties.join(', ') : '',
+        experience: actualProfile.experience || '',
+        website: actualProfile.website || '',
+        serviceArea: actualProfile.serviceArea || '',
+        isAvailable: actualProfile.isAvailable !== false,
+        categoryIds: actualProfile.categories ? actualProfile.categories.map(c => c.id) : []
+      });
+      
+      console.log('📝 Form data set:', {
         bio: actualProfile.bio || '',
         specialties: actualProfile.specialties ? actualProfile.specialties.join(', ') : '',
         experience: actualProfile.experience || '',
