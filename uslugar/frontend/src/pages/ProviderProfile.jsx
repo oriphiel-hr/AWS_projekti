@@ -72,7 +72,8 @@ export default function ProviderProfile({ onSuccess }) {
           setSuccess('Provider profil je automatski kreiran!');
         } catch (createErr) {
           console.error('Error creating profile:', createErr);
-          setError('Provider profil nije pronađen. Molimo kontaktirajte podršku.');
+          console.error('Create error details:', createErr.response?.data);
+          setError(`Greška pri kreiranju profila: ${createErr.response?.data?.error || createErr.message}`);
         }
       } else if (err.response?.status === 401) {
         setError('Morate biti prijavljeni kao provider da biste pristupili ovom profilu.');
@@ -168,9 +169,40 @@ export default function ProviderProfile({ onSuccess }) {
     return (
       <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-8">
         <div className="text-center">
-          <div className="text-red-500 text-4xl mb-4">⚠️</div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Greška</h3>
-          <p className="text-gray-600 mb-4">{error || 'Profil nije pronađen'}</p>
+          <div className="text-yellow-500 text-4xl mb-4">🔧</div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Provider profil nije kreiran</h3>
+          <p className="text-gray-600 mb-6">
+            Vaš Provider profil još nije kreiran. Ovo je normalno za nove providere.
+          </p>
+          
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <h4 className="font-semibold text-blue-900 mb-2">Što možete učiniti:</h4>
+            <ul className="text-left text-blue-800 space-y-1">
+              <li>• Osvježite stranicu (F5)</li>
+              <li>• Odjavite se i ponovno prijavite</li>
+              <li>• Kontaktirajte podršku ako se problem nastavi</li>
+            </ul>
+          </div>
+
+          <div className="space-y-3">
+            <button
+              onClick={() => window.location.reload()}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors"
+            >
+              🔄 Osvježi stranicu
+            </button>
+            
+            <button
+              onClick={() => {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                window.location.href = '#login';
+              }}
+              className="w-full bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg transition-colors"
+            >
+              🚪 Odjavi se i prijavi ponovno
+            </button>
+          </div>
         </div>
       </div>
     );
