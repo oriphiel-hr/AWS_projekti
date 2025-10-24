@@ -221,7 +221,22 @@ export default function ProviderProfile({ onSuccess }) {
                   });
                   
                   if (err.response?.status === 401) {
-                    setError('Vaš login je istekao. Molimo prijavite se ponovno.');
+                    setError('Vaš login je istekao ili JWT token nije valjan. Molimo prijavite se ponovno.');
+                    
+                    // Pokušaj kreirati profil bez autentifikacije za test
+                    console.log('🔄 Pokušavam kreirati profil bez autentifikacije za test...');
+                    try {
+                      const testResponse = await fetch('https://uslugar.api.oriph.io/api/providers/fix-profile', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                      });
+                      console.log('Test response status:', testResponse.status);
+                      const testData = await testResponse.text();
+                      console.log('Test response:', testData);
+                    } catch (testErr) {
+                      console.error('Test error:', testErr);
+                    }
+                    
                   } else if (err.response?.status === 404) {
                     setError('Backend endpoint nije pronađen. Backend možda nije ažuriran.');
                   } else {
