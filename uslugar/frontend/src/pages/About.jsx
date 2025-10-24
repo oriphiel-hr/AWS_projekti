@@ -84,19 +84,6 @@ const About = () => {
               </p>
             </div>
 
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                🏭 Pretežita djelatnost
-              </h3>
-              <p className="text-gray-700">
-                <strong>Djelatnost:</strong> Računalno programiranje i razvoj softvera<br />
-                <strong>Specijalizacija:</strong> Web aplikacije, mobilne aplikacije i IT savjetovanje<br />
-                <span className="text-sm text-gray-600">
-                  Pružamo usluge razvoja web stranica, mobilnih aplikacija, 
-                  e-trgovine i IT savjetovanja za poduzeća svih veličina.
-                </span>
-              </p>
-            </div>
 
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
