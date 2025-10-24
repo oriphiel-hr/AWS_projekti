@@ -154,7 +154,7 @@ export default function ProviderProfile({ onSuccess }) {
           <div className="text-yellow-500 text-4xl mb-4">🔧</div>
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Provider profil nije kreiran</h3>
           <p className="text-gray-600 mb-6">
-            Vaš Provider profil još nije kreiran. Ovo se automatski kreira prilikom registracije kao PROVIDER.
+            Vaš Provider profil još nije kreiran. Možete ga kreirati klikom na gumb ispod.
           </p>
           
           {error && (
@@ -167,13 +167,38 @@ export default function ProviderProfile({ onSuccess }) {
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
             <h4 className="font-semibold text-blue-900 mb-2">Što možete učiniti:</h4>
             <ul className="text-left text-blue-800 space-y-1">
-              <li>• Osvježite stranicu (F5)</li>
-              <li>• Odjavite se i ponovno prijavite</li>
-              <li>• Kontaktirajte podršku - profil se trebao kreirati automatski</li>
+              <li>• Kliknite "Kreiraj Provider profil" da kreirate profil</li>
+              <li>• Osvježite stranicu nakon kreiranja</li>
+              <li>• Odjavite se i ponovno prijavite ako se problem nastavi</li>
             </ul>
           </div>
 
           <div className="space-y-3">
+            <button
+              onClick={async () => {
+                try {
+                  setLoading(true);
+                  console.log('🔄 Pokušavam kreirati ProviderProfile...');
+                  const response = await api.post('/providers/fix-profile');
+                  console.log('✅ ProviderProfile kreiran:', response.data);
+                  setSuccess('Provider profil je uspješno kreiran! Osvježite stranicu.');
+                } catch (err) {
+                  console.error('Error creating profile:', err);
+                  if (err.response?.status === 401) {
+                    setError('Vaš login je istekao. Molimo prijavite se ponovno.');
+                  } else {
+                    setError(`Greška pri kreiranju profila: ${err.response?.data?.error || err.message}`);
+                  }
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              disabled={loading}
+              className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-6 py-3 rounded-lg transition-colors"
+            >
+              {loading ? '⏳ Kreiranje...' : '🔧 Kreiraj Provider profil'}
+            </button>
+            
             <button
               onClick={() => window.location.reload()}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors"
