@@ -44,7 +44,34 @@ export default function ProviderProfile({ onSuccess }) {
       } catch (meError) {
         // Ako /me ne radi, pokušaj preko /fix-profile endpoint-a
         console.log('🔄 /me endpoint ne radi, pokušavam preko /fix-profile...');
-        response = await api.post('/providers/fix-profile');
+        console.log('Token za test:', token);
+        console.log('Token duljina:', token?.length);
+        
+        // Testiraj token direktno
+        try {
+          const testResponse = await fetch('https://uslugar.api.oriph.io/api/providers/fix-profile', {
+            method: 'POST',
+            headers: {
+              'Authorization': 'Bearer ' + token,
+              'Content-Type': 'application/json'
+            }
+          });
+          console.log('Direct test status:', testResponse.status);
+          const testData = await testResponse.text();
+          console.log('Direct test response:', testData);
+          
+          if (testResponse.status === 200) {
+            const profileData = JSON.parse(testData);
+            console.log('✅ Profil učitavan direktno:', profileData);
+            response = { data: profileData };
+          } else {
+            throw new Error(`Direct test failed: ${testResponse.status}`);
+          }
+        } catch (directError) {
+          console.error('Direct test error:', directError);
+          // Fallback na api.post
+          response = await api.post('/providers/fix-profile');
+        }
       }
       
       const profileData = response.data;
