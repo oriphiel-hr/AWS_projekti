@@ -4,7 +4,6 @@ import { AdminRouter } from './admin';
 import JobCard from './components/JobCard';
 import JobForm from './components/JobForm';
 import ProviderCard from './components/ProviderCard';
-import ProviderProfile from './components/ProviderProfile';
 import ReviewList from './components/ReviewList';
 import Login from './pages/Login';
 import UserRegister from './pages/UserRegister';
