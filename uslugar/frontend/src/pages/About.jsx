@@ -80,7 +80,7 @@ const About = () => {
               </h3>
               <p className="text-gray-700">
                 <strong>Telefon:</strong> <a href="tel:+385915618258" className="text-blue-600 hover:underline">091 561 8258</a><br />
-                <strong>Kontakt osoba:</strong> Tomislav Kranjec
+                <strong>Kontakt osoba:</strong> Tomislav Kranjec, direktor
               </p>
             </div>
 
@@ -89,11 +89,11 @@ const About = () => {
                 🏭 Pretežita djelatnost
               </h3>
               <p className="text-gray-700">
-                <strong>NKD kod:</strong> 62109<br />
-                <strong>Opis:</strong> Ostalo računalno programiranje<br />
+                <strong>Djelatnost:</strong> Računalno programiranje i razvoj softvera<br />
+                <strong>Specijalizacija:</strong> Web aplikacije, mobilne aplikacije i IT savjetovanje<br />
                 <span className="text-sm text-gray-600">
-                  (K - TELEKOMUNIKACIJE, RAČUNALNO PROGRAMIRANJE, SAVJETOVANJE, 
-                  RAČUNALNA INFRASTRUKTURA I OSTALE INFORMACIJSKE USLUŽNE DJELATNOSTI)
+                  Pružamo usluge razvoja web stranica, mobilnih aplikacija, 
+                  e-trgovine i IT savjetovanja za poduzeća svih veličina.
                 </span>
               </p>
             </div>

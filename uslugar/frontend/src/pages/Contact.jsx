@@ -62,7 +62,7 @@ const Contact = () => {
                     Kontakt osoba
                   </h3>
                   <p className="text-gray-700">
-                    Tomislav Kranjec
+                    Tomislav Kranjec, direktor
                   </p>
                 </div>
               </div>
@@ -74,11 +74,11 @@ const Contact = () => {
                     Pretežita djelatnost
                   </h3>
                   <p className="text-gray-700">
-                    <strong>NKD kod:</strong> 62109<br />
-                    <strong>Opis:</strong> Ostalo računalno programiranje<br />
+                    <strong>Djelatnost:</strong> Računalno programiranje i razvoj softvera<br />
+                    <strong>Specijalizacija:</strong> Web aplikacije, mobilne aplikacije i IT savjetovanje<br />
                     <span className="text-sm text-gray-600">
-                      (K - TELEKOMUNIKACIJE, RAČUNALNO PROGRAMIRANJE, SAVJETOVANJE, 
-                      RAČUNALNA INFRASTRUKTURA I OSTALE INFORMACIJSKE USLUŽNE DJELATNOSTI)
+                      Pružamo usluge razvoja web stranica, mobilnih aplikacija, 
+                      e-trgovine i IT savjetovanja za poduzeća svih veličina.
                     </span>
                   </p>
                 </div>
@@ -198,7 +198,7 @@ const Contact = () => {
                 allowFullScreen
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
-                title="Uslugar lokacija - Slavenskoga ulica 5, Zagreb"
+                title="Oriphiel d.o.o. lokacija - Slavenskoga ulica 5, Zagreb"
               />
             </div>
             
@@ -206,7 +206,7 @@ const Contact = () => {
             <div className="absolute top-4 left-4 bg-white bg-opacity-90 backdrop-blur-sm rounded-lg p-3 shadow-lg">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                <span className="text-sm font-medium text-gray-900">Uslugar</span>
+                <span className="text-sm font-medium text-gray-900">Oriphiel d.o.o.</span>
               </div>
               <p className="text-xs text-gray-600 mt-1">
                 Slavenskoga ulica 5, Zagreb
