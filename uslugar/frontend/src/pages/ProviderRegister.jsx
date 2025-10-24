@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import api from '../api';
 import { useLegalStatuses } from '../hooks/useLegalStatuses';
 import { validateOIB, validateEmail } from '../utils/validators';
@@ -18,13 +18,33 @@ export default function ProviderRegister({ onSuccess }) {
     website: '',
     legalStatusId: '',
     taxId: '',
-    companyName: ''
+    companyName: '',
+    // Kategorije
+    categoryIds: []
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [oibError, setOibError] = useState('');
   const [emailError, setEmailError] = useState('');
+  const [categories, setCategories] = useState([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
+
+  // Učitaj kategorije
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const response = await api.get('/categories');
+        setCategories(response.data);
+      } catch (err) {
+        console.error('Error loading categories:', err);
+        setError('Greška pri učitavanju kategorija');
+      } finally {
+        setLoadingCategories(false);
+      }
+    };
+    loadCategories();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -53,6 +73,15 @@ export default function ProviderRegister({ onSuccess }) {
     }
   };
 
+  const handleCategoryChange = (categoryId) => {
+    setFormData(prev => ({
+      ...prev,
+      categoryIds: prev.categoryIds.includes(categoryId)
+        ? prev.categoryIds.filter(id => id !== categoryId)
+        : [...prev.categoryIds, categoryId]
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -63,6 +92,13 @@ export default function ProviderRegister({ onSuccess }) {
       if (!validateEmail(formData.email)) {
         setError('Email adresa nije valjana');
         setEmailError('Email adresa nije valjana');
+        setLoading(false);
+        return;
+      }
+
+      // VALIDACIJA: Kategorije su OBAVEZNE za pružatelje
+      if (formData.categoryIds.length === 0) {
+        setError('Morate odabrati minimalno 1 kategoriju usluga kojima se bavite.');
         setLoading(false);
         return;
       }
@@ -113,20 +149,21 @@ export default function ProviderRegister({ onSuccess }) {
       const { token, user } = response.data;
       
       // Ažuriraj provider profil
-      if (formData.bio || formData.specialties || formData.experience || formData.website) {
-        const profileData = {};
-        if (formData.bio) profileData.bio = formData.bio;
-        if (formData.specialties) profileData.specialties = formData.specialties.split(',').map(s => s.trim());
-        if (formData.experience) profileData.experience = parseInt(formData.experience);
-        if (formData.website) profileData.website = formData.website;
-        if (formData.legalStatusId) profileData.legalStatusId = formData.legalStatusId;
-        if (formData.taxId) profileData.taxId = formData.taxId;
-        if (formData.companyName) profileData.companyName = formData.companyName;
-        
-        // Update profila
-        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-        await api.put('/providers/me', profileData);
-      }
+      const profileData = {};
+      if (formData.bio) profileData.bio = formData.bio;
+      if (formData.specialties) profileData.specialties = formData.specialties.split(',').map(s => s.trim());
+      if (formData.experience) profileData.experience = parseInt(formData.experience);
+      if (formData.website) profileData.website = formData.website;
+      if (formData.legalStatusId) profileData.legalStatusId = formData.legalStatusId;
+      if (formData.taxId) profileData.taxId = formData.taxId;
+      if (formData.companyName) profileData.companyName = formData.companyName;
+      
+      // Dodaj kategorije
+      profileData.categoryIds = formData.categoryIds;
+      
+      // Update profila
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      await api.put('/providers/me', profileData);
       
       // Prikaži success message
       setSuccess(true);
@@ -354,6 +391,94 @@ export default function ProviderRegister({ onSuccess }) {
               />
             </div>
           </div>
+        </div>
+
+        {/* Kategorije usluga */}
+        <div className="space-y-4 bg-blue-50 border border-blue-200 p-4 rounded-lg">
+          <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+            <svg className="w-5 h-5 text-blue-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" clipRule="evenodd" />
+            </svg>
+            Kategorije usluga (obavezno)
+          </h3>
+          <p className="text-sm text-gray-700">
+            <strong>Odaberite kategorije</strong> usluga kojima se bavite. Klijenti će vas moći pronaći prema ovim kategorijama.
+          </p>
+          
+          {loadingCategories ? (
+            <div className="text-center py-4">
+              <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+              <p className="text-sm text-gray-600 mt-2">Učitavanje kategorija...</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {categories
+                  .filter(category => !category.parentId) // Samo glavne kategorije
+                  .map(category => {
+                    const subcategories = categories.filter(cat => cat.parentId === category.id);
+                    return (
+                      <div key={category.id} className="border border-gray-200 rounded-lg p-3 bg-white">
+                        <label className="flex items-start space-x-3 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={formData.categoryIds.includes(category.id)}
+                            onChange={() => handleCategoryChange(category.id)}
+                            className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                          />
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2">
+                              <span className="text-lg">{category.icon || '🛠️'}</span>
+                              <span className="font-medium text-gray-900">{category.name}</span>
+                            </div>
+                            {category.description && (
+                              <p className="text-xs text-gray-600 mt-1">{category.description}</p>
+                            )}
+                            {subcategories.length > 0 && (
+                              <div className="mt-2">
+                                <p className="text-xs text-gray-500 mb-1">Podkategorije:</p>
+                                <div className="space-y-1">
+                                  {subcategories.slice(0, 3).map(subcategory => (
+                                    <label key={subcategory.id} className="flex items-center space-x-2 cursor-pointer">
+                                      <input
+                                        type="checkbox"
+                                        checked={formData.categoryIds.includes(subcategory.id)}
+                                        onChange={() => handleCategoryChange(subcategory.id)}
+                                        className="h-3 w-3 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                      />
+                                      <span className="text-xs text-gray-700">{subcategory.name}</span>
+                                    </label>
+                                  ))}
+                                  {subcategories.length > 3 && (
+                                    <p className="text-xs text-gray-500">+{subcategories.length - 3} više</p>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </label>
+                      </div>
+                    );
+                  })}
+              </div>
+              
+              {formData.categoryIds.length === 0 && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                  <p className="text-sm text-red-700">
+                    ⚠️ <strong>Morate odabrati minimalno 1 kategoriju</strong> usluga kojima se bavite.
+                  </p>
+                </div>
+              )}
+              
+              {formData.categoryIds.length > 0 && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                  <p className="text-sm text-green-700">
+                    ✅ Odabrano <strong>{formData.categoryIds.length}</strong> kategorija
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Pravni status */}

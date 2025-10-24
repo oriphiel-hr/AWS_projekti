@@ -9,6 +9,7 @@ import ReviewList from './components/ReviewList';
 import Login from './pages/Login';
 import UserRegister from './pages/UserRegister';
 import ProviderRegister from './pages/ProviderRegister';
+import ProviderProfile from './pages/ProviderProfile';
 import UpgradeToProvider from './pages/UpgradeToProvider';
 import VerifyEmail from './pages/VerifyEmail';
 import ForgotPassword from './pages/ForgotPassword';
@@ -41,7 +42,7 @@ export default function App(){
   // TAB: 'user' | 'admin' | 'login' | 'register-user' | 'register-provider' | 'upgrade-to-provider' | 'verify' | 'forgot-password' | 'reset-password' | 'leads' | 'my-leads' | 'roi' | 'subscription' | 'pricing' | 'providers' | 'documentation' | 'faq'
   const [tab, setTab] = useState(() => {
     const hash = window.location.hash?.slice(1).split('?')[0];
-    const validTabs = ['admin', 'login', 'register-user', 'register-provider', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'leads', 'my-leads', 'roi', 'subscription', 'pricing', 'providers', 'documentation', 'faq', 'about', 'contact'];
+    const validTabs = ['admin', 'login', 'register-user', 'register-provider', 'provider-profile', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'leads', 'my-leads', 'roi', 'subscription', 'pricing', 'providers', 'documentation', 'faq', 'about', 'contact'];
     return validTabs.includes(hash) ? hash : 'user';
   });
 
@@ -293,6 +294,12 @@ export default function App(){
               </DropdownMenu>
 
               <button
+                className={'px-3 py-2 border rounded ' + (tab==='provider-profile' ? 'bg-blue-600 text-white' : 'border-blue-600 text-blue-600 hover:bg-blue-50')}
+                onClick={() => setTab('provider-profile')}
+              >
+                👤 Moj profil
+              </button>
+              <button
                 className={'px-3 py-2 border rounded ' + (tab==='upgrade-to-provider' ? 'bg-purple-600 text-white' : 'border-purple-600 text-purple-600 hover:bg-purple-50')}
                 onClick={() => setTab('upgrade-to-provider')}
               >
@@ -485,6 +492,12 @@ export default function App(){
                   onClick={() => { setTab('subscription'); setIsMobileMenuOpen(false); }}
                 >
                   💳 Pretplata
+                </button>
+                <button
+                  className="w-full text-left px-3 py-2 rounded hover:bg-gray-100"
+                  onClick={() => { setTab('provider-profile'); setIsMobileMenuOpen(false); }}
+                >
+                  👤 Moj profil
                 </button>
                 <button
                   className="w-full text-left px-3 py-2 rounded hover:bg-gray-100"
@@ -690,6 +703,14 @@ export default function App(){
           <ProviderRegister onSuccess={(token, user) => {
             saveToken(token);
             setTab('user');
+          }} />
+        </section>
+      )}
+
+      {tab === 'provider-profile' && (
+        <section id="provider-profile" className="tab-section">
+          <ProviderProfile onSuccess={() => {
+            // Refresh data if needed
           }} />
         </section>
       )}

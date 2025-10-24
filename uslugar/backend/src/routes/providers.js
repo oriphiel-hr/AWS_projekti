@@ -33,6 +33,26 @@ r.put('/me', auth(true, ['PROVIDER']), async (req, res, next) => {
       portfolio 
     } = req.body;
     
+    // VALIDACIJA: Kategorije su obavezne za pružatelje
+    if (categoryIds.length === 0) {
+      return res.status(400).json({ 
+        error: 'Morate odabrati minimalno 1 kategoriju usluga kojima se bavite.',
+        details: 'Kategorije su obavezne za pružatelje usluga kako bi klijenti mogli pronaći vaše usluge.'
+      });
+    }
+    
+    // VALIDACIJA: Provjeri da li kategorije postoje
+    const existingCategories = await prisma.category.findMany({
+      where: { id: { in: categoryIds } }
+    });
+    
+    if (existingCategories.length !== categoryIds.length) {
+      return res.status(400).json({ 
+        error: 'Neke od odabranih kategorija ne postoje.',
+        details: 'Molimo provjerite da li su sve kategorije valjane.'
+      });
+    }
+    
     const prof = await prisma.providerProfile.upsert({
       where: { userId: req.user.id },
       create: { 
