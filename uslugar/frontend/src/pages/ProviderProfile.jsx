@@ -28,6 +28,15 @@ export default function ProviderProfile({ onSuccess }) {
   const loadProfile = async () => {
     try {
       setLoading(true);
+      
+      // Provjeri da li postoji token
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setError('Morate biti prijavljeni da biste pristupili ovom profilu.');
+        setLoading(false);
+        return;
+      }
+      
       const response = await api.get('/providers/me');
       const profileData = response.data;
       
@@ -75,21 +84,13 @@ export default function ProviderProfile({ onSuccess }) {
           console.error('Create error details:', createErr.response?.data);
           
           if (createErr.response?.status === 401) {
-            // Token je nevaljan - automatski odjavi korisnika
-            console.log('🔑 Token je nevaljan tijekom kreiranja profila, odjavljujem korisnika...');
-            localStorage.clear();
-            window.location.href = '#login';
-            return;
+            setError('Vaš login je istekao. Molimo prijavite se ponovno.');
+          } else {
+            setError(`Greška pri kreiranju profila: ${createErr.response?.data?.error || createErr.message}`);
           }
-          
-          setError(`Greška pri kreiranju profila: ${createErr.response?.data?.error || createErr.message}`);
         }
       } else if (err.response?.status === 401) {
-        // Token je nevaljan - automatski odjavi korisnika
-        console.log('🔑 Token je nevaljan, odjavljujem korisnika...');
-        localStorage.clear();
-        window.location.href = '#login';
-        return;
+        setError('Vaš login je istekao. Molimo prijavite se ponovno.');
       } else {
         setError('Greška pri učitavanju profila. Molimo pokušajte ponovno.');
       }
@@ -188,6 +189,13 @@ export default function ProviderProfile({ onSuccess }) {
             Vaš Provider profil još nije kreiran. Ovo je normalno za nove providere.
           </p>
           
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+              <h4 className="font-semibold text-red-900 mb-2">Greška:</h4>
+              <p className="text-red-800">{error}</p>
+            </div>
+          )}
+
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
             <h4 className="font-semibold text-blue-900 mb-2">Što možete učiniti:</h4>
             <ul className="text-left text-blue-800 space-y-1">
