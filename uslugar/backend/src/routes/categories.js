@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { prisma } from '../lib/prisma.js';
-import subcategories from '../prisma/seeds/subcategories.cjs';
+import subcategories from '../../prisma/seeds/subcategories.cjs';
 
 const r = Router();
 
