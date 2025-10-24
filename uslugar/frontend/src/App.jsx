@@ -758,44 +758,91 @@ export default function App(){
               </p>
             </div>
             
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-              {categories.map(category => (
-                <div 
-                  key={category.id} 
-                  className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
-                  onClick={() => setFilters(prev => ({ ...prev, categoryId: category.id }))}
-                >
-                  <div className="text-center">
-                    <div className="text-2xl mb-2">
-                      {category.icon || '🛠️'}
-                    </div>
-                    <h3 className="font-semibold text-sm text-gray-800 mb-1">
-                      {category.name}
-                    </h3>
-                    <p className="text-xs text-gray-600 overflow-hidden" style={{
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical'
-                    }}>
-                      {category.description}
-                    </p>
-                    {category.requiresLicense && (
-                      <div className="mt-2">
-                        <span className="inline-block bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">
-                          🔐 Licencirano
-                        </span>
-                        {category.licenseType && (
-                          <div className="mt-1">
-                            <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
-                              {category.licenseType}
-                            </span>
-                          </div>
-                        )}
+            {/* Glavne kategorije (bez parentId) */}
+            <div className="space-y-8">
+              {categories
+                .filter(category => !category.parentId)
+                .map(parentCategory => {
+                  const subcategories = categories.filter(cat => cat.parentId === parentCategory.id);
+                  
+                  return (
+                    <div key={parentCategory.id} className="bg-white border border-gray-200 rounded-lg p-6">
+                      {/* Glavna kategorija */}
+                      <div className="flex items-center gap-4 mb-4">
+                        <div className="text-3xl">
+                          {parentCategory.icon || '🛠️'}
+                        </div>
+                        <div className="flex-1">
+                          <h2 className="text-xl font-bold text-gray-900 mb-1">
+                            {parentCategory.name}
+                          </h2>
+                          <p className="text-gray-600 mb-2">
+                            {parentCategory.description}
+                          </p>
+                          {parentCategory.requiresLicense && (
+                            <div className="flex gap-2">
+                              <span className="inline-block bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">
+                                🔐 Licencirano
+                              </span>
+                              {parentCategory.licenseType && (
+                                <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+                                  {parentCategory.licenseType}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => setFilters(prev => ({ ...prev, categoryId: parentCategory.id }))}
+                          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                        >
+                          Filtrirati poslove
+                        </button>
                       </div>
-                    )}
-                  </div>
-                </div>
-              ))}
+                      
+                      {/* Podkategorije */}
+                      {subcategories.length > 0 && (
+                        <div className="border-t pt-4">
+                          <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                            📂 Podkategorije ({subcategories.length})
+                          </h3>
+                          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                            {subcategories.map(subcategory => (
+                              <div 
+                                key={subcategory.id} 
+                                className="bg-gray-50 border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow cursor-pointer"
+                                onClick={() => setFilters(prev => ({ ...prev, categoryId: subcategory.id }))}
+                              >
+                                <div className="text-center">
+                                  <div className="text-xl mb-1">
+                                    {subcategory.icon || '🔧'}
+                                  </div>
+                                  <h4 className="font-semibold text-xs text-gray-800 mb-1">
+                                    {subcategory.name}
+                                  </h4>
+                                  <p className="text-xs text-gray-600 overflow-hidden" style={{
+                                    display: '-webkit-box',
+                                    WebkitLineClamp: 2,
+                                    WebkitBoxOrient: 'vertical'
+                                  }}>
+                                    {subcategory.description}
+                                  </p>
+                                  {subcategory.requiresLicense && (
+                                    <div className="mt-1">
+                                      <span className="inline-block bg-yellow-100 text-yellow-800 text-xs px-1 py-0.5 rounded-full">
+                                        🔐
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
             </div>
             
             {categories.length === 0 && (
