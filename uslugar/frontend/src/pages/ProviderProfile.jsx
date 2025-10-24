@@ -55,41 +55,7 @@ export default function ProviderProfile({ onSuccess }) {
       setWelcomeMessage(`Dobrodošli, ${profileData.user?.fullName || 'Provider'}! 🎉`);
     } catch (err) {
       console.error('Error loading profile:', err);
-      if (err.response?.status === 404) {
-        // Pokušaj kreirati profil automatski
-        try {
-          console.log('🔄 Pokušavam kreirati ProviderProfile automatski...');
-          const createResponse = await api.post('/providers/fix-profile');
-          console.log('✅ ProviderProfile kreiran:', createResponse.data);
-          
-          // Ponovno učitaj profil
-          const retryResponse = await api.get('/providers/me');
-          const profileData = retryResponse.data;
-          
-          setProfile(profileData);
-          setFormData({
-            bio: profileData.bio || '',
-            specialties: profileData.specialties ? profileData.specialties.join(', ') : '',
-            experience: profileData.experience || '',
-            website: profileData.website || '',
-            serviceArea: profileData.serviceArea || '',
-            isAvailable: profileData.isAvailable !== false,
-            categoryIds: profileData.categories ? profileData.categories.map(c => c.id) : []
-          });
-          
-          setWelcomeMessage(`Dobrodošli, ${profileData.user?.fullName || 'Provider'}! 🎉`);
-          setSuccess('Provider profil je automatski kreiran!');
-        } catch (createErr) {
-          console.error('Error creating profile:', createErr);
-          console.error('Create error details:', createErr.response?.data);
-          
-          if (createErr.response?.status === 401) {
-            setError('Vaš login je istekao. Molimo prijavite se ponovno.');
-          } else {
-            setError(`Greška pri kreiranju profila: ${createErr.response?.data?.error || createErr.message}`);
-          }
-        }
-      } else if (err.response?.status === 401) {
+      if (err.response?.status === 401) {
         setError('Vaš login je istekao. Molimo prijavite se ponovno.');
       } else if (err.response?.status === 404) {
         setError('Provider profil nije pronađen. Backend možda nije ažuriran. Molimo kontaktirajte podršku.');
