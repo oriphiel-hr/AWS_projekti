@@ -37,22 +37,34 @@ export default function ProviderProfile({ onSuccess }) {
         return;
       }
       
-      const response = await api.get('/providers/me');
+      // Pokušaj učitati profil preko /me endpoint-a
+      let response;
+      try {
+        response = await api.get('/providers/me');
+      } catch (meError) {
+        // Ako /me ne radi, pokušaj preko /fix-profile endpoint-a
+        console.log('🔄 /me endpoint ne radi, pokušavam preko /fix-profile...');
+        response = await api.post('/providers/fix-profile');
+      }
+      
       const profileData = response.data;
       
-      setProfile(profileData);
+      // Ako je odgovor iz /fix-profile endpoint-a, ekstraktiraj profil
+      const actualProfile = profileData.profile || profileData;
+      
+      setProfile(actualProfile);
       setFormData({
-        bio: profileData.bio || '',
-        specialties: profileData.specialties ? profileData.specialties.join(', ') : '',
-        experience: profileData.experience || '',
-        website: profileData.website || '',
-        serviceArea: profileData.serviceArea || '',
-        isAvailable: profileData.isAvailable !== false,
-        categoryIds: profileData.categories ? profileData.categories.map(c => c.id) : []
+        bio: actualProfile.bio || '',
+        specialties: actualProfile.specialties ? actualProfile.specialties.join(', ') : '',
+        experience: actualProfile.experience || '',
+        website: actualProfile.website || '',
+        serviceArea: actualProfile.serviceArea || '',
+        isAvailable: actualProfile.isAvailable !== false,
+        categoryIds: actualProfile.categories ? actualProfile.categories.map(c => c.id) : []
       });
       
       // Poruka dobrodošlice
-      setWelcomeMessage(`Dobrodošli, ${profileData.user?.fullName || 'Provider'}! 🎉`);
+      setWelcomeMessage(`Dobrodošli, ${actualProfile.user?.fullName || 'Provider'}! 🎉`);
     } catch (err) {
       console.error('Error loading profile:', err);
       if (err.response?.status === 401) {
