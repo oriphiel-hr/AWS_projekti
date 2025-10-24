@@ -461,6 +461,7 @@ export default function ProviderProfile({ onSuccess }) {
       let response;
       try {
         response = await api.get('/providers/me');
+        console.log('✅ /me endpoint radi ispravno');
       } catch (meError) {
         // Ako /me ne radi, pokušaj preko /fix-profile endpoint-a
         console.log('🔄 /me endpoint ne radi, pokušavam preko /fix-profile...');
