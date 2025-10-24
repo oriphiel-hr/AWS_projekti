@@ -422,7 +422,7 @@ export default function ProviderProfile({ onSuccess }) {
       'Kanalizacija': '🚽',
       'Popravak sanitarija': '🚽',
       'Vrtlar': '🌱',
-      'Vulkanizer': '🔧',
+      'Vulkanizer': '🛞',
       'Zidar': '🧱'
     };
     
