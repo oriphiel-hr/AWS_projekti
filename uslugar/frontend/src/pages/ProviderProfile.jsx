@@ -182,8 +182,26 @@ export default function ProviderProfile({ onSuccess }) {
                   setSuccess('');
                   
                   console.log('🔄 Pokušavam kreirati ProviderProfile...');
-                  console.log('Token:', localStorage.getItem('token'));
-                  console.log('User:', localStorage.getItem('user'));
+                  
+                  const token = localStorage.getItem('token');
+                  const user = localStorage.getItem('user');
+                  
+                  console.log('Token postoji:', !!token);
+                  console.log('Token duljina:', token?.length);
+                  console.log('User podaci:', user);
+                  
+                  // Dekodiraj JWT token
+                  if (token) {
+                    try {
+                      const payload = JSON.parse(atob(token.split('.')[1]));
+                      console.log('Token payload:', payload);
+                      console.log('Token expires:', new Date(payload.exp * 1000));
+                      console.log('Current time:', new Date());
+                      console.log('Token expired:', new Date() > new Date(payload.exp * 1000));
+                    } catch (e) {
+                      console.error('Invalid token format:', e);
+                    }
+                  }
                   
                   const response = await api.post('/providers/fix-profile');
                   console.log('✅ ProviderProfile kreiran:', response.data);
