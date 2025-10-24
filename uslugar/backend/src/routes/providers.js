@@ -32,6 +32,17 @@ r.get('/me', auth(true, ['PROVIDER']), async (req, res, next) => {
 
     // Ako profil ne postoji, kreiraj ga automatski
     if (!provider) {
+      // Dohvati korisničke podatke za kreiranje profila
+      const user = await prisma.user.findUnique({
+        where: { id: req.user.id },
+        select: {
+          city: true,
+          legalStatusId: true,
+          taxId: true,
+          companyName: true
+        }
+      });
+
       provider = await prisma.providerProfile.create({
         data: {
           userId: req.user.id,
@@ -39,15 +50,20 @@ r.get('/me', auth(true, ['PROVIDER']), async (req, res, next) => {
           specialties: [],
           experience: 0,
           website: '',
-          serviceArea: '',
+          serviceArea: user?.city || '',
+          legalStatusId: user?.legalStatusId,
+          taxId: user?.taxId,
+          companyName: user?.companyName,
           isAvailable: true,
-          portfolio: ''
+          portfolio: null
         },
         include: {
           user: true,
           categories: true
         }
       });
+      
+      console.log(`✅ Automatski kreiran ProviderProfile za korisnika: ${req.user.email}`);
     }
 
     // reviews summary
