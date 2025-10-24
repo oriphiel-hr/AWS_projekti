@@ -73,10 +73,23 @@ export default function ProviderProfile({ onSuccess }) {
         } catch (createErr) {
           console.error('Error creating profile:', createErr);
           console.error('Create error details:', createErr.response?.data);
+          
+          if (createErr.response?.status === 401) {
+            // Token je nevaljan - automatski odjavi korisnika
+            console.log('🔑 Token je nevaljan tijekom kreiranja profila, odjavljujem korisnika...');
+            localStorage.clear();
+            window.location.href = '#login';
+            return;
+          }
+          
           setError(`Greška pri kreiranju profila: ${createErr.response?.data?.error || createErr.message}`);
         }
       } else if (err.response?.status === 401) {
-        setError('Morate biti prijavljeni kao provider da biste pristupili ovom profilu.');
+        // Token je nevaljan - automatski odjavi korisnika
+        console.log('🔑 Token je nevaljan, odjavljujem korisnika...');
+        localStorage.clear();
+        window.location.href = '#login';
+        return;
       } else {
         setError('Greška pri učitavanju profila. Molimo pokušajte ponovno.');
       }
