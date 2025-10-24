@@ -19,6 +19,40 @@ r.get('/:userId', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+// get current provider profile
+r.get('/me', auth(true, ['PROVIDER']), async (req, res, next) => {
+  try {
+    const provider = await prisma.providerProfile.findUnique({
+      where: { userId: req.user.id },
+      include: { 
+        user: true,
+        categories: true 
+      }
+    });
+    
+    if (!provider) {
+      return res.status(404).json({ error: 'Provider profil nije pronađen' });
+    }
+    
+    // reviews summary
+    const reviews = await prisma.review.findMany({ 
+      where: { toUserId: req.user.id } 
+    });
+    
+    const ratingAvg = reviews.length > 0 
+      ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length 
+      : 0;
+    
+    res.json({
+      ...provider,
+      ratingAvg,
+      ratingCount: reviews.length
+    });
+  } catch (e) { 
+    next(e); 
+  }
+});
+
 // update provider profile
 r.put('/me', auth(true, ['PROVIDER']), async (req, res, next) => {
   try {
