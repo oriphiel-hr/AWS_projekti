@@ -997,7 +997,7 @@ export default function ProviderProfile({ onSuccess }) {
                         />
                         <div className="flex-1">
                           <div className="flex items-center space-x-2">
-                            <span className="text-lg">{getCategoryIcon(category.name)}</span>
+                            <span className="text-lg">{category.icon || getCategoryIcon(category.name)}</span>
                             <span className={`font-medium transition-colors duration-200 ${
                               formData.categoryIds.includes(category.id)
                                 ? 'text-blue-800 font-semibold'
@@ -1033,7 +1033,7 @@ export default function ProviderProfile({ onSuccess }) {
                                         ? 'text-blue-700 font-semibold'
                                         : 'text-gray-700'
                                     }`}>
-                                      <span className="mr-1">{getCategoryIcon(subcategory.name)}</span>
+                                      <span className="mr-1">{subcategory.icon || getCategoryIcon(subcategory.name)}</span>
                                       {subcategory.name}
                                     </span>
                                   </label>
