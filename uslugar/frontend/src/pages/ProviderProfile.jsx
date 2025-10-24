@@ -1000,7 +1000,10 @@ export default function ProviderProfile({ onSuccess }) {
                             <span className="text-lg">
                               {(() => {
                                 const icon = category.icon || getCategoryIcon(category.name);
-                                console.log(`🎨 Kategorija: ${category.name}, Baza ikona: ${category.icon}, Finalna ikona: ${icon}`);
+                                console.log(`🎨 [${new Date().toLocaleTimeString()}] Kategorija: ${category.name}, Baza ikona: ${category.icon}, Finalna ikona: ${icon}`);
+                                if (category.name === 'Parketar' || category.name === 'Podne obloge') {
+                                  console.log(`🔍 SPECIJALNO: ${category.name} - ikona: ${icon}`);
+                                }
                                 return icon;
                               })()}
                             </span>
