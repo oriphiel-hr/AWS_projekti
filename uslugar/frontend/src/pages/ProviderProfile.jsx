@@ -91,8 +91,10 @@ export default function ProviderProfile({ onSuccess }) {
         }
       } else if (err.response?.status === 401) {
         setError('Vaš login je istekao. Molimo prijavite se ponovno.');
+      } else if (err.response?.status === 404) {
+        setError('Provider profil nije pronađen. Backend možda nije ažuriran. Molimo kontaktirajte podršku.');
       } else {
-        setError('Greška pri učitavanju profila. Molimo pokušajte ponovno.');
+        setError(`Greška pri učitavanju profila (${err.response?.status || 'unknown'}): ${err.message}`);
       }
     } finally {
       setLoading(false);
