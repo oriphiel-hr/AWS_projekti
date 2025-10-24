@@ -97,6 +97,11 @@ export default function ProviderProfile({ onSuccess }) {
       
       setFormData(formDataToSet);
       
+      // Debug: Provjeri da li se state ažurira
+      setTimeout(() => {
+        console.log('🔍 Form data after setState:', formData);
+      }, 100);
+      
       // Poruka dobrodošlice
       setWelcomeMessage(`Dobrodošli, ${actualProfile.user?.fullName || 'Provider'}! 🎉`);
     } catch (err) {
@@ -346,6 +351,9 @@ export default function ProviderProfile({ onSuccess }) {
     );
   }
 
+  // Debug: Log formData prije render-a
+  console.log('🎨 Rendering with formData:', formData);
+  
   return (
     <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-8">
       <div className="mb-6">
