@@ -32,6 +32,8 @@ r.get('/me', auth(true, ['PROVIDER']), async (req, res, next) => {
 
     // Ako profil ne postoji, kreiraj ga automatski
     if (!provider) {
+      console.log(`🔍 ProviderProfile ne postoji za korisnika: ${req.user.email} (${req.user.id})`);
+      
       // Dohvati korisničke podatke za kreiranje profila
       const user = await prisma.user.findUnique({
         where: { id: req.user.id },
@@ -43,27 +45,37 @@ r.get('/me', auth(true, ['PROVIDER']), async (req, res, next) => {
         }
       });
 
-      provider = await prisma.providerProfile.create({
-        data: {
-          userId: req.user.id,
-          bio: '',
-          specialties: [],
-          experience: 0,
-          website: '',
-          serviceArea: user?.city || '',
-          legalStatusId: user?.legalStatusId,
-          taxId: user?.taxId,
-          companyName: user?.companyName,
-          isAvailable: true,
-          portfolio: null
-        },
-        include: {
-          user: true,
-          categories: true
-        }
-      });
-      
-      console.log(`✅ Automatski kreiran ProviderProfile za korisnika: ${req.user.email}`);
+      if (!user) {
+        console.log(`❌ Korisnik nije pronađen: ${req.user.id}`);
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      try {
+        provider = await prisma.providerProfile.create({
+          data: {
+            userId: req.user.id,
+            bio: '',
+            specialties: [],
+            experience: 0,
+            website: '',
+            serviceArea: user?.city || '',
+            legalStatusId: user?.legalStatusId,
+            taxId: user?.taxId,
+            companyName: user?.companyName,
+            isAvailable: true,
+            portfolio: null
+          },
+          include: {
+            user: true,
+            categories: true
+          }
+        });
+
+        console.log(`✅ Automatski kreiran ProviderProfile za korisnika: ${req.user.email}`);
+      } catch (createError) {
+        console.error(`❌ Greška pri kreiranju ProviderProfile:`, createError);
+        return res.status(500).json({ error: 'Failed to create provider profile' });
+      }
     }
 
     // reviews summary
