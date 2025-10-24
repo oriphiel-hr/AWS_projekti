@@ -147,9 +147,10 @@ r.put('/me', auth(true, ['PROVIDER']), async (req, res, next) => {
 });
 
 // Fix missing ProviderProfile for current user
-r.post('/fix-profile', auth(true, ['PROVIDER']), async (req, res, next) => {
+r.post('/fix-profile', auth(true, ['PROVIDER', 'ADMIN']), async (req, res, next) => {
   try {
-    const userId = req.user.id;
+    // Admin može kreirati profil za bilo kojeg korisnika
+    const userId = req.user.role === 'ADMIN' && req.body.userId ? req.body.userId : req.user.id;
     
     // Provjeri da li već postoji profil
     const existingProfile = await prisma.providerProfile.findUnique({
