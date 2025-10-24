@@ -552,21 +552,35 @@ export default function ProviderProfile({ onSuccess }) {
                 .map(category => {
                   const subcategories = categories.filter(cat => cat.parentId === category.id);
                   return (
-                    <div key={category.id} className="border border-gray-200 rounded-lg p-3 bg-white">
+                    <div key={category.id} className={`border rounded-lg p-3 transition-all duration-200 ${
+                      formData.categoryIds.includes(category.id) 
+                        ? 'border-blue-500 bg-blue-50 shadow-md' 
+                        : 'border-gray-200 bg-white hover:border-gray-300'
+                    }`}>
                       <label className={`flex items-start space-x-3 ${editMode ? 'cursor-pointer' : 'cursor-default'}`}>
                         <input
                           type="checkbox"
                           checked={formData.categoryIds.includes(category.id)}
                           onChange={() => handleCategoryChange(category.id)}
                           disabled={!editMode}
-                          className={`mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded ${
-                            !editMode ? 'opacity-50 cursor-not-allowed' : ''
+                          className={`mt-1 h-5 w-5 text-blue-600 focus:ring-blue-500 border-2 rounded transition-all duration-200 ${
+                            formData.categoryIds.includes(category.id)
+                              ? 'border-blue-600 bg-blue-600'
+                              : 'border-gray-300'
+                          } ${
+                            !editMode ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
                           }`}
                         />
                         <div className="flex-1">
                           <div className="flex items-center space-x-2">
                             <span className="text-lg">{category.icon || '🛠️'}</span>
-                            <span className="font-medium text-gray-900">{category.name}</span>
+                            <span className={`font-medium transition-colors duration-200 ${
+                              formData.categoryIds.includes(category.id)
+                                ? 'text-blue-800 font-semibold'
+                                : 'text-gray-900'
+                            }`}>
+                              {category.name}
+                            </span>
                           </div>
                           {category.description && (
                             <p className="text-xs text-gray-600 mt-1">{category.description}</p>
@@ -582,11 +596,21 @@ export default function ProviderProfile({ onSuccess }) {
                                       checked={formData.categoryIds.includes(subcategory.id)}
                                       onChange={() => handleCategoryChange(subcategory.id)}
                                       disabled={!editMode}
-                                      className={`h-3 w-3 text-blue-600 focus:ring-blue-500 border-gray-300 rounded ${
-                                        !editMode ? 'opacity-50 cursor-not-allowed' : ''
+                                      className={`h-4 w-4 text-blue-600 focus:ring-blue-500 border-2 rounded transition-all duration-200 ${
+                                        formData.categoryIds.includes(subcategory.id)
+                                          ? 'border-blue-600 bg-blue-600'
+                                          : 'border-gray-300'
+                                      } ${
+                                        !editMode ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
                                       }`}
                                     />
-                                    <span className="text-xs text-gray-700">{subcategory.name}</span>
+                                    <span className={`text-xs transition-colors duration-200 ${
+                                      formData.categoryIds.includes(subcategory.id)
+                                        ? 'text-blue-700 font-semibold'
+                                        : 'text-gray-700'
+                                    }`}>
+                                      {subcategory.name}
+                                    </span>
                                   </label>
                                 ))}
                                 {subcategories.length > 3 && (
