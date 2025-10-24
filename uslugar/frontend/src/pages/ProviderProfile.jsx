@@ -223,19 +223,44 @@ export default function ProviderProfile({ onSuccess }) {
                   if (err.response?.status === 401) {
                     setError('Vaš login je istekao ili JWT token nije valjan. Molimo prijavite se ponovno.');
                     
-                    // Pokušaj kreirati profil bez autentifikacije za test
-                    console.log('🔄 Pokušavam kreirati profil bez autentifikacije za test...');
-                    try {
-                      const testResponse = await fetch('https://uslugar.api.oriph.io/api/providers/fix-profile', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' }
-                      });
-                      console.log('Test response status:', testResponse.status);
-                      const testData = await testResponse.text();
-                      console.log('Test response:', testData);
-                    } catch (testErr) {
-                      console.error('Test error:', testErr);
-                    }
+                  // Testiraj backend endpoint direktno
+                  console.log('🔄 Testiram backend endpoint direktno...');
+                  try {
+                    // Test 1: Bez autentifikacije
+                    const test1 = await fetch('https://uslugar.api.oriph.io/api/providers/fix-profile', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' }
+                    });
+                    console.log('Test 1 (bez auth) status:', test1.status);
+                    const test1Data = await test1.text();
+                    console.log('Test 1 response:', test1Data);
+                    
+                    // Test 2: S valjanim tokenom
+                    const test2 = await fetch('https://uslugar.api.oriph.io/api/providers/fix-profile', {
+                      method: 'POST',
+                      headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + localStorage.getItem('token')
+                      }
+                    });
+                    console.log('Test 2 (s auth) status:', test2.status);
+                    const test2Data = await test2.text();
+                    console.log('Test 2 response:', test2Data);
+                    
+                    // Test 3: Provjeri da li endpoint postoji
+                    const test3 = await fetch('https://uslugar.api.oriph.io/api/providers/me', {
+                      method: 'GET',
+                      headers: { 
+                        'Authorization': 'Bearer ' + localStorage.getItem('token')
+                      }
+                    });
+                    console.log('Test 3 (/me) status:', test3.status);
+                    const test3Data = await test3.text();
+                    console.log('Test 3 response:', test3Data);
+                    
+                  } catch (testErr) {
+                    console.error('Test error:', testErr);
+                  }
                     
                   } else if (err.response?.status === 404) {
                     setError('Backend endpoint nije pronađen. Backend možda nije ažuriran.');
