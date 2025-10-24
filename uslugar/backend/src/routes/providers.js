@@ -154,7 +154,11 @@ r.post('/fix-profile', auth(true, ['PROVIDER', 'ADMIN']), async (req, res, next)
     
     // Provjeri da li već postoji profil
     const existingProfile = await prisma.providerProfile.findUnique({
-      where: { userId }
+      where: { userId },
+      include: {
+        user: true,
+        categories: true
+      }
     });
 
     if (existingProfile) {
