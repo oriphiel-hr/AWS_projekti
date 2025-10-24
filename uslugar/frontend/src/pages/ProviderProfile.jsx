@@ -426,10 +426,6 @@ export default function ProviderProfile({ onSuccess }) {
       'Zidar': '🧱'
     };
     
-    // Debug: logiraj kategorije koje nemaju ikonu
-    if (!iconMap[categoryName]) {
-      console.log('🔍 Kategorija bez ikone:', categoryName);
-    }
     
     return iconMap[categoryName] || '🛠️';
   };
@@ -997,16 +993,7 @@ export default function ProviderProfile({ onSuccess }) {
                         />
                         <div className="flex-1">
                           <div className="flex items-center space-x-2">
-                            <span className="text-lg">
-                              {(() => {
-                                const icon = category.icon || getCategoryIcon(category.name);
-                                console.log(`🎨 [${new Date().toLocaleTimeString()}] Kategorija: ${category.name}, Baza ikona: ${category.icon}, Finalna ikona: ${icon}`);
-                                if (category.name === 'Parketar' || category.name === 'Podne obloge') {
-                                  console.log(`🔍 SPECIJALNO: ${category.name} - ikona: ${icon}`);
-                                }
-                                return icon;
-                              })()}
-                            </span>
+                            <span className="text-lg">{category.icon || getCategoryIcon(category.name)}</span>
                             <span className={`font-medium transition-colors duration-200 ${
                               formData.categoryIds.includes(category.id)
                                 ? 'text-blue-800 font-semibold'
