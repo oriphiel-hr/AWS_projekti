@@ -6,60 +6,107 @@ const Contact = () => {
   console.log('Contact component rendering...');
 
   useEffect(() => {
-    // Load Google Maps script
-    if (!window.google) {
-      const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dOWWgxE4p4d4k&callback=initMap`;
-      script.async = true;
-      script.defer = true;
-      script.onerror = () => {
-        console.error('Google Maps failed to load');
-        setMapLoaded(true); // Show fallback even if map fails
-      };
-      window.initMap = () => {
-        try {
-          const map = new window.google.maps.Map(document.getElementById('map'), {
-            zoom: 15,
-            center: { lat: 45.8150, lng: 15.9819 }, // Zagreb coordinates
-            mapTypeId: 'roadmap'
-          });
-
-          const marker = new window.google.maps.Marker({
-            position: { lat: 45.8150, lng: 15.9819 },
-            map: map,
-            title: 'Uslugar - Slavenskoga ulica 5, Zagreb'
-          });
-
-          const infoWindow = new window.google.maps.InfoWindow({
-            content: `
-              <div style="padding: 10px;">
-                <h3 style="margin: 0 0 10px 0; color: #1f2937;">🏢 Uslugar</h3>
-                <p style="margin: 0; color: #374151;">
-                  Slavenskoga ulica 5<br>
-                  10000 Zagreb<br>
-                  Hrvatska
-                </p>
-                <p style="margin: 5px 0 0 0; color: #374151;">
-                  📞 <a href="tel:+385915618258" style="color: #3b82f6;">091 561 8258</a>
-                </p>
-              </div>
-            `
-          });
-
-          marker.addListener('click', () => {
-            infoWindow.open(map, marker);
-          });
-
-          setMapLoaded(true);
-        } catch (error) {
-          console.error('Error initializing map:', error);
-          setMapLoaded(true);
-        }
-      };
-      document.head.appendChild(script);
-    } else {
-      setMapLoaded(true);
+    let isMounted = true;
+    
+    // Check if Google Maps is already loaded
+    if (window.google && window.google.maps) {
+      initializeMap();
+      return;
     }
+
+    // Check if script is already being loaded
+    if (document.querySelector('script[src*="maps.googleapis.com"]')) {
+      // Script is already loading, wait for it
+      const checkGoogle = setInterval(() => {
+        if (window.google && window.google.maps) {
+          clearInterval(checkGoogle);
+          if (isMounted) {
+            initializeMap();
+          }
+        }
+      }, 100);
+      
+      return () => {
+        isMounted = false;
+        clearInterval(checkGoogle);
+      };
+    }
+
+    // Load Google Maps script
+    const script = document.createElement('script');
+    script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dOWWgxE4p4d4k&callback=initMap`;
+    script.async = true;
+    script.defer = true;
+    script.onerror = () => {
+      console.error('Google Maps failed to load');
+      if (isMounted) {
+        setMapLoaded(true);
+      }
+    };
+    
+    window.initMap = () => {
+      if (isMounted) {
+        initializeMap();
+      }
+    };
+    
+    document.head.appendChild(script);
+
+    function initializeMap() {
+      try {
+        const mapElement = document.getElementById('map');
+        if (!mapElement) {
+          console.error('Map element not found');
+          setMapLoaded(true);
+          return;
+        }
+
+        const map = new window.google.maps.Map(mapElement, {
+          zoom: 15,
+          center: { lat: 45.8150, lng: 15.9819 },
+          mapTypeId: 'roadmap'
+        });
+
+        const marker = new window.google.maps.Marker({
+          position: { lat: 45.8150, lng: 15.9819 },
+          map: map,
+          title: 'Uslugar - Slavenskoga ulica 5, Zagreb'
+        });
+
+        const infoWindow = new window.google.maps.InfoWindow({
+          content: `
+            <div style="padding: 10px;">
+              <h3 style="margin: 0 0 10px 0; color: #1f2937;">🏢 Uslugar</h3>
+              <p style="margin: 0; color: #374151;">
+                Slavenskoga ulica 5<br>
+                10000 Zagreb<br>
+                Hrvatska
+              </p>
+              <p style="margin: 5px 0 0 0; color: #374151;">
+                📞 <a href="tel:+385915618258" style="color: #3b82f6;">091 561 8258</a>
+              </p>
+            </div>
+          `
+        });
+
+        marker.addListener('click', () => {
+          infoWindow.open(map, marker);
+        });
+
+        setMapLoaded(true);
+      } catch (error) {
+        console.error('Error initializing map:', error);
+        setMapLoaded(true);
+      }
+    }
+
+    return () => {
+      isMounted = false;
+      // Clean up Google Maps callback
+      if (window.initMap) {
+        delete window.initMap;
+      }
+    };
   }, []);
 
   return (
