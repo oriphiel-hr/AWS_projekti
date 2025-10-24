@@ -22,34 +22,50 @@ r.get('/:userId', async (req, res, next) => {
 // get current provider profile
 r.get('/me', auth(true, ['PROVIDER']), async (req, res, next) => {
   try {
-    const provider = await prisma.providerProfile.findUnique({
+    let provider = await prisma.providerProfile.findUnique({
       where: { userId: req.user.id },
-      include: { 
+      include: {
         user: true,
-        categories: true 
+        categories: true
       }
     });
-    
+
+    // Ako profil ne postoji, kreiraj ga automatski
     if (!provider) {
-      return res.status(404).json({ error: 'Provider profil nije pronađen' });
+      provider = await prisma.providerProfile.create({
+        data: {
+          userId: req.user.id,
+          bio: '',
+          specialties: [],
+          experience: 0,
+          website: '',
+          serviceArea: '',
+          isAvailable: true,
+          portfolio: ''
+        },
+        include: {
+          user: true,
+          categories: true
+        }
+      });
     }
-    
+
     // reviews summary
-    const reviews = await prisma.review.findMany({ 
-      where: { toUserId: req.user.id } 
+    const reviews = await prisma.review.findMany({
+      where: { toUserId: req.user.id }
     });
-    
-    const ratingAvg = reviews.length > 0 
-      ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length 
+
+    const ratingAvg = reviews.length > 0
+      ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
       : 0;
-    
+
     res.json({
       ...provider,
       ratingAvg,
       ratingCount: reviews.length
     });
-  } catch (e) { 
-    next(e); 
+  } catch (e) {
+    next(e);
   }
 });
 

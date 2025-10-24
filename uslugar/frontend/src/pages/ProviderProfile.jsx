@@ -9,6 +9,7 @@ export default function ProviderProfile({ onSuccess }) {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [editMode, setEditMode] = useState(false);
+  const [welcomeMessage, setWelcomeMessage] = useState('');
   const [formData, setFormData] = useState({
     bio: '',
     specialties: '',
@@ -40,9 +41,18 @@ export default function ProviderProfile({ onSuccess }) {
         isAvailable: profileData.isAvailable !== false,
         categoryIds: profileData.categories ? profileData.categories.map(c => c.id) : []
       });
+      
+      // Poruka dobrodošlice
+      setWelcomeMessage(`Dobrodošli, ${profileData.user?.fullName || 'Provider'}! 🎉`);
     } catch (err) {
       console.error('Error loading profile:', err);
-      setError('Greška pri učitavanju profila');
+      if (err.response?.status === 404) {
+        setError('Provider profil nije pronađen. Molimo kontaktirajte podršku.');
+      } else if (err.response?.status === 401) {
+        setError('Morate biti prijavljeni kao provider da biste pristupili ovom profilu.');
+      } else {
+        setError('Greška pri učitavanju profila. Molimo pokušajte ponovno.');
+      }
     } finally {
       setLoading(false);
     }
@@ -170,6 +180,13 @@ export default function ProviderProfile({ onSuccess }) {
       {success && (
         <div className="mb-6 p-4 bg-green-50 border-l-4 border-green-500 rounded">
           <p className="text-sm text-green-700">{success}</p>
+        </div>
+      )}
+
+      {welcomeMessage && (
+        <div className="mb-6 p-4 bg-blue-50 border-l-4 border-blue-500 rounded">
+          <p className="text-sm text-blue-700 font-medium">{welcomeMessage}</p>
+          <p className="text-xs text-blue-600 mt-1">Ovdje možete upravljati svojim profilom i kategorijama usluga.</p>
         </div>
       )}
 

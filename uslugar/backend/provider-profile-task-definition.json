@@ -8,7 +8,7 @@
   "containerDefinitions": [
     {
       "name": "uslugar",
-      "image": "666203386231.dkr.ecr.eu-north-1.amazonaws.com/uslugar:provider-profile-fix-20251024-122106",
+      "image": "666203386231.dkr.ecr.eu-north-1.amazonaws.com/uslugar:auto-create-profile-20251024-123000",
       "cpu": 0,
       "portMappings": [
         {
