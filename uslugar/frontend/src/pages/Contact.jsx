@@ -1,113 +1,7 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React from 'react';
 
 const Contact = () => {
-  const [mapLoaded, setMapLoaded] = useState(false);
-  const mapRef = useRef(null);
-  const mapInstanceRef = useRef(null);
-  
   console.log('Contact component rendering...');
-
-  useEffect(() => {
-    let isMounted = true;
-    
-    // Initialize map after component mounts
-    const initMap = () => {
-      if (!isMounted || mapInstanceRef.current) return;
-      
-      try {
-        const mapElement = mapRef.current;
-        if (!mapElement) {
-          console.error('Map element not found');
-          setMapLoaded(true);
-          return;
-        }
-
-        const map = new window.google.maps.Map(mapElement, {
-          zoom: 15,
-          center: { lat: 45.8150, lng: 15.9819 },
-          mapTypeId: 'roadmap'
-        });
-
-        const marker = new window.google.maps.Marker({
-          position: { lat: 45.8150, lng: 15.9819 },
-          map: map,
-          title: 'Uslugar - Slavenskoga ulica 5, Zagreb'
-        });
-
-        const infoWindow = new window.google.maps.InfoWindow({
-          content: `
-            <div style="padding: 10px;">
-              <h3 style="margin: 0 0 10px 0; color: #1f2937;">🏢 Uslugar</h3>
-              <p style="margin: 0; color: #374151;">
-                Slavenskoga ulica 5<br>
-                10000 Zagreb<br>
-                Hrvatska
-              </p>
-              <p style="margin: 5px 0 0 0; color: #374151;">
-                📞 <a href="tel:+385915618258" style="color: #3b82f6;">091 561 8258</a>
-              </p>
-            </div>
-          `
-        });
-
-        marker.addListener('click', () => {
-          infoWindow.open(map, marker);
-        });
-
-        mapInstanceRef.current = map;
-        setMapLoaded(true);
-      } catch (error) {
-        console.error('Error initializing map:', error);
-        setMapLoaded(true);
-      }
-    };
-
-    // Check if Google Maps is already loaded
-    if (window.google && window.google.maps) {
-      initMap();
-      return;
-    }
-
-    // Load Google Maps script only once
-    if (!document.querySelector('script[src*="maps.googleapis.com"]')) {
-      const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dOWWgxE4p4d4k&libraries=geometry`;
-      script.async = true;
-      script.defer = true;
-      script.onload = () => {
-        if (isMounted) {
-          initMap();
-        }
-      };
-      script.onerror = () => {
-        console.error('Google Maps failed to load');
-        if (isMounted) {
-          setMapLoaded(true);
-        }
-      };
-      
-      document.head.appendChild(script);
-    } else {
-      // Script is already loading, wait for it
-      const checkGoogle = setInterval(() => {
-        if (window.google && window.google.maps) {
-          clearInterval(checkGoogle);
-          if (isMounted) {
-            initMap();
-          }
-        }
-      }, 100);
-      
-      return () => {
-        isMounted = false;
-        clearInterval(checkGoogle);
-      };
-    }
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-gray-50 min-h-screen">
@@ -295,49 +189,45 @@ const Contact = () => {
           </div>
 
           <div className="relative">
-            <div 
-              ref={mapRef}
-              className="w-full h-96 rounded-lg border border-gray-300"
-              style={{ minHeight: '400px' }}
-            >
-              {!mapLoaded && (
-                <div className="flex items-center justify-center h-full bg-gray-100 rounded-lg">
-                  <div className="text-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-                    <p className="text-gray-600">Učitavanje karte...</p>
-                  </div>
-                </div>
-              )}
-              {mapLoaded && !window.google && (
-                <div className="flex items-center justify-center h-full bg-gray-100 rounded-lg">
-                  <div className="text-center p-4">
-                    <div className="text-4xl mb-4">🗺️</div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Karta nije dostupna</h3>
-                    <p className="text-gray-600 mb-4">
-                      Google Maps trenutno nije dostupan.
-                    </p>
-                    <div className="bg-white p-4 rounded-lg border">
-                      <p className="text-sm text-gray-700">
-                        <strong>📍 Adresa:</strong><br />
-                        Slavenskoga ulica 5<br />
-                        10000 Zagreb, Hrvatska
-                      </p>
-                      <p className="text-sm text-gray-700 mt-2">
-                        <strong>📞 Telefon:</strong> 
-                        <a href="tel:+385915618258" className="text-blue-600 hover:underline ml-1">
-                          091 561 8258
-                        </a>
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
+            <div className="w-full h-96 rounded-lg border border-gray-300 overflow-hidden" style={{ minHeight: '400px' }}>
+              <iframe
+                src="https://www.openstreetmap.org/export/embed.html?bbox=15.9700%2C45.8100%2C15.9900%2C45.8200&layer=mapnik&marker=45.8150%2C15.9819"
+                width="100%"
+                height="100%"
+                style={{ border: 0 }}
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                title="Uslugar lokacija - Slavenskoga ulica 5, Zagreb"
+              />
+            </div>
+            
+            {/* Map info overlay */}
+            <div className="absolute top-4 left-4 bg-white bg-opacity-90 backdrop-blur-sm rounded-lg p-3 shadow-lg">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                <span className="text-sm font-medium text-gray-900">Uslugar</span>
+              </div>
+              <p className="text-xs text-gray-600 mt-1">
+                Slavenskoga ulica 5, Zagreb
+              </p>
             </div>
           </div>
 
           <div className="mt-4 text-sm text-gray-600">
             <p>
-              💡 <strong>Savjet:</strong> Kliknite na marker na karti za dodatne informacije.
+              💡 <strong>Savjet:</strong> Karta je interaktivna - možete zumirati i pomicati se po karti.
+            </p>
+            <p className="mt-1">
+              🔗 <strong>Otvori u novom prozoru:</strong> 
+              <a 
+                href="https://www.openstreetmap.org/?mlat=45.8150&mlon=15.9819&zoom=15" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline ml-1"
+              >
+                Pogledaj na OpenStreetMap
+              </a>
             </p>
           </div>
         </div>
