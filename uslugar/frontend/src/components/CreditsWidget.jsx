@@ -7,6 +7,13 @@ export default function CreditsWidget() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Provjeri da li je korisnik prijavljen
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+    
     loadBalance();
     
     // Refresh every 30 seconds
@@ -21,6 +28,12 @@ export default function CreditsWidget() {
       setLoading(false);
     } catch (err) {
       console.error('Error loading credits:', err);
+      // Ako je 401, možda korisnik nije prijavljen ili token je istekao
+      if (err.response?.status === 401) {
+        console.log('🔒 Credits endpoint zahtijeva autentifikaciju');
+        // Ne prikazuj widget ako korisnik nije autentificiran
+        setBalance(null);
+      }
       setLoading(false);
     }
   };
