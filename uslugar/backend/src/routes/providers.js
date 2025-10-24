@@ -207,4 +207,92 @@ r.post('/fix-profile', auth(true, ['PROVIDER']), async (req, res, next) => {
   }
 });
 
+// Fix all missing provider profiles (admin endpoint)
+r.post('/fix-all-profiles', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    console.log('🔍 Tražim PROVIDER korisnike bez ProviderProfile...');
+    
+    // Pronađi sve PROVIDER korisnike koji nemaju ProviderProfile
+    const providersWithoutProfile = await prisma.user.findMany({
+      where: {
+        role: 'PROVIDER',
+        providerProfile: null
+      },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        city: true,
+        legalStatusId: true,
+        taxId: true,
+        companyName: true
+      }
+    });
+
+    console.log(`📊 Pronađeno ${providersWithoutProfile.length} PROVIDER korisnika bez profila`);
+
+    if (providersWithoutProfile.length === 0) {
+      return res.json({ 
+        message: 'Svi PROVIDER korisnici već imaju profile!',
+        created: 0,
+        users: []
+      });
+    }
+
+    const createdProfiles = [];
+    const errors = [];
+
+    // Kreiraj ProviderProfile za svakog korisnika
+    for (const user of providersWithoutProfile) {
+      try {
+        console.log(`🔄 Kreiram ProviderProfile za: ${user.email} (${user.fullName})`);
+        
+        const providerProfile = await prisma.providerProfile.create({
+          data: {
+            userId: user.id,
+            bio: '',
+            specialties: [],
+            experience: 0,
+            website: '',
+            serviceArea: user.city || '',
+            legalStatusId: user.legalStatusId,
+            taxId: user.taxId,
+            companyName: user.companyName,
+            isAvailable: true,
+            portfolio: null
+          }
+        });
+
+        createdProfiles.push({
+          userId: user.id,
+          email: user.email,
+          fullName: user.fullName
+        });
+
+        console.log(`✅ ProviderProfile kreiran za: ${user.email}`);
+      } catch (error) {
+        console.error(`❌ Greška pri kreiranju profila za ${user.email}:`, error.message);
+        errors.push({
+          userId: user.id,
+          email: user.email,
+          error: error.message
+        });
+      }
+    }
+
+    console.log('🎉 Završeno kreiranje ProviderProfile-a za postojeće korisnike!');
+
+    res.json({
+      message: `Kreirano ${createdProfiles.length} ProviderProfile-a`,
+      created: createdProfiles.length,
+      errors: errors.length,
+      users: createdProfiles,
+      errorDetails: errors
+    });
+
+  } catch (e) {
+    next(e);
+  }
+});
+
 export default r;
