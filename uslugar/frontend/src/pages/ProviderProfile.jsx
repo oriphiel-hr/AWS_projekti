@@ -466,6 +466,7 @@ export default function ProviderProfile({ onSuccess }) {
         console.log('🔄 /me endpoint ne radi, pokušavam preko /fix-profile...');
         console.log('Token za test:', token);
         console.log('Token duljina:', token?.length);
+        console.log('Me error details:', meError.response?.status, meError.response?.data);
         
         // Testiraj token direktno
         try {
