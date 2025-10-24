@@ -178,16 +178,36 @@ export default function ProviderProfile({ onSuccess }) {
               onClick={async () => {
                 try {
                   setLoading(true);
+                  setError('');
+                  setSuccess('');
+                  
                   console.log('🔄 Pokušavam kreirati ProviderProfile...');
+                  console.log('Token:', localStorage.getItem('token'));
+                  console.log('User:', localStorage.getItem('user'));
+                  
                   const response = await api.post('/providers/fix-profile');
                   console.log('✅ ProviderProfile kreiran:', response.data);
                   setSuccess('Provider profil je uspješno kreiran! Osvježite stranicu.');
+                  
+                  // Automatski osvježi nakon 2 sekunde
+                  setTimeout(() => {
+                    window.location.reload();
+                  }, 2000);
+                  
                 } catch (err) {
                   console.error('Error creating profile:', err);
+                  console.error('Error details:', {
+                    status: err.response?.status,
+                    data: err.response?.data,
+                    message: err.message
+                  });
+                  
                   if (err.response?.status === 401) {
                     setError('Vaš login je istekao. Molimo prijavite se ponovno.');
+                  } else if (err.response?.status === 404) {
+                    setError('Backend endpoint nije pronađen. Backend možda nije ažuriran.');
                   } else {
-                    setError(`Greška pri kreiranju profila: ${err.response?.data?.error || err.message}`);
+                    setError(`Greška pri kreiranju profila (${err.response?.status || 'unknown'}): ${err.response?.data?.error || err.message}`);
                   }
                 } finally {
                   setLoading(false);
