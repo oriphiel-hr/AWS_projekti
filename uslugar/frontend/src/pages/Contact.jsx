@@ -1,60 +1,21 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 
 const Contact = () => {
   const [mapLoaded, setMapLoaded] = useState(false);
+  const mapRef = useRef(null);
+  const mapInstanceRef = useRef(null);
   
   console.log('Contact component rendering...');
 
   useEffect(() => {
     let isMounted = true;
     
-    // Check if Google Maps is already loaded
-    if (window.google && window.google.maps) {
-      initializeMap();
-      return;
-    }
-
-    // Check if script is already being loaded
-    if (document.querySelector('script[src*="maps.googleapis.com"]')) {
-      // Script is already loading, wait for it
-      const checkGoogle = setInterval(() => {
-        if (window.google && window.google.maps) {
-          clearInterval(checkGoogle);
-          if (isMounted) {
-            initializeMap();
-          }
-        }
-      }, 100);
+    // Initialize map after component mounts
+    const initMap = () => {
+      if (!isMounted || mapInstanceRef.current) return;
       
-      return () => {
-        isMounted = false;
-        clearInterval(checkGoogle);
-      };
-    }
-
-    // Load Google Maps script
-    const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dOWWgxE4p4d4k&callback=initMap`;
-    script.async = true;
-    script.defer = true;
-    script.onerror = () => {
-      console.error('Google Maps failed to load');
-      if (isMounted) {
-        setMapLoaded(true);
-      }
-    };
-    
-    window.initMap = () => {
-      if (isMounted) {
-        initializeMap();
-      }
-    };
-    
-    document.head.appendChild(script);
-
-    function initializeMap() {
       try {
-        const mapElement = document.getElementById('map');
+        const mapElement = mapRef.current;
         if (!mapElement) {
           console.error('Map element not found');
           setMapLoaded(true);
@@ -93,19 +54,58 @@ const Contact = () => {
           infoWindow.open(map, marker);
         });
 
+        mapInstanceRef.current = map;
         setMapLoaded(true);
       } catch (error) {
         console.error('Error initializing map:', error);
         setMapLoaded(true);
       }
+    };
+
+    // Check if Google Maps is already loaded
+    if (window.google && window.google.maps) {
+      initMap();
+      return;
+    }
+
+    // Load Google Maps script only once
+    if (!document.querySelector('script[src*="maps.googleapis.com"]')) {
+      const script = document.createElement('script');
+      script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dOWWgxE4p4d4k&libraries=geometry`;
+      script.async = true;
+      script.defer = true;
+      script.onload = () => {
+        if (isMounted) {
+          initMap();
+        }
+      };
+      script.onerror = () => {
+        console.error('Google Maps failed to load');
+        if (isMounted) {
+          setMapLoaded(true);
+        }
+      };
+      
+      document.head.appendChild(script);
+    } else {
+      // Script is already loading, wait for it
+      const checkGoogle = setInterval(() => {
+        if (window.google && window.google.maps) {
+          clearInterval(checkGoogle);
+          if (isMounted) {
+            initMap();
+          }
+        }
+      }, 100);
+      
+      return () => {
+        isMounted = false;
+        clearInterval(checkGoogle);
+      };
     }
 
     return () => {
       isMounted = false;
-      // Clean up Google Maps callback
-      if (window.initMap) {
-        delete window.initMap;
-      }
     };
   }, []);
 
@@ -296,7 +296,7 @@ const Contact = () => {
 
           <div className="relative">
             <div 
-              id="map" 
+              ref={mapRef}
               className="w-full h-96 rounded-lg border border-gray-300"
               style={{ minHeight: '400px' }}
             >
