@@ -10,6 +10,153 @@ export default function ProviderProfile({ onSuccess }) {
   const [success, setSuccess] = useState('');
   const [editMode, setEditMode] = useState(false);
   const [welcomeMessage, setWelcomeMessage] = useState('');
+  
+  // Mapiranje kategorija na specifične ikone
+  const getCategoryIcon = (categoryName) => {
+    const iconMap = {
+      // Gradnja i renoviranje
+      'Gradnja': '🏗️',
+      'Renoviranje': '🔨',
+      'Keramika': '🧱',
+      'Parket': '🪵',
+      'Krov': '🏠',
+      'Fasada': '🎨',
+      'Vodovod': '🚰',
+      'Elektrika': '⚡',
+      'Grijanje': '🔥',
+      'Klima': '❄️',
+      'Izolacija': '🧊',
+      'Stolarija': '🪟',
+      'Vrata': '🚪',
+      'Prozori': '🪟',
+      'Balkon': '🏡',
+      'Terasa': '🌿',
+      'Bazen': '🏊',
+      'Vrt': '🌱',
+      'Ogradni zid': '🧱',
+      'Asfalt': '🛣️',
+      
+      // IT i tehnologija
+      'IT usluge': '💻',
+      'Web dizajn': '🌐',
+      'Programiranje': '👨‍💻',
+      'Mreže': '🌐',
+      'Sigurnost': '🔒',
+      'Cloud': '☁️',
+      'Mobilne aplikacije': '📱',
+      'E-commerce': '🛒',
+      'SEO': '🔍',
+      'Digitalni marketing': '📈',
+      
+      // Obrazovanje
+      'Obrazovanje': '📚',
+      'Jezici': '🗣️',
+      'Muzika': '🎵',
+      'Sport': '⚽',
+      'Ples': '💃',
+      'Slikanje': '🎨',
+      'Fotografija': '📸',
+      'Kuhanje': '👨‍🍳',
+      
+      // Zdravlje i ljepota
+      'Zdravlje': '🏥',
+      'Fizioterapija': '💪',
+      'Masage': '💆',
+      'Kozmetika': '💄',
+      'Nokti': '💅',
+      'Kosa': '💇',
+      'Tatuaže': '🎨',
+      'Fitness': '💪',
+      'Joga': '🧘',
+      
+      // Usluge
+      'Čišćenje': '🧽',
+      'Pranje': '👕',
+      'Kuhanje': '👨‍🍳',
+      'Dostava': '🚚',
+      'Prevoz': '🚗',
+      'Taxi': '🚕',
+      'Dostava hrane': '🍕',
+      'Dostava paketa': '📦',
+      'Selidba': '📦',
+      'Skladištenje': '🏪',
+      
+      // Automobili
+      'Automobili': '🚗',
+      'Servis': '🔧',
+      'Dijagnostika': '🔍',
+      'Gume': '🛞',
+      'Akumulator': '🔋',
+      'Auto perionica': '🚿',
+      'Auto škola': '🚗',
+      'Prevoz': '🚐',
+      
+      // Ostalo
+      'Pravne usluge': '⚖️',
+      'Računovodstvo': '📊',
+      'Marketing': '📢',
+      'Dizajn': '🎨',
+      'Fotografija': '📸',
+      'Video': '🎬',
+      'Organizacija događaja': '🎉',
+      'Konzultacije': '💼',
+      'Prijenos': '📡',
+      'Sigurnost': '🛡️',
+      
+      // Dodatne specifične kategorije
+      'Instalacije': '🔧',
+      'Popravci': '🔨',
+      'Montaža': '⚙️',
+      'Dostava': '🚚',
+      'Prevoz': '🚗',
+      'Taxi': '🚕',
+      'Dostava hrane': '🍕',
+      'Dostava paketa': '📦',
+      'Selidba': '📦',
+      'Skladištenje': '🏪',
+      'Čišćenje': '🧽',
+      'Pranje': '👕',
+      'Kuhanje': '👨‍🍳',
+      'Automobili': '🚗',
+      'Servis': '🔧',
+      'Dijagnostika': '🔍',
+      'Gume': '🛞',
+      'Akumulator': '🔋',
+      'Auto perionica': '🚿',
+      'Auto škola': '🚗',
+      'Prevoz': '🚐',
+      'IT usluge': '💻',
+      'Web dizajn': '🌐',
+      'Programiranje': '👨‍💻',
+      'Mreže': '🌐',
+      'Sigurnost': '🔒',
+      'Cloud': '☁️',
+      'Mobilne aplikacije': '📱',
+      'E-commerce': '🛒',
+      'SEO': '🔍',
+      'Digitalni marketing': '📈',
+      'Obrazovanje': '📚',
+      'Jezici': '🗣️',
+      'Muzika': '🎵',
+      'Sport': '⚽',
+      'Ples': '💃',
+      'Slikanje': '🎨',
+      'Fotografija': '📸',
+      'Kuhanje': '👨‍🍳',
+      'Zdravlje': '🏥',
+      'Fizioterapija': '💪',
+      'Masage': '💆',
+      'Kozmetika': '💄',
+      'Nokti': '💅',
+      'Kosa': '💇',
+      'Tatuaže': '🎨',
+      'Fitness': '💪',
+      'Joga': '🧘'
+    };
+    
+    return iconMap[categoryName] || '🛠️';
+  };
+  
   const [formData, setFormData] = useState({
     bio: '',
     specialties: '',
@@ -573,7 +720,7 @@ export default function ProviderProfile({ onSuccess }) {
                         />
                         <div className="flex-1">
                           <div className="flex items-center space-x-2">
-                            <span className="text-lg">{category.icon || '🛠️'}</span>
+                            <span className="text-lg">{getCategoryIcon(category.name)}</span>
                             <span className={`font-medium transition-colors duration-200 ${
                               formData.categoryIds.includes(category.id)
                                 ? 'text-blue-800 font-semibold'
@@ -609,6 +756,7 @@ export default function ProviderProfile({ onSuccess }) {
                                         ? 'text-blue-700 font-semibold'
                                         : 'text-gray-700'
                                     }`}>
+                                      <span className="mr-1">{getCategoryIcon(subcategory.name)}</span>
                                       {subcategory.name}
                                     </span>
                                   </label>
