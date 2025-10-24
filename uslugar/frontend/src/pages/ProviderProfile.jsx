@@ -103,7 +103,8 @@ export default function ProviderProfile({ onSuccess }) {
       }, 100);
       
       // Poruka dobrodošlice
-      setWelcomeMessage(`Dobrodošli, ${actualProfile.user?.fullName || 'Provider'}! 🎉`);
+      const userName = actualProfile.user?.fullName || actualProfile.user?.name || 'Provider';
+      setWelcomeMessage(`Dobrodošli, ${userName}! 🎉`);
     } catch (err) {
       console.error('Error loading profile:', err);
       if (err.response?.status === 401) {
