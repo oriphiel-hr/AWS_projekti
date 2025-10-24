@@ -47,7 +47,33 @@ export default function ProviderProfile({ onSuccess }) {
     } catch (err) {
       console.error('Error loading profile:', err);
       if (err.response?.status === 404) {
-        setError('Provider profil nije pronađen. Molimo kontaktirajte podršku.');
+        // Pokušaj kreirati profil automatski
+        try {
+          console.log('🔄 Pokušavam kreirati ProviderProfile automatski...');
+          const createResponse = await api.post('/providers/fix-profile');
+          console.log('✅ ProviderProfile kreiran:', createResponse.data);
+          
+          // Ponovno učitaj profil
+          const retryResponse = await api.get('/providers/me');
+          const profileData = retryResponse.data;
+          
+          setProfile(profileData);
+          setFormData({
+            bio: profileData.bio || '',
+            specialties: profileData.specialties ? profileData.specialties.join(', ') : '',
+            experience: profileData.experience || '',
+            website: profileData.website || '',
+            serviceArea: profileData.serviceArea || '',
+            isAvailable: profileData.isAvailable !== false,
+            categoryIds: profileData.categories ? profileData.categories.map(c => c.id) : []
+          });
+          
+          setWelcomeMessage(`Dobrodošli, ${profileData.user?.fullName || 'Provider'}! 🎉`);
+          setSuccess('Provider profil je automatski kreiran!');
+        } catch (createErr) {
+          console.error('Error creating profile:', createErr);
+          setError('Provider profil nije pronađen. Molimo kontaktirajte podršku.');
+        }
       } else if (err.response?.status === 401) {
         setError('Morate biti prijavljeni kao provider da biste pristupili ovom profilu.');
       } else {
