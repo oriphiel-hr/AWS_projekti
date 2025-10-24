@@ -154,7 +154,7 @@ export default function ProviderProfile({ onSuccess }) {
           <div className="text-yellow-500 text-4xl mb-4">🔧</div>
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Provider profil nije kreiran</h3>
           <p className="text-gray-600 mb-6">
-            Vaš Provider profil još nije kreiran. Ovo je normalno za nove providere.
+            Vaš Provider profil još nije kreiran. Ovo se automatski kreira prilikom registracije kao PROVIDER.
           </p>
           
           {error && (
@@ -169,32 +169,11 @@ export default function ProviderProfile({ onSuccess }) {
             <ul className="text-left text-blue-800 space-y-1">
               <li>• Osvježite stranicu (F5)</li>
               <li>• Odjavite se i ponovno prijavite</li>
-              <li>• Kontaktirajte podršku ako se problem nastavi</li>
+              <li>• Kontaktirajte podršku - profil se trebao kreirati automatski</li>
             </ul>
           </div>
 
           <div className="space-y-3">
-            <button
-              onClick={async () => {
-                try {
-                  console.log('🔄 Pokušavam kreirati ProviderProfile ručno...');
-                  const response = await api.post('/providers/fix-profile');
-                  console.log('✅ ProviderProfile kreiran:', response.data);
-                  setSuccess('Provider profil je uspješno kreiran! Osvježite stranicu.');
-                } catch (err) {
-                  console.error('Error creating profile:', err);
-                  if (err.response?.status === 401) {
-                    setError('Vaš login je istekao. Molimo prijavite se ponovno.');
-                  } else {
-                    setError(`Greška pri kreiranju profila: ${err.response?.data?.error || err.message}`);
-                  }
-                }
-              }}
-              className="w-full bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg transition-colors"
-            >
-              🔧 Kreiraj Provider profil
-            </button>
-            
             <button
               onClick={() => window.location.reload()}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors"
