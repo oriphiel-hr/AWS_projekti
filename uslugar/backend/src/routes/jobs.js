@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { prisma } from '../lib/prisma.js';
 import { auth } from '../lib/auth.js';
-import { notifyNewJob, notifyAcceptedOffer } from '../lib/notifications.js';
+import { notifyNewJob, notifyAcceptedOffer, notifyJobCompleted } from '../lib/notifications.js';
 
 const r = Router();
 
@@ -216,6 +216,107 @@ r.post('/:jobId/accept/:offerId', auth(true, ['USER', 'PROVIDER']), async (req, 
     await notifyAcceptedOffer(offer, job);
     
     res.json({ ok: true });
+  } catch (e) { next(e); }
+});
+
+// Mark job as completed
+r.patch('/:jobId/complete', auth(true, ['USER', 'PROVIDER']), async (req, res, next) => {
+  try {
+    const { jobId } = req.params;
+    
+    const job = await prisma.job.findUnique({
+      where: { id: jobId },
+      include: {
+        offers: {
+          where: { status: 'ACCEPTED' },
+          include: { user: true }
+        }
+      }
+    });
+    
+    if (!job) {
+      return res.status(404).json({ error: 'Job not found' });
+    }
+    
+    // Check authorization: owner or provider who has accepted offer
+    const isOwner = job.userId === req.user.id;
+    const isProvider = job.offers.length > 0 && job.offers[0].userId === req.user.id;
+    
+    if (!isOwner && !isProvider) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+    
+    if (job.status !== 'IN_PROGRESS') {
+      return res.status(400).json({ error: 'Job is not in progress' });
+    }
+    
+    const updatedJob = await prisma.job.update({
+      where: { id: jobId },
+      data: { status: 'COMPLETED' }
+    });
+    
+    // Send notifications
+    await notifyJobCompleted(jobId);
+    
+    res.json({
+      success: true,
+      job: updatedJob
+    });
+  } catch (e) { next(e); }
+});
+
+// Mark job as cancelled
+r.patch('/:jobId/cancel', auth(true, ['USER', 'PROVIDER']), async (req, res, next) => {
+  try {
+    const { jobId } = req.params;
+    const { reason } = req.body;
+    
+    const job = await prisma.job.findUnique({
+      where: { id: jobId },
+      include: {
+        offers: {
+          where: { status: 'ACCEPTED' },
+          include: { user: true }
+        }
+      }
+    });
+    
+    if (!job) {
+      return res.status(404).json({ error: 'Job not found' });
+    }
+    
+    // Only owner can cancel
+    if (job.userId !== req.user.id) {
+      return res.status(403).json({ error: 'Only job owner can cancel' });
+    }
+    
+    if (job.status === 'COMPLETED' || job.status === 'CANCELLED') {
+      return res.status(400).json({ error: 'Cannot cancel completed or already cancelled job' });
+    }
+    
+    const updatedJob = await prisma.job.update({
+      where: { id: jobId },
+      data: { status: 'CANCELLED' }
+    });
+    
+    // If there was an accepted offer, notify provider
+    if (job.offers.length > 0) {
+      const provider = job.offers[0].user;
+      await prisma.notification.create({
+        data: {
+          title: 'Posao otkazan',
+          message: `Posao "${job.title}" je otkazan${reason ? ': ' + reason : ''}`,
+          type: 'JOB_CANCELLED',
+          userId: provider.id,
+          jobId: job.id
+        }
+      });
+    }
+    
+    res.json({
+      success: true,
+      job: updatedJob
+    });
   } catch (e) { next(e); }
 });
 

@@ -56,4 +56,106 @@ r.get('/job/:jobId', auth(true), async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+// Accept an offer
+r.patch('/:offerId/accept', auth(true), async (req, res, next) => {
+  try {
+    const { offerId } = req.params;
+    
+    // Get offer and job
+    const offer = await prisma.offer.findUnique({
+      where: { id: offerId },
+      include: {
+        job: true,
+        user: true
+      }
+    });
+    
+    if (!offer) {
+      return res.status(404).json({ error: 'Offer not found' });
+    }
+    
+    // Check if user owns the job
+    if (offer.job.userId !== req.user.id) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+    
+    // Check if job is still open
+    if (offer.job.status !== 'OPEN') {
+      return res.status(400).json({ error: 'Job is not open' });
+    }
+    
+    // Check if offer is still pending
+    if (offer.status !== 'PENDING') {
+      return res.status(400).json({ error: 'Offer already processed' });
+    }
+    
+    // Use transaction to update offer and job status
+    const result = await prisma.$transaction(async (tx) => {
+      // Update offer to ACCEPTED
+      const updatedOffer = await tx.offer.update({
+        where: { id: offerId },
+        data: { status: 'ACCEPTED' }
+      });
+      
+      // Reject all other offers for this job
+      await tx.offer.updateMany({
+        where: {
+          jobId: offer.jobId,
+          id: { not: offerId },
+          status: 'PENDING'
+        },
+        data: { status: 'REJECTED' }
+      });
+      
+      // Update job status to IN_PROGRESS
+      const updatedJob = await tx.job.update({
+        where: { id: offer.jobId },
+        data: { status: 'IN_PROGRESS' }
+      });
+      
+      return { updatedOffer, updatedJob };
+    });
+    
+    // Send notification to provider
+    await notifyAcceptedOffer(offer, offer.job);
+    
+    res.json({
+      success: true,
+      offer: result.updatedOffer,
+      job: result.updatedJob
+    });
+  } catch (e) { next(e); }
+});
+
+// Reject an offer
+r.patch('/:offerId/reject', auth(true), async (req, res, next) => {
+  try {
+    const { offerId } = req.params;
+    
+    const offer = await prisma.offer.findUnique({
+      where: { id: offerId },
+      include: { job: true }
+    });
+    
+    if (!offer) {
+      return res.status(404).json({ error: 'Offer not found' });
+    }
+    
+    if (offer.job.userId !== req.user.id) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+    
+    if (offer.status !== 'PENDING') {
+      return res.status(400).json({ error: 'Offer already processed' });
+    }
+    
+    const updatedOffer = await prisma.offer.update({
+      where: { id: offerId },
+      data: { status: 'REJECTED' }
+    });
+    
+    res.json({ success: true, offer: updatedOffer });
+  } catch (e) { next(e); }
+});
+
 export default r;
