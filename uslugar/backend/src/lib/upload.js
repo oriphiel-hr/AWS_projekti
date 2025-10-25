@@ -42,6 +42,31 @@ export const upload = multer({
   fileFilter: fileFilter
 });
 
+// File filter - dokumenti (PDF, DOC, DOCX, slike)
+const documentFileFilter = (req, file, cb) => {
+  const allowedTypes = /jpeg|jpg|png|pdf|doc|docx/;
+  const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+  const mimetype = allowedTypes.test(file.mimetype) || 
+                   file.mimetype === 'application/pdf' ||
+                   file.mimetype === 'application/msword' ||
+                   file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+
+  if (mimetype || extname) {
+    return cb(null, true);
+  } else {
+    cb(new Error('Only documents are allowed (PDF, DOC, DOCX, JPG, PNG)'));
+  }
+};
+
+// Multer konfiguracija za dokumente (10MB limit)
+export const uploadDocument = multer({
+  storage: storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB limit
+  },
+  fileFilter: documentFileFilter
+});
+
 // Helper za brisanje fajlova
 export const deleteFile = (filename) => {
   const filePath = path.join(uploadDir, filename);
