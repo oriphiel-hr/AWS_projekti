@@ -934,6 +934,84 @@ export default function ProviderProfile({ onSuccess }) {
               Dostupan za nove poslove
             </label>
           </div>
+
+          {/* Pravni status i licence */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Pravni status (OIB) <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="taxId"
+                value={profile.user?.taxId || ''}
+                disabled
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-600"
+                placeholder="12345678901"
+              />
+              <p className="text-xs text-gray-500 mt-1">OIB se ne može mijenjati</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Naziv firme/obrta
+              </label>
+              <input
+                type="text"
+                name="companyName"
+                value={profile.user?.companyName || ''}
+                disabled
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-600"
+              />
+              <p className="text-xs text-gray-500 mt-1">Prikazuje se ako postoji</p>
+            </div>
+          </div>
+
+          {/* Licence i ovlaštenja */}
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <h4 className="text-sm font-semibold text-yellow-900 mb-2">
+              📜 Licence i ovlaštenja
+            </h4>
+            <p className="text-xs text-yellow-800 mb-3">
+              Neke kategorije usluga zahtijevaju licence ili specijalna ovlaštenja (npr. Električar, Arhitekti, Građevina).
+            </p>
+            <div className="space-y-2">
+              {formData.categoryIds.map(categoryId => {
+                const category = categories.find(c => c.id === categoryId);
+                if (!category?.requiresLicense) return null;
+                return (
+                  <div key={categoryId} className="bg-white border border-yellow-300 rounded p-3">
+                    <div className="flex items-start space-x-2">
+                      <span className="text-yellow-600">⚠️</span>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-yellow-900">
+                          {category.icon} {category.name}
+                        </p>
+                        {category.licenseType && (
+                          <p className="text-xs text-yellow-700 mt-1">
+                            Zahtijeva: <strong>{category.licenseType}</strong>
+                          </p>
+                        )}
+                        {category.licenseAuthority && (
+                          <p className="text-xs text-yellow-600 mt-1">
+                            Izdaje: {category.licenseAuthority}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+              {formData.categoryIds.filter(catId => {
+                const cat = categories.find(c => c.id === catId);
+                return cat?.requiresLicense;
+              }).length === 0 && (
+                <p className="text-sm text-yellow-700">
+                  ✓ Odabrane kategorije ne zahtijevaju licence
+                </p>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Kategorije usluga */}
