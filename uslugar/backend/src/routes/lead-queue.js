@@ -111,11 +111,43 @@ router.get('/my-queue', authMiddleware, async (req, res) => {
       skip: parseInt(offset)
     })
     
+    // Za svaki queue item, izračunaj dodatne informacije
+    const enhancedQueueItems = await Promise.all(queueItems.map(async (item) => {
+      // Pronađi ukupan broj ljudi u redu za ovaj job
+      const queueForThisJob = await prisma.leadQueue.findMany({
+        where: { jobId: item.jobId },
+        orderBy: { position: 'asc' }
+      })
+      
+      // Izračunaj koliko ljudi je ispred
+      const peopleAhead = queueForThisJob.filter(q => 
+        q.position < item.position && 
+        (q.status === 'OFFERED' || q.status === 'WAITING')
+      ).length
+      
+      // Provjeri je li posao već uzet
+      const jobTaken = queueForThisJob.some(q => q.status === 'ACCEPTED')
+      
+      // Izračunaj procijenjeno vrijeme čekanja
+      const estimatedWaitHours = peopleAhead * 24
+      
+      return {
+        ...item,
+        queueInfo: {
+          position: item.position,
+          totalInQueue: queueForThisJob.length,
+          peopleAhead,
+          estimatedWaitHours,
+          jobTaken
+        }
+      }
+    }))
+    
     const total = await prisma.leadQueue.count({ where })
     
     res.json({
       success: true,
-      queueItems,
+      queueItems: enhancedQueueItems,
       pagination: {
         total,
         limit: parseInt(limit),
@@ -128,6 +160,105 @@ router.get('/my-queue', authMiddleware, async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Greška pri dohvaćanju queue-a',
+      error: error.message
+    })
+  }
+})
+
+/**
+ * GET /api/lead-queue/job/:jobId/my-position
+ * Provider vidi svoju poziciju u redu za određeni job
+ */
+router.get('/job/:jobId/my-position', authMiddleware, async (req, res) => {
+  try {
+    const { jobId } = req.params
+    const userId = req.user.id
+    
+    // Pronađi providerov queue item za ovaj job
+    const myQueueItem = await prisma.leadQueue.findFirst({
+      where: {
+        jobId,
+        providerId: userId
+      },
+      include: {
+        job: {
+          include: {
+            category: true
+          }
+        }
+      }
+    })
+    
+    if (!myQueueItem) {
+      return res.status(404).json({
+        success: false,
+        message: 'Vi niste u redu za ovaj posao'
+      })
+    }
+    
+    // Pronađi sve stavke u redu za ovaj job (za kontekst)
+    const allQueueItems = await prisma.leadQueue.findMany({
+      where: { jobId },
+      include: {
+        provider: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true
+          }
+        }
+      },
+      orderBy: { position: 'asc' }
+    })
+    
+    // Izračunaj koliko ljudi je ispred njega
+    const peopleAhead = allQueueItems.filter(item => 
+      item.position < myQueueItem.position && 
+      (item.status === 'OFFERED' || item.status === 'WAITING')
+    ).length
+    
+    // Provjeri je li posao već rezerviran
+    const jobTaken = allQueueItems.some(item => item.status === 'ACCEPTED')
+    
+    // Izračunaj prosječno vrijeme čekanja (po 24h po osobi)
+    const estimatedWaitHours = peopleAhead * 24
+    const estimatedWaitText = estimatedWaitHours > 24 
+      ? `${Math.floor(estimatedWaitHours / 24)} dana`
+      : `${estimatedWaitHours} sati`
+    
+    res.json({
+      success: true,
+      myPosition: {
+        position: myQueueItem.position,
+        totalInQueue: allQueueItems.length,
+        status: myQueueItem.status,
+        peopleAhead,
+        estimatedWaitHours,
+        estimatedWaitText,
+        jobTaken,
+        expiresAt: myQueueItem.expiresAt,
+        hasTimeLeft: myQueueItem.expiresAt ? myQueueItem.expiresAt > new Date() : false
+      },
+      job: {
+        id: myQueueItem.job.id,
+        title: myQueueItem.job.title,
+        category: myQueueItem.job.category.name,
+        city: myQueueItem.job.city,
+        leadPrice: myQueueItem.job.leadPrice
+      },
+      queueContext: allQueueItems.map(item => ({
+        position: item.position,
+        status: item.status,
+        providerName: item.providerId === userId ? 'Vi' : item.provider.fullName,
+        offeredAt: item.offeredAt,
+        expiresAt: item.expiresAt
+      }))
+    })
+  } catch (error) {
+    console.error('Error fetching position:', error)
+    res.status(500).json({
+      success: false,
+      message: 'Greška pri dohvaćanju pozicije',
       error: error.message
     })
   }
