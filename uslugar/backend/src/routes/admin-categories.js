@@ -90,7 +90,7 @@ r.post('/add-missing-categories', async (req, res, next) => {
             }
           });
           updatedCount++;
-          console.log(✅ Ažurirana: );
+          console.log('✅ Ažurirana:', cat.name);
         } else {
           await prisma.category.create({
             data: {
@@ -105,14 +105,14 @@ r.post('/add-missing-categories', async (req, res, next) => {
             }
           });
           addedCount++;
-          console.log(➕ Dodana: );
+          console.log('➕ Dodana:', cat.name);
         }
       } catch (error) {
-        console.error(❌ Greška za :, error.message);
+        console.error('❌ Greška za', cat.name + ':', error.message);
       }
     }
 
-    console.log(📊 REZULTAT: Dodano , Ažurirano );
+    console.log('📊 REZULTAT: Dodano', addedCount, 'Ažurirano', updatedCount);
     
     res.json({ 
       message: 'Kategorije uspješno dodane/ažurirane!',
