@@ -33,3 +33,11 @@ ALTER TABLE "Job" ALTER COLUMN "userId" DROP NOT NULL;
 -- AlterTable: Add linking token fields for anonymous job posting
 ALTER TABLE "Job" ADD COLUMN "linkingToken" TEXT,
 ADD COLUMN "linkingTokenExpiresAt" TIMESTAMP(3);
+
+-- AlterTable: Add cancelledAt to Subscription (if not exists)
+DO $$  
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'Subscription' AND column_name = 'cancelledAt') THEN
+        ALTER TABLE "Subscription" ADD COLUMN "cancelledAt" TIMESTAMP(3);
+    END IF;
+END $$;
