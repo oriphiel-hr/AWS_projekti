@@ -79,7 +79,12 @@ async function main() {
     { id: 'other_002', name: 'Umjetničke usluge', description: 'Kiparstvo, slikanje, umjetnost', isActive: false, icon: '🎭', requiresLicense: false, nkdCode: '90.03' },
     { id: 'other_003', name: 'Trgovinske usluge', description: 'Prodaja, trgovina', isActive: false, icon: '🏪', requiresLicense: false, nkdCode: '47.11' },
     { id: 'other_004', name: 'Poslovne usluge', description: 'Administrativne usluge', isActive: false, icon: '🏢', requiresLicense: false, nkdCode: '82.11' },
-    { id: 'other_005', name: 'Popravak opreme', description: 'Popravak različite opreme', isActive: false, icon: '🔧', requiresLicense: false, nkdCode: '95.11' }
+    { id: 'other_005', name: 'Popravak opreme', description: 'Popravak različite opreme', isActive: false, icon: '🔧', requiresLicense: false, nkdCode: '95.11' },
+    
+    // DODATNE GLAVNE KATEGORIJE ZA PODKATEGORIJE
+    { id: 'garden_001', name: 'Baštanski radovi', description: 'Vrtni radovi i baštanska njega', isActive: true, icon: '🌿', requiresLicense: false, nkdCode: '81.30' },
+    { id: 'clean_001', name: 'Čistoća i održavanje', description: 'Čišćenje i održavanje prostora', isActive: true, icon: '🧹', requiresLicense: false, nkdCode: '81.21' },
+    { id: 'it_support_001', name: 'IT podrška', description: 'IT usluge i tehnička podrška', isActive: true, icon: '🖥️', requiresLicense: false, nkdCode: '62.03' }
   ];
 
   for (const category of newCategories) {
@@ -90,6 +95,59 @@ async function main() {
     });
   }
   console.log(`✅ Seeded ${newCategories.length} new categories.`);
+
+  // Seed Subcategories
+  const subCategories = [
+    // BAŠTANSKI RADOVI - 4 podkategorije
+    { name: 'Uređivanje vrta', description: 'Dizajn i uređivanje vrtnih prostora', parentCategoryName: 'Baštanski radovi', icon: '🌿', isActive: true },
+    { name: 'Sadnja biljaka', description: 'Sadnja cvijeća, grmlja i drveća', parentCategoryName: 'Baštanski radovi', icon: '🌱', isActive: true },
+    { name: 'Održavanje vrta', description: 'Košenje, obrezivanje, zalijevanje', parentCategoryName: 'Baštanski radovi', icon: '✂️', isActive: true },
+    { name: 'Automatsko zalijevanje', description: 'Ugradnja sustava automatskog zalijevanja', parentCategoryName: 'Baštanski radovi', icon: '💧', isActive: true },
+
+    // ČISTOĆA I ODRŽAVANJE - 4 podkategorije
+    { name: 'Čišćenje kuće', description: 'Redovno čišćenje stanova i kuća', parentCategoryName: 'Čistoća i održavanje', icon: '🧹', isActive: true },
+    { name: 'Čišćenje ureda', description: 'Poslovni prostori i uredi', parentCategoryName: 'Čistoća i održavanje', icon: '🏢', isActive: true },
+    { name: 'Čišćenje nakon gradnje', description: 'Čišćenje nakon renovacije i gradnje', parentCategoryName: 'Čistoća i održavanje', icon: '🏗️', isActive: true },
+    { name: 'Čišćenje tepiha', description: 'Profesionalno čišćenje tepiha i tapeta', parentCategoryName: 'Čistoća i održavanje', icon: '🪣', isActive: true },
+
+    // IT PODRŠKA - 4 podkategorije
+    { name: 'Popravak računala', description: 'Servis desktop i laptop računala', parentCategoryName: 'IT podrška', icon: '💻', isActive: true },
+    { name: 'Mrežne instalacije', description: 'Ugradnja WiFi mreža i kabeliranje', parentCategoryName: 'IT podrška', icon: '📶', isActive: true },
+    { name: 'Sigurnosni sustavi', description: 'Kamere, alarmi, kontrolni sustavi', parentCategoryName: 'IT podrška', icon: '🔒', isActive: true },
+    { name: 'Software podrška', description: 'Instalacija programa i tehnička podrška', parentCategoryName: 'IT podrška', icon: '⚙️', isActive: true },
+
+    // PRIJEVOZ - 4 podkategorije
+    { name: 'Selidba', description: 'Selidba stanova i kuća', parentCategoryName: 'Prijevoz', icon: '📦', isActive: true },
+    { name: 'Prijevoz namještaja', description: 'Transport namještaja i velikih predmeta', parentCategoryName: 'Prijevoz', icon: '🚚', isActive: true },
+    { name: 'Prijevoz građevinskog materijala', description: 'Transport cementa, pijeska, cigle', parentCategoryName: 'Prijevoz', icon: '🧱', isActive: true },
+    { name: 'Prijevoz otpada', description: 'Odvoz građevinskog i komunalnog otpada', parentCategoryName: 'Prijevoz', icon: '🗑️', isActive: true }
+  ];
+
+  for (const subcategory of subCategories) {
+    const parent = await prisma.category.findFirst({
+      where: { name: subcategory.parentCategoryName }
+    });
+    
+    if (parent) {
+      await prisma.category.upsert({
+        where: { 
+          name: subcategory.name
+        },
+        update: {
+          ...subcategory,
+          parentId: parent.id
+        },
+        create: {
+          name: subcategory.name,
+          description: subcategory.description,
+          icon: subcategory.icon,
+          isActive: subcategory.isActive,
+          parentId: parent.id
+        }
+      });
+    }
+  }
+  console.log(`✅ Seeded ${subCategories.length} subcategories.`);
   
   // Seed Legal Statuses (Hrvatski pravni oblici) - IDevi moraju biti isti kao u migraciji!
   const legalStatuses = [
