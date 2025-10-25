@@ -441,6 +441,53 @@ export default function ProviderProfile({ onSuccess }) {
     isAvailable: true,
     categoryIds: []
   });
+  
+  // Mapiranje kategorija koje zahtijevaju više dokumenata
+  const [categoryDocuments, setCategoryDocuments] = useState({});
+  const [uploadingDoc, setUploadingDoc] = useState({}); // {categoryId: true/false}
+  
+  // Kategorije koje zahtijevaju više dokumenata
+  const getRequiredDocumentsForCategory = (categoryId) => {
+    const category = categories.find(c => c.id === categoryId);
+    if (!category || !category.requiresLicense) return [];
+    
+    const docsMap = {
+      // Električar - više vrsta dozvola
+      'Električar': [
+        { name: 'Elektrotehnička dozvola', required: true },
+        { name: 'Certifikat električara', required: true },
+        { name: 'Obrazovanje (diploma)', required: false }
+      ],
+      // Arhitekti - više dokumenata
+      'Arhitekti': [
+        { name: 'Licenca arhitekta', required: true },
+        { name: 'Diploma', required: true },
+        { name: 'Članstvo u komori', required: false }
+      ],
+      // Građevina - različite dozvole
+      'Projektiranje građevina': [
+        { name: 'Građevinska dozvola', required: true },
+        { name: 'Certifikat', required: true }
+      ],
+      // Fizioterapija
+      'Fizioterapija': [
+        { name: 'Licenca fizioterapeuta', required: true },
+        { name: 'Diploma', required: true }
+      ],
+      // Nutrisionizam
+      'Nutricionizam': [
+        { name: 'Licenca nutricionista', required: true },
+        { name: 'Diploma', required: true }
+      ],
+      // Mentalno zdravlje
+      'Mentalno zdravlje': [
+        { name: 'Licenca psihologa', required: true },
+        { name: 'Diploma', required: true }
+      ]
+    };
+    
+    return docsMap[category.name] || [{ name: category.licenseType || 'Licenca', required: true }];
+  };
 
   useEffect(() => {
     loadProfile();
@@ -548,6 +595,42 @@ export default function ProviderProfile({ onSuccess }) {
         ? prev.categoryIds.filter(id => id !== categoryId)
         : [...prev.categoryIds, categoryId]
     }));
+  };
+
+  const handleDocumentUpload = async (categoryId, docIndex, file) => {
+    const category = categories.find(c => c.id === categoryId);
+    if (!category) return;
+    
+    setUploadingDoc(prev => ({ ...prev, [`${categoryId}_${docIndex}`]: true }));
+    
+    try {
+      // Create FormData
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('categoryId', categoryId);
+      formData.append('docType', docIndex);
+      
+      // Upload file to backend
+      const response = await api.post('/providers/upload-license', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      
+      // Update category documents state
+      setCategoryDocuments(prev => ({
+        ...prev,
+        [categoryId]: {
+          ...prev[categoryId],
+          [docIndex]: response.data.url
+        }
+      }));
+      
+      setSuccess(`✅ Dokument "${file.name}" je uspješno učit動n!`);
+    } catch (err) {
+      console.error('Error uploading document:', err);
+      setError(`Greška pri učitavanju dokumenta: ${err.response?.data?.error || err.message}`);
+    } finally {
+      setUploadingDoc(prev => ({ ...prev, [`${categoryId}_${docIndex}`]: false }));
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -1248,6 +1331,76 @@ export default function ProviderProfile({ onSuccess }) {
               </div>
             )}
           </div>
+
+          {/* Document Upload Section - Only for selected categories that require licenses */}
+          {editMode && formData.categoryIds.length > 0 && formData.categoryIds.some(catId => {
+            const cat = categories.find(c => c.id === catId);
+            return cat && cat.requiresLicense;
+          }) && (
+            <div className="space-y-4 bg-yellow-50 border-2 border-yellow-300 p-4 rounded-lg mt-4">
+              <h3 className="text-lg font-semibold text-yellow-900 flex items-center">
+                📄 Obavezni dokumenti za odabrane kategorije
+              </h3>
+              <p className="text-sm text-yellow-800 mb-4">
+                Neke odabrane kategorije zahtijevaju licence ili certifikate. Molimo učitajte potrebne dokumente.
+              </p>
+              
+              {formData.categoryIds.map(categoryId => {
+                const category = categories.find(c => c.id === categoryId);
+                if (!category || !category.requiresLicense) return null;
+                
+                const requiredDocs = getRequiredDocumentsForCategory(categoryId);
+                
+                return (
+                  <div key={categoryId} className="bg-white border border-yellow-300 rounded-lg p-4">
+                    <h4 className="font-semibold text-yellow-900 mb-3 flex items-center">
+                      <span className="mr-2">{category.icon}</span>
+                      {category.name}
+                    </h4>
+                    
+                    <div className="space-y-3">
+                      {requiredDocs.map((doc, docIndex) => (
+                        <div key={docIndex} className="border border-gray-300 rounded-lg p-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <label className="text-sm font-medium text-gray-700">
+                              {doc.name}
+                              {doc.required && <span className="text-red-500 ml-1">*</span>}
+                            </label>
+                            {categoryDocuments[categoryId]?.[docIndex] && (
+                              <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                                ✅ Učitano
+                              </span>
+                            )}
+                          </div>
+                          
+                          <input
+                            type="file"
+                            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                handleDocumentUpload(categoryId, docIndex, file);
+                              }
+                            }}
+                            disabled={uploadingDoc[`${categoryId}_${docIndex}`]}
+                            className="w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-yellow-600 file:text-white hover:file:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                          />
+                          
+                          {uploadingDoc[`${categoryId}_${docIndex}`] && (
+                            <p className="text-xs text-blue-600 mt-1">⏳ Učitavanje...</p>
+                          )}
+                          
+                          <p className="text-xs text-gray-500 mt-1">
+                            Prihvaćeni formati: PDF, JPG, PNG, DOC, DOCX (max 10MB)
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Statistike */}
