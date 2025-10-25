@@ -99,6 +99,7 @@ model Job {
   title               String
   description         String
   projectType         String?   // Vrsta projekta (npr. "Renovacija", "Gradnja", "Popravak")
+  customFields        Json?     // Dinamička polja ovisno o kategoriji i vrsti projekta
   budgetMin           Int?
   budgetMax           Int?
   city                String?

@@ -90,9 +90,117 @@ const DEFAULT_PROJECT_TYPES = [
   'Ostalo'
 ];
 
+// Konfiguracija specifičnih polja ovisno o kategoriji i vrsti projekta
+const FIELD_CONFIGURATIONS = {
+  'Arhitekti': {
+    'Novogradnja': [
+      { key: 'surface', label: 'Broj kvadratnih metara', type: 'number', required: false },
+      { key: 'floors', label: 'Broj katova', type: 'number', required: false },
+      { key: 'plotSize', label: 'Površina parcele (m²)', type: 'number', required: false }
+    ],
+    'Adaptacija ili rekonstrukcija': [
+      { key: 'surface', label: 'Broj kvadratnih metara', type: 'number', required: false },
+      { key: 'currentState', label: 'Trenutno stanje objekta', type: 'select', options: ['Dobar', 'Potreban remont', 'Ruševina'], required: false },
+      { key: 'buildingYear', label: 'Godina izgradnje', type: 'number', required: false }
+    ],
+    'Nadogradnja': [
+      { key: 'currentFloors', label: 'Trenutni broj katova', type: 'number', required: false },
+      { key: 'newFloors', label: 'Broj novih katova', type: 'number', required: false },
+      { key: 'surface', label: 'Broj kvadratnih metara', type: 'number', required: false }
+    ]
+  },
+  'Električar': {
+    'Nova instalacija': [
+      { key: 'propertyType', label: 'Vrsta objekta', type: 'select', options: ['Stan', 'Kuća', 'Poslovni prostor'], required: false },
+      { key: 'surface', label: 'Broj kvadratnih metara', type: 'number', required: false },
+      { key: 'meterLocation', label: 'Lokacija elektromjernog mjesta', type: 'text', required: false }
+    ],
+    'Popravak': [
+      { key: 'problemDescription', label: 'Opis problema', type: 'textarea', required: false },
+      { key: 'urgency', label: 'Hitnost', type: 'select', options: ['Niski', 'Srednji', 'Visok', 'Hitan'], required: false }
+    ]
+  },
+  'Vodoinstalater': {
+    'Nova instalacija': [
+      { key: 'bathrooms', label: 'Broj kupaonica', type: 'number', required: false },
+      { key: 'kitchens', label: 'Broj kuhinja', type: 'number', required: false },
+      { key: 'hotWater', label: 'Topla voda', type: 'select', options: ['Da', 'Ne'], required: false }
+    ],
+    'Popravak': [
+      { key: 'problemType', label: 'Vrsta problema', type: 'select', options: ['Curenje', 'Zasiranje', 'Slab tlak', 'Drugi'], required: false },
+      { key: 'location', label: 'Lokacija problema', type: 'text', required: false }
+    ]
+  },
+  'Soboslikarstvo': {
+    'Farbanje': [
+      { key: 'rooms', label: 'Broj prostorija', type: 'number', required: false },
+      { key: 'surface', label: 'Ukupna površina (m²)', type: 'number', required: false },
+      { key: 'paintType', label: 'Tip boje', type: 'select', options: ['Dispersija', 'Lateks', 'Akril', 'Mineralna'], required: false }
+    ],
+    'Tapaciranje': [
+      { key: 'walls', label: 'Broj zidova za tapaciranje', type: 'number', required: false },
+      { key: 'wallpaperType', label: 'Tip tapeta', type: 'select', options: ['Vinilne', 'Tekstilne', 'Fototapete'], required: false }
+    ]
+  },
+  'Keramičar': {
+    'Položba pločica': [
+      { key: 'rooms', label: 'Broj prostorija', type: 'number', required: false },
+      { key: 'surface', label: 'Ukupna površina (m²)', type: 'number', required: false },
+      { key: 'tileSize', label: 'Veličina pločica', type: 'text', placeholder: 'npr. 30x30', required: false }
+    ],
+    'Fugiranje': [
+      { key: 'surface', label: 'Površina za fugiranje (m²)', type: 'number', required: false },
+      { key: 'jointWidth', label: 'Širina fuge (mm)', type: 'number', required: false }
+    ]
+  },
+  'Krovopokrivač': {
+    'Popravak krova': [
+      { key: 'roofType', label: 'Vrsta krova', type: 'select', options: ['Lamela', 'Crijep', 'Lim', 'Betonski'], required: false },
+      { key: 'problemDescription', label: 'Opis problema', type: 'textarea', required: false },
+      { key: 'surface', label: 'Površina krova (m²)', type: 'number', required: false }
+    ]
+  },
+  'Stolar': {
+    'Namještaj': [
+      { key: 'roomType', label: 'Prostorija', type: 'select', options: ['Kuhinja', 'Dnevni boravak', 'Spavaća soba', 'Ured', 'Ostalo'], required: false },
+      { key: 'furnitureType', label: 'Vrsta namještaja', type: 'select', options: ['Kuhinjske jedinice', 'Orman', 'Police', 'Stolovi', 'Klupice'], required: false }
+    ],
+    'Parket': [
+      { key: 'surface', label: 'Površina (m²)', type: 'number', required: false },
+      { key: 'roomType', label: 'Prostorija', type: 'text', required: false },
+      { key: 'woodType', label: 'Vrsta drva', type: 'select', options: ['Hrast', 'Bukva', 'Jasen', 'Kruška'], required: false }
+    ]
+  },
+  'Čišćenje': {
+    'Stanovanje': [
+      { key: 'rooms', label: 'Broj prostorija', type: 'number', required: false },
+      { key: 'surface', label: 'Površina (m²)', type: 'number', required: false },
+      { key: 'cleaningType', label: 'Vrsta čišćenja', type: 'select', options: ['Standardno', 'Temeljito', 'Nakon gradnje'], required: false }
+    ],
+    'Poslovni prostor': [
+      { key: 'surface', label: 'Površina (m²)', type: 'number', required: false },
+      { key: 'employees', label: 'Broj zaposlenih', type: 'number', required: false },
+      { key: 'frequency', label: 'Učestalost', type: 'select', options: ['Jednom', 'Tjedno', 'Mjesečno'], required: false }
+    ]
+  },
+  'Dostava': {
+    'Paketi': [
+      { key: 'weight', label: 'Težina (kg)', type: 'number', required: false },
+      { key: 'dimensions', label: 'Dimenzije (cm)', type: 'text', placeholder: 'npr. 40x30x20', required: false },
+      { key: 'fragile', label: 'Lomljivo', type: 'select', options: ['Da', 'Ne'], required: false }
+    ],
+    'Hrana': [
+      { key: 'restaurant', label: 'Restoran/Prehrambeni objekt', type: 'text', required: false },
+      { key: 'address', label: 'Adresa dostave', type: 'text', required: false },
+      { key: 'readyTime', label: 'Vrijeme pripreme', type: 'time', required: false }
+    ]
+  }
+};
+
 const JobForm = ({ onSubmit, categories = [], initialData = null }) => {
   const [images, setImages] = useState(initialData?.images || []);
   const [uploading, setUploading] = useState(false);
+  const [customFields, setCustomFields] = useState({}); // State za custom polja
   
   const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm({
     defaultValues: initialData || {
@@ -109,8 +217,9 @@ const JobForm = ({ onSubmit, categories = [], initialData = null }) => {
     }
   });
 
-  // Watch selected category
+  // Watch selected category and project type
   const selectedCategoryId = watch('categoryId');
+  const selectedProjectType = watch('projectType');
   
   // Get project types for selected category
   const getProjectTypes = () => {
@@ -122,10 +231,29 @@ const JobForm = ({ onSubmit, categories = [], initialData = null }) => {
     return PROJECT_TYPES_BY_CATEGORY[selectedCategory.name] || DEFAULT_PROJECT_TYPES;
   };
 
-  // Reset project type when category changes
+  // Get custom fields for selected category and project type
+  const getCustomFields = () => {
+    if (!selectedCategoryId || !selectedProjectType) return [];
+    
+    const selectedCategory = categories.find(cat => cat.id === selectedCategoryId);
+    if (!selectedCategory) return [];
+    
+    const categoryConfig = FIELD_CONFIGURATIONS[selectedCategory.name];
+    if (!categoryConfig) return [];
+    
+    return categoryConfig[selectedProjectType] || [];
+  };
+
+  // Reset project type and custom fields when category changes
   useEffect(() => {
     setValue('projectType', '');
+    setCustomFields({});
   }, [selectedCategoryId, setValue]);
+
+  // Reset custom fields when project type changes
+  useEffect(() => {
+    setCustomFields({});
+  }, [selectedProjectType]);
 
   const handleImageUpload = async (event) => {
     const files = Array.from(event.target.files);
@@ -172,6 +300,7 @@ const JobForm = ({ onSubmit, categories = [], initialData = null }) => {
     onSubmit({
       ...data,
       images,
+      customFields, // Add custom fields
       budgetMin: data.budgetMin ? parseInt(data.budgetMin) : null,
       budgetMax: data.budgetMax ? parseInt(data.budgetMax) : null,
       deadline: data.deadline ? new Date(data.deadline).toISOString() : null
@@ -248,6 +377,64 @@ const JobForm = ({ onSubmit, categories = [], initialData = null }) => {
           </select>
         </div>
       </div>
+
+      {/* Dynamic fields based on category and project type */}
+      {selectedCategoryId && selectedProjectType && getCustomFields().length > 0 && (
+        <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg space-y-4">
+          <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+            <svg className="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Dodatni detalji projekta
+          </h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {getCustomFields().map((field) => (
+              <div key={field.key}>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {field.label} {field.required && <span className="text-red-500">*</span>}
+                </label>
+                
+                {field.type === 'select' ? (
+                  <select
+                    value={customFields[field.key] || ''}
+                    onChange={(e) => setCustomFields({ ...customFields, [field.key]: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="">Odaberite</option>
+                    {field.options?.map(option => (
+                      <option key={option} value={option}>{option}</option>
+                    ))}
+                  </select>
+                ) : field.type === 'textarea' ? (
+                  <textarea
+                    value={customFields[field.key] || ''}
+                    onChange={(e) => setCustomFields({ ...customFields, [field.key]: e.target.value })}
+                    rows={3}
+                    placeholder={field.placeholder}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                ) : field.type === 'time' ? (
+                  <input
+                    type="time"
+                    value={customFields[field.key] || ''}
+                    onChange={(e) => setCustomFields({ ...customFields, [field.key]: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                ) : (
+                  <input
+                    type={field.type || 'text'}
+                    value={customFields[field.key] || ''}
+                    onChange={(e) => setCustomFields({ ...customFields, [field.key]: e.target.value })}
+                    placeholder={field.placeholder}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
