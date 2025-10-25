@@ -4,11 +4,23 @@ import { sendJobNotification, sendOfferNotification, sendOfferAcceptedNotificati
 // Notify providers about new job
 export const notifyNewJob = async (job, categoryId) => {
   try {
-    // Find all providers in this category
+    // Get parent category if this is a subcategory
+    const category = await prisma.category.findUnique({
+      where: { id: categoryId },
+      include: { parent: true }
+    });
+    
+    const relevantCategories = [categoryId];
+    // If this is a subcategory, also notify providers with parent category
+    if (category && category.parentId) {
+      relevantCategories.push(category.parentId);
+    }
+    
+    // Find all providers in this category or its parent category
     const providers = await prisma.providerProfile.findMany({
       where: {
         categories: {
-          some: { id: categoryId }
+          some: { id: { in: relevantCategories } }
         },
         isAvailable: true
       },

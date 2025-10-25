@@ -64,6 +64,88 @@ r.get('/', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+// Get jobs relevant to provider's categories (including subcategories)
+r.get('/for-provider', auth(true, ['PROVIDER']), async (req, res, next) => {
+  try {
+    const { latitude, longitude, distance = 50 } = req.query;
+    
+    // Get provider's categories
+    const providerProfile = await prisma.providerProfile.findUnique({
+      where: { userId: req.user.id },
+      include: {
+        categories: true
+      }
+    });
+
+    if (!providerProfile) {
+      return res.status(404).json({ error: 'Provider profile not found' });
+    }
+
+    const categoryIds = providerProfile.categories.map(cat => cat.id);
+    
+    if (categoryIds.length === 0) {
+      return res.json([]);
+    }
+
+    // For each category, find all subcategories
+    const allCategoryIds = new Set(categoryIds);
+    for (const catId of categoryIds) {
+      const subcategories = await prisma.category.findMany({
+        where: { parentId: catId },
+        select: { id: true }
+      });
+      subcategories.forEach(sub => allCategoryIds.add(sub.id));
+    }
+
+    const finalCategoryIds = Array.from(allCategoryIds);
+    
+    // Get jobs in these categories
+    let jobs = await prisma.job.findMany({
+      where: {
+        status: 'OPEN',
+        categoryId: { in: finalCategoryIds }
+      },
+      include: { 
+        category: true, 
+        offers: {
+          include: {
+            user: {
+              select: { id: true, fullName: true, email: true }
+            }
+          }
+        },
+        user: {
+          select: { id: true, fullName: true, email: true, phone: true }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    
+    // Filter by distance if coordinates provided
+    if (latitude && longitude) {
+      const userLat = parseFloat(latitude);
+      const userLon = parseFloat(longitude);
+      const maxDistance = parseFloat(distance);
+      
+      jobs = jobs.filter(job => {
+        if (!job.latitude || !job.longitude) return false;
+        const R = 6371; // Earth radius in km
+        const dLat = (job.latitude - userLat) * Math.PI / 180;
+        const dLon = (job.longitude - userLon) * Math.PI / 180;
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                  Math.cos(userLat * Math.PI / 180) * Math.cos(job.latitude * Math.PI / 180) *
+                  Math.sin(dLon/2) * Math.sin(dLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        const dist = R * c;
+        job.distance = Math.round(dist * 10) / 10; // Round to 1 decimal
+        return dist <= maxDistance;
+      }).sort((a, b) => a.distance - b.distance);
+    }
+    
+    res.json(jobs);
+  } catch (e) { next(e); }
+});
+
 // create job (USER or PROVIDER can create jobs)
 r.post('/', auth(true, ['USER', 'PROVIDER']), async (req, res, next) => {
   try {
