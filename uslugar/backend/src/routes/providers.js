@@ -12,7 +12,12 @@ r.get('/me', auth(true, ['PROVIDER']), async (req, res, next) => {
       where: { userId: req.user.id },
       include: {
         user: true,
-        categories: true
+        categories: true,
+        licenses: {
+          orderBy: {
+            createdAt: 'desc'
+          }
+        }
       }
     });
 

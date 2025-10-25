@@ -149,4 +149,98 @@ r.post('/add-categories', async (req, res, next) => {
   }
 });
 
+// Verify license - Admin endpoint
+r.patch('/licenses/:licenseId/verify', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const { licenseId } = req.params;
+    const { isVerified, notes } = req.body;
+
+    // Get license
+    const license = await prisma.providerLicense.findUnique({
+      where: { id: licenseId },
+      include: {
+        provider: {
+          include: {
+            user: true
+          }
+        }
+      }
+    });
+
+    if (!license) {
+      return res.status(404).json({ error: 'License not found' });
+    }
+
+    // Update license
+    const updatedLicense = await prisma.providerLicense.update({
+      where: { id: licenseId },
+      data: {
+        isVerified: isVerified !== undefined ? Boolean(isVerified) : true,
+        verifiedAt: isVerified !== undefined && Boolean(isVerified) ? new Date() : null,
+        verifiedBy: isVerified !== undefined && Boolean(isVerified) ? req.user.id : null,
+        notes: notes || undefined
+      },
+      include: {
+        provider: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+                fullName: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    res.json({
+      message: isVerified ? 'License verified successfully' : 'License verification removed',
+      license: updatedLicense
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+// Get all licenses (Admin)
+r.get('/licenses', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const { verified, providerId } = req.query;
+
+    const where = {};
+    if (verified !== undefined) {
+      where.isVerified = verified === 'true';
+    }
+    if (providerId) {
+      where.providerId = providerId;
+    }
+
+    const licenses = await prisma.providerLicense.findMany({
+      where,
+      include: {
+        provider: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+                fullName: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    res.json(licenses);
+  } catch (e) {
+    next(e);
+  }
+});
+
 export default r;
