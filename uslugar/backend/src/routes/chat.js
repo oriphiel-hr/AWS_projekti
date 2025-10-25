@@ -54,6 +54,49 @@ r.post('/rooms', auth(true), async (req, res, next) => {
       return res.status(400).json({ error: 'Missing jobId or participantId' });
     }
 
+    // Get job and verify status
+    const job = await prisma.job.findUnique({
+      where: { id: jobId },
+      include: {
+        offers: {
+          where: { status: 'ACCEPTED' },
+          include: {
+            user: true
+          }
+        }
+      }
+    });
+
+    if (!job) {
+      return res.status(404).json({ error: 'Job not found' });
+    }
+
+    // Check if job has accepted offer
+    const acceptedOffer = job.offers[0];
+    if (!acceptedOffer) {
+      return res.status(403).json({ 
+        error: 'Chat is only available after a provider accepts the job' 
+      });
+    }
+
+    // Verify that the participants are the job owner and the accepted provider
+    const isJobOwner = req.user.id === job.userId;
+    const isAcceptedProvider = req.user.id === acceptedOffer.userId;
+    
+    if (!isJobOwner && !isAcceptedProvider) {
+      return res.status(403).json({ 
+        error: 'Only the job owner and accepted provider can chat' 
+      });
+    }
+
+    // Verify participantId matches
+    const expectedOtherParticipant = isJobOwner ? acceptedOffer.userId : job.userId;
+    if (participantId !== expectedOtherParticipant) {
+      return res.status(403).json({ 
+        error: 'Invalid participant - you can only chat with the job owner or accepted provider' 
+      });
+    }
+
     // Check if room already exists
     const existingRoom = await prisma.chatRoom.findFirst({
       where: {
@@ -119,6 +162,73 @@ r.post('/rooms', auth(true), async (req, res, next) => {
   }
 });
 
+// Check chat access and get other participant info
+r.get('/check/:jobId', auth(true), async (req, res, next) => {
+  try {
+    const { jobId } = req.params;
+
+    const job = await prisma.job.findUnique({
+      where: { id: jobId },
+      include: {
+        offers: {
+          where: { status: 'ACCEPTED' },
+          include: {
+            user: {
+              select: { id: true, fullName: true, email: true }
+            }
+          }
+        },
+        user: {
+          select: { id: true, fullName: true, email: true }
+        }
+      }
+    });
+
+    if (!job) {
+      return res.status(404).json({ error: 'Job not found' });
+    }
+
+    const acceptedOffer = job.offers[0];
+    const isJobOwner = req.user.id === job.userId;
+    const isAcceptedProvider = acceptedOffer && req.user.id === acceptedOffer.userId;
+
+    // Determine who can chat
+    if (!isJobOwner && !isAcceptedProvider) {
+      return res.json({
+        hasAccess: false,
+        message: 'Chat is only available for the job owner and accepted provider'
+      });
+    }
+
+    // Get the other participant
+    const otherParticipant = isJobOwner ? acceptedOffer?.user : job.user;
+
+    // Check if chat room exists
+    const existingRoom = await prisma.chatRoom.findFirst({
+      where: {
+        jobId,
+        participants: {
+          some: { id: req.user.id }
+        }
+      }
+    });
+
+    res.json({
+      hasAccess: true,
+      otherParticipant,
+      job: {
+        id: job.id,
+        title: job.title,
+        status: job.status
+      },
+      roomExists: !!existingRoom,
+      roomId: existingRoom?.id
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
 // Get messages for a room
 r.get('/rooms/:roomId/messages', auth(true), async (req, res, next) => {
   try {
@@ -132,11 +242,26 @@ r.get('/rooms/:roomId/messages', auth(true), async (req, res, next) => {
         participants: {
           some: { id: req.user.id }
         }
+      },
+      include: {
+        job: {
+          include: {
+            offers: {
+              where: { status: 'ACCEPTED' },
+              include: { user: true }
+            }
+          }
+        }
       }
     });
 
     if (!room) {
       return res.status(403).json({ error: 'Access denied' });
+    }
+
+    // Additional validation: ensure job has accepted offer
+    if (!room.job.offers || room.job.offers.length === 0) {
+      return res.status(403).json({ error: 'Chat is only available after job acceptance' });
     }
 
     const messages = await prisma.chatMessage.findMany({
