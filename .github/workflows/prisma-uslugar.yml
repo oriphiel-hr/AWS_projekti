@@ -197,3 +197,145 @@ jobs:
 
           echo "❌ Prisma migrate failed."
           exit 1
+
+  seed:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    needs: prisma
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Get latest Prisma image
+        env:
+          ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          PRISMA_IMAGE_URI="$ECR_REGISTRY/${{ env.ECR_REPO_PRISMA }}:$IMAGE_TAG"
+          echo "PRISMA_IMAGE_URI=$PRISMA_IMAGE_URI" >> $GITHUB_ENV
+
+      - name: Run Prisma seed (one-off Fargate task)
+        shell: bash
+        env:
+          SUBNETS: ${{ env.MIGRATE_SUBNETS }}
+          SECGRP:  ${{ env.MIGRATE_SG }}
+          ASSIGN_PUBLIC_IP: ENABLED
+          AWS_REGION: ${{ env.AWS_REGION }}
+          DB_SECRET_ARN: ${{ secrets.DB_SECRET_ARN }}
+          AWS_ECS_TASK_EXEC_ROLE_ARN: ${{ secrets.AWS_ECS_TASK_EXEC_ROLE_ARN }}
+          AWS_ECS_TASK_ROLE_ARN: ${{ secrets.AWS_ECS_TASK_ROLE_ARN }}
+          ECS_CLUSTER: ${{ env.ECS_CLUSTER }}
+        run: |
+          set -euo pipefail
+
+          echo "Running Prisma seed with image: ${PRISMA_IMAGE_URI}"
+
+          sudo apt-get update -y >/dev/null
+          sudo apt-get install -y jq >/dev/null
+
+          # container-definitions for seed
+          cat > container-seed.json <<EOF
+          [
+            {
+              "name": "prisma-seed",
+              "image": "${PRISMA_IMAGE_URI}",
+              "essential": true,
+              "environment": [
+                { "name": "PRISMA_OPENSSL_VERSION", "value": "3.0.x" }
+              ],
+              "secrets": [
+                { "name": "DATABASE_URL", "valueFrom": "${DB_SECRET_ARN}:DATABASE_URL::" }
+              ],
+              "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                  "awslogs-region": "${AWS_REGION}",
+                  "awslogs-group": "/ecs/uslugar/prisma",
+                  "awslogs-stream-prefix": "seed"
+                }
+              },
+              "command": [
+                "sh","-lc",
+                "npm run seed"
+              ]
+            }
+          ]
+          EOF
+
+          echo "----- container-seed.json -----"
+          cat container-seed.json
+          echo "------------------------------"
+
+          # Register Task Definition for seed
+          TD_ARN=$(aws ecs register-task-definition \
+            --family uslugar-prisma-seed-oneoff \
+            --network-mode awsvpc \
+            --cpu "256" \
+            --memory "512" \
+            --requires-compatibilities FARGATE \
+            --execution-role-arn "$AWS_ECS_TASK_EXEC_ROLE_ARN" \
+            ${AWS_ECS_TASK_ROLE_ARN:+--task-role-arn "$AWS_ECS_TASK_ROLE_ARN"} \
+            --container-definitions file://container-seed.json \
+            --query "taskDefinition.taskDefinitionArn" \
+            --output text)
+          echo "TD_ARN=$TD_ARN"
+
+          # Network config
+          cat > netcfg.json <<EOF
+          {
+            "awsvpcConfiguration": {
+              "subnets": ["${SUBNETS//,/\",\"}"],
+              "securityGroups": ["${SECGRP}"],
+              "assignPublicIp": "${ASSIGN_PUBLIC_IP}"
+            }
+          }
+          EOF
+
+          TASK_ARN=$(aws ecs run-task \
+            --cluster "$ECS_CLUSTER" \
+            --launch-type FARGATE \
+            --task-definition "$TD_ARN" \
+            --network-configuration file://netcfg.json \
+            --query "tasks[0].taskArn" --output text)
+          echo "Seed Task: $TASK_ARN"
+
+          aws ecs wait tasks-stopped --cluster "$ECS_CLUSTER" --tasks "$TASK_ARN"
+
+          # Check status
+          DESC=$(aws ecs describe-tasks --cluster "$ECS_CLUSTER" --tasks "$TASK_ARN")
+          STATUS=$(echo "$DESC" | jq -r '.tasks[0].lastStatus')
+          EXIT=$(echo "$DESC" | jq -r '.tasks[0].containers[0].exitCode // empty')
+          CREASON=$(echo "$DESC" | jq -r '.tasks[0].containers[0].reason // empty')
+
+          echo "Task status: $STATUS ; exitCode: ${EXIT:-<none>} ; reason: ${CREASON:-<none>}"
+
+          if [ "${EXIT:-}" = "0" ]; then
+            echo "✅ Prisma seed OK"
+            exit 0
+          fi
+
+          # Fetch CloudWatch logs
+          TASK_ID="${TASK_ARN##*/}"
+          STREAM="seed/prisma-seed/${TASK_ID}"
+          echo "Fetching CloudWatch logs: /ecs/uslugar/prisma :: ${STREAM}"
+          aws logs get-log-events \
+            --log-group-name "/ecs/uslugar/prisma" \
+            --log-stream-name "$STREAM" \
+            --limit 200 --output text || true
+
+          echo "❌ Prisma seed failed."
+          exit 1
