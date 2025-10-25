@@ -9,144 +9,145 @@ datasource db {
 }
 
 model User {
-  id                    String        @id @default(cuid())
-  email                 String        @unique
-  passwordHash          String
-  fullName              String
-  role                  Role          @default(USER)
-  phone                 String?
-  city                  String?
-  latitude              Float?        // Geolokacija
-  longitude             Float?        // Geolokacija
-  isVerified            Boolean       @default(false) // Verifikacija korisnika
-  verificationToken     String?       @unique // Token za email verifikaciju
-  tokenExpiresAt        DateTime?     // Istek verifikacijskog tokena
-  resetPasswordToken    String?       @unique // Token za resetiranje lozinke
-  resetPasswordExpires  DateTime?     // Istek reset tokena (1h)
-  legalStatus           LegalStatus?  @relation("UserLegalStatus", fields: [legalStatusId], references: [id])
-  legalStatusId         String?       // Pravni status (za firme koje traže usluge)
-  taxId                 String?       // OIB
-  companyName           String?       // Naziv firme
-  createdAt             DateTime      @default(now())
-  updatedAt             DateTime      @updatedAt
+  id                   String       @id @default(cuid())
+  email                String       @unique
+  passwordHash         String
+  fullName             String
+  role                 Role         @default(USER)
+  phone                String?
+  city                 String?
+  latitude             Float? // Geolokacija
+  longitude            Float? // Geolokacija
+  isVerified           Boolean      @default(false) // Verifikacija korisnika
+  verificationToken    String?      @unique // Token za email verifikaciju
+  tokenExpiresAt       DateTime? // Istek verifikacijskog tokena
+  resetPasswordToken   String?      @unique // Token za resetiranje lozinke
+  resetPasswordExpires DateTime? // Istek reset tokena (1h)
+  legalStatus          LegalStatus? @relation("UserLegalStatus", fields: [legalStatusId], references: [id])
+  legalStatusId        String? // Pravni status (za firme koje traže usluge)
+  taxId                String? // OIB
+  companyName          String? // Naziv firme
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
 
-  providerProfile     ProviderProfile?
-  jobs                Job[]            @relation("UserJobs")
-  assignedJobs        Job[]            @relation("AssignedJobs")
-  offers              Offer[]
-  reviewsGiven        Review[]         @relation("reviewsGiven")
-  reviewsReceived     Review[]         @relation("reviewsReceived")
-  notifications       Notification[]
-  chatMessages        ChatMessage[]    @relation("senderMessages")
-  chatRooms           ChatRoom[]       @relation("participants")
-  leadPurchases       LeadPurchase[]
-  providerROI         ProviderROI?
-  creditTransactions  CreditTransaction[]
-  clientVerification  ClientVerification?
+  providerProfile    ProviderProfile?
+  jobs               Job[]               @relation("UserJobs")
+  assignedJobs       Job[]               @relation("AssignedJobs")
+  offers             Offer[]
+  reviewsGiven       Review[]            @relation("reviewsGiven")
+  reviewsReceived    Review[]            @relation("reviewsReceived")
+  notifications      Notification[]
+  chatMessages       ChatMessage[]       @relation("senderMessages")
+  chatRooms          ChatRoom[]          @relation("participants")
+  leadPurchases      LeadPurchase[]
+  providerROI        ProviderROI?
+  creditTransactions CreditTransaction[]
+  clientVerification ClientVerification?
+  subscriptions      Subscription[]
 }
 
 model ProviderProfile {
-  id             String        @id @default(cuid())
-  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId         String        @unique
-  bio            String?
-  categories     Category[]    @relation("ProviderCategories")
-  portfolio      Json?         // Portfolio slike i radovi
-  ratingAvg      Float         @default(0)
-  ratingCount    Int           @default(0)
-  serviceArea    String?
-  specialties    String[]      // Specijalizacije pružatelja
-  experience     Int?          // Godine iskustva
-  website        String?       // Website pružatelja
-  isAvailable    Boolean       @default(true) // Dostupnost za nove poslove
-  legalStatus    LegalStatus?  @relation(fields: [legalStatusId], references: [id])
-  legalStatusId  String?       // Pravni status (obrt, d.o.o., itd.)
-  taxId          String?       // OIB (porezni broj)
-  companyName    String?       // Naziv obrta/firme
-  
+  id            String       @id @default(cuid())
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String       @unique
+  bio           String?
+  categories    Category[]   @relation("ProviderCategories")
+  portfolio     Json? // Portfolio slike i radovi
+  ratingAvg     Float        @default(0)
+  ratingCount   Int          @default(0)
+  serviceArea   String?
+  specialties   String[] // Specijalizacije pružatelja
+  experience    Int? // Godine iskustva
+  website       String? // Website pružatelja
+  isAvailable   Boolean      @default(true) // Dostupnost za nove poslove
+  legalStatus   LegalStatus? @relation(fields: [legalStatusId], references: [id])
+  legalStatusId String? // Pravni status (obrt, d.o.o., itd.)
+  taxId         String? // OIB (porezni broj)
+  companyName   String? // Naziv obrta/firme
+
   // USLUGAR EXCLUSIVE - Licence i limiti kategorija
-  maxCategories  Int           @default(5) // Max broj kategorija koje smije odabrati
-  licenses       ProviderLicense[] // Licence koje posjeduje
-  nkdCodes       String[]      // NKD kodovi koje firma pokriva
-  
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  maxCategories Int               @default(5) // Max broj kategorija koje smije odabrati
+  licenses      ProviderLicense[] // Licence koje posjeduje
+  nkdCodes      String[] // NKD kodovi koje firma pokriva
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Category {
-  id                String @id @default(cuid())
-  name              String @unique
-  description       String?
-  parentId          String? // Za hijerarhijske kategorije
-  parent            Category? @relation("CategoryHierarchy", fields: [parentId], references: [id])
-  children          Category[] @relation("CategoryHierarchy")
-  providers         ProviderProfile[] @relation("ProviderCategories")
-  jobs              Job[]
-  
+  id          String            @id @default(cuid())
+  name        String            @unique
+  description String?
+  parentId    String? // Za hijerarhijske kategorije
+  parent      Category?         @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    Category[]        @relation("CategoryHierarchy")
+  providers   ProviderProfile[] @relation("ProviderCategories")
+  jobs        Job[]
+
   // USLUGAR EXCLUSIVE - NKD i licence
-  nkdCode           String? // NKD kod djelatnosti (npr. "43.21" za električne instalacije)
-  requiresLicense   Boolean @default(false) // Zahtijeva li djelatnost licencu
-  licenseType       String? // Tip licence (npr. "Elektrotehnička licenca")
-  licenseAuthority  String? // Tijelo koje izdaje dozvolu (npr. "Hrvatska komora inženjera")
-  icon              String? // Emoji ili URL ikone za kategoriju
-  
-  isActive          Boolean @default(true)
-  createdAt         DateTime @default(now())
+  nkdCode          String? // NKD kod djelatnosti (npr. "43.21" za električne instalacije)
+  requiresLicense  Boolean @default(false) // Zahtijeva li djelatnost licencu
+  licenseType      String? // Tip licence (npr. "Elektrotehnička licenca")
+  licenseAuthority String? // Tijelo koje izdaje dozvolu (npr. "Hrvatska komora inženjera")
+  icon             String? // Emoji ili URL ikone za kategoriju
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
 }
 
 model Job {
-  id                  String    @id @default(cuid())
-  title               String
-  description         String
-  projectType         String?   // Vrsta projekta (npr. "Renovacija", "Gradnja", "Popravak")
-  customFields        Json?     // Dinamička polja ovisno o kategoriji i vrsti projekta
-  budgetMin           Int?
-  budgetMax           Int?
-  city                String?
-  latitude            Float?    // Geolokacija posla
-  longitude           Float?    // Geolokacija posla
-  status              JobStatus @default(OPEN)
-  urgency             Urgency   @default(NORMAL) // Hitnost posla
-  jobSize             JobSize?  // Veličina posla
-  deadline            DateTime? // Rok izvršenja
-  images              String[]  // Slike posla
-  
+  id           String    @id @default(cuid())
+  title        String
+  description  String
+  projectType  String? // Vrsta projekta (npr. "Renovacija", "Gradnja", "Popravak")
+  customFields Json? // Dinamička polja ovisno o kategoriji i vrsti projekta
+  budgetMin    Int?
+  budgetMax    Int?
+  city         String?
+  latitude     Float? // Geolokacija posla
+  longitude    Float? // Geolokacija posla
+  status       JobStatus @default(OPEN)
+  urgency      Urgency   @default(NORMAL) // Hitnost posla
+  jobSize      JobSize? // Veličina posla
+  deadline     DateTime? // Rok izvršenja
+  images       String[] // Slike posla
+
   // USLUGAR EXCLUSIVE polja
-  isExclusive         Boolean   @default(true)  // Ekskluzivan lead (samo 1 provider)
-  leadPrice           Int?      @default(10)    // Cijena u kreditima (10-20)
-  assignedProvider    User?     @relation("AssignedJobs", fields: [assignedProviderId], references: [id], onDelete: SetNull)
-  assignedProviderId  String?
-  leadStatus          LeadStatus @default(AVAILABLE) // Status ekskluzivnog leada
-  clientVerified      Boolean   @default(false) // Verificiran klijent
-  qualityScore        Int?      @default(0)     // AI score kvalitete (0-100)
-  
-  user                User      @relation("UserJobs", fields: [userId], references: [id], onDelete: Cascade)
-  userId              String
-  category            Category  @relation(fields: [categoryId], references: [id])
-  categoryId          String
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
-  offers              Offer[]
-  acceptedOfferId     String?
-  chatRooms           ChatRoom[] @relation("jobChatRooms")
-  leadPurchases       LeadPurchase[]
-  creditTransactions  CreditTransaction[] @relation("JobTransactions")
-  leadQueue           LeadQueue[] @relation("JobQueue")
+  isExclusive        Boolean    @default(true) // Ekskluzivan lead (samo 1 provider)
+  leadPrice          Int?       @default(10) // Cijena u kreditima (10-20)
+  assignedProvider   User?      @relation("AssignedJobs", fields: [assignedProviderId], references: [id], onDelete: SetNull)
+  assignedProviderId String?
+  leadStatus         LeadStatus @default(AVAILABLE) // Status ekskluzivnog leada
+  clientVerified     Boolean    @default(false) // Verificiran klijent
+  qualityScore       Int?       @default(0) // AI score kvalitete (0-100)
+
+  user               User                @relation("UserJobs", fields: [userId], references: [id], onDelete: Cascade)
+  userId             String
+  category           Category            @relation(fields: [categoryId], references: [id])
+  categoryId         String
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  offers             Offer[]
+  acceptedOfferId    String?
+  chatRooms          ChatRoom[]          @relation("jobChatRooms")
+  leadPurchases      LeadPurchase[]
+  creditTransactions CreditTransaction[] @relation("JobTransactions")
+  leadQueue          LeadQueue[]         @relation("JobQueue")
 }
 
 model Offer {
-  id          String   @id @default(cuid())
-  amount      Int
-  message     String?
-  status      OfferStatus @default(PENDING)
-  isNegotiable Boolean  @default(true) // Može li se pregovarati o cijeni
-  estimatedDays Int?    // Procijenjeni broj dana za izvršenje
-  job         Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  jobId       String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId      String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            String      @id @default(cuid())
+  amount        Int
+  message       String?
+  status        OfferStatus @default(PENDING)
+  isNegotiable  Boolean     @default(true) // Može li se pregovarati o cijeni
+  estimatedDays Int? // Procijenjeni broj dana za izvršenje
+  job           Job         @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  jobId         String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 }
 
 model Review {
@@ -179,56 +180,6 @@ enum OfferStatus {
   REJECTED
 }
 
-// Novi modeli za trebam.hr funkcionalnosti
-
-model Notification {
-  id        String   @id @default(cuid())
-  title     String
-  message   String
-  type      NotificationType
-  isRead    Boolean  @default(false)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
-  jobId     String?  // Povezano s poslom
-  offerId   String?  // Povezano s ponudom
-  createdAt DateTime @default(now())
-}
-
-model ChatRoom {
-  id        String   @id @default(cuid())
-  name      String?
-  job       Job?     @relation("jobChatRooms", fields: [jobId], references: [id], onDelete: Cascade)
-  jobId     String?
-  participants User[] @relation("participants")
-  messages  ChatMessage[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model ChatMessage {
-  id        String   @id @default(cuid())
-  content   String
-  sender    User     @relation("senderMessages", fields: [senderId], references: [id], onDelete: Cascade)
-  senderId  String
-  room      ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  roomId    String
-  createdAt DateTime @default(now())
-}
-
-model Subscription {
-  id                    String   @id @default(cuid())
-  userId                String   @unique
-  plan                  String   // BASIC, PREMIUM, PRO
-  status                String   // ACTIVE, CANCELLED, EXPIRED
-  credits               Int      @default(0) // Legacy - deprecated
-  creditsBalance        Int      @default(0) // EXCLUSIVE: Trenutni broj kredita
-  lifetimeCreditsUsed   Int      @default(0) // Ukupno potrošenih kredita
-  lifetimeLeadsConverted Int     @default(0) // Ukupno konvertiranih leadova
-  expiresAt             DateTime?
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-}
-
 enum NotificationType {
   NEW_JOB
   NEW_OFFER
@@ -237,6 +188,8 @@ enum NotificationType {
   JOB_COMPLETED
   REVIEW_RECEIVED
   SYSTEM
+  JOB_CANCELLED
+  OFFER_NOTIFICATION
 }
 
 enum Urgency {
@@ -253,43 +206,103 @@ enum JobSize {
   EXTRA_LARGE
 }
 
-// Pravni statusi pružatelja usluga
-model LegalStatus {
-  id          String   @id @default(cuid())
-  code        String   @unique // INDIVIDUAL, SOLE_TRADER, COMPANY, etc.
-  name        String   // Naziv na hrvatskom
-  description String?  // Detaljan opis
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  
-  users       User[]   @relation("UserLegalStatus")
-  providers   ProviderProfile[]
+// Novi modeli za trebam.hr funkcionalnosti
+
+model Notification {
+  id        String           @id @default(cuid())
+  title     String
+  message   String
+  type      NotificationType
+  isRead    Boolean          @default(false)
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  jobId     String? // Povezano s poslom
+  offerId   String? // Povezano s ponudom
+  createdAt DateTime         @default(now())
 }
 
-// ============================================================
-// USLUGAR EXCLUSIVE - Modeli za ekskluzivne leadove
-// ============================================================
+model ChatRoom {
+  id           String        @id @default(cuid())
+  name         String?
+  job          Job?          @relation("jobChatRooms", fields: [jobId], references: [id], onDelete: Cascade)
+  jobId        String?
+  participants User[]        @relation("participants")
+  messages     ChatMessage[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  content   String
+  sender    User     @relation("senderMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  senderId  String
+  room      ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  roomId    String
+  createdAt DateTime @default(now())
+}
+
+// Pretplate (za provajdere usluga)
+model Subscription {
+  id                  String             @id @default(cuid())
+  user                User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId              String             @unique
+  plan                String             @default("BASIC") // BASIC, PREMIUM, PRO
+  status              SubscriptionStatus @default(ACTIVE)
+  credits             Int                @default(0) // Legacy - ukupno kredita
+  creditsBalance      Int                @default(0) // Trenutno stanje kredita
+  lifetimeCreditsUsed Int                @default(0) // Ukupno potrošeno kredita (samo za statistiku)
+  expiresAt           DateTime?
+  cancelledAt         DateTime?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+// Subscription Plans - Cjenik planova (za admin upravljanje)
+model SubscriptionPlan {
+  id           String   @id @default(cuid())
+  name         String // BASIC, PREMIUM, PRO
+  displayName  String // "Basic", "Premium", "Pro"
+  price        Float // Cijena u EUR
+  currency     String   @default("EUR")
+  credits      Int // Broj kredita
+  features     String[] // Array feature opisa
+  isPopular    Boolean  @default(false) // Badge "Najpopularniji"
+  displayOrder Int      @default(0) // Redoslijed prikaza
+  isActive     Boolean  @default(true) // Da li je plan aktivan
+  description  String? // Opis plana
+  savings      String? // Tekst uštede (npr. "Ušteda 161€ vs pay-per-lead")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([name])
+  @@index([isActive])
+  @@index([displayOrder])
+}
 
 // Kupljeni ekskluzivni leadovi (1 lead = 1 provider)
 model LeadPurchase {
-  id              String    @id @default(cuid())
-  job             Job       @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  jobId           String
-  provider        User      @relation(fields: [providerId], references: [id], onDelete: Cascade)
-  providerId      String
-  creditsSpent    Int       // Broj kredita potrošenih za kupovinu
-  leadPrice       Int       // Cijena leada u trenutku kupnje
-  status          LeadPurchaseStatus @default(ACTIVE)
-  contactedAt     DateTime? // Kada je provider kontaktirao klijenta
-  convertedAt     DateTime? // Kada je lead konvertiran u posao
-  refundedAt      DateTime? // Kada je izvršena refundacija
-  refundReason    String?   // Razlog refundacije
-  notes           String?   // Dodatne bilješke
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  
+  id           String             @id @default(cuid())
+  job          Job                @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  jobId        String
+  provider     User               @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  providerId   String
+  creditsSpent Int // Broj kredita potrošenih za kupovinu
+  leadPrice    Int // Cijena leada u trenutku kupnje
+  status       LeadPurchaseStatus @default(ACTIVE)
+  contactedAt  DateTime? // Kada je provider kontaktirao klijenta
+  convertedAt  DateTime? // Kada je lead konvertiran u posao
+  refundedAt   DateTime? // Kada je izvršena refundacija
+  refundReason String? // Razlog refundacije
+  notes        String? // Dodatne bilješke
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
   creditTransactions CreditTransaction[]
-  
+
   @@index([jobId])
   @@index([providerId])
   @@index([status])
@@ -298,36 +311,36 @@ model LeadPurchase {
 
 // ROI statistika za providere
 model ProviderROI {
-  id                    String   @id @default(cuid())
-  provider              User     @relation(fields: [providerId], references: [id], onDelete: Cascade)
-  providerId            String   @unique
-  totalLeadsPurchased   Int      @default(0)
-  totalLeadsContacted   Int      @default(0)
-  totalLeadsConverted   Int      @default(0)
-  totalCreditsSpent     Int      @default(0)
-  totalRevenue          Int      @default(0) // Ukupan prihod od leadova (EUR)
-  conversionRate        Float    @default(0.0) // Postotak konverzije
-  roi                   Float    @default(0.0) // Return on Investment
-  avgLeadValue          Float    @default(0.0) // Prosječna vrijednost leada
-  lastUpdated           DateTime @default(now())
-  createdAt             DateTime @default(now())
+  id                  String   @id @default(cuid())
+  provider            User     @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  providerId          String   @unique
+  totalLeadsPurchased Int      @default(0)
+  totalLeadsContacted Int      @default(0)
+  totalLeadsConverted Int      @default(0)
+  totalCreditsSpent   Int      @default(0)
+  totalRevenue        Int      @default(0) // Ukupan prihod od leadova (EUR)
+  conversionRate      Float    @default(0.0) // Postotak konverzije
+  roi                 Float    @default(0.0) // Return on Investment
+  avgLeadValue        Float    @default(0.0) // Prosječna vrijednost leada
+  lastUpdated         DateTime @default(now())
+  createdAt           DateTime @default(now())
 }
 
 // Transakcije kredita (history)
 model CreditTransaction {
-  id                String    @id @default(cuid())
-  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                String                @id @default(cuid())
+  user              User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId            String
   type              CreditTransactionType
-  amount            Int       // Pozitivan za dodavanje, negativan za trošenje
-  balance           Int       // Stanje nakon transakcije
+  amount            Int // Pozitivan za dodavanje, negativan za trošenje
+  balance           Int // Stanje nakon transakcije
   description       String?
-  relatedJob        Job?      @relation("JobTransactions", fields: [relatedJobId], references: [id], onDelete: SetNull)
+  relatedJob        Job?                  @relation("JobTransactions", fields: [relatedJobId], references: [id], onDelete: SetNull)
   relatedJobId      String?
-  relatedPurchase   LeadPurchase? @relation(fields: [relatedPurchaseId], references: [id], onDelete: SetNull)
+  relatedPurchase   LeadPurchase?         @relation(fields: [relatedPurchaseId], references: [id], onDelete: SetNull)
   relatedPurchaseId String?
-  createdAt         DateTime  @default(now())
-  
+  createdAt         DateTime              @default(now())
+
   @@index([userId])
   @@index([type])
   @@index([createdAt])
@@ -351,22 +364,22 @@ model ClientVerification {
 
 // Licence pružatelja (za licencirane djelatnosti)
 model ProviderLicense {
-  id              String          @id @default(cuid())
-  provider        ProviderProfile @relation(fields: [providerId], references: [id], onDelete: Cascade)
-  providerId      String
-  licenseType     String          // Tip licence (npr. "Elektrotehnička licenca")
-  licenseNumber   String          // Broj dozvole
-  issuingAuthority String         // Tijelo koje je izdalo
-  issuedAt        DateTime        // Datum izdavanja
-  expiresAt       DateTime?       // Datum isteka (ako vrijedi)
-  documentUrl     String?         // URL skeniranog dokumenta
-  isVerified      Boolean         @default(false) // Verificirana od strane admina
-  verifiedAt      DateTime?
-  verifiedBy      String?         // Admin koji je verificirao
-  notes           String?
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-  
+  id               String          @id @default(cuid())
+  provider         ProviderProfile @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  providerId       String
+  licenseType      String // Tip licence (npr. "Elektrotehnička licenca")
+  licenseNumber    String // Broj dozvole
+  issuingAuthority String // Tijelo koje je izdalo
+  issuedAt         DateTime // Datum izdavanja
+  expiresAt        DateTime? // Datum isteka (ako vrijedi)
+  documentUrl      String? // URL skeniranog dokumenta
+  isVerified       Boolean         @default(false) // Verificirana od strane admina
+  verifiedAt       DateTime?
+  verifiedBy       String? // Admin koji je verificirao
+  notes            String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
   @@index([providerId])
   @@index([isVerified])
 }
@@ -374,24 +387,37 @@ model ProviderLicense {
 // USLUGAR EXCLUSIVE - Queue model za distribuciju leadova
 // Umjesto broadcastinga na 6+ providera, leadovi idu u queue
 model LeadQueue {
-  id              String    @id @default(cuid())
-  job             Job       @relation("JobQueue", fields: [jobId], references: [id], onDelete: Cascade)
-  jobId           String
-  providerId      String    // Provider u queueu
-  position        Int       // Pozicija u queueu (1, 2, 3...)
-  status          LeadQueueStatus @default(WAITING)
-  offeredAt       DateTime? // Kada je lead ponuđen provideru
-  respondedAt     DateTime? // Kada je provider odgovorio
-  expiresAt       DateTime? // Rok za odgovor (npr. 24h)
-  response        QueueResponse? // Odgovor providera
-  notes           String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  
+  id          String          @id @default(cuid())
+  job         Job             @relation("JobQueue", fields: [jobId], references: [id], onDelete: Cascade)
+  jobId       String
+  providerId  String // Provider u queueu
+  position    Int // Pozicija u queueu (1, 2, 3...)
+  status      LeadQueueStatus @default(WAITING)
+  offeredAt   DateTime? // Kada je lead ponuđen provideru
+  respondedAt DateTime? // Kada je provider odgovorio
+  expiresAt   DateTime? // Rok za odgovor (npr. 24h)
+  response    QueueResponse? // Odgovor providera
+  notes       String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
   @@unique([jobId, providerId]) // Provider može biti samo jednom u queue za job
   @@index([jobId, position])
   @@index([providerId, status])
   @@index([status])
+}
+
+// Pravni statusi pružatelja usluga
+model LegalStatus {
+  id          String   @id @default(cuid())
+  code        String   @unique // INDIVIDUAL, SOLE_TRADER, COMPANY, etc.
+  name        String // Naziv na hrvatskom
+  description String? // Detaljan opis
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  users     User[]            @relation("UserLegalStatus")
+  providers ProviderProfile[]
 }
 
 // ============================================================
@@ -399,44 +425,50 @@ model LeadQueue {
 // ============================================================
 
 enum LeadStatus {
-  AVAILABLE   // Dostupan za kupovinu
-  ASSIGNED    // Dodijeljen provideru
-  CONTACTED   // Provider kontaktirao klijenta
-  CONVERTED   // Konvertiran u posao
-  REFUNDED    // Refundiran
-  EXPIRED     // Istekao
+  AVAILABLE // Dostupan za kupovinu
+  ASSIGNED // Dodijeljen provideru
+  CONTACTED // Provider kontaktirao klijenta
+  CONVERTED // Konvertiran u posao
+  REFUNDED // Refundiran
+  EXPIRED // Istekao
 }
 
 enum LeadPurchaseStatus {
-  ACTIVE      // Aktivan lead
-  CONTACTED   // Kontaktiran
-  CONVERTED   // Uspješno realiziran
-  REFUNDED    // Vraćeni krediti
-  EXPIRED     // Istekao
-  CANCELLED   // Otkazan
+  ACTIVE // Aktivan lead
+  CONTACTED // Kontaktiran
+  CONVERTED // Uspješno realiziran
+  REFUNDED // Vraćeni krediti
+  EXPIRED // Istekao
+  CANCELLED // Otkazan
 }
 
 enum CreditTransactionType {
-  PURCHASE        // Kupovina kredita
-  LEAD_PURCHASE   // Trošenje kredita za lead
-  REFUND          // Povrat kredita
-  BONUS           // Bonus krediti
-  SUBSCRIPTION    // Krediti iz pretplate
-  ADMIN_ADJUST    // Admin prilagodba
+  PURCHASE // Kupovina kredita
+  LEAD_PURCHASE // Trošenje kredita za lead
+  REFUND // Povrat kredita
+  BONUS // Bonus krediti
+  SUBSCRIPTION // Krediti iz pretplate
+  ADMIN_ADJUST // Admin prilagodba
 }
 
 // USLUGAR EXCLUSIVE - Queue statusi i odgovori
 enum LeadQueueStatus {
-  WAITING     // Čeka svoj red
-  OFFERED     // Ponuđen provideru (trenutni u redu)
-  ACCEPTED    // Provider prihvatio
-  DECLINED    // Provider odbio
-  EXPIRED     // Isteklo vrijeme za odgovor
-  SKIPPED     // Preskočen (išli na sljedećeg)
+  WAITING // Čeka svoj red
+  OFFERED // Ponuđen provideru (trenutni u redu)
+  ACCEPTED // Provider prihvatio
+  DECLINED // Provider odbio
+  EXPIRED // Isteklo vrijeme za odgovor
+  SKIPPED // Preskočen (išli na sljedećeg)
 }
 
 enum QueueResponse {
-  INTERESTED      // Zainteresiran za lead
-  NOT_INTERESTED  // Nije zainteresiran
-  NO_RESPONSE     // Nije odgovorio
+  INTERESTED // Zainteresiran za lead
+  NOT_INTERESTED // Nije zainteresiran
+  NO_RESPONSE // Nije odgovorio
+}
+
+enum SubscriptionStatus {
+  ACTIVE // Aktivna pretplata
+  CANCELLED // Otkazana
+  EXPIRED // Istekla
 }
