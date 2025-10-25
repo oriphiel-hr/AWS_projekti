@@ -122,13 +122,27 @@ r.post('/register', async (req, res, next) => {
 r.post('/login', async (req, res, next) => {
   try {
     const { email, password } = req.body;
+    console.log('[LOGIN] Attempting login for email:', email);
+    
     const user = await prisma.user.findUnique({ where: { email } });
-    if (!user) return res.status(401).json({ error: 'Invalid credentials' });
+    if (!user) {
+      console.log('[LOGIN] User not found:', email);
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+    
     const ok = await verifyPassword(password, user.passwordHash);
-    if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
+    if (!ok) {
+      console.log('[LOGIN] Password mismatch for:', email);
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+    
+    console.log('[LOGIN] Successful login for:', email);
     const token = signToken({ id: user.id, email: user.email, role: user.role, name: user.fullName });
     res.json({ token, user: { id: user.id, email: user.email, role: user.role, fullName: user.fullName, isVerified: user.isVerified } });
-  } catch (e) { next(e); }
+  } catch (e) {
+    console.error('[LOGIN] Error:', e);
+    next(e);
+  }
 });
 
 r.get('/verify', async (req, res, next) => {
