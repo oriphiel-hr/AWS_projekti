@@ -10,6 +10,7 @@ const JobForm = ({ onSubmit, categories = [], initialData = null }) => {
       title: '',
       description: '',
       categoryId: '',
+      projectType: '',
       budgetMin: '',
       budgetMax: '',
       city: '',
@@ -124,14 +125,37 @@ const JobForm = ({ onSubmit, categories = [], initialData = null }) => {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Grad
+            Vrsta projekta
           </label>
-          <input
-            {...register('city')}
+          <select
+            {...register('projectType')}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Zagreb"
-          />
+          >
+            <option value="">Odaberite vrstu projekta</option>
+            <option value="Renovacija">Renovacija</option>
+            <option value="Gradnja">Gradnja</option>
+            <option value="Popravak">Popravak</option>
+            <option value="Ugradnja">Ugradnja</option>
+            <option value="Servis">Servis</option>
+            <option value="Održavanje">Održavanje</option>
+            <option value="Dizajn">Dizajn</option>
+            <option value="Planiranje">Planiranje</option>
+            <option value="Čišćenje">Čišćenje</option>
+            <option value="Dostava">Dostava</option>
+            <option value="Ostalo">Ostalo</option>
+          </select>
         </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Grad
+        </label>
+        <input
+          {...register('city')}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          placeholder="Zagreb"
+        />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

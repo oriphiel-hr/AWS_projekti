@@ -70,7 +70,8 @@ r.post('/', auth(true, ['USER', 'PROVIDER']), async (req, res, next) => {
     const { 
       title, 
       description, 
-      categoryId, 
+      categoryId,
+      projectType,
       budgetMin, 
       budgetMax, 
       city, 
@@ -88,7 +89,8 @@ r.post('/', auth(true, ['USER', 'PROVIDER']), async (req, res, next) => {
       data: {
         title, 
         description, 
-        categoryId, 
+        categoryId,
+        projectType: projectType || null,
         budgetMin: budgetMin ? parseInt(budgetMin) : null, 
         budgetMax: budgetMax ? parseInt(budgetMax) : null,
         city: city || null, 
