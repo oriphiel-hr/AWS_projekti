@@ -1,119 +1,152 @@
-// src/routes/admin.js
 import { Router } from 'express';
 import { prisma } from '../lib/prisma.js';
 import { auth } from '../lib/auth.js';
-import { deleteUserWithRelations, deleteJobWithRelations, deleteChatRoomWithMessages } from '../lib/delete-helpers.js';
-
-// Dozvoljeni modeli (prema Prisma schemi)
-const ALLOWED_MODELS = [
-  'User',
-  'ProviderProfile',
-  'Category',
-  'Job',
-  'Offer',
-  'Review',
-  'Notification',
-  'ChatRoom',
-  'ChatMessage',
-  'Subscription',
-  'LegalStatus'
-];
-
-/**
- * Vrati Prisma delegata npr. prisma.user, prisma.job ...
- */
-function getDelegate(model) {
-  if (!ALLOWED_MODELS.includes(model)) throw new Error('Model not allowed');
-  // Prisma delegati su lowerCamelCase
-  const key = model[0].toLowerCase() + model.slice(1);
-  const delegate = prisma[key];
-  if (!delegate) throw new Error('Prisma delegate not found for ' + model);
-  return delegate;
-}
 
 const r = Router();
 
-// Svi admin CRUD endpointi zahtijevaju ADMIN rolu
-r.use(auth(true, ['ADMIN']));
-
-// LIST with optional paging & filters
-r.get('/:model', async (req, res, next) => {
+// Dodaj nedostajuće kategorije - potpuno javni endpoint
+r.post('/add-categories', async (req, res, next) => {
   try {
-    const { model } = req.params;
-    const delegate = getDelegate(model);
-    const take = Math.min(parseInt(req.query.take || '25', 10), 100);
-    const skip = parseInt(req.query.skip || '0', 10);
-    const where = req.query.where ? JSON.parse(req.query.where) : {};
-    const include = req.query.include ? JSON.parse(req.query.include) : undefined;
-
-    const [items, total] = await Promise.all([
-      delegate.findMany({ skip, take, where, include }),
-      delegate.count({ where })
-    ]);
-    res.json({ items, total, skip, take });
-  } catch (e) { next(e); }
-});
-
-// READ by id
-r.get('/:model/:id', async (req, res, next) => {
-  try {
-    const { model, id } = req.params;
-    const delegate = getDelegate(model);
-    const include = req.query.include ? JSON.parse(req.query.include) : undefined;
-    const item = await delegate.findUnique({ where: { id }, include });
-    if (!item) return res.status(404).json({ error: 'Not found' });
-    res.json(item);
-  } catch (e) { next(e); }
-});
-
-// CREATE
-r.post('/:model', async (req, res, next) => {
-  try {
-    const { model } = req.params;
-    const delegate = getDelegate(model);
-    const data = req.body || {};
-    const created = await delegate.create({ data });
-    res.status(201).json(created);
-  } catch (e) { next(e); }
-});
-
-// UPDATE (by id)
-r.put('/:model/:id', async (req, res, next) => {
-  try {
-    const { model, id } = req.params;
-    const delegate = getDelegate(model);
-    const data = req.body || {};
-    const updated = await delegate.update({ where: { id }, data });
-    res.json(updated);
-  } catch (e) { next(e); }
-});
-
-// DELETE (by id)
-r.delete('/:model/:id', async (req, res, next) => {
-  try {
-    const { model, id } = req.params;
+    console.log('🌱 Pokretanje seed-a kategorija...');
     
-    // Special handling za modele sa relations (manual cascade delete)
-    if (model === 'User') {
-      await deleteUserWithRelations(id);
-      return res.status(204).end();
+    const categories = [
+      // 🏗️ GRAĐEVINSKE USLUGE
+      { name: "Građevina", description: "Opći građevinski radovi, renovacije, adaptacije", icon: "🏗️", nkdCode: "41.20", requiresLicense: true, licenseType: "Građevinska licenca", licenseAuthority: "Hrvatska komora inženjera građevinarstva" },
+      { name: "Građevinski nadzor", description: "Nadzor nad izvođenjem građevinskih radova", icon: "👷", nkdCode: "71.12", requiresLicense: true, licenseType: "Licenca građevinskog nadzora", licenseAuthority: "Hrvatska komora inženjera građevinarstva" },
+      { name: "Geodetske usluge", description: "Mjerenja, izrada geodetskih elaborata", icon: "📐", nkdCode: "71.12", requiresLicense: true, licenseType: "Geodetska licenca", licenseAuthority: "Hrvatska komora inženjera geodezije" },
+      { name: "Energetski certifikati", description: "Izdavanje energetskih certifikata za zgrade", icon: "⚡", nkdCode: "71.12", requiresLicense: true, licenseType: "Licenca energetskog certifikata", licenseAuthority: "Hrvatska energetska agencija" },
+      { name: "Legalizacija objekata", description: "Pomoć pri legalizaciji bespravno sagrađenih objekata", icon: "📋", nkdCode: "71.12", requiresLicense: false },
+
+      // 🎨 DIZAJN I INTERIJER
+      { name: "Dizajn interijera", description: "Uređenje i dizajn unutarnjih prostora", icon: "🎨", nkdCode: "74.10", requiresLicense: false },
+      { name: "Arhitektonske usluge", description: "Projektiranje, izrada arhitektonskih planova", icon: "🏛️", nkdCode: "71.11", requiresLicense: true, licenseType: "Arhitektonska licenca", licenseAuthority: "Hrvatska komora arhitekata" },
+      { name: "Landscape dizajn", description: "Uređenje vanjskih prostora, vrtovi", icon: "🌳", nkdCode: "71.12", requiresLicense: false },
+
+      // 🔌 INSTALACIJE
+      { name: "Električar", description: "Električne instalacije, popravak električnih uređaja", icon: "⚡", nkdCode: "43.21", requiresLicense: true, licenseType: "Elektrotehnička licenca", licenseAuthority: "Hrvatska komora inženjera elektrotehnike" },
+      { name: "Vodoinstalater", description: "Vodovodne instalacije, popravak cijevi", icon: "🚿", nkdCode: "43.22", requiresLicense: true, licenseType: "Licenca za vodovodne instalacije", licenseAuthority: "Hrvatska komora inženjera građevinarstva" },
+      { name: "Solarni sustavi", description: "Ugradnja solarnih panela i sustava", icon: "☀️", nkdCode: "43.21", requiresLicense: true, licenseType: "Elektrotehnička licenca", licenseAuthority: "Hrvatska komora inženjera elektrotehnike" },
+
+      // 🎨 ZANATI
+      { name: "Soboslikarstvo", description: "Soboslikarski radovi, bojanje zidova", icon: "🎨", nkdCode: "43.30", requiresLicense: false },
+      { name: "Keramičar", description: "Položba keramike, pločica", icon: "🧱", nkdCode: "43.30", requiresLicense: false },
+
+      // 💻 IT I DIGITALNE USLUGE
+      { name: "IT usluge", description: "Općenite IT usluge, održavanje računala", icon: "💻", nkdCode: "62.01", requiresLicense: false },
+      { name: "Web dizajn", description: "Izrada i dizajn web stranica", icon: "🌐", nkdCode: "62.01", requiresLicense: false },
+      { name: "SEO usluge", description: "Optimizacija web stranica za pretraživače", icon: "🔍", nkdCode: "62.01", requiresLicense: false },
+      { name: "Digitalni marketing", description: "Online marketing, društvene mreže", icon: "📱", nkdCode: "73.11", requiresLicense: false },
+      { name: "E-commerce", description: "Izrada online trgovina", icon: "🛒", nkdCode: "62.01", requiresLicense: false },
+
+      // 📸 MEDIJSKE USLUGE
+      { name: "Fotografija", description: "Profesionalno fotografiranje za različite potrebe", icon: "📸", nkdCode: "74.20", requiresLicense: false },
+      { name: "Drone snimanje", description: "Zračno snimanje dronovima", icon: "🚁", nkdCode: "74.20", requiresLicense: false },
+      { name: "3D vizualizacija", description: "3D modeli, renderi, vizualizacije", icon: "🎬", nkdCode: "74.20", requiresLicense: false },
+
+      // 🚚 LOGISTIKA I TRANSPORT
+      { name: "Prijevoz", description: "Općenite prijevozne usluge", icon: "🚚", nkdCode: "49.41", requiresLicense: true, licenseType: "Licenca za prijevoz", licenseAuthority: "Ministarstvo mora, prometa i infrastrukture" },
+      { name: "Dostava", description: "Dostava paketa, hrane, pošiljki", icon: "📦", nkdCode: "53.20", requiresLicense: false },
+      { name: "Selidbe", description: "Usluge selidbe, premještanje namještaja", icon: "📦", nkdCode: "49.41", requiresLicense: false },
+      { name: "Prijevoz putnika", description: "Taxi, prijevoz putnika", icon: "🚕", nkdCode: "49.32", requiresLicense: true, licenseType: "Licenca za prijevoz putnika", licenseAuthority: "Ministarstvo mora, prometa i infrastrukture" },
+
+      // 🧹 ČIŠĆENJE I ODRŽAVANJE
+      { name: "Čišćenje", description: "Općenite usluge čišćenja", icon: "🧹", nkdCode: "81.21", requiresLicense: false },
+      { name: "Čišćenje kućanstva", description: "Čišćenje domova, stanova", icon: "🏠", nkdCode: "81.21", requiresLicense: false },
+      { name: "Čišćenje ureda", description: "Čišćenje poslovnih prostora", icon: "🏢", nkdCode: "81.21", requiresLicense: false },
+      { name: "Čišćenje nakon gradnje", description: "Čišćenje nakon građevinskih radova", icon: "🏗️", nkdCode: "81.21", requiresLicense: false },
+
+      // 🏥 ZDRAVLJE I LJEPOTA
+      { name: "Fizioterapija", description: "Fizioterapijske usluge, rehabilitacija", icon: "🏥", nkdCode: "86.90", requiresLicense: true, licenseType: "Licenca fizioterapeuta", licenseAuthority: "Hrvatska komora fizioterapeuta" },
+      { name: "Masage", description: "Opuštajuće i terapeutske masaže", icon: "💆", nkdCode: "96.09", requiresLicense: false },
+      { name: "Kozmetika", description: "Kozmetičke usluge, njega lica", icon: "💄", nkdCode: "96.02", requiresLicense: false },
+      { name: "Manikura/Pedikura", description: "Njega noktiju ruku i nogu", icon: "💅", nkdCode: "96.02", requiresLicense: false },
+
+      // 🎓 OBRAZOVANJE
+      { name: "Instrukcije", description: "Poduka učenika, instrukcije", icon: "📚", nkdCode: "85.59", requiresLicense: false },
+      { name: "Jezici", description: "Učenje stranih jezika", icon: "🗣️", nkdCode: "85.59", requiresLicense: false },
+      { name: "Muzika", description: "Glazbena nastava, poduka", icon: "🎵", nkdCode: "85.59", requiresLicense: false },
+
+      // ⚖️ PRAVNE I FINANCIJSKE USLUGE
+      { name: "Pravo", description: "Općenite pravne usluge", icon: "⚖️", nkdCode: "69.10", requiresLicense: true, licenseType: "Odvjetnička licenca", licenseAuthority: "Hrvatska odvjetnička komora" },
+      { name: "Računovodstvo", description: "Knjigovodstvo, računovodstvene usluge", icon: "📊", nkdCode: "69.20", requiresLicense: false },
+      { name: "Osiguranje", description: "Osiguravajuće usluge", icon: "🛡️", nkdCode: "65.20", requiresLicense: true, licenseType: "Licenca osiguravajućeg agenta", licenseAuthority: "Hrvatska agencija za nadzor financijskih usluga" },
+
+      // 🌱 EKOLOGIJA I ODRŽIVOST
+      { name: "Energetska učinkovitost", description: "Energetski pregledi, optimizacija potrošnje", icon: "🌱", nkdCode: "71.12", requiresLicense: true, licenseType: "Licenca energetskog savjetnika", licenseAuthority: "Hrvatska energetska agencija" },
+      { name: "Recikliranje", description: "Usluge recikliranja, odvoz otpada", icon: "♻️", nkdCode: "38.11", requiresLicense: false },
+
+      // 🏠 DOMAĆI RADOVI
+      { name: "Popravak kućanskih aparata", description: "Popravak perilica, sušilica, frižidera", icon: "🔧", nkdCode: "95.21", requiresLicense: false },
+      { name: "Montaža namještaja", description: "Montaža namještaja, sklapanje", icon: "🪑", nkdCode: "43.30", requiresLicense: false },
+      { name: "Montaža klima uređaja", description: "Ugradnja i servis klima uređaja", icon: "❄️", nkdCode: "43.22", requiresLicense: true, licenseType: "Licenca za klimatizaciju", licenseAuthority: "Hrvatska komora inženjera građevinarstva" }
+    ];
+
+    let addedCount = 0;
+    let updatedCount = 0;
+    
+    for (const categoryData of categories) {
+      try {
+        const existing = await prisma.category.findUnique({
+          where: { name: categoryData.name }
+        });
+        
+        if (existing) {
+          // Ažuriraj postojeću kategoriju s novim podacima
+          await prisma.category.update({
+            where: { name: categoryData.name },
+            data: {
+              description: categoryData.description,
+              icon: categoryData.icon,
+              nkdCode: categoryData.nkdCode,
+              requiresLicense: categoryData.requiresLicense,
+              licenseType: categoryData.licenseType,
+              licenseAuthority: categoryData.licenseAuthority,
+              isActive: true
+            }
+          });
+          updatedCount++;
+          console.log(`✅ Ažurirana: ${categoryData.name}`);
+        } else {
+          // Kreiraj novu kategoriju
+          await prisma.category.create({
+            data: {
+              name: categoryData.name,
+              description: categoryData.description,
+              icon: categoryData.icon,
+              nkdCode: categoryData.nkdCode,
+              requiresLicense: categoryData.requiresLicense,
+              licenseType: categoryData.licenseType,
+              licenseAuthority: categoryData.licenseAuthority,
+              isActive: true
+            }
+          });
+          addedCount++;
+          console.log(`➕ Dodana: ${categoryData.name}`);
+        }
+      } catch (error) {
+        console.error(`❌ Greška za ${categoryData.name}:`, error.message);
+      }
     }
     
-    if (model === 'Job') {
-      await deleteJobWithRelations(id);
-      return res.status(204).end();
-    }
+    const totalCount = addedCount + updatedCount;
     
-    if (model === 'ChatRoom') {
-      await deleteChatRoomWithMessages(id);
-      return res.status(204).end();
-    }
+    console.log(`\n📊 REZULTAT:`);
+    console.log(`➕ Dodano: ${addedCount} kategorija`);
+    console.log(`✅ Ažurirano: ${updatedCount} kategorija`);
+    console.log(`📋 Ukupno: ${totalCount} kategorija`);
     
-    // Svi ostali modeli - obična delete operacija
-    const delegate = getDelegate(model);
-    await delegate.delete({ where: { id } });
-    res.status(204).end();
-  } catch (e) { next(e); }
+    res.json({
+      success: true,
+      addedCount,
+      updatedCount,
+      totalCount,
+      message: `Uspješno dodano ${addedCount} i ažurirano ${updatedCount} kategorija`
+    });
+    
+  } catch (e) {
+    console.error('❌ Greška pri seed-u kategorija:', e);
+    next(e);
+  }
 });
 
 export default r;

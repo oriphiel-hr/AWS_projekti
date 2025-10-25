@@ -457,43 +457,24 @@ export default function ProviderProfile({ onSuccess }) {
         return;
       }
       
-      // Pokušaj učitati profil preko /me endpoint-a
+      // Učitaj profil preko /fix-profile endpoint-a (radi sigurno)
       let response;
       try {
-        response = await api.get('/providers/me');
-        console.log('✅ /me endpoint radi ispravno');
-      } catch (meError) {
-        // Ako /me ne radi, pokušaj preko /fix-profile endpoint-a
-        console.log('🔄 /me endpoint ne radi, pokušavam preko /fix-profile...');
-        console.log('Token za test:', token);
-        console.log('Token duljina:', token?.length);
-        console.log('Me error details:', meError.response?.status, meError.response?.data);
-        
-        // Testiraj token direktno
-        try {
-          const testResponse = await fetch('https://uslugar.api.oriph.io/api/providers/fix-profile', {
-            method: 'POST',
-            headers: {
-              'Authorization': 'Bearer ' + token,
-              'Content-Type': 'application/json'
-            }
-          });
-          console.log('Direct test status:', testResponse.status);
-          const testData = await testResponse.text();
-          console.log('Direct test response:', testData);
-          
-          if (testResponse.status === 200) {
-            const profileData = JSON.parse(testData);
-            console.log('✅ Profil učitavan direktno:', profileData);
-            response = { data: profileData };
-          } else {
-            throw new Error(`Direct test failed: ${testResponse.status}`);
-          }
-        } catch (directError) {
-          console.error('Direct test error:', directError);
-          // Fallback na api.post
-          response = await api.post('/providers/fix-profile');
-        }
+        response = await api.post('/providers/fix-profile', {
+          bio: '',
+          specialties: [],
+          experience: 0,
+          website: '',
+          serviceArea: 'Zagreb',
+          isAvailable: true,
+          categoryIds: []
+        });
+        console.log('✅ /fix-profile endpoint radi ispravno');
+      } catch (fixError) {
+        console.log('❌ /fix-profile endpoint ne radi:', fixError);
+        setError('Greška pri učitavanju profila. Pokušajte ponovno.');
+        setLoading(false);
+        return;
       }
       
       const profileData = response.data;
