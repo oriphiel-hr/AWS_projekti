@@ -82,7 +82,7 @@ async function main() {
     { id: 'other_005', name: 'Popravak opreme', description: 'Popravak različite opreme', isActive: false, icon: '🔧', requiresLicense: false, nkdCode: '95.11' },
     
     // DODATNE GLAVNE KATEGORIJE ZA PODKATEGORIJE
-    { id: 'garden_001', name: 'Baštanski radovi', description: 'Vrtni radovi i baštanska njega', isActive: true, icon: '🌿', requiresLicense: false, nkdCode: '81.30' },
+    { id: 'garden_001', name: 'Vrtni radovi', description: 'Vrtni radovi i baštanska njega', isActive: true, icon: '🌿', requiresLicense: false, nkdCode: '81.30' },
     { id: 'clean_001', name: 'Čistoća i održavanje', description: 'Čišćenje i održavanje prostora', isActive: true, icon: '🧹', requiresLicense: false, nkdCode: '81.21' },
     { id: 'it_support_001', name: 'IT podrška', description: 'IT usluge i tehnička podrška', isActive: true, icon: '🖥️', requiresLicense: false, nkdCode: '62.03' }
   ];
@@ -98,11 +98,11 @@ async function main() {
 
   // Seed Subcategories
   const subCategories = [
-    // BAŠTANSKI RADOVI - 4 podkategorije
-    { name: 'Uređivanje vrta', description: 'Dizajn i uređivanje vrtnih prostora', parentCategoryName: 'Baštanski radovi', icon: '🌿', isActive: true },
-    { name: 'Sadnja biljaka', description: 'Sadnja cvijeća, grmlja i drveća', parentCategoryName: 'Baštanski radovi', icon: '🌱', isActive: true },
-    { name: 'Održavanje vrta', description: 'Košenje, obrezivanje, zalijevanje', parentCategoryName: 'Baštanski radovi', icon: '✂️', isActive: true },
-    { name: 'Automatsko zalijevanje', description: 'Ugradnja sustava automatskog zalijevanja', parentCategoryName: 'Baštanski radovi', icon: '💧', isActive: true },
+    // VRTNI RADOVI - 4 podkategorije
+    { name: 'Uređivanje vrta', description: 'Dizajn i uređivanje vrtnih prostora', parentCategoryName: 'Vrtni radovi', icon: '🌿', isActive: true },
+    { name: 'Sadnja biljaka', description: 'Sadnja cvijeća, grmlja i drveća', parentCategoryName: 'Vrtni radovi', icon: '🌱', isActive: true },
+    { name: 'Održavanje vrta', description: 'Košenje, obrezivanje, zalijevanje', parentCategoryName: 'Vrtni radovi', icon: '✂️', isActive: true },
+    { name: 'Automatsko zalijevanje', description: 'Ugradnja sustava automatskog zalijevanja', parentCategoryName: 'Vrtni radovi', icon: '💧', isActive: true },
 
     // ČISTOĆA I ODRŽAVANJE - 4 podkategorije
     { name: 'Čišćenje kuće', description: 'Redovno čišćenje stanova i kuća', parentCategoryName: 'Čistoća i održavanje', icon: '🧹', isActive: true },
