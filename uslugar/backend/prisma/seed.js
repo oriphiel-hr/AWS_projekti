@@ -129,19 +129,17 @@ async function main() {
     });
     
     if (parent) {
+      const { parentCategoryName, ...subcategoryData } = subcategory;
       await prisma.category.upsert({
         where: { 
           name: subcategory.name
         },
         update: {
-          ...subcategory,
+          ...subcategoryData,
           parentId: parent.id
         },
         create: {
-          name: subcategory.name,
-          description: subcategory.description,
-          icon: subcategory.icon,
-          isActive: subcategory.isActive,
+          ...subcategoryData,
           parentId: parent.id
         }
       });
