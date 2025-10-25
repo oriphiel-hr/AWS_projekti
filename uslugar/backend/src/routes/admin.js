@@ -255,6 +255,7 @@ const MODELS = {
   ChatRoom: prisma.chatRoom,
   ChatMessage: prisma.chatMessage,
   Subscription: prisma.subscription,
+  SubscriptionPlan: prisma.subscriptionPlan,
   LegalStatus: prisma.legalStatus
 };
 

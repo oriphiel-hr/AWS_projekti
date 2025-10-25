@@ -4,65 +4,30 @@ import { auth } from '../lib/auth.js';
 
 const r = Router();
 
-// USLUGAR EXCLUSIVE - Subscription plans sa kreditima za ekskluzivne leadove
-const PLANS = {
-  BASIC: {
-    name: 'Basic',
-    price: 39, // EUR mjesečno
-    credits: 10, // 10 ekskluzivnih leadova
-    creditsPerLead: 1, // 1 lead = 1 kredit (prosječno 10€ per lead)
-    avgLeadPrice: 10, // EUR
-    features: [
-      '10 ekskluzivnih leadova mjesečno',
-      '1 lead = 1 izvođač (bez konkurencije)',
-      'Refund ako klijent ne odgovori',
-      'ROI statistika',
-      'Email notifikacije',
-      'Mini CRM za leadove'
-    ],
-    savings: 'Ušteda 10€ vs pay-per-lead'
-  },
-  PREMIUM: {
-    name: 'Premium',
-    price: 89, // EUR mjesečno
-    credits: 25, // 25 ekskluzivnih leadova
-    creditsPerLead: 1,
-    avgLeadPrice: 10,
-    features: [
-      '25 ekskluzivnih leadova mjesečno',
-      '1 lead = 1 izvođač (bez konkurencije)',
-      'Refund ako klijent ne odgovori',
-      'AI prioritet - viđeni prvi',
-      'ROI statistika + analitika',
-      'SMS + Email notifikacije',
-      'Mini CRM za leadove',
-      'Prioritetna podrška'
-    ],
-    savings: 'Ušteda 161€ vs pay-per-lead (36% popust)',
-    popular: true
-  },
-  PRO: {
-    name: 'Pro',
-    price: 149, // EUR mjesečno
-    credits: 50, // 50 ekskluzivnih leadova
-    creditsPerLead: 1,
-    avgLeadPrice: 10,
-    features: [
-      '50 ekskluzivnih leadova mjesečno',
-      '1 lead = 1 izvođač (bez konkurencije)',
-      'Refund ako klijent ne odgovori',
-      'AI prioritet - viđeni prvi',
-      'Premium kvaliteta leadova (80+ score)',
-      'ROI statistika + napredna analitika',
-      'SMS + Email + Push notifikacije',
-      'CRM + izvještaji',
-      'VIP podrška 24/7',
-      'Featured profil',
-      'White-label opcija'
-    ],
-    savings: 'Ušteda 351€ vs pay-per-lead (47% popust)'
-  }
-};
+// Helper function to get plans from database
+async function getPlansFromDB() {
+  const dbPlans = await prisma.subscriptionPlan.findMany({
+    where: { isActive: true },
+    orderBy: { displayOrder: 'asc' }
+  });
+  
+  // Transform to legacy format for backward compatibility
+  const plansObj = {};
+  dbPlans.forEach(plan => {
+    plansObj[plan.name] = {
+      name: plan.displayName,
+      price: plan.price,
+      credits: plan.credits,
+      creditsPerLead: 1,
+      avgLeadPrice: plan.price / plan.credits,
+      features: plan.features,
+      savings: plan.savings,
+      popular: plan.isPopular
+    };
+  });
+  
+  return { dbPlans, plansObj };
+}
 
 // Get current subscription
 r.get('/me', auth(true, ['PROVIDER']), async (req, res, next) => {
@@ -97,28 +62,36 @@ r.get('/me', auth(true, ['PROVIDER']), async (req, res, next) => {
 
     // Check if subscription expired
     if (subscription.expiresAt && new Date() > subscription.expiresAt) {
+      const { plansObj } = await getPlansFromDB();
       subscription = await prisma.subscription.update({
         where: { userId: req.user.id },
         data: {
           status: 'EXPIRED',
           plan: 'BASIC',
-          credits: PLANS.BASIC.credits
+          credits: plansObj.BASIC?.credits || 10
         }
       });
     }
 
+    const { plansObj } = await getPlansFromDB();
     res.json({
       subscription,
-      planDetails: PLANS[subscription.plan]
+      planDetails: plansObj[subscription.plan] || null
     });
   } catch (e) {
     next(e);
   }
 });
 
-// Get all available plans
+// Get all available plans (from database)
 r.get('/plans', async (req, res) => {
-  res.json(PLANS);
+  try {
+    const { plansObj, dbPlans } = await getPlansFromDB();
+    // Return database format
+    res.json(dbPlans);
+  } catch (e) {
+    next(e);
+  }
 });
 
 // Subscribe to a plan (USLUGAR EXCLUSIVE)
@@ -126,11 +99,13 @@ r.post('/subscribe', auth(true, ['PROVIDER']), async (req, res, next) => {
   try {
     const { plan, paymentIntentId } = req.body;
 
-    if (!['BASIC', 'PREMIUM', 'PRO'].includes(plan)) {
+    const { plansObj } = await getPlansFromDB();
+    
+    if (!plansObj[plan]) {
       return res.status(400).json({ error: 'Invalid plan' });
     }
 
-    const planDetails = PLANS[plan];
+    const planDetails = plansObj[plan];
     const expiresAt = new Date();
     expiresAt.setMonth(expiresAt.getMonth() + 1); // 1 mjesec
 

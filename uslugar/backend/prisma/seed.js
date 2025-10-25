@@ -2,6 +2,87 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
+  console.log('🌱 Starting seed...');
+
+  // Seed Subscription Plans
+  console.log('📦 Seeding subscription plans...');
+  
+  const plans = [
+    {
+      name: 'BASIC',
+      displayName: 'Basic',
+      price: 39,
+      currency: 'EUR',
+      credits: 10,
+      features: [
+        '10 ekskluzivnih leadova mjesečno',
+        '1 lead = 1 izvođač (bez konkurencije)',
+        'Refund ako klijent ne odgovori',
+        'ROI statistika',
+        'Email notifikacije',
+        'Mini CRM za leadove'
+      ],
+      isPopular: false,
+      displayOrder: 1,
+      isActive: true,
+      savings: 'Ušteda 10€ vs pay-per-lead'
+    },
+    {
+      name: 'PREMIUM',
+      displayName: 'Premium',
+      price: 89,
+      currency: 'EUR',
+      credits: 25,
+      features: [
+        '25 ekskluzivnih leadova mjesečno',
+        '1 lead = 1 izvođač (bez konkurencije)',
+        'Refund ako klijent ne odgovori',
+        'AI prioritet - viđeni prvi',
+        'ROI statistika + analitika',
+        'SMS + Email notifikacije',
+        'Mini CRM za leadove',
+        'Prioritetna podrška'
+      ],
+      isPopular: true,
+      displayOrder: 2,
+      isActive: true,
+      savings: 'Ušteda 161€ vs pay-per-lead (36% popust)'
+    },
+    {
+      name: 'PRO',
+      displayName: 'Pro',
+      price: 149,
+      currency: 'EUR',
+      credits: 50,
+      features: [
+        '50 ekskluzivnih leadova mjesečno',
+        '1 lead = 1 izvođač (bez konkurencije)',
+        'Refund ako klijent ne odgovori',
+        'AI prioritet - viđeni prvi',
+        'Premium kvaliteta leadova (80+ score)',
+        'ROI statistika + napredna analitika',
+        'SMS + Email + Push notifikacije',
+        'CRM + izvještaji',
+        'VIP podrška 24/7',
+        'Featured profil',
+        'White-label opcija'
+      ],
+      isPopular: false,
+      displayOrder: 3,
+      isActive: true,
+      savings: 'Ušteda 351€ vs pay-per-lead (47% popust)'
+    }
+  ];
+
+  for (const plan of plans) {
+    await prisma.subscriptionPlan.upsert({
+      where: { name: plan.name },
+      update: plan,
+      create: plan
+    });
+    console.log(`✅ Plan dodan/ažuriran: ${plan.displayName}`);
+  }
+
   // Seed Original Categories
   const categories = [
     'Soboslikarstvo', 'Keramičar', 'Električar', 'Vodoinstalater',
