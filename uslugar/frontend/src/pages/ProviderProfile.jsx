@@ -10,6 +10,8 @@ export default function ProviderProfile({ onSuccess }) {
   const [success, setSuccess] = useState('');
   const [editMode, setEditMode] = useState(false);
   const [welcomeMessage, setWelcomeMessage] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('active'); // 'active', 'inactive', 'all'
+  const [searchTerm, setSearchTerm] = useState('');
   
   // Mapiranje kategorija na specifične ikone
   const getCategoryIcon = (categoryName) => {
@@ -1026,26 +1028,113 @@ export default function ProviderProfile({ onSuccess }) {
             <strong>Odaberite kategorije</strong> usluga kojima se bavite. Klijenti će vas moći pronaći prema ovim kategorijama.
           </p>
           
+          {/* Filter and Search */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            {/* Filter buttons */}
+            <div className="flex gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={() => setCategoryFilter('active')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  categoryFilter === 'active'
+                    ? 'bg-green-600 text-white'
+                    : 'bg-white text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                ✅ Aktivne ({categories.filter(c => c.isActive && !c.parentId).length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setCategoryFilter('inactive')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  categoryFilter === 'inactive'
+                    ? 'bg-yellow-600 text-white'
+                    : 'bg-white text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                ⏸️ Neaktivne ({categories.filter(c => !c.isActive && !c.parentId).length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setCategoryFilter('all')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  categoryFilter === 'all'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                📋 Sve
+              </button>
+            </div>
+            
+            {/* Search */}
+            <input
+              type="text"
+              placeholder="🔍 Pretraži kategorije..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+          
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {categories
                 .filter(category => !category.parentId) // Samo glavne kategorije
+                .filter(category => {
+                  // Filter by active status
+                  if (categoryFilter === 'active' && !category.isActive) return false;
+                  if (categoryFilter === 'inactive' && category.isActive) return false;
+                  
+                  // Filter by search term
+                  if (searchTerm) {
+                    const searchLower = searchTerm.toLowerCase();
+                    return category.name.toLowerCase().includes(searchLower) ||
+                           (category.description && category.description.toLowerCase().includes(searchLower));
+                  }
+                  return true;
+                })
                 .map(category => {
                   const subcategories = categories.filter(cat => cat.parentId === category.id);
+                  const isSelected = formData.categoryIds.includes(category.id);
+                  const isInactive = !category.isActive;
+                  
                   return (
-                    <div key={category.id} className={`border rounded-lg p-3 transition-all duration-200 ${
-                      formData.categoryIds.includes(category.id) 
+                    <div key={category.id} className={`border-2 rounded-lg p-3 transition-all duration-200 relative ${
+                      isInactive ? 'opacity-75 bg-gray-50' : ''
+                    } ${
+                      isSelected
                         ? 'border-blue-500 bg-blue-50 shadow-md' 
+                        : isInactive
+                        ? 'border-gray-300 bg-gray-50'
                         : 'border-gray-200 bg-white hover:border-gray-300'
                     }`}>
-                      <label className={`flex items-start space-x-3 ${editMode ? 'cursor-pointer' : 'cursor-default'}`}>
+                      {/* Inactive badge */}
+                      {isInactive && (
+                        <div className="absolute top-2 right-2">
+                          <span className="bg-yellow-100 text-yellow-800 text-xs font-semibold px-2 py-1 rounded">
+                            ⏸️ Neaktivna
+                          </span>
+                        </div>
+                      )}
+                      
+                      {/* License required badge */}
+                      {category.requiresLicense && (
+                        <div className="absolute top-2 left-2">
+                          <span className="bg-yellow-100 text-yellow-800 text-xs font-semibold px-2 py-1 rounded">
+                            📜 Licenca
+                          </span>
+                        </div>
+                      )}
+                      
+                      <label className={`flex items-start space-x-3 ${editMode ? 'cursor-pointer' : 'cursor-default'} mt-6`}>
                         <input
                           type="checkbox"
-                          checked={formData.categoryIds.includes(category.id)}
+                          checked={isSelected}
                           onChange={() => handleCategoryChange(category.id)}
                           disabled={!editMode}
                           className={`mt-1 h-5 w-5 text-blue-600 focus:ring-blue-500 border-2 rounded transition-all duration-200 ${
-                            formData.categoryIds.includes(category.id)
+                            isSelected
                               ? 'border-blue-600 bg-blue-600'
                               : 'border-gray-300'
                           } ${
@@ -1056,15 +1145,24 @@ export default function ProviderProfile({ onSuccess }) {
                           <div className="flex items-center space-x-2">
                             <span className="text-lg">{category.icon || getCategoryIcon(category.name)}</span>
                             <span className={`font-medium transition-colors duration-200 ${
-                              formData.categoryIds.includes(category.id)
+                              isSelected
                                 ? 'text-blue-800 font-semibold'
+                                : isInactive
+                                ? 'text-gray-600'
                                 : 'text-gray-900'
                             }`}>
                               {category.name}
                             </span>
                           </div>
                           {category.description && (
-                            <p className="text-xs text-gray-600 mt-1">{category.description}</p>
+                            <p className={`text-xs mt-1 ${isInactive ? 'text-gray-500' : 'text-gray-600'}`}>
+                              {category.description}
+                            </p>
+                          )}
+                          {category.licenseType && (
+                            <p className="text-xs text-yellow-700 mt-1">
+                              ⚠️ {category.licenseType}
+                            </p>
                           )}
                           {subcategories.length > 0 && (
                             <div className="mt-2">
@@ -1107,6 +1205,32 @@ export default function ProviderProfile({ onSuccess }) {
                   );
                 })}
             </div>
+            
+            {/* No results message */}
+            {categories.filter(category => !category.parentId).filter(category => {
+              if (categoryFilter === 'active' && !category.isActive) return false;
+              if (categoryFilter === 'inactive' && category.isActive) return false;
+              if (searchTerm) {
+                const searchLower = searchTerm.toLowerCase();
+                return category.name.toLowerCase().includes(searchLower) ||
+                       (category.description && category.description.toLowerCase().includes(searchLower));
+              }
+              return true;
+            }).length === 0 && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+                <p className="text-yellow-800 font-medium">🔍 Nema kategorija koje odgovaraju vašem pretraživanju</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCategoryFilter('all');
+                    setSearchTerm('');
+                  }}
+                  className="mt-3 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
+                >
+                  Očisti filtere
+                </button>
+              </div>
+            )}
             
             {formData.categoryIds.length === 0 && editMode && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-3">
