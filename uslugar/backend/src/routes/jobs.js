@@ -71,7 +71,9 @@ r.post('/', auth(true, ['USER', 'PROVIDER']), async (req, res, next) => {
       title, 
       description, 
       categoryId,
+      subcategoryId, // Use subcategory if provided, otherwise use category
       projectType,
+      customFields,
       budgetMin, 
       budgetMax, 
       city, 
@@ -83,14 +85,18 @@ r.post('/', auth(true, ['USER', 'PROVIDER']), async (req, res, next) => {
       images = [] 
     } = req.body;
     
-    if (!title || !description || !categoryId) return res.status(400).json({ error: 'Missing fields' });
+    // If subcategory is provided, use it as the categoryId (subcategories are categories with parentId)
+    const finalCategoryId = subcategoryId || categoryId;
+    
+    if (!title || !description || !finalCategoryId) return res.status(400).json({ error: 'Missing fields' });
     
     const job = await prisma.job.create({
       data: {
         title, 
         description, 
-        categoryId,
+        categoryId: finalCategoryId, // Use subcategory if provided
         projectType: projectType || null,
+        customFields: customFields || null,
         budgetMin: budgetMin ? parseInt(budgetMin) : null, 
         budgetMax: budgetMax ? parseInt(budgetMax) : null,
         city: city || null, 
