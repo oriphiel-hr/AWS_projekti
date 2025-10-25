@@ -121,8 +121,10 @@ model Job {
   clientVerified     Boolean    @default(false) // Verificiran klijent
   qualityScore       Int?       @default(0) // AI score kvalitete (0-100)
 
-  user               User                @relation("UserJobs", fields: [userId], references: [id], onDelete: Cascade)
-  userId             String
+  user               User?               @relation("UserJobs", fields: [userId], references: [id], onDelete: Cascade)
+  userId             String? // Nullable za anonimne korisnike
+  linkingToken       String? // Token za povezivanje posla s računom nakon registracije
+  linkingTokenExpiresAt DateTime? // Istek linking tokena (7 dana)
   category           Category            @relation(fields: [categoryId], references: [id])
   categoryId         String
   createdAt          DateTime            @default(now())
