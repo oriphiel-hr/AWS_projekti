@@ -207,6 +207,7 @@ const JobForm = ({ onSubmit, categories = [], initialData = null }) => {
       title: '',
       description: '',
       categoryId: '',
+      subcategoryId: '',
       projectType: '',
       budgetMin: '',
       budgetMax: '',
@@ -244,9 +245,10 @@ const JobForm = ({ onSubmit, categories = [], initialData = null }) => {
     return categoryConfig[selectedProjectType] || [];
   };
 
-  // Reset project type and custom fields when category changes
+  // Reset project type, subcategory and custom fields when category changes
   useEffect(() => {
     setValue('projectType', '');
+    setValue('subcategoryId', '');
     setCustomFields({});
   }, [selectedCategoryId, setValue]);
 
@@ -338,44 +340,73 @@ const JobForm = ({ onSubmit, categories = [], initialData = null }) => {
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Kategorija *
-          </label>
-          <select
-            {...register('categoryId', { required: 'Kategorija je obavezna' })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            <option value="">Odaberite kategoriju</option>
-            {categories.map(category => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
-          {errors.categoryId && (
-            <p className="mt-1 text-sm text-red-600">{errors.categoryId.message}</p>
-          )}
-        </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Kategorija *
+        </label>
+        <select
+          {...register('categoryId', { required: 'Kategorija je obavezna' })}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        >
+          <option value="">Odaberite kategoriju</option>
+          {categories.filter(cat => !cat.parentId).map(category => (
+            <option key={category.id} value={category.id}>
+              {category.name}
+            </option>
+          ))}
+        </select>
+        {errors.categoryId && (
+          <p className="mt-1 text-sm text-red-600">{errors.categoryId.message}</p>
+        )}
+      </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Vrsta projekta {selectedCategoryId && <span className="text-blue-600 text-xs">(mijenja se s kategorijom)</span>}
-          </label>
-          <select
-            {...register('projectType')}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            disabled={!selectedCategoryId}
-          >
-            <option value="">{selectedCategoryId ? 'Odaberite vrstu projekta' : 'Najprije odaberite kategoriju'}</option>
-            {getProjectTypes().map((type) => (
-              <option key={type} value={type}>
-                {type}
-              </option>
-            ))}
-          </select>
-        </div>
+      {/* Subcategory selection - only for categories with children */}
+      {selectedCategoryId && (() => {
+        const selectedCategory = categories.find(cat => cat.id === selectedCategoryId);
+        const subcategories = selectedCategory ? categories.filter(cat => cat.parentId === selectedCategoryId) : [];
+        
+        if (subcategories.length > 0) {
+          return (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Podkategorija *
+              </label>
+              <select
+                {...register('subcategoryId', { required: 'Podkategorija je obavezna' })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">Odaberite podkategoriju</option>
+                {subcategories.map(subcategory => (
+                  <option key={subcategory.id} value={subcategory.id}>
+                    {subcategory.name}
+                  </option>
+                ))}
+              </select>
+              {errors.subcategoryId && (
+                <p className="mt-1 text-sm text-red-600">{errors.subcategoryId.message}</p>
+              )}
+            </div>
+          );
+        }
+        return null;
+      })()}
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Vrsta projekta {selectedCategoryId && <span className="text-blue-600 text-xs">(mijenja se s kategorijom)</span>}
+        </label>
+        <select
+          {...register('projectType')}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          disabled={!selectedCategoryId}
+        >
+          <option value="">{selectedCategoryId ? 'Odaberite vrstu projekta' : 'Najprije odaberite kategoriju'}</option>
+          {getProjectTypes().map((type) => (
+            <option key={type} value={type}>
+              {type}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* Dynamic fields based on category and project type */}
