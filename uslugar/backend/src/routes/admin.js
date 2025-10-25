@@ -4,7 +4,7 @@ import { auth } from '../lib/auth.js';
 
 const r = Router();
 
-// Dodaj nedostajuće kategorije - potpuno javni endpoint
+// Dodaj nedostajuće kategorije - potpuno javni endpoint (MUST be before generic routes)
 r.post('/add-categories', async (req, res, next) => {
   try {
     console.log('🌱 Pokretanje seed-a kategorija...');
@@ -241,6 +241,115 @@ r.get('/licenses', auth(true, ['ADMIN']), async (req, res, next) => {
   } catch (e) {
     next(e);
   }
+});
+
+// Generic CRUD routes for all models
+const MODELS = {
+  User: prisma.user,
+  ProviderProfile: prisma.providerProfile,
+  Category: prisma.category,
+  Job: prisma.job,
+  Offer: prisma.offer,
+  Review: prisma.review,
+  Notification: prisma.notification,
+  ChatRoom: prisma.chatRoom,
+  ChatMessage: prisma.chatMessage,
+  Subscription: prisma.subscription,
+  LegalStatus: prisma.legalStatus
+};
+
+// Generic GET /:model - list with pagination
+Object.keys(MODELS).forEach(modelName => {
+  const model = MODELS[modelName];
+  
+  r.get(`/${modelName}`, auth(true, ['ADMIN']), async (req, res, next) => {
+    try {
+      const { skip = 0, take = 25, where: whereStr, include: includeStr } = req.query;
+      
+      const where = whereStr ? JSON.parse(whereStr) : {};
+      const include = includeStr ? JSON.parse(includeStr) : undefined;
+      
+      const [items, total] = await Promise.all([
+        model.findMany({
+          where,
+          include,
+          skip: parseInt(skip),
+          take: parseInt(take),
+          orderBy: { createdAt: 'desc' }
+        }),
+        model.count({ where })
+      ]);
+      
+      res.json({ items, total });
+    } catch (e) {
+      next(e);
+    }
+  });
+  
+  // Generic GET /:model/:id
+  r.get(`/${modelName}/:id`, auth(true, ['ADMIN']), async (req, res, next) => {
+    try {
+      const { id } = req.params;
+      const { include: includeStr } = req.query;
+      const include = includeStr ? JSON.parse(includeStr) : undefined;
+      
+      const item = await model.findUnique({
+        where: { id },
+        include
+      });
+      
+      if (!item) {
+        return res.status(404).json({ error: 'Not found' });
+      }
+      
+      res.json(item);
+    } catch (e) {
+      next(e);
+    }
+  });
+  
+  // Generic POST /:model
+  r.post(`/${modelName}`, auth(true, ['ADMIN']), async (req, res, next) => {
+    try {
+      const data = req.body;
+      const item = await model.create({ data });
+      res.status(201).json(item);
+    } catch (e) {
+      next(e);
+    }
+  });
+  
+  // Generic PUT /:model/:id
+  r.put(`/${modelName}/:id`, auth(true, ['ADMIN']), async (req, res, next) => {
+    try {
+      const { id } = req.params;
+      const data = req.body;
+      
+      // Remove fields that shouldn't be updated
+      delete data.id;
+      delete data.createdAt;
+      
+      const item = await model.update({
+        where: { id },
+        data
+      });
+      
+      res.json(item);
+    } catch (e) {
+      next(e);
+    }
+  });
+  
+  // Generic DELETE /:model/:id
+  r.delete(`/${modelName}/:id`, auth(true, ['ADMIN']), async (req, res, next) => {
+    try {
+      const { id } = req.params;
+      await model.delete({ where: { id } });
+      res.json({ success: true });
+    } catch (e) {
+      next(e);
+    }
+  });
 });
 
 export default r;
