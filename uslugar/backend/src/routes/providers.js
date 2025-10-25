@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { prisma } from '../lib/prisma.js';
 import { auth } from '../lib/auth.js';
+import { uploadDocument, getImageUrl } from '../lib/upload.js';
 
 const r = Router();
 
@@ -307,6 +308,73 @@ r.post('/fix-all-profiles', auth(true, ['ADMIN']), async (req, res, next) => {
       errorDetails: errors
     });
 
+  } catch (e) {
+    next(e);
+  }
+});
+
+// Upload license document
+r.post('/upload-license', auth(true, ['PROVIDER']), uploadDocument.single('file'), async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    const { categoryId, docType } = req.body;
+
+    if (!categoryId) {
+      return res.status(400).json({ error: 'Category ID is required' });
+    }
+
+    // Verify category exists and requires license
+    const category = await prisma.category.findUnique({
+      where: { id: categoryId }
+    });
+
+    if (!category) {
+      return res.status(404).json({ error: 'Category not found' });
+    }
+
+    if (!category.requiresLicense) {
+      return res.status(400).json({ error: 'This category does not require a license' });
+    }
+
+    // Get provider profile
+    const provider = await prisma.providerProfile.findUnique({
+      where: { userId: req.user.id }
+    });
+
+    if (!provider) {
+      return res.status(404).json({ error: 'Provider profile not found' });
+    }
+
+    // Create or update license
+    const documentUrl = getImageUrl(req, req.file.filename);
+
+    const licenseData = {
+      providerId: provider.id,
+      licenseType: category.licenseType || docType || 'Licenca',
+      licenseNumber: '',
+      issuingAuthority: category.licenseAuthority || 'N/A',
+      issuedAt: new Date(),
+      documentUrl: documentUrl,
+      isVerified: false
+    };
+
+    const license = await prisma.providerLicense.create({
+      data: licenseData
+    });
+
+    res.json({
+      message: 'License document uploaded successfully',
+      url: documentUrl,
+      license: {
+        id: license.id,
+        documentUrl: documentUrl,
+        licenseType: license.licenseType,
+        isVerified: license.isVerified
+      }
+    });
   } catch (e) {
     next(e);
   }
