@@ -201,6 +201,7 @@ const JobForm = ({ onSubmit, categories = [], initialData = null }) => {
   const [images, setImages] = useState(initialData?.images || []);
   const [uploading, setUploading] = useState(false);
   const [customFields, setCustomFields] = useState({}); // State za custom polja
+  const [isAnonymous, setIsAnonymous] = useState(false); // State za anonimne korisnike
   
   const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm({
     defaultValues: initialData || {
@@ -214,7 +215,11 @@ const JobForm = ({ onSubmit, categories = [], initialData = null }) => {
       city: '',
       urgency: 'NORMAL',
       jobSize: '',
-      deadline: ''
+      deadline: '',
+      // Anonymous user fields
+      contactName: '',
+      contactEmail: '',
+      contactPhone: ''
     }
   });
 
@@ -302,15 +307,42 @@ const JobForm = ({ onSubmit, categories = [], initialData = null }) => {
     onSubmit({
       ...data,
       images,
-      customFields, // Add custom fields
+      customFields,
       budgetMin: data.budgetMin ? parseInt(data.budgetMin) : null,
       budgetMax: data.budgetMax ? parseInt(data.budgetMax) : null,
-      deadline: data.deadline ? new Date(data.deadline).toISOString() : null
+      deadline: data.deadline ? new Date(data.deadline).toISOString() : null,
+      // Add anonymous user fields if not authenticated
+      anonymous: isAnonymous,
+      contactName: isAnonymous ? data.contactName : undefined,
+      contactEmail: isAnonymous ? data.contactEmail : undefined,
+      contactPhone: isAnonymous ? data.contactPhone : undefined
     });
   };
 
   return (
     <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-6">
+      {/* Anonymous user option - show only if not authenticated */}
+      {!localStorage.getItem('token') && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <label className="flex items-center space-x-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={isAnonymous}
+              onChange={(e) => setIsAnonymous(e.target.checked)}
+              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+            />
+            <span className="text-sm text-gray-700">
+              Nisam registriran - Nastaviti ću bez prijave (kao na Trebam.hr)
+            </span>
+          </label>
+          {isAnonymous && (
+            <p className="mt-2 text-xs text-gray-600">
+              Podatke spremamo odmah, tako da vas možemo podsjetiti putem e-maila ako ne uspijete dovršiti upit.
+            </p>
+          )}
+        </div>
+      )}
+      
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
           Naslov posla *
@@ -587,6 +619,73 @@ const JobForm = ({ onSubmit, categories = [], initialData = null }) => {
           )}
         </div>
       </div>
+
+      {/* Anonymous user contact fields - show if user is not authenticated */}
+      {isAnonymous && (
+        <div className="border-t pt-6 mt-6 space-y-4">
+          <h3 className="text-lg font-semibold text-gray-700">Vaši kontakt podaci</h3>
+          <p className="text-sm text-gray-500">
+            Ove podatke koristimo da vas možemo podsjetiti putem e-maila ako ne uspijete dovršiti upit.
+          </p>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              E-pošta *
+            </label>
+            <input
+              {...register('contactEmail', { 
+                required: isAnonymous ? 'Email je obavezan' : false,
+                pattern: {
+                  value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                  message: 'Neispravna email adresa'
+                }
+              })}
+              type="email"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="vas.email@primjer.com"
+            />
+            {errors.contactEmail && (
+              <p className="mt-1 text-sm text-red-600">{errors.contactEmail.message}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Ime i prezime (ili tvrtka) *
+            </label>
+            <input
+              {...register('contactName', { 
+                required: isAnonymous ? 'Ime je obavezno' : false 
+              })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Vaše ime ili naziv tvrtke"
+            />
+            {errors.contactName && (
+              <p className="mt-1 text-sm text-red-600">{errors.contactName.message}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Telefon *
+              <span className="ml-2 text-xs text-gray-500 font-normal">
+                (koristimo samo za provjeru dodatnih podataka)
+              </span>
+            </label>
+            <input
+              {...register('contactPhone', { 
+                required: isAnonymous ? 'Telefon je obavezan' : false 
+              })}
+              type="tel"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="09x xxx xxx"
+            />
+            {errors.contactPhone && (
+              <p className="mt-1 text-sm text-red-600">{errors.contactPhone.message}</p>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="flex justify-end space-x-4">
         <button
