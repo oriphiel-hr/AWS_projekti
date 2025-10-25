@@ -1,5 +1,94 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+
+// Konfiguracija vrsta projekata po kategorijama
+const PROJECT_TYPES_BY_CATEGORY = {
+  'Arhitekti': [
+    'Novogradnja',
+    'Adaptacija ili rekonstrukcija',
+    'Nadogradnja',
+    'Unutarnji dizajn (dizajn interijera)',
+    'Legalizacija objekta'
+  ],
+  'Električar': [
+    'Nova instalacija',
+    'Popravak',
+    'Servis',
+    'Prekabeliranje',
+    'Održavanje'
+  ],
+  'Vodoinstalater': [
+    'Nova instalacija',
+    'Popravak',
+    'Servis',
+    'Zamjena instalacije',
+    'Održavanje'
+  ],
+  'Građevina': [
+    'Novogradnja',
+    'Renovacija',
+    'Adaptacija',
+    'Sanacija',
+    'Dogradnja'
+  ],
+  'Soboslikarstvo': [
+    'Farbanje',
+    'Tapaciranje',
+    'Dekorativna boja',
+    'Glazura',
+    'Premazivanje'
+  ],
+  'Keramičar': [
+    'Položba pločica',
+    'Popravak',
+    'Fugiranje',
+    'Dekorativna ugradnja',
+    'Renovacija'
+  ],
+  'Krovopokrivač': [
+    'Novi krov',
+    'Popravak krova',
+    'Zamjena pokrivača',
+    'Hidroizolacija',
+    'Održavanje'
+  ],
+  'Stolar': [
+    'Namještaj',
+    'Parket',
+    'Laminat',
+    'Vrata i prozori',
+    'Kućno namještajstvo'
+  ],
+  'Čišćenje': [
+    'Stanovanje',
+    'Poslovni prostor',
+    'Nakon gradnje',
+    'Kancelarija',
+    'Deep clean'
+  ],
+  'Dostava': [
+    'Paketi',
+    'Hrana',
+    'Namirnice',
+    'Povratna pošiljka',
+    'Dokumenti'
+  ]
+};
+
+// Opći projekti za kategorije koje nemaju specifične
+const DEFAULT_PROJECT_TYPES = [
+  'Renovacija',
+  'Gradnja',
+  'Popravak',
+  'Ugradnja',
+  'Servis',
+  'Održavanje',
+  'Dizajn',
+  'Planiranje',
+  'Čišćenje',
+  'Dostava',
+  'Ostalo'
+];
 
 const JobForm = ({ onSubmit, categories = [], initialData = null }) => {
   const [images, setImages] = useState(initialData?.images || []);
@@ -19,6 +108,24 @@ const JobForm = ({ onSubmit, categories = [], initialData = null }) => {
       deadline: ''
     }
   });
+
+  // Watch selected category
+  const selectedCategoryId = watch('categoryId');
+  
+  // Get project types for selected category
+  const getProjectTypes = () => {
+    if (!selectedCategoryId) return DEFAULT_PROJECT_TYPES;
+    
+    const selectedCategory = categories.find(cat => cat.id === selectedCategoryId);
+    if (!selectedCategory) return DEFAULT_PROJECT_TYPES;
+    
+    return PROJECT_TYPES_BY_CATEGORY[selectedCategory.name] || DEFAULT_PROJECT_TYPES;
+  };
+
+  // Reset project type when category changes
+  useEffect(() => {
+    setValue('projectType', '');
+  }, [selectedCategoryId, setValue]);
 
   const handleImageUpload = async (event) => {
     const files = Array.from(event.target.files);
@@ -125,24 +232,19 @@ const JobForm = ({ onSubmit, categories = [], initialData = null }) => {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Vrsta projekta
+            Vrsta projekta {selectedCategoryId && <span className="text-blue-600 text-xs">(mijenja se s kategorijom)</span>}
           </label>
           <select
             {...register('projectType')}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            disabled={!selectedCategoryId}
           >
-            <option value="">Odaberite vrstu projekta</option>
-            <option value="Renovacija">Renovacija</option>
-            <option value="Gradnja">Gradnja</option>
-            <option value="Popravak">Popravak</option>
-            <option value="Ugradnja">Ugradnja</option>
-            <option value="Servis">Servis</option>
-            <option value="Održavanje">Održavanje</option>
-            <option value="Dizajn">Dizajn</option>
-            <option value="Planiranje">Planiranje</option>
-            <option value="Čišćenje">Čišćenje</option>
-            <option value="Dostava">Dostava</option>
-            <option value="Ostalo">Ostalo</option>
+            <option value="">{selectedCategoryId ? 'Odaberite vrstu projekta' : 'Najprije odaberite kategoriju'}</option>
+            {getProjectTypes().map((type) => (
+              <option key={type} value={type}>
+                {type}
+              </option>
+            ))}
           </select>
         </div>
       </div>
