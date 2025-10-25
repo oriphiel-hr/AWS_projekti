@@ -1403,6 +1403,107 @@ export default function ProviderProfile({ onSuccess }) {
           )}
         </div>
 
+        {/* Display uploaded licenses */}
+        {profile.licenses && profile.licenses.length > 0 && (
+          <div className="space-y-4 bg-blue-50 border border-blue-200 p-4 rounded-lg">
+            <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+              <svg className="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Vaše učitane licence
+            </h3>
+            
+            <div className="space-y-3">
+              {profile.licenses.map((license) => (
+                <div
+                  key={license.id}
+                  className={`border-2 rounded-lg p-4 transition-all ${
+                    license.isVerified
+                      ? 'border-green-300 bg-green-50'
+                      : 'border-yellow-300 bg-yellow-50'
+                  }`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <h4 className="font-semibold text-gray-900">{license.licenseType}</h4>
+                        {license.isVerified ? (
+                          <span className="bg-green-100 text-green-800 text-xs font-semibold px-2 py-1 rounded flex items-center">
+                            ✅ Verificirana
+                          </span>
+                        ) : (
+                          <span className="bg-yellow-100 text-yellow-800 text-xs font-semibold px-2 py-1 rounded flex items-center">
+                            ⏳ Čeka verifikaciju
+                          </span>
+                        )}
+                      </div>
+                      
+                      {license.issuingAuthority && (
+                        <p className="text-sm text-gray-600 mb-1">
+                          <strong>Izdaje:</strong> {license.issuingAuthority}
+                        </p>
+                      )}
+                      
+                      {license.licenseNumber && (
+                        <p className="text-sm text-gray-600 mb-1">
+                          <strong>Broj licence:</strong> {license.licenseNumber}
+                        </p>
+                      )}
+                      
+                      {license.issuedAt && (
+                        <p className="text-xs text-gray-500">
+                          Izdata: {new Date(license.issuedAt).toLocaleDateString('hr-HR')}
+                        </p>
+                      )}
+                      
+                      {license.verifiedAt && (
+                        <p className="text-xs text-green-600 mt-1">
+                          Verificirana: {new Date(license.verifiedAt).toLocaleDateString('hr-HR')}
+                        </p>
+                      )}
+                      
+                      {license.documentUrl && (
+                        <div className="mt-3">
+                          <a
+                            href={license.documentUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-blue-600 hover:text-blue-800 underline inline-flex items-center"
+                          >
+                            📄 Pregledaj dokument
+                            <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {!license.isVerified && (
+                    <div className="mt-3 bg-yellow-100 border border-yellow-300 rounded p-3">
+                      <p className="text-sm text-yellow-800 flex items-center">
+                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <strong>⚠️ Upozorenje:</strong> Vaša licenca čeka verifikaciju od administratora. Nakon verifikacije će biti prikazana kao verificirana.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            
+            {profile.licenses.some(l => !l.isVerified) && (
+              <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-3 mt-3">
+                <p className="text-sm text-yellow-800">
+                  💡 <strong>Napomena:</strong> Neverificirane licence mogu utjecati na vašu vidljivost i povjerenje klijenata. Molimo pričekajte verifikaciju od administratora.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Statistike */}
         <div className="space-y-4 bg-gray-50 border border-gray-200 p-4 rounded-lg">
           <h3 className="text-lg font-semibold text-gray-900">Statistike</h3>
