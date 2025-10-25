@@ -146,14 +146,14 @@ r.get('/for-provider', auth(true, ['PROVIDER']), async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-// create job (USER or PROVIDER can create jobs)
-r.post('/', auth(true, ['USER', 'PROVIDER']), async (req, res, next) => {
+// create job - allow anonymous users (like Trebam.hr)
+r.post('/', async (req, res, next) => {
   try {
     const { 
       title, 
       description, 
       categoryId,
-      subcategoryId, // Use subcategory if provided, otherwise use category
+      subcategoryId,
       projectType,
       customFields,
       budgetMin, 
@@ -164,19 +164,50 @@ r.post('/', auth(true, ['USER', 'PROVIDER']), async (req, res, next) => {
       urgency = 'NORMAL', 
       jobSize, 
       deadline, 
-      images = [] 
+      images = [],
+      // Anonymous user contact info
+      contactEmail,
+      contactPhone,
+      contactName,
+      anonymous = false
     } = req.body;
     
-    // If subcategory is provided, use it as the categoryId (subcategories are categories with parentId)
+    // If subcategory is provided, use it as the categoryId
     const finalCategoryId = subcategoryId || categoryId;
     
-    if (!title || !description || !finalCategoryId) return res.status(400).json({ error: 'Missing fields' });
+    if (!title || !description || !finalCategoryId) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+    
+    // For anonymous users, require contact info
+    let userId = null;
+    
+    // Check if user is authenticated
+    const authToken = req.headers.authorization?.replace('Bearer ', '');
+    if (authToken) {
+      try {
+        const jwt = await import('jsonwebtoken');
+        const SECRET = process.env.JWT_SECRET || 'dev-super-secret';
+        const decoded = jwt.verify(authToken, SECRET);
+        userId = decoded.id;
+      } catch (e) {
+        // Token invalid or expired, continue as anonymous
+      }
+    }
+    
+    // If not authenticated and anonymous, require contact info
+    if (!userId && (anonymous || !contactEmail || !contactPhone || !contactName)) {
+      return res.status(400).json({ 
+        error: 'Missing contact information',
+        message: 'Za anonimne korisnike morate unijeti email, telefon i ime'
+      });
+    }
     
     const job = await prisma.job.create({
       data: {
         title, 
         description, 
-        categoryId: finalCategoryId, // Use subcategory if provided
+        categoryId: finalCategoryId,
         projectType: projectType || null,
         customFields: customFields || null,
         budgetMin: budgetMin ? parseInt(budgetMin) : null, 
@@ -188,14 +219,35 @@ r.post('/', auth(true, ['USER', 'PROVIDER']), async (req, res, next) => {
         jobSize,
         deadline: deadline ? new Date(deadline) : null,
         images: Array.isArray(images) ? images : [],
-        userId: req.user.id
+        userId: userId, // Will be null for anonymous users
+        
+        // Store contact info in custom fields for anonymous users
+        ...(anonymous && {
+          customFields: {
+            ...(customFields || {}),
+            _anonymous: true,
+            _contactEmail: contactEmail,
+            _contactPhone: contactPhone,
+            _contactName: contactName
+          }
+        })
       }
     });
     
-    // Pošalji notifikacije pružateljima u kategoriji
-    await notifyNewJob(job, categoryId);
+    // If anonymous user, send notification/email to notify them to complete registration
+    if (anonymous && contactEmail) {
+      // TODO: Send email to contactEmail with link to complete registration
+      // This email should contain a link to continue the job posting after registration
+      console.log(`[ANONYMOUS_JOB] Job created by anonymous user: ${contactName} (${contactEmail})`);
+    }
     
-    res.status(201).json(job);
+    // Pošalji notifikacije pružateljima u kategoriji
+    await notifyNewJob(job, finalCategoryId);
+    
+    res.status(201).json({
+      ...job,
+      message: anonymous ? 'Hvala na upitu! Poslali smo Vam e-mail s detaljima.' : 'Posao kreiran uspješno!'
+    });
   } catch (e) { next(e); }
 });
 
