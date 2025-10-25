@@ -5,6 +5,8 @@ import { getCreditsBalance } from '../api/exclusive';
 export default function CreditsWidget() {
   const [balance, setBalance] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [retryCount, setRetryCount] = useState(0);
+  const [shouldRetry, setShouldRetry] = useState(true);
 
   useEffect(() => {
     // Provjeri da li je korisnik prijavljen
@@ -16,16 +18,21 @@ export default function CreditsWidget() {
     
     loadBalance();
     
-    // Refresh every 30 seconds
-    const interval = setInterval(loadBalance, 30000);
+    // Refresh every 30 seconds only if we should retry
+    const interval = setInterval(() => {
+      if (shouldRetry) {
+        loadBalance();
+      }
+    }, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [shouldRetry]);
 
   const loadBalance = async () => {
     try {
       const response = await getCreditsBalance();
       setBalance(response.data);
       setLoading(false);
+      setRetryCount(0); // Reset retry count on success
     } catch (err) {
       console.error('Error loading credits:', err);
       // Ako je 401, možda korisnik nije prijavljen ili token je istekao
@@ -33,6 +40,13 @@ export default function CreditsWidget() {
         console.log('🔒 Credits endpoint zahtijeva autentifikaciju');
         // Ne prikazuj widget ako korisnik nije autentificiran
         setBalance(null);
+        setRetryCount(prev => prev + 1);
+        
+        // Stop retrying after 3 consecutive 401 errors
+        if (retryCount >= 2) {
+          console.log('🛑 Stopping credits retry after 3 consecutive 401 errors');
+          setShouldRetry(false);
+        }
       }
       setLoading(false);
     }

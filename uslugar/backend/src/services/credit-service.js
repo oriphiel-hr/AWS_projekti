@@ -92,7 +92,7 @@ export async function refundCredits(userId, amount, description = null, relatedP
  * Dohvati trenutni balans kredita
  */
 export async function getCreditsBalance(userId) {
-  const subscription = await prisma.subscription.findUnique({
+  let subscription = await prisma.subscription.findUnique({
     where: { userId },
     select: {
       creditsBalance: true,
@@ -101,13 +101,39 @@ export async function getCreditsBalance(userId) {
     }
   });
 
+  // Create default TRIAL subscription if doesn't exist
   if (!subscription) {
-    return { balance: 0, lifetime: 0, plan: 'NONE' };
+    console.log(`[CREDITS] Creating default TRIAL subscription for user ${userId}`);
+    subscription = await prisma.subscription.create({
+      data: {
+        userId: userId,
+        plan: 'TRIAL',
+        status: 'ACTIVE',
+        credits: 0,
+        creditsBalance: 2, // 2 besplatna leada za probati
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 dana trial
+      },
+      select: {
+        creditsBalance: true,
+        lifetimeCreditsUsed: true,
+        plan: true
+      }
+    });
+    
+    // Create notification
+    await prisma.notification.create({
+      data: {
+        title: 'Dobrodošli u Uslugar EXCLUSIVE!',
+        message: 'Dobili ste 2 besplatna leada da probate našu platformu. Nadogradite pretplatu za više.',
+        type: 'SYSTEM',
+        userId: userId
+      }
+    });
   }
 
   return {
     balance: subscription.creditsBalance,
-    lifetime: subscription.lifetimeCreditsUsed,
+    lifetime: subscription.lifetimeCreditsUsed || 0,
     plan: subscription.plan
   };
 }

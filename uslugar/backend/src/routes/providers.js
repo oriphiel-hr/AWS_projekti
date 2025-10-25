@@ -4,22 +4,7 @@ import { auth } from '../lib/auth.js';
 
 const r = Router();
 
-// get provider profile
-r.get('/:userId', async (req, res, next) => {
-  try {
-    const { userId } = req.params;
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      include: { providerProfile: { include: { categories: true } } }
-    });
-    if (!user || user.role !== 'PROVIDER') return res.status(404).json({ error: 'Provider not found' });
-    // reviews summary
-    const reviews = await prisma.review.findMany({ where: { toUserId: userId } });
-    res.json({ user, reviews });
-  } catch (e) { next(e); }
-});
-
-// get current provider profile
+// get current provider profile - MUST be before /:userId route
 r.get('/me', auth(true, ['PROVIDER']), async (req, res, next) => {
   try {
     let provider = await prisma.providerProfile.findUnique({
@@ -95,6 +80,21 @@ r.get('/me', auth(true, ['PROVIDER']), async (req, res, next) => {
   } catch (e) {
     next(e);
   }
+});
+
+// get provider profile by userId
+r.get('/:userId', async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { providerProfile: { include: { categories: true } } }
+    });
+    if (!user || user.role !== 'PROVIDER') return res.status(404).json({ error: 'Provider not found' });
+    // reviews summary
+    const reviews = await prisma.review.findMany({ where: { toUserId: userId } });
+    res.json({ user, reviews });
+  } catch (e) { next(e); }
 });
 
 // update provider profile
