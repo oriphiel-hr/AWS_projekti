@@ -405,4 +405,50 @@ r.post('/upgrade-to-provider', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+// Link anonymous job to account after registration
+r.post('/link-job', auth(true, ['USER', 'PROVIDER']), async (req, res, next) => {
+  try {
+    const { jobId, token } = req.body;
+    
+    if (!jobId || !token) {
+      return res.status(400).json({ error: 'Missing jobId or token' });
+    }
+    
+    // Find the job by ID and token
+    const job = await prisma.job.findFirst({
+      where: {
+        id: jobId,
+        linkingToken: token,
+        userId: null // Must be unlinked
+      }
+    });
+    
+    if (!job) {
+      return res.status(404).json({ error: 'Invalid or expired linking token' });
+    }
+    
+    // Check if token is expired
+    if (job.linkingTokenExpiresAt && new Date() > job.linkingTokenExpiresAt) {
+      return res.status(410).json({ error: 'Linking token has expired' });
+    }
+    
+    // Link the job to the user's account
+    await prisma.job.update({
+      where: { id: jobId },
+      data: {
+        userId: req.user.id,
+        linkingToken: null, // Clear token after linking
+        linkingTokenExpiresAt: null
+      }
+    });
+    
+    console.log(`[OK] Job ${jobId} linked to user ${req.user.email}`);
+    
+    res.json({ 
+      message: 'Job successfully linked to your account!',
+      job: { id: job.id, title: job.title, status: job.status }
+    });
+  } catch (e) { next(e); }
+});
+
 export default r;

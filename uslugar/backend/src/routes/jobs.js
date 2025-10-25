@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { prisma } from '../lib/prisma.js';
 import { auth } from '../lib/auth.js';
 import { notifyNewJob, notifyAcceptedOffer, notifyJobCompleted } from '../lib/notifications.js';
+import { sendAnonymousJobConfirmationEmail } from '../lib/email.js';
 
 const r = Router();
 
@@ -203,6 +204,17 @@ r.post('/', async (req, res, next) => {
       });
     }
     
+    // Generate linking token for anonymous users
+    let linkingToken = null;
+    let linkingTokenExpiresAt = null;
+    
+    if (anonymous && !userId) {
+      const crypto = await import('crypto');
+      linkingToken = crypto.randomBytes(32).toString('hex');
+      linkingTokenExpiresAt = new Date();
+      linkingTokenExpiresAt.setDate(linkingTokenExpiresAt.getDate() + 7); // 7 days
+    }
+    
     const job = await prisma.job.create({
       data: {
         title, 
@@ -220,6 +232,8 @@ r.post('/', async (req, res, next) => {
         deadline: deadline ? new Date(deadline) : null,
         images: Array.isArray(images) ? images : [],
         userId: userId, // Will be null for anonymous users
+        linkingToken: linkingToken, // Token for linking job to account after registration
+        linkingTokenExpiresAt: linkingTokenExpiresAt, // Token expires in 7 days
         
         // Store contact info in custom fields for anonymous users
         ...(anonymous && {
@@ -234,11 +248,15 @@ r.post('/', async (req, res, next) => {
       }
     });
     
-    // If anonymous user, send notification/email to notify them to complete registration
+    // If anonymous user, send confirmation email with registration link
     if (anonymous && contactEmail) {
-      // TODO: Send email to contactEmail with link to complete registration
-      // This email should contain a link to continue the job posting after registration
-      console.log(`[ANONYMOUS_JOB] Job created by anonymous user: ${contactName} (${contactEmail})`);
+      try {
+        await sendAnonymousJobConfirmationEmail(contactEmail, contactName, title, job.id);
+        console.log(`[ANONYMOUS_JOB] Confirmation email sent to: ${contactEmail}`);
+      } catch (emailError) {
+        console.error('[ANONYMOUS_JOB] Failed to send confirmation email:', emailError);
+        // Don't fail the job creation if email fails
+      }
     }
     
     // Pošalji notifikacije pružateljima u kategoriji

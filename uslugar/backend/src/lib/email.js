@@ -278,6 +278,107 @@ export const sendPasswordResetEmail = async (toEmail, fullName, resetToken) => {
   }
 };
 
+export const sendAnonymousJobConfirmationEmail = async (toEmail, contactName, jobTitle, jobId) => {
+  if (!transporter) {
+    console.log('SMTP not configured, skipping anonymous job confirmation email:', toEmail);
+    return;
+  }
+
+  // Create a unique token for linking the job to an account after registration
+  const crypto = await import('crypto');
+  const linkingToken = crypto.randomBytes(32).toString('hex');
+  
+  // Store the linking token temporarily (in production, use Redis or similar)
+  // For now, we'll include it in the email and verify it during registration
+  
+  const registerUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/#register?linkJob=${jobId}&token=${linkingToken}`;
+
+  try {
+    await transporter.sendMail({
+      from: `"Uslugar" <${process.env.SMTP_USER}>`,
+      to: toEmail,
+      subject: 'Hvala na upitu - Uslugar',
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+        </head>
+        <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background-color: #f8f9fa; padding: 30px; border-radius: 10px;">
+            <h1 style="color: #333; margin-bottom: 20px;">Hvala na upitu! 👋</h1>
+            
+            <p style="font-size: 16px; color: #555;">Poštovani/a <strong>${contactName}</strong>,</p>
+            
+            <p style="font-size: 16px; color: #555; line-height: 1.6;">
+              Vaš upit za <strong>${jobTitle}</strong> je uspješno kreiran! 🎉
+            </p>
+            
+            <div style="background-color: #E0F2FE; border-left: 4px solid #0EA5E9; padding: 20px; margin: 30px 0; border-radius: 5px;">
+              <p style="font-size: 15px; color: #0369A1; margin: 0;">
+                <strong>🗣️ Pružatelji usluga su sada u mogućnosti vidjeti vaš upit i poslati vam ponude!</strong>
+              </p>
+            </div>
+            
+            <h2 style="color: #333; margin-top: 30px; margin-bottom: 15px; font-size: 20px;">
+              Što dalje?
+            </h2>
+            
+            <ul style="font-size: 16px; color: #555; line-height: 1.8;">
+              <li>Pružatelji usluga će vidjeti vaš upit i moći će vam poslati ponude</li>
+              <li>Primit ćete notifikacije o novim ponudama na email <strong>${toEmail}</strong></li>
+              <li>Možete pregledati i usporediti ponude dok ne odaberete najbolju</li>
+            </ul>
+            
+            <div style="background-color: #FEF3C7; border-left: 4px solid #F59E0B; padding: 20px; margin: 30px 0; border-radius: 5px;">
+              <p style="font-size: 15px; color: #92400E; margin: 0;">
+                <strong>💡 Prijava na Uslugar:</strong> Prijavite se za lakše upravljanje upitima i pregled ponuda!
+              </p>
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${registerUrl}" 
+                 style="background-color: #4CAF50; 
+                        color: white; 
+                        padding: 15px 40px; 
+                        text-decoration: none; 
+                        border-radius: 5px; 
+                        font-size: 18px;
+                        font-weight: bold;
+                        display: inline-block;">
+                Registriraj se i poveži upit
+              </a>
+            </div>
+            
+            <p style="font-size: 14px; color: #888; text-align: center; margin-top: 20px;">
+              Prijavom ćete moći upravljati svojim upitima i brže odgovarati na ponude.
+            </p>
+            
+            <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
+            
+            <p style="font-size: 14px; color: #888; margin-top: 20px;">
+              Ako imate pitanja, slobodno nam se obratite.
+            </p>
+            
+            <p style="font-size: 12px; color: #999; text-align: center; margin-top: 30px;">
+              Uslugar - Platforma za pronalaženje lokalnih pružatelja usluga<br>
+              © ${new Date().getFullYear()} Uslugar. Sva prava pridržana.
+            </p>
+          </div>
+        </body>
+        </html>
+      `
+    });
+    console.log('[OK] Anonymous job confirmation email sent to:', toEmail);
+    
+    // Return the linking token for storage
+    return linkingToken;
+  } catch (error) {
+    console.error('Error sending anonymous job confirmation email:', error);
+    return null;
+  }
+};
+
 export { transporter, createTransporter };
 export default { transporter, createTransporter };
 
