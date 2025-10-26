@@ -1,6 +1,35 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import api from '@/api';
 
 export default function Pricing() {
+  const [plans, setPlans] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Dohvati planove iz baze
+    api.get('/subscriptions/plans')
+      .then(response => {
+        console.log('✅ Subscription plans učitani iz baze:', response.data);
+        setPlans(response.data);
+      })
+      .catch(err => {
+        console.error('❌ Greška pri učitavanju planova:', err);
+        setPlans([]);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 py-12 px-4">
+        <div className="max-w-7xl mx-auto text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <p className="mt-4 text-gray-600">Učitavanje cjenika...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 py-12 px-4">
       <div className="max-w-7xl mx-auto">
@@ -21,124 +50,53 @@ export default function Pricing() {
 
         {/* Pricing Cards */}
         <div className="grid md:grid-cols-3 gap-8 mb-16">
-          {/* Basic Plan */}
-          <div className="bg-white rounded-2xl shadow-lg p-8 border-2 border-gray-200">
-            <div className="text-center mb-8">
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">Basic</h3>
-              <div className="text-4xl font-bold text-blue-600 mb-2">99€</div>
-              <p className="text-gray-600">mjesečno</p>
-            </div>
-            <ul className="space-y-4 mb-8">
-              <li className="flex items-center">
-                <span className="text-green-500 mr-3">✓</span>
-                <span>10 ekskluzivnih leadova mjesečno</span>
-              </li>
-              <li className="flex items-center">
-                <span className="text-green-500 mr-3">✓</span>
-                <span>Refund sistem</span>
-              </li>
-              <li className="flex items-center">
-                <span className="text-green-500 mr-3">✓</span>
-                <span>ROI statistika</span>
-              </li>
-              <li className="flex items-center">
-                <span className="text-red-500 mr-3">✗</span>
-                <span className="text-gray-400">AI prioritet u pretrazi</span>
-              </li>
-              <li className="flex items-center">
-                <span className="text-red-500 mr-3">✗</span>
-                <span className="text-gray-400">Premium kvaliteta leadova</span>
-              </li>
-              <li className="flex items-center">
-                <span className="text-blue-500 mr-3">📧</span>
-                <span>Email podrška</span>
-              </li>
-            </ul>
-            <button className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
-              Odaberite Basic
-            </button>
-          </div>
+          {plans.map(plan => (
+            <div
+              key={plan.id}
+              className={`bg-white rounded-2xl shadow-lg p-8 border-2 ${
+                plan.isPopular ? 'border-blue-500 shadow-xl' : 'border-gray-200'
+              } relative`}
+            >
+              {plan.isPopular && (
+                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                  <span className="bg-blue-500 text-white px-4 py-2 rounded-full text-sm font-semibold">
+                    ⭐ Najpopularniji
+                  </span>
+                </div>
+              )}
+              
+              <div className="text-center mb-8">
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                  {plan.displayName}
+                </h3>
+                <div className="text-4xl font-bold text-blue-600 mb-2">
+                  {plan.price}€
+                </div>
+                <p className="text-gray-600">mjesečno</p>
+              </div>
 
-          {/* Premium Plan */}
-          <div className="bg-white rounded-2xl shadow-xl p-8 border-2 border-blue-500 relative">
-            <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-              <span className="bg-blue-500 text-white px-4 py-2 rounded-full text-sm font-semibold">
-                ⭐ Najpopularniji
-              </span>
-            </div>
-            <div className="text-center mb-8">
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">Premium</h3>
-              <div className="text-4xl font-bold text-blue-600 mb-2">199€</div>
-              <p className="text-gray-600">mjesečno</p>
-            </div>
-            <ul className="space-y-4 mb-8">
-              <li className="flex items-center">
-                <span className="text-green-500 mr-3">✓</span>
-                <span>25 ekskluzivnih leadova mjesečno</span>
-              </li>
-              <li className="flex items-center">
-                <span className="text-green-500 mr-3">✓</span>
-                <span>Refund sistem</span>
-              </li>
-              <li className="flex items-center">
-                <span className="text-green-500 mr-3">✓</span>
-                <span>ROI statistika</span>
-              </li>
-              <li className="flex items-center">
-                <span className="text-green-500 mr-3">✓</span>
-                <span>AI prioritet u pretrazi</span>
-              </li>
-              <li className="flex items-center">
-                <span className="text-red-500 mr-3">✗</span>
-                <span className="text-gray-400">Premium kvaliteta leadova</span>
-              </li>
-              <li className="flex items-center">
-                <span className="text-blue-500 mr-3">🚀</span>
-                <span>Prioritetna podrška</span>
-              </li>
-            </ul>
-            <button className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
-              Odaberite Premium
-            </button>
-          </div>
+              <ul className="space-y-4 mb-8">
+                {plan.features.map((feature, idx) => (
+                  <li key={idx} className="flex items-center">
+                    <span className="text-green-500 mr-3">✓</span>
+                    <span>{feature}</span>
+                  </li>
+                ))}
+              </ul>
 
-          {/* Pro Plan */}
-          <div className="bg-white rounded-2xl shadow-lg p-8 border-2 border-gray-200">
-            <div className="text-center mb-8">
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">Pro</h3>
-              <div className="text-4xl font-bold text-blue-600 mb-2">399€</div>
-              <p className="text-gray-600">mjesečno</p>
+              {plan.savings && (
+                <div className="mb-4 text-center">
+                  <p className="text-sm font-semibold text-green-600">
+                    {plan.savings}
+                  </p>
+                </div>
+              )}
+
+              <button className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
+                Odaberite {plan.displayName}
+              </button>
             </div>
-            <ul className="space-y-4 mb-8">
-              <li className="flex items-center">
-                <span className="text-green-500 mr-3">✓</span>
-                <span>50 ekskluzivnih leadova mjesečno</span>
-              </li>
-              <li className="flex items-center">
-                <span className="text-green-500 mr-3">✓</span>
-                <span>Refund sistem</span>
-              </li>
-              <li className="flex items-center">
-                <span className="text-green-500 mr-3">✓</span>
-                <span>ROI statistika</span>
-              </li>
-              <li className="flex items-center">
-                <span className="text-green-500 mr-3">✓</span>
-                <span>AI prioritet u pretrazi</span>
-              </li>
-              <li className="flex items-center">
-                <span className="text-green-500 mr-3">✓</span>
-                <span>Premium kvaliteta leadova (80+)</span>
-              </li>
-              <li className="flex items-center">
-                <span className="text-blue-500 mr-3">👑</span>
-                <span>VIP 24/7 podrška</span>
-              </li>
-            </ul>
-            <button className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
-              Odaberite Pro
-            </button>
-          </div>
+          ))}
         </div>
 
         {/* FAQ Link */}
