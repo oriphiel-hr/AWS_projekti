@@ -28,37 +28,10 @@ export default function PaymentSuccess({ setTab }) {
 
     setSessionId(sessionIdParam);
     
-    // First verify payment with backend
+    // Verify payment with backend
     api.get(`/payments/success?session_id=${sessionIdParam}`)
-      .then(async response => {
+      .then(response => {
         console.log('Payment success response:', response.data);
-        
-        // Get user email from token or localStorage
-        const token = localStorage.getItem('token');
-        let email = null;
-        
-        if (token) {
-          try {
-            // Decode JWT to get user email
-            const payload = JSON.parse(atob(token.split('.')[1]));
-            email = payload.email;
-          } catch (e) {
-            console.error('Error decoding token:', e);
-          }
-        }
-        
-        // If we have email, activate subscription directly
-        if (email) {
-          try {
-            console.log('Auto-activating subscription for:', email);
-            await api.post('/payments/activate-by-email', { email });
-            console.log('Subscription activated automatically!');
-          } catch (err) {
-            console.error('Auto-activation failed:', err);
-            // Continue anyway - webhook might have activated it
-          }
-        }
-        
         setStatus('success');
         
         // Set a flag in localStorage to trigger subscription data refresh
