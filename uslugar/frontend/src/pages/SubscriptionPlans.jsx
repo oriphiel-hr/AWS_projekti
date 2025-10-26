@@ -38,9 +38,27 @@ export default function SubscriptionPlans() {
             
             if (email) {
               console.log('Attempting auto-activation for:', email);
-              await api.post('/payments/activate-by-email', { email }).catch(() => {
+              const result = await api.post('/payments/activate-by-email', { email }).catch(() => {
                 // Silently fail - might already be activated or no payment exists
               });
+              
+              // If activation succeeded, refresh subscription data
+              if (result?.data?.success) {
+                console.log('Auto-activation succeeded!');
+                // Reload subscription data
+                const [plansRes, subRes] = await Promise.all([
+                  getSubscriptionPlans(),
+                  getMySubscription()
+                ]);
+                
+                const plansObj = {};
+                plansRes.data.forEach(plan => {
+                  plansObj[plan.name] = plan;
+                });
+                
+                setPlans(plansObj);
+                setCurrentSubscription(subRes.data.subscription);
+              }
             }
           } catch (e) {
             // Silently fail
