@@ -6,34 +6,39 @@ import { prisma } from '../lib/prisma.js';
  * @param {String} userId - ID korisnika
  * @param {String} subject - Naslov
  * @param {String} message - Poruka
- * @param {String} priority - NORMAL, HIGH, URGENT
+ * @param {String} priority - NORMAL, HIGH, URGENT (premium/PRO dobiva HIGH/URGENT)
  * @param {String} category - BILLING, TECHNICAL, REFUND, OTHER
  * @returns {Object} - Kreirani ticket
  */
 export async function createSupportTicket(userId, subject, message, priority = 'NORMAL', category = 'OTHER') {
   try {
-    // Kreiraj ticket u bazi (za sada bez SupportTicket modela - extension)
-    // TODO: Add SupportTicket model to Prisma schema
+    // Provjeri plan korisnika za prioritet
+    const subscription = await prisma.subscription.findUnique({
+      where: { userId }
+    });
     
-    const ticket = {
-      id: 'tkt_' + Date.now(),
-      userId,
-      subject,
-      message,
-      priority,
-      category,
-      status: 'OPEN',
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
+    // Automatski povišaj prioritet za PREMIUM/PRO
+    if (subscription?.plan === 'PRO') {
+      priority = 'URGENT'; // VIP podrška
+    } else if (subscription?.plan === 'PREMIUM') {
+      priority = 'HIGH'; // Prioritetna podrška
+    }
+    
+    const ticket = await prisma.supportTicket.create({
+      data: {
+        userId,
+        subject,
+        message,
+        priority,
+        category,
+        status: 'OPEN'
+      }
+    });
     
     console.log(`📧 Support ticket kreiran: ${ticket.id}`);
     console.log(`   Subject: ${subject}`);
     console.log(`   User: ${userId}`);
-    console.log(`   Priority: ${priority}`);
-    
-    // TODO: Store in database when SupportTicket model is added
-    // await prisma.supportTicket.create({ data: ticket });
+    console.log(`   Priority: ${priority} (plan: ${subscription?.plan || 'NONE'})`);
     
     // TODO: Send email to support team
     // await sendTicketToSupportTeam(ticket);
@@ -53,16 +58,37 @@ export async function createSupportTicket(userId, subject, message, priority = '
  */
 export async function getMySupportTickets(userId) {
   try {
-    // TODO: Query from database when SupportTicket model is added
-    // return await prisma.supportTicket.findMany({
-    //   where: { userId },
-    //   orderBy: { createdAt: 'desc' }
-    // });
+    const tickets = await prisma.supportTicket.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' }
+    });
     
-    return [];
+    return tickets;
   } catch (error) {
     console.error('❌ Error fetching support tickets:', error);
     return [];
+  }
+}
+
+/**
+ * Dohvati support ticket
+ * @param {String} ticketId - ID ticket-a
+ * @returns {Object} - Ticket
+ */
+export async function getSupportTicket(ticketId, userId) {
+  try {
+    const ticket = await prisma.supportTicket.findUnique({
+      where: { id: ticketId }
+    });
+    
+    if (!ticket || ticket.userId !== userId) {
+      throw new Error('Ticket not found');
+    }
+    
+    return ticket;
+  } catch (error) {
+    console.error('❌ Error fetching support ticket:', error);
+    throw new Error('Failed to get support ticket');
   }
 }
 
@@ -74,18 +100,48 @@ export async function getMySupportTickets(userId) {
  */
 export async function resolveTicket(ticketId, userId) {
   try {
-    // TODO: Update in database when SupportTicket model is added
+    const ticket = await prisma.supportTicket.update({
+      where: { id: ticketId },
+      data: {
+        status: 'RESOLVED',
+        resolvedAt: new Date()
+      }
+    });
+    
     console.log(`✅ Support ticket resolved: ${ticketId}`);
     
-    return { success: true, ticketId, status: 'RESOLVED' };
+    return ticket;
   } catch (error) {
     throw new Error('Failed to resolve ticket');
+  }
+}
+
+/**
+ * Dodaj napomenu na ticket (samo za admin)
+ * @param {String} ticketId - ID ticket-a
+ * @param {String} notes - Napomena
+ * @returns {Object} - Ažurirani ticket
+ */
+export async function addTicketNote(ticketId, notes) {
+  try {
+    const ticket = await prisma.supportTicket.update({
+      where: { id: ticketId },
+      data: {
+        notes: notes
+      }
+    });
+    
+    return ticket;
+  } catch (error) {
+    throw new Error('Failed to add note');
   }
 }
 
 export default {
   createSupportTicket,
   getMySupportTickets,
-  resolveTicket
+  getSupportTicket,
+  resolveTicket,
+  addTicketNote
 };
 

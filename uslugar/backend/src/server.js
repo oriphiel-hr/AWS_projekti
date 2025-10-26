@@ -30,6 +30,7 @@ import exclusiveLeadsRouter from './routes/exclusive-leads.js'
 import providerROIRouter from './routes/provider-roi.js'
 import clientVerificationRouter from './routes/client-verification.js'
 import leadQueueRouter from './routes/lead-queue.js'
+import supportRouter from './routes/support.js'
 import { startQueueScheduler } from './lib/queueScheduler.js'
 import { checkExpiringSubscriptions } from './lib/subscription-reminder.js'
 
@@ -265,6 +266,7 @@ app.use('/api/exclusive/leads', exclusiveLeadsRouter)
 app.use('/api/exclusive/roi', providerROIRouter)
 app.use('/api/verification', clientVerificationRouter)
 app.use('/api/lead-queue', leadQueueRouter)
+app.use('/api/support', supportRouter)
 
 // basic error handler
 app.use((err, _req, res, _next) => {
@@ -318,6 +320,45 @@ async function ensureLifetimeLeadsConverted() {
   }
 }
 await ensureLifetimeLeadsConverted()
+
+// Auto-fix: Ensure SupportTicket table exists
+async function ensureSupportTicket() {
+  try {
+    await prisma.$queryRaw`SELECT "id" FROM "SupportTicket" LIMIT 1`
+    console.log('✅ SupportTicket table exists')
+  } catch (error) {
+    if (error.message.includes('does not exist')) {
+      console.log('🔧 Adding missing SupportTicket table and enums...')
+      try {
+        // Create enums
+        await prisma.$executeRaw`DO $$ BEGIN CREATE TYPE "SupportPriority" AS ENUM ('LOW', 'NORMAL', 'HIGH', 'URGENT'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;`
+        await prisma.$executeRaw`DO $$ BEGIN CREATE TYPE "SupportStatus" AS ENUM ('OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;`
+        await prisma.$executeRaw`DO $$ BEGIN CREATE TYPE "SupportCategory" AS ENUM ('BILLING', 'TECHNICAL', 'REFUND', 'FEATURE_REQUEST', 'OTHER'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;`
+        
+        // Create table
+        await prisma.$executeRaw`CREATE TABLE IF NOT EXISTS "SupportTicket" (
+          "id" TEXT NOT NULL PRIMARY KEY,
+          "userId" TEXT NOT NULL,
+          "subject" TEXT NOT NULL,
+          "message" TEXT NOT NULL,
+          "priority" "SupportPriority" NOT NULL DEFAULT 'NORMAL',
+          "status" "SupportStatus" NOT NULL DEFAULT 'OPEN',
+          "category" "SupportCategory" NOT NULL DEFAULT 'OTHER',
+          "assignedTo" TEXT,
+          "notes" TEXT,
+          "resolvedAt" TIMESTAMP(3),
+          "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )`
+        
+        console.log('✅ SupportTicket table added successfully')
+      } catch (e) {
+        console.error('⚠️  Failed to add SupportTicket table:', e.message)
+      }
+    }
+  }
+}
+await ensureSupportTicket()
 
 // Start Queue Scheduler (checks expired offers every hour)
 startQueueScheduler()
