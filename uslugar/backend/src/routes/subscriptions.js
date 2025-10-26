@@ -60,15 +60,25 @@ r.get('/me', auth(true, ['PROVIDER']), async (req, res, next) => {
       });
     }
 
-    // Check if subscription expired
-    if (subscription.expiresAt && new Date() > subscription.expiresAt) {
-      const { plansObj } = await getPlansFromDB();
+    // Check if subscription expired (MORATE PLATITI - ne automatski prelazak!)
+    if (subscription.expiresAt && new Date() > subscription.expiresAt && subscription.status === 'ACTIVE') {
+      // Samo označi kao EXPIRED - NIJE automatski BASIC!
       subscription = await prisma.subscription.update({
         where: { userId: req.user.id },
         data: {
           status: 'EXPIRED',
-          plan: 'BASIC',
-          credits: plansObj.BASIC?.credits || 10
+          creditsBalance: 0, // Nema kredita dok ne plate
+          plan: 'TRIAL' // Ostaje TRIAL dok ne plate
+        }
+      });
+      
+      // Notifika o isteku
+      await prisma.notification.create({
+        data: {
+          title: 'TRIAL je istekao',
+          message: 'Vaš besplatni trial je istekao. Plati we pretplatu da nastaviš koristiti Uslugar EXCLUSIVE.',
+          type: 'SYSTEM',
+          userId: req.user.id
         }
       });
     }
