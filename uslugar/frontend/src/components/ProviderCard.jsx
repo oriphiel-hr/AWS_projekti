@@ -39,9 +39,14 @@ const ProviderCard = ({ provider, onViewProfile, onContact }) => {
         
         <div className="flex-1">
           <div className="flex justify-between items-start mb-2">
-            <h3 className="text-xl font-semibold text-gray-900">
-              {provider.user.fullName}
-            </h3>
+            <div>
+              <h3 className="text-xl font-semibold text-gray-900">
+                {provider.user.fullName}
+                {provider.isFeatured && (
+                  <span className="ml-2 text-yellow-500 text-sm">⭐ Featured</span>
+                )}
+              </h3>
+            </div>
             <div className="flex items-center space-x-1">
               {renderStars(provider.ratingAvg)}
               <span className="text-sm text-gray-600 ml-1">
