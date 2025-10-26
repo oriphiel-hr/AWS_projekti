@@ -1,6 +1,7 @@
 // USLUGAR EXCLUSIVE - Rute za ekskluzivne leadove
 import { Router } from 'express';
 import { auth } from '../lib/auth.js';
+import { requirePlan } from '../lib/subscription-auth.js';
 import {
   purchaseLead,
   markLeadContacted,
@@ -182,6 +183,73 @@ r.post('/credits/purchase', auth(true, ['PROVIDER']), async (req, res, next) => 
       newBalance: result.balance,
       message: `Successfully purchased ${amount} credits`
     });
+  } catch (e) {
+    next(e);
+  }
+});
+
+// ============================================================
+// EXPORT - CSV Export za leadove
+// ============================================================
+
+// Export mojih leadova u CSV (PREMIUM/PRO feature)
+r.get('/export/my-leads', auth(true, ['PROVIDER']), requirePlan('PREMIUM'), async (req, res, next) => {
+  try {
+    const leads = await getMyLeads(req.user.id, null);
+    
+    // Generiraj CSV
+    const csvHeader = 'ID,Naziv,Kategorija,Grad,Budžet,Status,Kontaktirano,Konvertirano,Refundirano,Cijena,Potrošeno kredita,Created At\n';
+    const csvRows = leads.map(p => {
+      const job = p.job || {};
+      const user = (job.user || {});
+      return [
+        p.id,
+        `"${job.title || ''}"`,
+        `"${(job.category || {}).name || ''}"`,
+        `"${job.city || ''}"`,
+        `${job.budgetMin || 0}-${job.budgetMax || 0} EUR`,
+        p.status,
+        p.contactedAt ? new Date(p.contactedAt).toISOString() : '',
+        p.convertedAt ? new Date(p.convertedAt).toISOString() : '',
+        p.refundedAt ? new Date(p.refundedAt).toISOString() : '',
+        `${p.leadPrice} credits`,
+        p.creditsSpent,
+        new Date(p.createdAt).toISOString()
+      ].join(',');
+    }).join('\n');
+    
+    const csv = csvHeader + csvRows;
+    
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="my-leads.csv"');
+    res.send(csv);
+  } catch (e) {
+    next(e);
+  }
+});
+
+// Export kreditnih transakcija u CSV (PREMIUM/PRO feature)
+r.get('/export/credits-history', auth(true, ['PROVIDER']), requirePlan('PREMIUM'), async (req, res, next) => {
+  try {
+    const history = await getCreditHistory(req.user.id, 1000);
+    
+    const csvHeader = 'ID,Type,Amount,Balance,Description,Related Job,Related Purchase,Created At\n';
+    const csvRows = history.map(t => [
+      t.id,
+      t.type,
+      t.amount,
+      t.balance,
+      `"${t.description || ''}"`,
+      t.relatedJobId || '',
+      t.relatedPurchaseId || '',
+      new Date(t.createdAt).toISOString()
+    ].join(',')).join('\n');
+    
+    const csv = csvHeader + csvRows;
+    
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="credit-history.csv"');
+    res.send(csv);
   } catch (e) {
     next(e);
   }

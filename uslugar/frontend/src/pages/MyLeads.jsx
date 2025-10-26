@@ -1,6 +1,6 @@
 // USLUGAR EXCLUSIVE - My Leads Page
 import React, { useState, useEffect } from 'react';
-import { getMyLeads, markLeadContacted, markLeadConverted, requestRefund, getCreditsBalance } from '../api/exclusive';
+import { getMyLeads, markLeadContacted, markLeadConverted, requestRefund, getCreditsBalance, exportMyLeadsCSV, exportCreditsHistoryCSV } from '../api/exclusive';
 
 export default function MyLeads() {
   const [leads, setLeads] = useState([]);
@@ -79,6 +79,38 @@ export default function MyLeads() {
     }
   };
 
+  const handleExportLeads = async () => {
+    try {
+      const response = await exportMyLeadsCSV();
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'my-leads.csv');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      alert('✅ Leadovi izvezeni!');
+    } catch (err) {
+      alert('Greška pri izvozu: ' + (err.response?.data?.error || 'Neuspjelo'));
+    }
+  };
+
+  const handleExportCredits = async () => {
+    try {
+      const response = await exportCreditsHistoryCSV();
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'credit-history.csv');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      alert('✅ Povijest kredita izvezena!');
+    } catch (err) {
+      alert('Greška pri izvozu: ' + (err.response?.data?.error || 'Neuspjelo'));
+    }
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'ACTIVE': return 'bg-blue-100 text-blue-800';
@@ -99,15 +131,31 @@ export default function MyLeads() {
           <p className="text-gray-600 mt-2">Upravljajte svojim kupljenim leadovima</p>
         </div>
         
-        <div className="text-right">
-          <p className="text-sm text-gray-600">Dostupni krediti</p>
-          <p className="text-3xl font-bold text-green-600">{creditsBalance}</p>
-          <button
-            onClick={() => window.location.hash = '#leads'}
-            className="mt-2 text-sm text-green-600 hover:underline"
-          >
-            Kupi još leadova →
-          </button>
+        <div className="text-right flex gap-2 items-center">
+          <div className="mr-4">
+            <p className="text-sm text-gray-600">Dostupni krediti</p>
+            <p className="text-3xl font-bold text-green-600">{creditsBalance}</p>
+          </div>
+          <div className="flex flex-col gap-2">
+            <button
+              onClick={() => window.location.hash = '#leads'}
+              className="text-sm text-green-600 hover:underline"
+            >
+              Kupi još leadova →
+            </button>
+            <button
+              onClick={handleExportLeads}
+              className="text-xs text-gray-600 hover:text-gray-900 px-2 py-1 border rounded"
+            >
+              📥 Export CSV
+            </button>
+            <button
+              onClick={handleExportCredits}
+              className="text-xs text-gray-600 hover:text-gray-900 px-2 py-1 border rounded"
+            >
+              💰 Export kredita
+            </button>
+          </div>
         </div>
       </div>
 

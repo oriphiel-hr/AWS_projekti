@@ -112,3 +112,18 @@ export const cancelSubscription = () => {
   return api.post('/subscriptions/cancel');
 };
 
+// ============================================================
+// EXPORT
+// ============================================================
+
+export const exportMyLeadsCSV = () => {
+  return api.get('/exclusive/leads/export/my-leads', {
+    responseType: 'blob'
+  });
+};
+
+export const exportCreditsHistoryCSV = () => {
+  return api.get('/exclusive/leads/export/credits-history', {
+    responseType: 'blob'
+  });
+};
