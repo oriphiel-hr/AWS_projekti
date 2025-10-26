@@ -384,7 +384,7 @@ r.post('/activate-subscription', auth(true, ['PROVIDER']), async (req, res, next
  * Confirm subscription after successful payment
  * GET /api/payments/success
  */
-r.get('/success', auth(true, ['PROVIDER']), async (req, res, next) => {
+r.get('/success', async (req, res, next) => {
   try {
     const { session_id } = req.query;
 
@@ -397,11 +397,17 @@ r.get('/success', auth(true, ['PROVIDER']), async (req, res, next) => {
 
     if (session.payment_status === 'paid') {
       // Activate subscription if not already activated
-      const userId = session.metadata?.userId || req.user.id;
+      const userId = session.metadata?.userId;
       const plan = session.metadata?.plan;
       const credits = parseInt(session.metadata?.credits || '0');
       
+      console.log(`[PAYMENT SUCCESS] Session metadata:`, session.metadata);
       console.log(`[PAYMENT SUCCESS] Activating subscription for user ${userId}, plan: ${plan}`);
+      
+      if (!userId) {
+        console.error('[PAYMENT SUCCESS] No userId found in session metadata');
+        return res.status(400).json({ error: 'User ID not found in payment session' });
+      }
       
       try {
         // Activate subscription directly
