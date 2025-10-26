@@ -299,6 +299,25 @@ async function ensureProjectTypeColumn() {
 }
 await ensureProjectTypeColumn()
 
+// Auto-fix: Ensure lifetimeLeadsConverted exists in Subscription
+async function ensureLifetimeLeadsConverted() {
+  try {
+    await prisma.$queryRaw`SELECT "lifetimeLeadsConverted" FROM "Subscription" LIMIT 1`
+    console.log('✅ lifetimeLeadsConverted column exists')
+  } catch (error) {
+    if (error.message.includes('does not exist')) {
+      console.log('🔧 Adding missing lifetimeLeadsConverted column...')
+      try {
+        await prisma.$executeRaw`ALTER TABLE "Subscription" ADD COLUMN IF NOT EXISTS "lifetimeLeadsConverted" INTEGER DEFAULT 0`
+        console.log('✅ Column added successfully')
+      } catch (e) {
+        console.error('⚠️  Failed to add column:', e.message)
+      }
+    }
+  }
+}
+await ensureLifetimeLeadsConverted()
+
 // Start Queue Scheduler (checks expired offers every hour)
 startQueueScheduler()
 
