@@ -1,4 +1,4 @@
-# Uslugar Backend - trebam.hr Funkcionalnosti
+# Uslugar Backend - Funkcionalnosti
 
 ## 🎉 Nove funkcionalnosti implementirane
 
