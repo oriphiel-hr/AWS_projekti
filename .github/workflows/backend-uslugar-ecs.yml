@@ -107,11 +107,17 @@ jobs:
 
           jq 'del(.status,.requiresAttributes,.compatibilities,.revision,.registeredAt,.registeredBy,.deregisteredAt,.taskDefinitionArn,.tags,.inferenceAccelerators)' td.json > td_clean.json
 
-      - name: Replace image in TD
+      - name: Replace image in TD and add CORS_ORIGINS
         run: |
           jq --arg NAME "${{ env.CONTAINER_NAME }}" --arg IMG "${IMAGE_URI}" '
             .containerDefinitions = (.containerDefinitions | map(
-              if .name == $NAME then .image = $IMG | . else . end
+              if .name == $NAME then 
+                .image = $IMG |
+                .environment = (.environment + [{
+                  "name": "CORS_ORIGINS",
+                  "value": "https://uslugar.oriph.io,http://localhost:5173,http://localhost:3000"
+                }])
+              else . end
             ))
           ' td_clean.json > td_new.json
 
