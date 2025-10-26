@@ -469,3 +469,48 @@ enum SubscriptionStatus {
   CANCELLED // Otkazana
   EXPIRED // Istekla
 }
+
+enum SupportPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum SupportStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum SupportCategory {
+  BILLING
+  TECHNICAL
+  REFUND
+  FEATURE_REQUEST
+  OTHER
+}
+
+// VIP podrška 24/7 - Support Ticket System
+model SupportTicket {
+  id          String          @id @default(cuid())
+  userId      String
+  subject     String
+  message     String
+  priority    SupportPriority @default(NORMAL)
+  status      SupportStatus   @default(OPEN)
+  category    SupportCategory @default(OTHER)
+  assignedTo  String?
+  notes       String?
+  resolvedAt  DateTime?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  
+  user        User            @relation("UserSupportTickets", fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([status])
+  @@index([priority])
+  @@index([category])
+}
