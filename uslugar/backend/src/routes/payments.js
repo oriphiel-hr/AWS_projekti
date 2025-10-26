@@ -482,12 +482,16 @@ r.get('/success', async (req, res, next) => {
           sessionId: session_id
         });
       } catch (activateError) {
-        console.error('Error activating subscription:', activateError);
-        // Still return success if payment is completed
-        res.json({
-          success: true,
+        console.error('[PAYMENT SUCCESS] Error activating subscription:', activateError);
+        console.error('[PAYMENT SUCCESS] Error message:', activateError.message);
+        console.error('[PAYMENT SUCCESS] Error stack:', activateError.stack);
+        // Return error details for debugging
+        res.status(200).json({
+          success: false,
           message: 'Plaćanje uspješno završeno.',
-          sessionId: session_id
+          error: activateError.message,
+          sessionId: session_id,
+          metadata: session.metadata
         });
       }
     } else {
