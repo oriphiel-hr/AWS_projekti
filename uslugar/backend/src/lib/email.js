@@ -379,6 +379,93 @@ export const sendAnonymousJobConfirmationEmail = async (toEmail, contactName, jo
   }
 };
 
+export const sendPaymentConfirmationEmail = async (toEmail, fullName, planName, amount, credits) => {
+  if (!transporter) {
+    console.log('SMTP not configured, skipping payment confirmation email:', toEmail);
+    return;
+  }
+
+  try {
+    await transporter.sendMail({
+      from: `"Uslugar" <${process.env.SMTP_USER}>`,
+      to: toEmail,
+      subject: `Potvrda plaćanja - ${planName} pretplata`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+        </head>
+        <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background-color: #f8f9fa; padding: 30px; border-radius: 10px;">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #4CAF50; font-size: 32px; margin: 0;">🎉 Hvala vam!</h1>
+            </div>
+            
+            <p style="font-size: 16px; color: #555;">Poštovani/a <strong>${fullName}</strong>,</p>
+            
+            <p style="font-size: 16px; color: #555; line-height: 1.6;">
+              Vaša pretplata na <strong>${planName}</strong> je uspješno aktivirana! 🎉
+            </p>
+            
+            <div style="background-color: #E8F5E9; border-left: 4px solid #4CAF50; padding: 20px; margin: 30px 0; border-radius: 5px;">
+              <h2 style="color: #2E7D32; font-size: 24px; margin: 0 0 15px 0;">Detalji pretplate:</h2>
+              <p style="font-size: 16px; color: #555; margin: 10px 0;">
+                <strong>Plan:</strong> ${planName}
+              </p>
+              <p style="font-size: 16px; color: #555; margin: 10px 0;">
+                <strong>Cijena:</strong> ${amount}€
+              </p>
+              <p style="font-size: 16px; color: #555; margin: 10px 0;">
+                <strong>Krediti:</strong> ${credits}
+              </p>
+            </div>
+            
+            <div style="background-color: #FFF3CD; border-left: 4px solid #FFC107; padding: 20px; margin: 30px 0; border-radius: 5px;">
+              <p style="font-size: 15px; color: #856404; margin: 0;">
+                <strong>💡 Sada možete:</strong><br>
+                • Pregledavati ekskluzivne leadove bez konkurencije<br>
+                • Kontaktirati direktno klijente<br>
+                • Koristiti AI-kvalitetu leadova<br>
+                • Pratiti ROI statistiku
+              </p>
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="https://uslugar.oriph.io/#leads" 
+                 style="background-color: #4CAF50; 
+                        color: white; 
+                        padding: 15px 40px; 
+                        text-decoration: none; 
+                        border-radius: 5px; 
+                        font-size: 18px;
+                        font-weight: bold;
+                        display: inline-block;">
+                Pregledaj leadove →
+              </a>
+            </div>
+            
+            <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
+            
+            <p style="font-size: 14px; color: #888; margin-top: 20px;">
+              Ako imate pitanja ili trebate pomoć, slobodno nam se obratite.
+            </p>
+            
+            <p style="font-size: 12px; color: #999; text-align: center; margin-top: 30px;">
+              Uslugar - Ekskluzivni leadovi bez konkurencije<br>
+              © ${new Date().getFullYear()} Uslugar. Sva prava pridržana.
+            </p>
+          </div>
+        </body>
+        </html>
+      `
+    });
+    console.log('[OK] Payment confirmation email sent to:', toEmail);
+  } catch (error) {
+    console.error('Error sending payment confirmation email:', error);
+  }
+};
+
 export { transporter, createTransporter };
 export default { transporter, createTransporter };
 

@@ -4,6 +4,7 @@ import { Router } from 'express';
 import Stripe from 'stripe';
 import { prisma } from '../lib/prisma.js';
 import { auth } from '../lib/auth.js';
+import { sendPaymentConfirmationEmail } from '../lib/email.js';
 
 const r = Router();
 
@@ -486,6 +487,26 @@ async function activateSubscription(userId, plan, credits) {
     });
 
     console.log(`[SUBSCRIPTION] Activated: User ${userId}, Plan ${plan}, Credits ${credits}`);
+
+    // Send confirmation email
+    try {
+      const user = await prisma.user.findUnique({ where: { id: userId } });
+      if (user && user.email) {
+        // Get plan price
+        const planPrice = credits * 10; // Approximate price based on credits
+        await sendPaymentConfirmationEmail(
+          user.email,
+          user.fullName || user.email,
+          plan,
+          planPrice,
+          credits
+        );
+        console.log(`[EMAIL] Payment confirmation sent to: ${user.email}`);
+      }
+    } catch (emailError) {
+      console.error('Error sending payment confirmation email:', emailError);
+      // Don't throw - email failure shouldn't block subscription activation
+    }
 
     return subscription;
 
