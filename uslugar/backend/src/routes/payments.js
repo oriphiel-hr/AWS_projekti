@@ -509,14 +509,29 @@ async function activateSubscription(userId, plan, credits) {
     const userIdNum = typeof userId === 'string' ? parseInt(userId) : userId;
     
     console.log(`[ACTIVATE SUBSCRIPTION] userId: ${userId}, type: ${typeof userId}, converted: ${userIdNum}`);
+    console.log(`[ACTIVATE SUBSCRIPTION] plan: ${plan}, credits: ${credits}`);
+    
+    if (!plan) {
+      throw new Error('Plan is required');
+    }
+    
+    if (!credits || credits === 0) {
+      throw new Error('Credits is required and must be > 0');
+    }
+    
+    console.log(`[ACTIVATE SUBSCRIPTION] Checking for existing subscription...`);
     
     // Check if subscription exists
     const existingSubscription = await prisma.subscription.findUnique({
       where: { userId: userIdNum }
     });
+    
+    console.log(`[ACTIVATE SUBSCRIPTION] Existing subscription:`, existingSubscription);
 
     const expiresAt = new Date();
     expiresAt.setMonth(expiresAt.getMonth() + 1); // 1 mjesec
+    
+    console.log(`[ACTIVATE SUBSCRIPTION] Updating subscription, expiresAt: ${expiresAt}`);
 
     // Create or update subscription
     const subscription = await prisma.subscription.upsert({
@@ -538,6 +553,8 @@ async function activateSubscription(userId, plan, credits) {
         expiresAt
       }
     });
+    
+    console.log(`[ACTIVATE SUBSCRIPTION] Subscription upserted successfully:`, subscription);
 
     // Create credit transaction
     await prisma.creditTransaction.create({
