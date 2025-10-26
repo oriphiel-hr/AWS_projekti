@@ -17,7 +17,7 @@ export default function Pricing({ setTab }) {
         console.log('✅ Subscription plans učitani iz baze:', plansRes.data);
         
         // Add TRIAL plan
-        const tri alPlan = {
+        const trialPlan = {
           id: 'trial-plan',
           name: 'TRIAL',
           displayName: 'TRIAL',
