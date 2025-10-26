@@ -2,6 +2,8 @@ import React from 'react';
 
 export default function Toast({ message, type = 'info', isVisible, onClose }) {
   if (!isVisible) return null;
+  
+  // Toast notification component for user-friendly error messages
 
   const colors = {
     success: 'bg-green-500',
