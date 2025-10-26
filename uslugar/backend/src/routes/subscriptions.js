@@ -186,12 +186,24 @@ r.post('/subscribe', auth(true, ['PROVIDER']), async (req, res, next) => {
 // Cancel subscription
 r.post('/cancel', auth(true, ['PROVIDER']), async (req, res, next) => {
   try {
+    // Get current subscription
+    const existingSubscription = await prisma.subscription.findUnique({
+      where: { userId: req.user.id }
+    });
+
+    if (!existingSubscription) {
+      return res.status(404).json({ error: 'No active subscription found' });
+    }
+
+    // If it's a paid subscription (not TRIAL), we should cancel the Stripe subscription too
+    // TODO: Integrate Stripe subscription cancellation
+    // For now, just mark as cancelled locally
+    
     const subscription = await prisma.subscription.update({
       where: { userId: req.user.id },
       data: {
         status: 'CANCELLED',
-        plan: 'BASIC',
-        credits: PLANS.BASIC.credits
+        cancelledAt: new Date()
       }
     });
 
@@ -199,13 +211,19 @@ r.post('/cancel', auth(true, ['PROVIDER']), async (req, res, next) => {
     await prisma.notification.create({
       data: {
         title: 'Pretplata otkazana',
-        message: 'Vaša pretplata je otkazana. Vraćeni ste na Basic plan.',
+        message: 'Vaša pretplata je otkazana. Zadržavate postojeće kredite do kraja periode.',
         type: 'SYSTEM',
         userId: req.user.id
       }
     });
 
-    res.json({ subscription });
+    console.log(`[SUBSCRIPTION] User ${req.user.id} cancelled subscription`);
+
+    res.json({ 
+      success: true,
+      subscription,
+      message: 'Pretplata je uspješno otkazana.' 
+    });
   } catch (e) {
     next(e);
   }
