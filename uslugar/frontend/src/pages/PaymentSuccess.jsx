@@ -7,9 +7,18 @@ export default function PaymentSuccess({ setTab }) {
   const [sessionId, setSessionId] = useState(null);
 
   useEffect(() => {
-    // Get session_id from URL query params
-    const urlParams = new URLSearchParams(window.location.search);
-    const sessionIdParam = urlParams.get('session_id');
+    // Get session_id from URL (works with hash-based routing)
+    // URL format: #subscription-success?session_id=...
+    const hash = window.location.hash;
+    
+    // Parse query params from hash
+    let sessionIdParam = null;
+    if (hash.includes('?')) {
+      const hashParts = hash.split('?');
+      const paramsString = hashParts[1];
+      const urlParams = new URLSearchParams(paramsString);
+      sessionIdParam = urlParams.get('session_id');
+    }
     
     if (!sessionIdParam) {
       setStatus('error');
