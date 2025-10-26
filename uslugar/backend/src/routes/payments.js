@@ -454,16 +454,20 @@ r.get('/success', async (req, res, next) => {
     const session = await stripe.checkout.sessions.retrieve(session_id);
 
     if (session.payment_status === 'paid') {
+      // Log full session object to debug
+      console.log(`[PAYMENT SUCCESS] Full session object:`, JSON.stringify(session, null, 2));
+      console.log(`[PAYMENT SUCCESS] Session metadata:`, session.metadata);
+      
       // Activate subscription if not already activated
       const userId = session.metadata?.userId;
       const plan = session.metadata?.plan;
       const credits = parseInt(session.metadata?.credits || '0');
       
-      console.log(`[PAYMENT SUCCESS] Session metadata:`, session.metadata);
-      console.log(`[PAYMENT SUCCESS] Activating subscription for user ${userId}, plan: ${plan}`);
+      console.log(`[PAYMENT SUCCESS] Parsed values - userId: ${userId}, plan: ${plan}, credits: ${credits}`);
       
       if (!userId) {
         console.error('[PAYMENT SUCCESS] No userId found in session metadata');
+        console.error('[PAYMENT SUCCESS] Available metadata keys:', Object.keys(session.metadata || {}));
         return res.status(400).json({ error: 'User ID not found in payment session' });
       }
       
@@ -472,6 +476,7 @@ r.get('/success', async (req, res, next) => {
       try {
         // Convert userId to number if needed
         const userIdNum = typeof userId === 'string' ? parseInt(userId) : userId;
+        console.log('[PAYMENT SUCCESS] Converted userIdNum:', userIdNum);
         
         // Activate subscription directly
         await activateSubscription(userIdNum, plan, credits);
