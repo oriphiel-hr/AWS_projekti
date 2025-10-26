@@ -226,6 +226,46 @@ r.post('/cancel-subscription', auth(true, ['PROVIDER']), async (req, res, next) 
 });
 
 /**
+ * Manual activation for paid sessions (for fixing old payments)
+ * POST /api/payments/activate-subscription
+ */
+r.post('/activate-subscription', auth(true, ['PROVIDER']), async (req, res, next) => {
+  try {
+    const { session_id } = req.body;
+
+    if (!session_id) {
+      return res.status(400).json({ error: 'Session ID required' });
+    }
+
+    // Retrieve session from Stripe
+    const session = await stripe.checkout.sessions.retrieve(session_id);
+
+    if (session.payment_status === 'paid') {
+      // Activate subscription directly
+      const userId = session.metadata?.userId || req.user.id;
+      const plan = session.metadata?.plan;
+      const credits = parseInt(session.metadata?.credits || '0');
+      
+      console.log(`[PAYMENT MANUAL ACTIVATION] Activating subscription for user ${userId}, plan: ${plan}`);
+      
+      await activateSubscription(userId, plan, credits);
+      
+      res.json({
+        success: true,
+        message: 'Subscription activated!',
+        sessionId: session_id
+      });
+    } else {
+      res.status(400).json({ error: 'Payment not completed' });
+    }
+
+  } catch (error) {
+    console.error('Manual activation error:', error);
+    next(error);
+  }
+});
+
+/**
  * Confirm subscription after successful payment
  * GET /api/payments/success
  */
