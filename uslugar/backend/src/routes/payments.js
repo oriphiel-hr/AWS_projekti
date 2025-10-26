@@ -442,9 +442,14 @@ r.get('/success', async (req, res, next) => {
  */
 async function activateSubscription(userId, plan, credits) {
   try {
+    // Ensure userId is converted to number if it's a string
+    const userIdNum = typeof userId === 'string' ? parseInt(userId) : userId;
+    
+    console.log(`[ACTIVATE SUBSCRIPTION] userId: ${userId}, type: ${typeof userId}, converted: ${userIdNum}`);
+    
     // Check if subscription exists
     const existingSubscription = await prisma.subscription.findUnique({
-      where: { userId }
+      where: { userId: userIdNum }
     });
 
     const expiresAt = new Date();
@@ -452,9 +457,9 @@ async function activateSubscription(userId, plan, credits) {
 
     // Create or update subscription
     const subscription = await prisma.subscription.upsert({
-      where: { userId },
+      where: { userId: userIdNum },
       create: {
-        userId,
+        userId: userIdNum,
         plan,
         status: 'ACTIVE',
         creditsBalance: credits,
@@ -474,7 +479,7 @@ async function activateSubscription(userId, plan, credits) {
     // Create credit transaction
     await prisma.creditTransaction.create({
       data: {
-        userId,
+        userId: userIdNum,
         type: 'SUBSCRIPTION',
         amount: credits,
         balance: subscription.creditsBalance,
@@ -488,15 +493,15 @@ async function activateSubscription(userId, plan, credits) {
         title: 'Pretplata aktivirana!',
         message: `Uspješno ste se pretplatili na ${plan} plan! Dodano ${credits} kredita.`,
         type: 'SYSTEM',
-        userId
+        userId: userIdNum
       }
     });
 
-    console.log(`[SUBSCRIPTION] Activated: User ${userId}, Plan ${plan}, Credits ${credits}`);
+    console.log(`[SUBSCRIPTION] Activated: User ${userIdNum}, Plan ${plan}, Credits ${credits}`);
 
     // Send confirmation email
     try {
-      const user = await prisma.user.findUnique({ where: { id: userId } });
+      const user = await prisma.user.findUnique({ where: { id: userIdNum } });
       if (user && user.email) {
         // Get plan price
         const planPrice = credits * 10; // Approximate price based on credits
