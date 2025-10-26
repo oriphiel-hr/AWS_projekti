@@ -246,18 +246,19 @@ model ChatMessage {
 
 // Pretplate (za provajdere usluga)
 model Subscription {
-  id                  String             @id @default(cuid())
-  user                User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId              String             @unique
-  plan                String             @default("BASIC") // BASIC, PREMIUM, PRO
-  status              SubscriptionStatus @default(ACTIVE)
-  credits             Int                @default(0) // Legacy - ukupno kredita
-  creditsBalance      Int                @default(0) // Trenutno stanje kredita
-  lifetimeCreditsUsed Int                @default(0) // Ukupno potrošeno kredita (samo za statistiku)
-  expiresAt           DateTime?
-  cancelledAt         DateTime?
-  createdAt           DateTime           @default(now())
-  updatedAt           DateTime           @updatedAt
+  id                      String             @id @default(cuid())
+  user                    User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId                  String             @unique
+  plan                    String             @default("BASIC") // BASIC, PREMIUM, PRO
+  status                  SubscriptionStatus @default(ACTIVE)
+  credits                 Int                @default(0) // Legacy - ukupno kredita
+  creditsBalance          Int                @default(0) // Trenutno stanje kredita
+  lifetimeCreditsUsed     Int                @default(0) // Ukupno potrošeno kredita (samo za statistiku)
+  lifetimeLeadsConverted  Int                @default(0) // Ukupno konvertiranih leadova
+  expiresAt               DateTime?
+  cancelledAt             DateTime?
+  createdAt               DateTime           @default(now())
+  updatedAt               DateTime           @updatedAt
 
   @@index([userId])
   @@index([status])
