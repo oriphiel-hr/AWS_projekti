@@ -467,9 +467,14 @@ r.get('/success', async (req, res, next) => {
         return res.status(400).json({ error: 'User ID not found in payment session' });
       }
       
+      console.log('[PAYMENT SUCCESS] Metadata userId:', userId, 'type:', typeof userId);
+      
       try {
+        // Convert userId to number if needed
+        const userIdNum = typeof userId === 'string' ? parseInt(userId) : userId;
+        
         // Activate subscription directly
-        await activateSubscription(userId, plan, credits);
+        await activateSubscription(userIdNum, plan, credits);
         
         res.json({
           success: true,
