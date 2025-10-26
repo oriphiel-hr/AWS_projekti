@@ -2,6 +2,8 @@ import { Router } from 'express';
 import { prisma } from '../lib/prisma.js';
 import { auth } from '../lib/auth.js';
 
+// Legacy route - deprecated, use /api/payments/create-checkout instead
+
 const r = Router();
 
 // Helper function to get plans from database

@@ -32,6 +32,7 @@ import clientVerificationRouter from './routes/client-verification.js'
 import leadQueueRouter from './routes/lead-queue.js'
 import supportRouter from './routes/support.js'
 import whitelabelRouter from './routes/whitelabel.js'
+import paymentsRouter from './routes/payments.js'
 import { startQueueScheduler } from './lib/queueScheduler.js'
 import { checkExpiringSubscriptions } from './lib/subscription-reminder.js'
 
@@ -45,7 +46,10 @@ if (process.env.NODE_ENV !== 'production') {
   }
 }
 
+// Configure body parser for webhooks (before json)
 const app = express()
+app.use('/api/payments/webhook', express.raw({ type: 'application/json' })) // Stripe webhook needs raw body
+
 const prisma = new PrismaClient()
 const PORT = process.env.PORT || 4000
 
@@ -269,6 +273,7 @@ app.use('/api/verification', clientVerificationRouter)
 app.use('/api/lead-queue', leadQueueRouter)
 app.use('/api/support', supportRouter)
 app.use('/api/whitelabel', whitelabelRouter)
+app.use('/api/payments', paymentsRouter)
 
 // basic error handler
 app.use((err, _req, res, _next) => {
