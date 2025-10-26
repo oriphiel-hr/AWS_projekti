@@ -228,46 +228,67 @@ r.post('/cancel-subscription', auth(true, ['PROVIDER']), async (req, res, next) 
 /**
  * Auto-activate PRO subscription for user (manual activation)
  * POST /api/payments/activate-latest-subscription
+ * 
+ * NOTE: No auth required - payment verification is enough
  */
-r.post('/activate-latest-subscription', auth(true, ['PROVIDER']), async (req, res, next) => {
+r.post('/activate-latest-subscription', async (req, res, next) => {
   try {
-    const userId = req.user.id;
-    const { payment_intent_id } = req.body;
+    const { payment_intent_id, user_id } = req.body;
     
-    console.log(`[PAYMENT AUTO-ACTIVATION] Activating PRO subscription for user ${userId}`);
-    
-    // Verify payment exists
-    if (payment_intent_id) {
-      try {
-        const paymentIntent = await stripe.paymentIntents.retrieve(payment_intent_id);
-        console.log(`[PAYMENT AUTO-ACTIVATION] Found payment intent: ${payment_intent_id}, status: ${paymentIntent.status}`);
-        
-        if (paymentIntent.status !== 'succeeded') {
-          return res.status(400).json({ 
-            error: 'Payment not completed', 
-            status: paymentIntent.status 
-          });
-        }
-      } catch (err) {
-        console.error('Error checking payment intent:', err);
-        // Continue anyway if we can't verify
-      }
+    if (!payment_intent_id) {
+      return res.status(400).json({ error: 'Payment intent ID required' });
     }
+    
+    console.log(`[PAYMENT AUTO-ACTIVATION] Verifying payment: ${payment_intent_id}`);
+    
+    // Verify payment exists and succeeded
+    const paymentIntent = await stripe.paymentIntents.retrieve(payment_intent_id);
+    
+    console.log(`[PAYMENT AUTO-ACTIVATION] Payment status: ${paymentIntent.status}`);
+    
+    if (paymentIntent.status !== 'succeeded') {
+      return res.status(400).json({ 
+        error: 'Payment not completed', 
+        status: paymentIntent.status 
+      });
+    }
+    
+    // Get customer email to find user
+    const customerId = paymentIntent.customer;
+    let customer;
+    
+    if (customerId && typeof customerId === 'string') {
+      customer = await stripe.customers.retrieve(customerId);
+    } else {
+      return res.status(400).json({ error: 'No customer found for this payment' });
+    }
+    
+    console.log(`[PAYMENT AUTO-ACTIVATION] Customer email: ${customer.email}`);
+    
+    // Find user by email
+    const user = await prisma.user.findUnique({
+      where: { email: customer.email }
+    });
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    console.log(`[PAYMENT AUTO-ACTIVATION] Activating PRO subscription for user ${user.id}`);
     
     // Activate PRO subscription with 50 credits
     const plan = 'PRO';
     const credits = 50;
     
-    console.log(`[PAYMENT AUTO-ACTIVATION] Activating: plan=${plan}, credits=${credits}`);
-    
     // Activate subscription
-    await activateSubscription(userId, plan, credits);
+    await activateSubscription(user.id, plan, credits);
     
     res.json({
       success: true,
       message: 'PRO subscription activated!',
       plan: plan,
-      credits: credits
+      credits: credits,
+      userId: user.id
     });
 
   } catch (error) {
