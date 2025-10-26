@@ -2,12 +2,14 @@
 import React, { useState, useEffect } from 'react';
 import { getSubscriptionPlans, getMySubscription } from '../api/exclusive';
 import api from '../api';
+import Toast from '../components/Toast';
 
 export default function SubscriptionPlans() {
   const [plans, setPlans] = useState({});
   const [currentSubscription, setCurrentSubscription] = useState(null);
   const [loading, setLoading] = useState(true);
   const [subscribing, setSubscribing] = useState(null);
+  const [toast, setToast] = useState({ message: '', type: 'info', isVisible: false });
 
   useEffect(() => {
     loadData();
@@ -35,11 +37,16 @@ export default function SubscriptionPlans() {
     }
   };
 
+  const showToast = (message, type = 'info') => {
+    setToast({ message, type, isVisible: true });
+    setTimeout(() => setToast(prev => ({ ...prev, isVisible: false })), 5000);
+  };
+
   const handleSubscribe = async (planKey) => {
     const plan = plans[planKey];
     
     const confirmed = window.confirm(
-      `Pretplatiti se na ${plan.name} plan?\n\nCijena: ${plan.price}€/mjesečno\nKrediti: ${plan.credits}\n\n${plan.features.join('\n')}`
+      `Pretplatiti se na ${plan.displayName} plan?\n\nCijena: ${plan.price}€/mjesečno\nKrediti: ${plan.credits}\n\n${plan.features?.join('\n') || ''}`
     );
 
     if (!confirmed) return;
@@ -63,7 +70,8 @@ export default function SubscriptionPlans() {
     } catch (err) {
       console.error('Subscription error:', err);
       console.error('Error response:', err.response?.data);
-      alert('Greška: ' + (err.response?.data?.error || 'Neuspjelo'));
+      const errorMsg = err.response?.data?.error || err.response?.data?.message || 'Neuspjelo';
+      showToast(errorMsg, 'error');
       setSubscribing(null);
     }
   };
@@ -78,6 +86,12 @@ export default function SubscriptionPlans() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.isVisible}
+        onClose={() => setToast(prev => ({ ...prev, isVisible: false }))}
+      />
       {/* Header */}
       <div className="text-center mb-12">
         <h1 className="text-4xl font-bold text-gray-900 mb-4">Odaberite Vaš Plan</h1>
