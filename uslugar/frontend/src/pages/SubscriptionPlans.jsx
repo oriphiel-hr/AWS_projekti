@@ -40,8 +40,13 @@ export default function SubscriptionPlans() {
     try {
       setSubscribing(planKey);
       
+      console.log('Subscribing to plan:', planKey);
+      console.log('Sending data:', { plan: planKey });
+      
       // Create Stripe checkout session
       const response = await api.post('/payments/create-checkout', { plan: planKey });
+      
+      console.log('Checkout response:', response.data);
       
       if (response.data.url) {
         // Redirect to Stripe checkout
@@ -49,6 +54,8 @@ export default function SubscriptionPlans() {
       }
       
     } catch (err) {
+      console.error('Subscription error:', err);
+      console.error('Error response:', err.response?.data);
       alert('Greška: ' + (err.response?.data?.error || 'Neuspjelo'));
       setSubscribing(null);
     }

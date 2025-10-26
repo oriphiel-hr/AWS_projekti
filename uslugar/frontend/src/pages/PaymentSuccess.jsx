@@ -33,6 +33,11 @@ export default function PaymentSuccess({ setTab }) {
       .then(response => {
         console.log('Payment success response:', response.data);
         setStatus('success');
+        
+        // After successful verification, reload after 3 seconds
+        setTimeout(() => {
+          window.location.hash = '#subscription';
+        }, 3000);
       })
       .catch(err => {
         console.error('Payment verification error:', err);
