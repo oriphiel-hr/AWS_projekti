@@ -113,7 +113,7 @@ model User {
   clientVerification ClientVerification?
   subscriptions      Subscription[]
   supportTickets     SupportTicket[]     @relation("UserSupportTickets")
-  whiteLabel         WhiteLabel?
+  whiteLabel         WhiteLabel?         @relation("UserWhiteLabel")
 }
 
 model ProviderProfile {
