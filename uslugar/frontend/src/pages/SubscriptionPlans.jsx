@@ -44,12 +44,6 @@ export default function SubscriptionPlans() {
 
   const handleSubscribe = async (planKey) => {
     const plan = plans[planKey];
-    
-    const confirmed = window.confirm(
-      `Pretplatiti se na ${plan.displayName} plan?\n\nCijena: ${plan.price}€/mjesečno\nKrediti: ${plan.credits}\n\n${plan.features?.join('\n') || ''}`
-    );
-
-    if (!confirmed) return;
 
     try {
       setSubscribing(planKey);
