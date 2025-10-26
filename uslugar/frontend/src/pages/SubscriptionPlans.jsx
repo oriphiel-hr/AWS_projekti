@@ -75,24 +75,57 @@ export default function SubscriptionPlans() {
 
       {/* Current Subscription */}
       {currentSubscription && (
-        <div className="mb-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
-          <div className="flex justify-between items-center">
+        <div className="mb-8 bg-blue-50 border-2 border-blue-200 rounded-lg p-6">
+          <div className="flex justify-between items-center mb-4">
             <div>
-              <p className="text-sm text-blue-700">Trenutna pretplata:</p>
-              <p className="text-2xl font-bold text-blue-900">{currentSubscription.plan}</p>
+              <p className="text-sm text-blue-700 mb-1">Trenutna pretplata:</p>
+              <p className="text-3xl font-bold text-blue-900">{currentSubscription.plan}</p>
               <p className="text-sm text-blue-600 mt-1">
-                Preostalo kredita: <strong>{currentSubscription.creditsBalance}</strong>
+                Status: <span className="font-semibold">{currentSubscription.status}</span>
               </p>
             </div>
             {currentSubscription.expiresAt && (
               <div className="text-right">
-                <p className="text-sm text-blue-700">Ističe:</p>
-                <p className="font-semibold text-blue-900">
+                <p className="text-sm text-blue-700 mb-1">Ističe:</p>
+                <p className="text-xl font-semibold text-blue-900">
                   {new Date(currentSubscription.expiresAt).toLocaleDateString('hr-HR')}
+                </p>
+                <p className="text-xs text-blue-600 mt-1">
+                  {(() => {
+                    const days = Math.ceil((new Date(currentSubscription.expiresAt) - new Date()) / (1000 * 60 * 60 * 24));
+                    return days > 0 ? `${days} dana preostalo` : 'Isteklo';
+                  })()}
                 </p>
               </div>
             )}
           </div>
+          
+          <div className="grid grid-cols-2 gap-4 border-t pt-4">
+            <div>
+              <p className="text-sm text-blue-700 mb-1">Krediti:</p>
+              <p className="text-2xl font-bold text-blue-900">{currentSubscription.creditsBalance || 0}</p>
+            </div>
+            <div>
+              <p className="text-sm text-blue-700 mb-1">Ukupno potrošeno:</p>
+              <p className="text-2xl font-bold text-blue-900">{currentSubscription.lifetimeCreditsUsed || 0}</p>
+            </div>
+          </div>
+
+          {currentSubscription.plan === 'TRIAL' && currentSubscription.status !== 'EXPIRED' && (
+            <div className="mt-4 p-3 bg-yellow-100 border border-yellow-300 rounded">
+              <p className="text-sm text-yellow-800">
+                🎁 Besplatni TRIAL - Isprobajte sve mogućnosti Uslugar EXCLUSIVE-a!
+              </p>
+            </div>
+          )}
+
+          {currentSubscription.status === 'EXPIRED' && (
+            <div className="mt-4 p-3 bg-red-100 border border-red-300 rounded">
+              <p className="text-sm text-red-800 font-semibold">
+                ⚠️ Vaša pretplata je istekla. Nadogradite pretplatu da nastavite koristiti Uslugar EXCLUSIVE.
+              </p>
+            </div>
+          )}
         </div>
       )}
 
