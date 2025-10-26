@@ -1,4 +1,5 @@
 // Stripe Payment Integration - HR Market
+// Updated: 2025-10-26 - Deployed to production
 import { Router } from 'express';
 import Stripe from 'stripe';
 import { prisma } from '../lib/prisma.js';
