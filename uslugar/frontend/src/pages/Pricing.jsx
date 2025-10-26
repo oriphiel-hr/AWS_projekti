@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '@/api';
 
-export default function Pricing() {
+export default function Pricing({ setTab }) {
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -107,12 +107,12 @@ export default function Pricing() {
           <p className="text-xl text-gray-600 mb-6">
             Pogledajte našu FAQ sekciju s odgovorima na najčešća pitanja
           </p>
-          <a
-            href="#faq"
+          <button
+            onClick={() => setTab('faq')}
             className="inline-block bg-purple-600 text-white py-3 px-8 rounded-lg font-semibold hover:bg-purple-700 transition-colors"
           >
             ❓ Pregledaj FAQ
-          </a>
+          </button>
         </div>
 
         {/* CTA Section */}
@@ -124,18 +124,18 @@ export default function Pricing() {
             Registrirajte se danas i počnite primati kvalitetne leadove
           </p>
           <div className="space-x-4">
-            <a
-              href="#register-provider"
+            <button
+              onClick={() => setTab('register-provider')}
               className="inline-block bg-green-600 text-white py-3 px-8 rounded-lg font-semibold hover:bg-green-700 transition-colors"
             >
               Registriraj se kao pružatelj
-            </a>
-            <a
-              href="#register-user"
+            </button>
+            <button
+              onClick={() => setTab('register-user')}
               className="inline-block bg-blue-600 text-white py-3 px-8 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
             >
               Registriraj se kao korisnik
-            </a>
+            </button>
           </div>
         </div>
       </div>

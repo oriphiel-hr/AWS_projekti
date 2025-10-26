@@ -913,9 +913,9 @@ export default function App(){
         </section>
       )}
 
-      {tab === 'pricing' && (
-        <section id="pricing" className="tab-section">
-          <Pricing />
+              {tab === 'pricing' && (
+          <section id="pricing" className="tab-section">
+            <Pricing setTab={setTab} />
         </section>
       )}
 
