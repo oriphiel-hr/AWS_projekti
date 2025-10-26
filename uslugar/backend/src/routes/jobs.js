@@ -150,7 +150,7 @@ r.get('/for-provider', auth(true, ['PROVIDER']), async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-// create job - allow anonymous users (like Uslugar)
+// create job - allow anonymous users (like Trebam.hr)
 r.post('/', async (req, res, next) => {
   try {
     const { 
