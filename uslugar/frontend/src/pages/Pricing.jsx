@@ -1,16 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import api from '@/api';
 import { getMySubscription } from '../api/exclusive';
+import Toast from '../components/Toast';
 
 export default function Pricing({ setTab }) {
   const [plans, setPlans] = useState([]);
   const [currentSubscription, setCurrentSubscription] = useState(null);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(null); // Track which plan is being processed
+  const [toast, setToast] = useState({ message: '', type: 'info', isVisible: false });
+
+  const showToast = (message, type = 'info') => {
+    setToast({ message, type, isVisible: true });
+    setTimeout(() => setToast(prev => ({ ...prev, isVisible: false })), 5000);
+  };
 
   const handleSubscribe = async (planName) => {
     if (!localStorage.getItem('token')) {
-      alert('Molimo prijavite se da biste odabrali plan.');
+      showToast('Molimo prijavite se da biste odabrali plan.', 'warning');
       setTab('login');
       return;
     }
@@ -24,13 +31,16 @@ export default function Pricing({ setTab }) {
         // Redirect to Stripe checkout
         window.location.href = response.data.url;
       } else {
-        alert('Greška pri kreiranju sesije za plaćanje.');
+        showToast('Greška pri kreiranju sesije za plaćanje.', 'error');
         setProcessing(null);
       }
     } catch (error) {
       console.error('Subscribe error:', error);
       const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Greška pri odabiru paketa.';
-      alert(`❌ ${errorMessage}\n\n${error.response?.data?.error === 'Payment system not configured' ? 'Kontaktirajte podršku za aktivaciju plaćanja.' : 'Pokušajte ponovno.'}`);
+      const additionalInfo = error.response?.data?.error === 'Payment system not configured' 
+        ? ' Kontaktirajte podršku za aktivaciju plaćanja.' 
+        : ' Pokušajte ponovno.';
+      showToast(errorMessage + additionalInfo, 'error');
       setProcessing(null);
     }
   };
@@ -92,6 +102,12 @@ export default function Pricing({ setTab }) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 py-12 px-4">
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.isVisible}
+        onClose={() => setToast(prev => ({ ...prev, isVisible: false }))}
+      />
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-16">
