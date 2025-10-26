@@ -278,6 +278,27 @@ const io = initSocket(httpServer)
 // Initialize database (seed legal statuses if missing)
 await ensureLegalStatuses()
 
+// Auto-fix: Add missing columns if needed
+async function ensureProjectTypeColumn() {
+  try {
+    // Try to query a job with projectType - if fails, column doesn't exist
+    await prisma.$queryRaw`SELECT "projectType" FROM "Job" LIMIT 1`
+    console.log('✅ projectType column exists')
+  } catch (error) {
+    if (error.message.includes('does not exist')) {
+      console.log('🔧 Adding missing projectType and customFields columns...')
+      try {
+        await prisma.$executeRaw`ALTER TABLE "Job" ADD COLUMN IF NOT EXISTS "projectType" TEXT`
+        await prisma.$executeRaw`ALTER TABLE "Job" ADD COLUMN IF NOT EXISTS "customFields" JSONB`
+        console.log('✅ Columns added successfully')
+      } catch (e) {
+        console.error('⚠️  Failed to add columns:', e.message)
+      }
+    }
+  }
+}
+await ensureProjectTypeColumn()
+
 // Start Queue Scheduler (checks expired offers every hour)
 startQueueScheduler()
 
