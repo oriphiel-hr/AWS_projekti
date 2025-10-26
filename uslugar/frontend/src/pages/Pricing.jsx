@@ -6,6 +6,33 @@ export default function Pricing({ setTab }) {
   const [plans, setPlans] = useState([]);
   const [currentSubscription, setCurrentSubscription] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [processing, setProcessing] = useState(null); // Track which plan is being processed
+
+  const handleSubscribe = async (planName) => {
+    if (!localStorage.getItem('token')) {
+      alert('Molimo prijavite se da biste odabrali plan.');
+      setTab('login');
+      return;
+    }
+
+    setProcessing(planName);
+    try {
+      // Create Stripe checkout session
+      const response = await api.post('/payments/create-checkout', { plan: planName });
+      
+      if (response.data.url) {
+        // Redirect to Stripe checkout
+        window.location.href = response.data.url;
+      } else {
+        alert('Greška pri kreiranju sesije za plaćanje.');
+        setProcessing(null);
+      }
+    } catch (error) {
+      console.error('Subscribe error:', error);
+      alert(error.response?.data?.error || 'Greška pri odabiru paketa.');
+      setProcessing(null);
+    }
+  };
 
   useEffect(() => {
     // Dohvati planove i trenutnu pretplatu
@@ -163,16 +190,19 @@ export default function Pricing({ setTab }) {
               )}
 
               <button 
-                disabled={isCurrentPlan}
+                disabled={isCurrentPlan || processing === plan.name}
+                onClick={() => !isCurrentPlan && handleSubscribe(plan.name)}
                 className={`w-full py-3 px-6 rounded-lg font-semibold transition-colors ${
                   isCurrentPlan
                     ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                    : processing === plan.name
+                    ? 'bg-yellow-300 text-gray-700 cursor-wait'
                     : isTrial
                     ? 'bg-yellow-500 text-white hover:bg-yellow-600'
                     : 'bg-blue-600 text-white hover:bg-blue-700'
                 }`}
               >
-                {isCurrentPlan ? '✓ Aktivno' : plan.price === 0 ? 'Besplatno' : `Odaberite ${plan.displayName}`}
+                {isCurrentPlan ? '✓ Aktivno' : processing === plan.name ? '⏳ Obrađuje se...' : plan.price === 0 ? 'Besplatno' : `Odaberite ${plan.displayName}`}
               </button>
             </div>
             );
