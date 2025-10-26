@@ -117,7 +117,7 @@ model Job {
   leadPrice          Int?       @default(10) // Cijena u kreditima (10-20)
   assignedProvider   User?      @relation("AssignedJobs", fields: [assignedProviderId], references: [id], onDelete: SetNull)
   assignedProviderId String?
-  leadStatus         LeadStatus @default(AVAILABLE) // Status ekskluzivnog leada
+  leadStatus         String      @default("AVAILABLE") // Status ekskluzivnog leada (AVAILABLE, ASSIGNED, CONTACTED, CONVERTED, REFUNDED)
   clientVerified     Boolean    @default(false) // Verificiran klijent
   qualityScore       Int?       @default(0) // AI score kvalitete (0-100)
 
