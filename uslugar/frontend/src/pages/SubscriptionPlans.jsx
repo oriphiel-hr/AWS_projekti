@@ -19,7 +19,14 @@ export default function SubscriptionPlans() {
         getSubscriptionPlans(),
         getMySubscription()
       ]);
-      setPlans(plansRes.data);
+      
+      // Convert array to object keyed by plan name
+      const plansObj = {};
+      plansRes.data.forEach(plan => {
+        plansObj[plan.name] = plan;
+      });
+      
+      setPlans(plansObj);
       setCurrentSubscription(subRes.data.subscription);
     } catch (err) {
       console.error('Error loading subscription data:', err);
