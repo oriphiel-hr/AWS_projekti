@@ -54,6 +54,28 @@ model SupportTicket {
   @@index([category])
 }
 
+// White-Label Configuration - PRO users only
+model WhiteLabel {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  companyName     String   // Naziv firme/kampanje
+  logoUrl         String?  // URL do custom loga
+  primaryColor    String   @default("#3B82F6") // Glavna boja (hex)
+  secondaryColor  String?  // Sekundarna boja
+  accentColor     String?  // Akcentna boja
+  faviconUrl      String?  // Custom favicon
+  footerText      String?  // Custom footer tekst
+  poweredByHidden Boolean  @default(false) // Sakriti "Powered by Uslugar"
+  customDomain    String?  // Custom domain (budući feature)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  user            User     @relation("UserWhiteLabel", fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+}
+
 model User {
   id                   String       @id @default(cuid())
   email                String       @unique
@@ -91,6 +113,7 @@ model User {
   clientVerification ClientVerification?
   subscriptions      Subscription[]
   supportTickets     SupportTicket[]     @relation("UserSupportTickets")
+  whiteLabel         WhiteLabel?
 }
 
 model ProviderProfile {

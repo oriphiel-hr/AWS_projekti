@@ -31,6 +31,7 @@ import providerROIRouter from './routes/provider-roi.js'
 import clientVerificationRouter from './routes/client-verification.js'
 import leadQueueRouter from './routes/lead-queue.js'
 import supportRouter from './routes/support.js'
+import whitelabelRouter from './routes/whitelabel.js'
 import { startQueueScheduler } from './lib/queueScheduler.js'
 import { checkExpiringSubscriptions } from './lib/subscription-reminder.js'
 
@@ -267,6 +268,7 @@ app.use('/api/exclusive/roi', providerROIRouter)
 app.use('/api/verification', clientVerificationRouter)
 app.use('/api/lead-queue', leadQueueRouter)
 app.use('/api/support', supportRouter)
+app.use('/api/whitelabel', whitelabelRouter)
 
 // basic error handler
 app.use((err, _req, res, _next) => {
@@ -359,6 +361,47 @@ async function ensureSupportTicket() {
   }
 }
 await ensureSupportTicket()
+
+// Auto-fix: Ensure WhiteLabel table exists
+async function ensureWhiteLabel() {
+  try {
+    await prisma.$queryRaw`SELECT "id" FROM "WhiteLabel" LIMIT 1`
+    console.log('✅ WhiteLabel table exists')
+  } catch (error) {
+    if (error.message.includes('does not exist')) {
+      console.log('🔧 Adding missing WhiteLabel table...')
+      try {
+        await prisma.$executeRaw`CREATE TABLE IF NOT EXISTS "WhiteLabel" (
+          "id" TEXT NOT NULL PRIMARY KEY,
+          "userId" TEXT NOT NULL UNIQUE,
+          "companyName" TEXT NOT NULL,
+          "logoUrl" TEXT,
+          "primaryColor" TEXT NOT NULL DEFAULT '#3B82F6',
+          "secondaryColor" TEXT,
+          "accentColor" TEXT,
+          "faviconUrl" TEXT,
+          "footerText" TEXT,
+          "poweredByHidden" BOOLEAN NOT NULL DEFAULT false,
+          "customDomain" TEXT,
+          "isActive" BOOLEAN NOT NULL DEFAULT true,
+          "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )`
+        
+        await prisma.$executeRaw`CREATE UNIQUE INDEX IF NOT EXISTS "WhiteLabel_userId_key" ON "WhiteLabel"("userId")`
+        await prisma.$executeRaw`CREATE INDEX IF NOT EXISTS "WhiteLabel_userId_idx" ON "WhiteLabel"("userId")`
+        
+        // Add foreign key
+        await prisma.$executeRaw`ALTER TABLE "WhiteLabel" ADD CONSTRAINT "WhiteLabel_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE`
+        
+        console.log('✅ WhiteLabel table added successfully')
+      } catch (e) {
+        console.error('⚠️  Failed to add WhiteLabel table:', e.message)
+      }
+    }
+  }
+}
+await ensureWhiteLabel()
 
 // Start Queue Scheduler (checks expired offers every hour)
 startQueueScheduler()
