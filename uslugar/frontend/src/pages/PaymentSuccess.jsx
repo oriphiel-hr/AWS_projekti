@@ -34,7 +34,10 @@ export default function PaymentSuccess({ setTab }) {
         console.log('Payment success response:', response.data);
         setStatus('success');
         
-        // After successful verification, reload after 3 seconds
+        // Set a flag in localStorage to trigger subscription data refresh
+        localStorage.setItem('payment_successful', 'true');
+        
+        // Redirect to subscription page after payment
         setTimeout(() => {
           window.location.hash = '#subscription';
         }, 3000);

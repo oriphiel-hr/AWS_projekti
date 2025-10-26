@@ -13,6 +13,30 @@ export default function SubscriptionPlans() {
 
   useEffect(() => {
     loadData();
+    
+    // Check if payment was successful and refresh data
+    const paymentSuccessful = localStorage.getItem('payment_successful');
+    if (paymentSuccessful === 'true') {
+      localStorage.removeItem('payment_successful');
+      // Force reload to get fresh subscription data
+      setTimeout(() => {
+        loadData();
+      }, 1000);
+    }
+    
+    // Listen for hash changes to refresh data after payment success
+    const hashChangeHandler = () => {
+      if (window.location.hash === '#subscription') {
+        // Refresh subscription data when returning from payment success
+        loadData();
+      }
+    };
+    
+    window.addEventListener('hashchange', hashChangeHandler);
+    
+    return () => {
+      window.removeEventListener('hashchange', hashChangeHandler);
+    };
   }, []);
 
   const loadData = async () => {
