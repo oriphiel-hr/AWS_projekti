@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { randomBytes } from 'crypto';
 import { prisma } from '../lib/prisma.js';
-import { hashPassword, verifyPassword, signToken } from '../lib/auth.js';
+import { hashPassword, verifyPassword, signToken, auth } from '../lib/auth.js';
 import { sendVerificationEmail, sendPasswordResetEmail } from '../lib/email.js';
 import { deleteUserWithRelations } from '../lib/delete-helpers.js';
 
