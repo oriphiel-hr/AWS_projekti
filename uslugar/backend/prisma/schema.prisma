@@ -426,14 +426,7 @@ model LegalStatus {
 // USLUGAR EXCLUSIVE - Enumovi
 // ============================================================
 
-enum LeadStatus {
-  AVAILABLE // Dostupan za kupovinu
-  ASSIGNED // Dodijeljen provideru
-  CONTACTED // Provider kontaktirao klijenta
-  CONVERTED // Konvertiran u posao
-  REFUNDED // Refundiran
-  EXPIRED // Istekao
-}
+// LeadStatus je String (AVAILABLE, ASSIGNED, CONTACTED, CONVERTED, REFUNDED, EXPIRED)
 
 enum LeadPurchaseStatus {
   ACTIVE // Aktivan lead
