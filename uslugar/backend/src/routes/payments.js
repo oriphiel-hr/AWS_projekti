@@ -306,6 +306,8 @@ r.post('/activate-by-email', async (req, res, next) => {
   try {
     const { email, plan = 'PRO', credits = 50 } = req.body;
     
+    console.log(`[PAYMENT ACTIVATE-BY-EMAIL] Request body:`, req.body);
+    
     if (!email) {
       return res.status(400).json({ error: 'Email required' });
     }
@@ -318,13 +320,64 @@ r.post('/activate-by-email', async (req, res, next) => {
     });
     
     if (!user) {
+      console.log(`[PAYMENT ACTIVATE-BY-EMAIL] User not found for email: ${email}`);
       return res.status(404).json({ error: 'User not found with this email' });
     }
     
-    console.log(`[PAYMENT ACTIVATE-BY-EMAIL] Found user: ${user.id}`);
+    console.log(`[PAYMENT ACTIVATE-BY-EMAIL] Found user: ${user.id} (type: ${typeof user.id})`);
     
-    // Activate subscription
-    await activateSubscription(user.id, plan, credits);
+    // Activate subscription without email (fast path)
+    console.log(`[PAYMENT ACTIVATE-BY-EMAIL] Calling activateSubscription with userId=${user.id}, plan=${plan}, credits=${credits}`);
+    
+    // Manual subscription activation without email
+    const userIdNum = typeof user.id === 'string' ? parseInt(user.id) : user.id;
+    const existingSubscription = await prisma.subscription.findUnique({
+      where: { userId: userIdNum }
+    });
+    
+    const expiresAt = new Date();
+    expiresAt.setMonth(expiresAt.getMonth() + 1);
+    
+    const subscription = await prisma.subscription.upsert({
+      where: { userId: userIdNum },
+      create: {
+        userId: userIdNum,
+        plan,
+        status: 'ACTIVE',
+        creditsBalance: credits,
+        credits: credits,
+        expiresAt
+      },
+      update: {
+        plan,
+        status: 'ACTIVE',
+        creditsBalance: existingSubscription 
+          ? existingSubscription.creditsBalance + credits 
+          : credits,
+        expiresAt
+      }
+    });
+    
+    await prisma.creditTransaction.create({
+      data: {
+        userId: userIdNum,
+        type: 'SUBSCRIPTION',
+        amount: credits,
+        balance: subscription.creditsBalance,
+        description: `${plan} subscription - ${credits} credits`
+      }
+    });
+    
+    await prisma.notification.create({
+      data: {
+        title: 'Pretplata aktivirana!',
+        message: `Uspješno ste se pretplatili na ${plan} plan! Dodano ${credits} kredita.`,
+        type: 'SYSTEM',
+        userId: userIdNum
+      }
+    });
+    
+    console.log(`[PAYMENT ACTIVATE-BY-EMAIL] Subscription activated successfully:`, subscription);
     
     res.json({
       success: true,
@@ -335,8 +388,13 @@ r.post('/activate-by-email', async (req, res, next) => {
     });
 
   } catch (error) {
-    console.error('Activate-by-email error:', error);
-    next(error);
+    console.error('[PAYMENT ACTIVATE-BY-EMAIL] Error:', error);
+    console.error('[PAYMENT ACTIVATE-BY-EMAIL] Error stack:', error.stack);
+    res.status(500).json({ 
+      error: 'Failed to activate subscription', 
+      message: error.message,
+      details: error
+    });
   }
 });
 
