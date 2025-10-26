@@ -38,6 +38,9 @@ r.get('/', async (req, res, next) => {
         }
       },
       orderBy: { createdAt: 'desc' }
+    }).catch(err => {
+      console.error('Error fetching jobs:', err);
+      throw err;
     });
     
     // Filter by distance if coordinates provided
