@@ -91,6 +91,19 @@ const MODEL_EXAMPLES = {
     credits: 10,
     expiresAt: "2026-01-01T00:00:00.000Z"
   },
+  SubscriptionPlan: {
+    name: "BASIC",
+    displayName: "Basic Plan",
+    price: 39,
+    currency: "EUR",
+    credits: 10,
+    features: ["Feature 1", "Feature 2"],
+    isPopular: false,
+    displayOrder: 1,
+    isActive: true,
+    description: "Basic plan description",
+    savings: "Save 10€"
+  },
   LegalStatus: {
     code: "SOLE_TRADER",
     name: "Obrtnik",
@@ -111,6 +124,7 @@ const WHERE_EXAMPLES = {
   ChatRoom: { jobId: { not: null } },
   ChatMessage: { senderId: "cm...(User ID)" },
   Subscription: { status: "ACTIVE", plan: "PREMIUM" },
+  SubscriptionPlan: { isActive: true, isPopular: true },
   LegalStatus: { isActive: true }
 }
 
@@ -126,6 +140,7 @@ const INCLUDE_EXAMPLES = {
   ChatRoom: { participants: true, messages: true, job: true },
   ChatMessage: { sender: true, room: true },
   Subscription: {},
+  SubscriptionPlan: {},
   LegalStatus: { users: true, providers: true }
 }
 

@@ -18,6 +18,7 @@ export const MODELS = [
   'ChatRoom',
   'ChatMessage',
   'Subscription',
+  'SubscriptionPlan',
   'LegalStatus'
 ]
 
