@@ -18,41 +18,12 @@ export default function SubscriptionPlans() {
     const paymentSuccessful = localStorage.getItem('payment_successful');
     if (paymentSuccessful === 'true') {
       localStorage.removeItem('payment_successful');
+      console.log('[PAYMENT-SUCCESS] Loading fresh subscription data...');
       // Force reload to get fresh subscription data
       setTimeout(() => {
         loadData();
       }, 1000);
     }
-    
-    // Auto-activate paid subscription if user sees TRIAL
-    const autoActivateSubscription = async () => {
-      try {
-        const subscription = await getMySubscription().catch(() => null);
-        if (subscription?.data?.subscription?.plan === 'TRIAL') {
-          const token = localStorage.getItem('token');
-          if (token) {
-            const payload = JSON.parse(atob(token.split('.')[1]));
-            const email = payload.email;
-            
-            if (email) {
-              console.log('[AUTO-ACTIVATE] Attempting subscription activation for:', email);
-              const result = await api.post('/payments/activate-by-email', { email }).catch(() => null);
-              
-              if (result?.data?.success) {
-                console.log('[AUTO-ACTIVATE] Subscription activated! Reloading...');
-                setTimeout(() => {
-                  window.location.reload();
-                }, 1000);
-              }
-            }
-          }
-        }
-      } catch (e) {
-        // Silently fail
-      }
-    };
-    
-    setTimeout(autoActivateSubscription, 2000);
     
     // Listen for hash changes to refresh data after payment success
     const hashChangeHandler = () => {
