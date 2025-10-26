@@ -24,6 +24,35 @@ export default function SubscriptionPlans() {
       }, 1000);
     }
     
+    // Auto-activate paid subscription if user sees TRIAL
+    const autoActivateSubscription = async () => {
+      try {
+        const subscription = await getMySubscription().catch(() => null);
+        if (subscription?.data?.subscription?.plan === 'TRIAL') {
+          const token = localStorage.getItem('token');
+          if (token) {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            const email = payload.email;
+            
+            if (email) {
+              console.log('[AUTO-ACTIVATE] Attempting subscription activation for:', email);
+              const result = await api.post('/payments/activate-by-email', { email }).catch(() => null);
+              
+              if (result?.data?.success) {
+                console.log('[AUTO-ACTIVATE] Subscription activated! Reloading...');
+                setTimeout(() => {
+                  window.location.reload();
+                }, 1000);
+              }
+            }
+          }
+        }
+      } catch (e) {
+        // Silently fail
+      }
+    };
+    
+    setTimeout(autoActivateSubscription, 2000);
     
     // Listen for hash changes to refresh data after payment success
     const hashChangeHandler = () => {
@@ -157,35 +186,10 @@ export default function SubscriptionPlans() {
           </div>
 
           {currentSubscription.plan === 'TRIAL' && currentSubscription.status !== 'EXPIRED' && (
-            <div className="mt-4">
-              <div className="p-3 bg-yellow-100 border border-yellow-300 rounded mb-3">
-                <p className="text-sm text-yellow-800">
-                  🎁 Besplatni TRIAL - Isprobajte sve mogućnosti Uslugar EXCLUSIVE-a!
-                </p>
-              </div>
-              <button
-                onClick={async () => {
-                  try {
-                    showToast('Aktiviram postojeću pretplatu...', 'info');
-                    const token = localStorage.getItem('token');
-                    const payload = JSON.parse(atob(token.split('.')[1]));
-                    const email = payload.email;
-                    
-                    await api.post('/payments/activate-by-email', { email });
-                    showToast('Pretplata aktivirana!', 'success');
-                    
-                    setTimeout(() => {
-                      window.location.reload();
-                    }, 2000);
-                  } catch (err) {
-                    console.error('Activation error:', err);
-                    showToast('Greška pri aktivaciji. Možda nemaš plaćenu pretplatu.', 'error');
-                  }
-                }}
-                className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-200"
-              >
-                🔄 Aktiviraj moju plaćenu pretplatu
-              </button>
+            <div className="mt-4 p-3 bg-yellow-100 border border-yellow-300 rounded">
+              <p className="text-sm text-yellow-800">
+                🎁 Besplatni TRIAL - Isprobajte sve mogućnosti Uslugar EXCLUSIVE-a!
+              </p>
             </div>
           )}
 
