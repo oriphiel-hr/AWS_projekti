@@ -14,7 +14,8 @@
     "migrate:dev": "prisma migrate dev --schema=prisma/schema.prisma",
     "db:push": "prisma db push --schema=prisma/schema.prisma",
     "seed": "node prisma/seed.js",
-    "seed:legal": "node prisma/seed-legal-statuses-only.js"
+    "seed:legal": "node prisma/seed-legal-statuses-only.js",
+    "db:fix": "node prisma/seed-db-fix.js"
   },
   "dependencies": {
     "@prisma/client": "5.22.0",
