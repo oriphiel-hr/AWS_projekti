@@ -9,8 +9,14 @@ const r = Router();
 // Initialize Stripe with error handling
 let stripe;
 try {
-  stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
-  console.log('[PAYMENTS] Stripe initialized successfully');
+  const stripeKey = process.env.STRIPE_SECRET_KEY || '';
+  if (stripeKey && stripeKey !== '') {
+    stripe = new Stripe(stripeKey);
+    console.log('[PAYMENTS] Stripe initialized successfully');
+  } else {
+    console.warn('[PAYMENTS] STRIPE_SECRET_KEY is empty or not set');
+    stripe = null;
+  }
 } catch (error) {
   console.error('[PAYMENTS] Stripe initialization failed:', error.message);
   stripe = null;
