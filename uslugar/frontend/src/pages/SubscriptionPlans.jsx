@@ -325,7 +325,7 @@ export default function SubscriptionPlans() {
             <summary className="font-semibold text-gray-900 cursor-pointer">Što je ekskluzivan lead?</summary>
             <p className="mt-2 text-gray-700 text-sm">
               Ekskluzivan lead znači da samo <strong>vi</strong> dobivate kontakt klijenta - nema drugih izvođača koji konkuriraju.
-              Za razliku od Trebam.hr gdje se jedan lead dijeli između 5-10 providera.
+              Za razliku od ostalih servisa gdje se jedan lead dijeli između 5-10 providera.
             </p>
           </details>
 
