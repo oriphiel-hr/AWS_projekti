@@ -31,6 +31,7 @@ import providerROIRouter from './routes/provider-roi.js'
 import clientVerificationRouter from './routes/client-verification.js'
 import leadQueueRouter from './routes/lead-queue.js'
 import { startQueueScheduler } from './lib/queueScheduler.js'
+import { checkExpiringSubscriptions } from './lib/subscription-reminder.js'
 
 // .env samo izvan produkcije
 if (process.env.NODE_ENV !== 'production') {
@@ -320,6 +321,15 @@ await ensureLifetimeLeadsConverted()
 
 // Start Queue Scheduler (checks expired offers every hour)
 startQueueScheduler()
+
+// Start Subscription Reminder Scheduler (checks expiring subscriptions daily at 9am)
+import cron from 'node-cron'
+cron.schedule('0 9 * * *', async () => {
+  console.log('📧 Checking expiring subscriptions...')
+  await checkExpiringSubscriptions()
+})
+
+console.log('[OK] Subscription reminder scheduler active (daily at 9am)')
 
 // graceful shutdown (Prisma + Socket.io) + start
 const server = httpServer.listen(PORT, () => {
