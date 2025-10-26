@@ -1,6 +1,7 @@
 // USLUGAR EXCLUSIVE - Subscription Plans Page
 import React, { useState, useEffect } from 'react';
-import { getSubscriptionPlans, getMySubscription, subscribeToPlan } from '../api/exclusive';
+import { getSubscriptionPlans, getMySubscription } from '../api/exclusive';
+import api from '../api';
 
 export default function SubscriptionPlans() {
   const [plans, setPlans] = useState({});
@@ -39,19 +40,16 @@ export default function SubscriptionPlans() {
     try {
       setSubscribing(planKey);
       
-      // TODO: Integracija sa Stripe payment gateway
-      // Za sada simuliramo uspješnu uplatu
-      const mockPaymentIntentId = 'pi_test_' + Date.now();
+      // Create Stripe checkout session
+      const response = await api.post('/payments/create-checkout', { plan: planKey });
       
-      const response = await subscribeToPlan(planKey, mockPaymentIntentId);
-      
-      alert(`✅ Uspješno!\n\n${response.data.message}\n\nDodano kredita: ${plan.credits}\nNovi balans: ${response.data.subscription.creditsBalance}`);
-      
-      loadData();
+      if (response.data.url) {
+        // Redirect to Stripe checkout
+        window.location.href = response.data.url;
+      }
       
     } catch (err) {
       alert('Greška: ' + (err.response?.data?.error || 'Neuspjelo'));
-    } finally {
       setSubscribing(null);
     }
   };

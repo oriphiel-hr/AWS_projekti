@@ -104,8 +104,8 @@ export const getMySubscription = () => {
   return api.get('/subscriptions/me');
 };
 
-export const subscribeToPlan = (plan, paymentIntentId) => {
-  return api.post('/subscriptions/subscribe', { plan, paymentIntentId });
+export const subscribeToPlan = (plan) => {
+  return api.post('/payments/create-checkout', { plan });
 };
 
 export const cancelSubscription = () => {
