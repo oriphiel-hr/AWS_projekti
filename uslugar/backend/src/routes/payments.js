@@ -62,6 +62,25 @@ r.post('/create-checkout', auth(true, ['PROVIDER']), async (req, res, next) => {
       return res.status(400).json({ error: 'Invalid plan' });
     }
 
+    // Log user info for debugging
+    console.log('[CREATE-CHECKOUT] req.user:', JSON.stringify(req.user, null, 2));
+    console.log('[CREATE-CHECKOUT] req.user.id:', req.user.id, 'type:', typeof req.user.id);
+    console.log('[CREATE-CHECKOUT] req.user.email:', req.user.email);
+    
+    if (!req.user || !req.user.id) {
+      console.error('[CREATE-CHECKOUT] req.user is missing or req.user.id is missing');
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
+    // Create metadata
+    const metadata = {
+      userId: req.user.id.toString(),
+      plan: plan,
+      credits: planDetails.credits.toString()
+    };
+    
+    console.log('[CREATE-CHECKOUT] Creating session with metadata:', metadata);
+
     // Create Stripe Checkout Session
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'], // Kartice (Visa, Mastercard, Diners)
@@ -83,11 +102,7 @@ r.post('/create-checkout', auth(true, ['PROVIDER']), async (req, res, next) => {
       }],
       success_url: `${process.env.CLIENT_URL || 'https://uslugar.oriph.io'}#subscription-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.CLIENT_URL || 'https://uslugar.oriph.io'}#pricing`,
-      metadata: {
-        userId: req.user.id,
-        plan: plan,
-        credits: planDetails.credits.toString()
-      }
+      metadata: metadata
     });
 
     res.json({
