@@ -18,6 +18,7 @@ import Documentation from './pages/Documentation';
 import FAQ from './pages/FAQ';
 import About from './pages/About';
 import Contact from './pages/Contact';
+import PaymentSuccess from './pages/PaymentSuccess';
 // USLUGAR EXCLUSIVE components
 import LeadMarketplace from './pages/LeadMarketplace';
 import ROIDashboard from './pages/ROIDashboard';
@@ -41,7 +42,7 @@ export default function App(){
   // TAB: 'user' | 'admin' | 'login' | 'register-user' | 'register-provider' | 'upgrade-to-provider' | 'verify' | 'forgot-password' | 'reset-password' | 'leads' | 'my-leads' | 'roi' | 'subscription' | 'pricing' | 'providers' | 'documentation' | 'faq'
   const [tab, setTab] = useState(() => {
     const hash = window.location.hash?.slice(1).split('?')[0];
-    const validTabs = ['admin', 'login', 'register-user', 'register-provider', 'provider-profile', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'leads', 'my-leads', 'roi', 'subscription', 'pricing', 'providers', 'documentation', 'faq', 'about', 'contact'];
+    const validTabs = ['admin', 'login', 'register-user', 'register-provider', 'provider-profile', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'leads', 'my-leads', 'roi', 'subscription', 'subscription-success', 'pricing', 'providers', 'documentation', 'faq', 'about', 'contact'];
     return validTabs.includes(hash) ? hash : 'user';
   });
 
@@ -760,6 +761,12 @@ export default function App(){
       {tab === 'subscription' && (
         <section id="subscription" className="tab-section">
           <SubscriptionPlans />
+        </section>
+      )}
+
+      {tab === 'subscription-success' && (
+        <section id="subscription-success" className="tab-section">
+          <PaymentSuccess setTab={setTab} />
         </section>
       )}
 
