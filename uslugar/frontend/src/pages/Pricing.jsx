@@ -1,16 +1,48 @@
 import React, { useState, useEffect } from 'react';
 import api from '@/api';
+import { getMySubscription } from '../api/exclusive';
 
 export default function Pricing({ setTab }) {
   const [plans, setPlans] = useState([]);
+  const [currentSubscription, setCurrentSubscription] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Dohvati planove iz baze
-    api.get('/subscriptions/plans')
-      .then(response => {
-        console.log('✅ Subscription plans učitani iz baze:', response.data);
-        setPlans(response.data);
+    // Dohvati planove i trenutnu pretplatu
+    Promise.all([
+      api.get('/subscriptions/plans'),
+      localStorage.getItem('token') ? getMySubscription().catch(() => null) : Promise.resolve(null)
+    ])
+      .then(([plansRes, subscriptionRes]) => {
+        console.log('✅ Subscription plans učitani iz baze:', plansRes.data);
+        
+        // Add TRIAL plan
+        const tri alPlan = {
+          id: 'trial-plan',
+          name: 'TRIAL',
+          displayName: 'TRIAL',
+          price: 0,
+          currency: 'EUR',
+          credits: 2,
+          features: [
+            '2 ekskluzivna leada (besplatno)',
+            '1 lead = 1 izvođač',
+            '7 dana probni period',
+            'ROI statistika',
+            'Refund ako klijent ne odgovori',
+            'Email notifikacije',
+            'Mini CRM za leadove'
+          ],
+          isPopular: false,
+          displayOrder: 0,
+          isActive: true,
+          savings: 'Besplatno!'
+        };
+        
+        setPlans([trialPlan, ...plansRes.data]);
+        if (subscriptionRes?.data?.subscription) {
+          setCurrentSubscription(subscriptionRes.data.subscription);
+        }
       })
       .catch(err => {
         console.error('❌ Greška pri učitavanju planova:', err);
@@ -49,30 +81,53 @@ export default function Pricing({ setTab }) {
         </div>
 
         {/* Pricing Cards */}
-        <div className="grid md:grid-cols-3 gap-8 mb-16">
-          {plans.map(plan => (
+        <div className="grid md:grid-cols-4 gap-6 mb-16">
+          {plans.map(plan => {
+            const isCurrentPlan = currentSubscription?.plan === plan.name;
+            const isTrial = plan.name === 'TRIAL';
+            
+            return (
             <div
               key={plan.id}
-              className={`bg-white rounded-2xl shadow-lg p-8 border-2 ${
-                plan.isPopular ? 'border-blue-500 shadow-xl' : 'border-gray-200'
+              className={`bg-white rounded-2xl shadow-lg p-6 border-4 ${
+                isCurrentPlan 
+                  ? 'border-green-500 shadow-2xl' 
+                  : plan.isPopular 
+                  ? 'border-blue-500 shadow-xl' 
+                  : 'border-gray-200'
               } relative`}
             >
-              {plan.isPopular && (
-                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-blue-500 text-white px-4 py-2 rounded-full text-sm font-semibold">
+              {isCurrentPlan && (
+                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                  <span className="bg-green-500 text-white px-4 py-1 rounded-full text-xs font-bold">
+                    ✓ VAŠ PLAN
+                  </span>
+                </div>
+              )}
+              
+              {plan.isPopular && !isCurrentPlan && (
+                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                  <span className="bg-blue-500 text-white px-4 py-1 rounded-full text-xs font-semibold">
                     ⭐ Najpopularniji
                   </span>
                 </div>
               )}
               
-              <div className="text-center mb-8">
+              <div className="text-center mb-6">
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">
                   {plan.displayName}
                 </h3>
-                <div className="text-4xl font-bold text-blue-600 mb-2">
+                <div className={`text-4xl font-bold mb-2 ${
+                  isTrial ? 'text-yellow-600' : 'text-blue-600'
+                }`}>
                   {plan.price}€
                 </div>
                 <p className="text-gray-600">mjesečno</p>
+                {isTrial && (
+                  <p className="text-sm text-yellow-600 font-semibold mt-1">
+                    7 dana besplatno!
+                  </p>
+                )}
               </div>
 
               <ul className="space-y-4 mb-8">
@@ -92,11 +147,21 @@ export default function Pricing({ setTab }) {
                 </div>
               )}
 
-              <button className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
-                Odaberite {plan.displayName}
+              <button 
+                disabled={isCurrentPlan}
+                className={`w-full py-3 px-6 rounded-lg font-semibold transition-colors ${
+                  isCurrentPlan
+                    ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                    : isTrial
+                    ? 'bg-yellow-500 text-white hover:bg-yellow-600'
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                }`}
+              >
+                {isCurrentPlan ? '✓ Aktivno' : plan.price === 0 ? 'Besplatno' : `Odaberite ${plan.displayName}`}
               </button>
             </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* FAQ Link */}
