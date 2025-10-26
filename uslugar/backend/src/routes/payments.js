@@ -241,13 +241,31 @@ r.get('/success', auth(true, ['PROVIDER']), async (req, res, next) => {
     const session = await stripe.checkout.sessions.retrieve(session_id);
 
     if (session.payment_status === 'paid') {
-      // Subscription je već aktivirana preko webhook-a
-      // Ovde možemo prikazati potvrdu
-      res.json({
-        success: true,
-        message: 'Pretplata uspješno aktivirana!',
-        sessionId: session_id
-      });
+      // Activate subscription if not already activated
+      const userId = session.metadata?.userId || req.user.id;
+      const plan = session.metadata?.plan;
+      const credits = parseInt(session.metadata?.credits || '0');
+      
+      console.log(`[PAYMENT SUCCESS] Activating subscription for user ${userId}, plan: ${plan}`);
+      
+      try {
+        // Activate subscription directly
+        await activateSubscription(userId, plan, credits);
+        
+        res.json({
+          success: true,
+          message: 'Pretplata uspješno aktivirana!',
+          sessionId: session_id
+        });
+      } catch (activateError) {
+        console.error('Error activating subscription:', activateError);
+        // Still return success if payment is completed
+        res.json({
+          success: true,
+          message: 'Plaćanje uspješno završeno.',
+          sessionId: session_id
+        });
+      }
     } else {
       res.redirect('/subscription/plans?error=payment_pending');
     }
