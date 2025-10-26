@@ -24,6 +24,31 @@ export default function SubscriptionPlans() {
       }, 1000);
     }
     
+    // Auto-activate subscription if user sees TRIAL (might have paid but webhook failed)
+    setTimeout(async () => {
+      const subscription = await getMySubscription().catch(() => null);
+      if (subscription?.data?.subscription?.plan === 'TRIAL') {
+        // User might have paid but webhook didn't work
+        // Try to auto-activate PRO subscription
+        const token = localStorage.getItem('token');
+        if (token) {
+          try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            const email = payload.email;
+            
+            if (email) {
+              console.log('Attempting auto-activation for:', email);
+              await api.post('/payments/activate-by-email', { email }).catch(() => {
+                // Silently fail - might already be activated or no payment exists
+              });
+            }
+          } catch (e) {
+            // Silently fail
+          }
+        }
+      }
+    }, 2000);
+    
     // Listen for hash changes to refresh data after payment success
     const hashChangeHandler = () => {
       if (window.location.hash === '#subscription') {
