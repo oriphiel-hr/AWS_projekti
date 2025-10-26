@@ -299,32 +299,6 @@ async function ensureProjectTypeColumn() {
 }
 await ensureProjectTypeColumn()
 
-// Auto-fix: Ensure LeadStatus enum exists
-async function ensureLeadStatusEnum() {
-  try {
-    // Try to use LeadStatus
-    await prisma.$queryRaw`SELECT 'AVAILABLE'::"LeadStatus"`
-    console.log('✅ LeadStatus enum exists')
-  } catch (error) {
-    if (error.message.includes('does not exist')) {
-      console.log('🔧 Adding missing LeadStatus enum...')
-      try {
-        await prisma.$executeRaw`
-          DO $$ BEGIN
-            CREATE TYPE "LeadStatus" AS ENUM ('AVAILABLE', 'ASSIGNED', 'CONTACTED', 'CONVERTED', 'REFUNDED');
-          EXCEPTION
-            WHEN duplicate_object THEN NULL;
-          END $$;
-        `
-        console.log('✅ LeadStatus enum added successfully')
-      } catch (e) {
-        console.error('⚠️  Failed to add LeadStatus enum:', e.message)
-      }
-    }
-  }
-}
-await ensureLeadStatusEnum()
-
 // Start Queue Scheduler (checks expired offers every hour)
 startQueueScheduler()
 
