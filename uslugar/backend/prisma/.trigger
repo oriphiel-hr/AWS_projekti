@@ -1,1 +1,1 @@
-trigger-prisma
+trigger-prisma-retry
