@@ -139,6 +139,9 @@ model ProviderProfile {
   maxCategories Int               @default(5) // Max broj kategorija koje smije odabrati
   licenses      ProviderLicense[] // Licence koje posjeduje
   nkdCodes      String[] // NKD kodovi koje firma pokriva
+  
+  // Featured Profile - PRO users only
+  isFeatured    Boolean           @default(false) // Featured badge za PRO korisnike
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
