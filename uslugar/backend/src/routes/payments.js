@@ -298,6 +298,48 @@ r.post('/activate-latest-subscription', async (req, res, next) => {
 });
 
 /**
+ * Activate PRO subscription by email (for manual activation)
+ * POST /api/payments/activate-by-email
+ */
+r.post('/activate-by-email', async (req, res, next) => {
+  try {
+    const { email, plan = 'PRO', credits = 50 } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ error: 'Email required' });
+    }
+    
+    console.log(`[PAYMENT ACTIVATE-BY-EMAIL] Activating ${plan} subscription for: ${email}`);
+    
+    // Find user by email
+    const user = await prisma.user.findUnique({
+      where: { email: email }
+    });
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found with this email' });
+    }
+    
+    console.log(`[PAYMENT ACTIVATE-BY-EMAIL] Found user: ${user.id}`);
+    
+    // Activate subscription
+    await activateSubscription(user.id, plan, credits);
+    
+    res.json({
+      success: true,
+      message: `${plan} subscription activated!`,
+      plan: plan,
+      credits: credits,
+      userId: user.id
+    });
+
+  } catch (error) {
+    console.error('Activate-by-email error:', error);
+    next(error);
+  }
+});
+
+/**
  * Manual activation for paid sessions (for fixing old payments)
  * POST /api/payments/activate-subscription
  */
