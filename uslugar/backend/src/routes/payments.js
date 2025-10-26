@@ -6,13 +6,21 @@ import { auth } from '../lib/auth.js';
 
 const r = Router();
 
-// Initialize Stripe
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+// Initialize Stripe with error handling
+let stripe;
+try {
+  stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
+  console.log('[PAYMENTS] Stripe initialized successfully');
+} catch (error) {
+  console.error('[PAYMENTS] Stripe initialization failed:', error.message);
+  stripe = null;
+}
 
 // Get publishable key for frontend
 r.get('/config', (req, res) => {
   res.json({
-    publishableKey: process.env.STRIPE_PUBLISHABLE_KEY
+    publishableKey: process.env.STRIPE_PUBLISHABLE_KEY || '',
+    enabled: !!process.env.STRIPE_SECRET_KEY
   });
 });
 
@@ -22,6 +30,15 @@ r.get('/config', (req, res) => {
  */
 r.post('/create-checkout', auth(true, ['PROVIDER']), async (req, res, next) => {
   try {
+    // Check if Stripe is configured
+    if (!stripe || !process.env.STRIPE_SECRET_KEY) {
+      console.error('[PAYMENTS] Stripe not configured - STRIPE_SECRET_KEY missing');
+      return res.status(503).json({ 
+        error: 'Payment system not configured',
+        message: 'Stripe API keys are missing. Please contact support.'
+      });
+    }
+
     const { plan } = req.body;
     
     if (!plan) {

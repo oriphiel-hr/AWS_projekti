@@ -29,7 +29,8 @@ export default function Pricing({ setTab }) {
       }
     } catch (error) {
       console.error('Subscribe error:', error);
-      alert(error.response?.data?.error || 'Greška pri odabiru paketa.');
+      const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Greška pri odabiru paketa.';
+      alert(`❌ ${errorMessage}\n\n${error.response?.data?.error === 'Payment system not configured' ? 'Kontaktirajte podršku za aktivaciju plaćanja.' : 'Pokušajte ponovno.'}`);
       setProcessing(null);
     }
   };
