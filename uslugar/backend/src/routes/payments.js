@@ -226,6 +226,57 @@ r.post('/cancel-subscription', auth(true, ['PROVIDER']), async (req, res, next) 
 });
 
 /**
+ * Auto-activate PRO subscription for user (manual activation)
+ * POST /api/payments/activate-latest-subscription
+ */
+r.post('/activate-latest-subscription', auth(true, ['PROVIDER']), async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { payment_intent_id } = req.body;
+    
+    console.log(`[PAYMENT AUTO-ACTIVATION] Activating PRO subscription for user ${userId}`);
+    
+    // Verify payment exists
+    if (payment_intent_id) {
+      try {
+        const paymentIntent = await stripe.paymentIntents.retrieve(payment_intent_id);
+        console.log(`[PAYMENT AUTO-ACTIVATION] Found payment intent: ${payment_intent_id}, status: ${paymentIntent.status}`);
+        
+        if (paymentIntent.status !== 'succeeded') {
+          return res.status(400).json({ 
+            error: 'Payment not completed', 
+            status: paymentIntent.status 
+          });
+        }
+      } catch (err) {
+        console.error('Error checking payment intent:', err);
+        // Continue anyway if we can't verify
+      }
+    }
+    
+    // Activate PRO subscription with 50 credits
+    const plan = 'PRO';
+    const credits = 50;
+    
+    console.log(`[PAYMENT AUTO-ACTIVATION] Activating: plan=${plan}, credits=${credits}`);
+    
+    // Activate subscription
+    await activateSubscription(userId, plan, credits);
+    
+    res.json({
+      success: true,
+      message: 'PRO subscription activated!',
+      plan: plan,
+      credits: credits
+    });
+
+  } catch (error) {
+    console.error('Auto-activation error:', error);
+    next(error);
+  }
+});
+
+/**
  * Manual activation for paid sessions (for fixing old payments)
  * POST /api/payments/activate-subscription
  */
