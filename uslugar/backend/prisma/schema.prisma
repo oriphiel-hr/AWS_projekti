@@ -8,6 +8,52 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Enums (must be defined before models that use them)
+enum SupportPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum SupportStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum SupportCategory {
+  BILLING
+  TECHNICAL
+  REFUND
+  FEATURE_REQUEST
+  OTHER
+}
+
+// Support Ticket System (must be before User model)
+model SupportTicket {
+  id          String          @id @default(cuid())
+  userId      String
+  subject     String
+  message     String
+  priority    SupportPriority @default(NORMAL)
+  status      SupportStatus   @default(OPEN)
+  category    SupportCategory @default(OTHER)
+  assignedTo  String?
+  notes       String?
+  resolvedAt  DateTime?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  
+  user        User            @relation("UserSupportTickets", fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([status])
+  @@index([priority])
+  @@index([category])
+}
+
 model User {
   id                   String       @id @default(cuid())
   email                String       @unique
@@ -490,49 +536,4 @@ enum SubscriptionStatus {
   ACTIVE // Aktivna pretplata
   CANCELLED // Otkazana
   EXPIRED // Istekla
-}
-
-enum SupportPriority {
-  LOW
-  NORMAL
-  HIGH
-  URGENT
-}
-
-enum SupportStatus {
-  OPEN
-  IN_PROGRESS
-  RESOLVED
-  CLOSED
-}
-
-enum SupportCategory {
-  BILLING
-  TECHNICAL
-  REFUND
-  FEATURE_REQUEST
-  OTHER
-}
-
-// VIP podrška 24/7 - Support Ticket System
-model SupportTicket {
-  id          String          @id @default(cuid())
-  userId      String
-  subject     String
-  message     String
-  priority    SupportPriority @default(NORMAL)
-  status      SupportStatus   @default(OPEN)
-  category    SupportCategory @default(OTHER)
-  assignedTo  String?
-  notes       String?
-  resolvedAt  DateTime?
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-  
-  user        User            @relation("UserSupportTickets", fields: [userId], references: [id], onDelete: Cascade)
-  
-  @@index([userId])
-  @@index([status])
-  @@index([priority])
-  @@index([category])
 }
