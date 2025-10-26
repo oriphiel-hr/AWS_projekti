@@ -430,6 +430,28 @@ model LegalStatus {
 
 // LeadStatus je String (AVAILABLE, ASSIGNED, CONTACTED, CONVERTED, REFUNDED, EXPIRED)
 
+enum SupportPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum SupportStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum SupportCategory {
+  BILLING
+  TECHNICAL
+  REFUND
+  FEATURE_REQUEST
+  OTHER
+}
+
 enum LeadPurchaseStatus {
   ACTIVE // Aktivan lead
   CONTACTED // Kontaktiran
