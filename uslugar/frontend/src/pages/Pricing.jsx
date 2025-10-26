@@ -80,8 +80,23 @@ export default function Pricing({ setTab }) {
           </div>
         </div>
 
+        {/* Current Subscription Info */}
+        {currentSubscription && (
+          <div className="mb-8 bg-green-50 border-2 border-green-500 rounded-xl p-6 text-center">
+            <h2 className="text-2xl font-bold text-green-900 mb-2">
+              ✓ Vaš aktivni plan: <span className="text-green-700">{currentSubscription.plan}</span>
+            </h2>
+            <p className="text-gray-700">
+              Preostalo kredita: <strong className="text-green-700">{currentSubscription.creditsBalance || 0}</strong>
+              {currentSubscription.expiresAt && (
+                <> | Ističe: <strong>{new Date(currentSubscription.expiresAt).toLocaleDateString('hr-HR')}</strong></>
+              )}
+            </p>
+          </div>
+        )}
+
         {/* Pricing Cards */}
-        <div className="grid md:grid-cols-4 gap-6 mb-16">
+        <div className="grid md:grid-cols-4 gap-4 mb-16">
           {plans.map(plan => {
             const isCurrentPlan = currentSubscription?.plan === plan.name;
             const isTrial = plan.name === 'TRIAL';
