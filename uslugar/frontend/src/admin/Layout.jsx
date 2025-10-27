@@ -56,6 +56,18 @@ export default function Layout({ user, onLogout }){
               
               {/* Special Pages */}
               <NavLink
+                to="/admin/provider-approvals"
+                className={({isActive}) =>
+                  `block px-4 py-2 rounded-lg text-sm font-medium transition ${
+                    isActive 
+                      ? 'bg-indigo-600 text-white shadow-sm' 
+                      : 'text-gray-700 hover:bg-gray-200'
+                  }`
+                }
+              >
+                ✅ Provider Approvals
+              </NavLink>
+              <NavLink
                 to="/admin/payments"
                 className={({isActive}) =>
                   `block px-4 py-2 rounded-lg text-sm font-medium transition ${
