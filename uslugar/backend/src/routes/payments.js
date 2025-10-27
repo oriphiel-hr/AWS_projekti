@@ -532,10 +532,10 @@ r.get('/success', async (req, res, next) => {
  */
 async function activateSubscription(userId, plan, credits) {
   try {
-    // Ensure userId is converted to number if it's a string
-    const userIdNum = typeof userId === 'string' ? parseInt(userId) : userId;
+    // Ensure userId is a string (database expects string, not number)
+    const userIdStr = typeof userId === 'string' ? userId : userId.toString();
     
-    console.log(`[ACTIVATE SUBSCRIPTION] userId: ${userId}, type: ${typeof userId}, converted: ${userIdNum}`);
+    console.log(`[ACTIVATE SUBSCRIPTION] userId: ${userId}, type: ${typeof userId}, converted: ${userIdStr}`);
     console.log(`[ACTIVATE SUBSCRIPTION] plan: ${plan}, credits: ${credits}`);
     
     if (!plan) {
@@ -550,7 +550,7 @@ async function activateSubscription(userId, plan, credits) {
     
     // Check if subscription exists
     const existingSubscription = await prisma.subscription.findUnique({
-      where: { userId: userIdNum }
+      where: { userId: userIdStr }
     });
     
     console.log(`[ACTIVATE SUBSCRIPTION] Existing subscription:`, existingSubscription);
@@ -562,9 +562,9 @@ async function activateSubscription(userId, plan, credits) {
 
     // Create or update subscription
     const subscription = await prisma.subscription.upsert({
-      where: { userId: userIdNum },
+      where: { userId: userIdStr },
       create: {
-        userId: userIdNum,
+        userId: userIdStr,
         plan,
         status: 'ACTIVE',
         creditsBalance: credits,
@@ -586,7 +586,7 @@ async function activateSubscription(userId, plan, credits) {
     // Create credit transaction
     await prisma.creditTransaction.create({
       data: {
-        userId: userIdNum,
+        userId: userIdStr,
         type: 'SUBSCRIPTION',
         amount: credits,
         balance: subscription.creditsBalance,
@@ -600,15 +600,15 @@ async function activateSubscription(userId, plan, credits) {
         title: 'Pretplata aktivirana!',
         message: `Uspješno ste se pretplatili na ${plan} plan! Dodano ${credits} kredita.`,
         type: 'SYSTEM',
-        userId: userIdNum
+        userId: userIdStr
       }
     });
 
-    console.log(`[SUBSCRIPTION] Activated: User ${userIdNum}, Plan ${plan}, Credits ${credits}`);
+    console.log(`[SUBSCRIPTION] Activated: User ${userIdStr}, Plan ${plan}, Credits ${credits}`);
 
     // Send confirmation email
     try {
-      const user = await prisma.user.findUnique({ where: { id: userIdNum } });
+      const user = await prisma.user.findUnique({ where: { id: userIdStr } });
       if (user && user.email) {
         // Get plan price
         const planPrice = credits * 10; // Approximate price based on credits
