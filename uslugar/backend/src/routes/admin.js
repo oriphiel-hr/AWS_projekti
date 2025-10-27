@@ -43,6 +43,9 @@ r.get('/kyc-metrics', auth(true, ['ADMIN']), async (req, res, next) => {
       WHERE "kycVerifiedAt" IS NOT NULL
     `;
     
+    // Helper function to convert BigInt to Number
+    const toNumber = (val) => typeof val === 'bigint' ? Number(val) : val;
+    
     const metrics = {
       total: totalRegistrations,
       verified: verifiedProviders,
@@ -51,8 +54,14 @@ r.get('/kyc-metrics', auth(true, ['ADMIN']), async (req, res, next) => {
       verificationRate: totalRegistrations > 0 
         ? ((verifiedProviders / totalRegistrations) * 100).toFixed(1) + '%'
         : '0%',
-      byStatus: byStatus,
-      avgVerificationMinutes: avgTime[0]?.avg_minutes ? avgTime[0].avg_minutes.toFixed(0) : 'N/A'
+      byStatus: byStatus.map(item => ({
+        code: item.code,
+        name: item.name,
+        count: toNumber(item.count)
+      })),
+      avgVerificationMinutes: avgTime[0]?.avg_minutes 
+        ? toNumber(avgTime[0].avg_minutes).toFixed(0) 
+        : 'N/A'
     };
     
     res.json(metrics);
