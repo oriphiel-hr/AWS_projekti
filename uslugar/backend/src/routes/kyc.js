@@ -217,6 +217,8 @@ r.post('/auto-verify', async (req, res, next) => {
         };
         break;
         
+        /* REAL API LOGIC - TODO: Enable when SUDREG_API_KEY is added
+        
         try {
           // API Sudskog registra: https://sudreg.pravosudje.hr/
           // Treba: Ocp-Apim-Subscription-Key header
@@ -257,6 +259,7 @@ r.post('/auto-verify', async (req, res, next) => {
           errors: ['Sudski registar provjera nije dostupna. Učitajte službeni izvadak iz Sudskog registra.']
         };
         break;
+        */
         
       case 'SOLE_TRADER':
       case 'PAUSAL':
