@@ -214,6 +214,9 @@ r.post('/auto-verify', async (req, res, next) => {
           console.log('[Auto-Verify] 📝 Checking environment variables...');
           console.log('[Auto-Verify] clientId exists:', !!clientId);
           console.log('[Auto-Verify] clientSecret exists:', !!clientSecret);
+          console.log('[Auto-Verify] clientId length:', clientId?.length || 0);
+          console.log('[Auto-Verify] clientSecret length:', clientSecret?.length || 0);
+          console.log('[Auto-Verify] First 10 chars of clientId:', clientId?.substring(0, 10) || 'undefined');
           
           if (!clientId || !clientSecret) {
             console.log('[Auto-Verify] ❌ Missing SUDREG credentials');
