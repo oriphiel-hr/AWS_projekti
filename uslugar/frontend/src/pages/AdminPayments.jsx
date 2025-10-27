@@ -74,6 +74,41 @@ export default function AdminPayments() {
     return true;
   });
 
+  // Export functions
+  const exportToCSV = () => {
+    const headers = ['Korisnik', 'Email', 'Paket', 'Status', 'Iznos', 'Datum', 'Session ID'];
+    const rows = filteredSessions.map(session => [
+      session.user?.fullName || session.customerEmail || 'N/A',
+      session.user?.email || session.customerEmail || 'N/A',
+      session.plan || 'N/A',
+      session.paymentStatus || session.status || 'N/A',
+      session.amountTotal ? (session.amountTotal / 100).toFixed(2) : 'N/A',
+      session.createdAt ? formatDate(session.createdAt) : 'N/A',
+      session.id || 'N/A'
+    ]);
+    
+    const csv = [headers.join(','), ...rows.map(row => 
+      row.map(val => `"${String(val).replace(/"/g, '""')}"`).join(',')
+    )].join('\n');
+    
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `payments_export_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+  };
+
+  const exportToJSON = () => {
+    const data = JSON.stringify(filteredSessions, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `payments_export_${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+  };
+
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-8">
@@ -96,17 +131,68 @@ export default function AdminPayments() {
     <div className="max-w-7xl mx-auto px-4 py-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Administracija uplata</h1>
-        <p className="text-gray-600">Pregled svih Stripe checkout session-a</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Administracija uplata</h1>
+            <p className="text-gray-600">Pregled svih Stripe checkout session-a</p>
+          </div>
+          <div className="flex gap-2">
+            <button 
+              onClick={exportToCSV}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              📄 CSV
+            </button>
+            <button 
+              onClick={exportToJSON}
+              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+            >
+              📄 JSON
+            </button>
+            <button
+              onClick={loadSessions}
+              className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800"
+            >
+              🔄 Osvježi
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Box with Export */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div>
+              <div className="text-sm text-gray-600">Prikazano</div>
+              <div className="text-2xl font-bold text-blue-700">
+                {filteredSessions.length} / {sessions.length}
+              </div>
+            </div>
+            <div>
+              <div className="text-sm text-gray-600">Ukupno</div>
+              <div className="text-2xl font-bold text-gray-700">{sessions.length}</div>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button 
+              onClick={exportToCSV}
+              className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
+            >
+              📄 Export CSV
+            </button>
+            <button 
+              onClick={exportToJSON}
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+            >
+              📄 Export JSON
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="text-sm font-medium text-gray-500">Prikaženo</div>
-          <div className="text-2xl font-bold text-gray-900">{filteredSessions.length}</div>
-          <div className="text-xs text-gray-400">od {sessions.length}</div>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
         <div className="bg-white rounded-lg shadow p-6">
           <div className="text-sm font-medium text-gray-500">✅ Plaćeno</div>
           <div className="text-2xl font-bold text-green-600">
@@ -260,16 +346,6 @@ export default function AdminPayments() {
             </tbody>
           </table>
         </div>
-      </div>
-
-      {/* Refresh Button */}
-      <div className="mt-6">
-        <button
-          onClick={loadSessions}
-          className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          Osvježi
-        </button>
       </div>
     </div>
   );
