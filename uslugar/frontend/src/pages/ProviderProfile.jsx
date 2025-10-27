@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
+import KYCVerification from '../components/KYCVerification';
 
 export default function ProviderProfile({ onSuccess }) {
   const [profile, setProfile] = useState(null);
@@ -1051,6 +1052,19 @@ export default function ProviderProfile({ onSuccess }) {
               <p className="text-xs text-gray-500 mt-1">Prikazuje se ako postoji</p>
             </div>
           </div>
+
+          {/* KYC-lite Verifikacija za Freelancere */}
+          {profile?.user?.legalStatus?.code === 'FREELANCER' || profile?.user?.legalStatus?.code === 'SOLE_TRADER' ? (
+            <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
+              <h4 className="text-lg font-semibold text-gray-900 mb-4">
+                🔒 KYC-lite Verifikacija
+              </h4>
+              <KYCVerification 
+                providerProfile={profile}
+                onUpdate={loadProfile}
+              />
+            </div>
+          ) : null}
 
           {/* Licence i ovlaštenja */}
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">

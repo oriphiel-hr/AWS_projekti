@@ -11,7 +11,11 @@ r.get('/me', auth(true, ['PROVIDER']), async (req, res, next) => {
     let provider = await prisma.providerProfile.findUnique({
       where: { userId: req.user.id },
       include: {
-        user: true,
+        user: {
+          include: {
+            legalStatus: true
+          }
+        },
         categories: true,
         licenses: {
           orderBy: {
@@ -57,7 +61,11 @@ r.get('/me', auth(true, ['PROVIDER']), async (req, res, next) => {
             portfolio: null
           },
           include: {
-            user: true,
+            user: {
+              include: {
+                legalStatus: true
+              }
+            },
             categories: true
           }
         });
