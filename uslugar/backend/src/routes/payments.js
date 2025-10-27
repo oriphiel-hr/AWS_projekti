@@ -483,21 +483,28 @@ r.get('/success', async (req, res, next) => {
       
       console.log(`[PAYMENT SUCCESS] Parsed values - userId: ${userId}, plan: ${plan}, credits: ${credits}`);
       
-      if (!userId) {
-        console.error('[PAYMENT SUCCESS] No userId found in session metadata');
+      // Check if userId is valid
+      if (!userId || userId === 'NaN' || userId === 'undefined' || isNaN(parseInt(userId))) {
+        console.error('[PAYMENT SUCCESS] No valid userId found in session metadata');
         console.error('[PAYMENT SUCCESS] Available metadata keys:', Object.keys(session.metadata || {}));
-        return res.status(400).json({ error: 'User ID not found in payment session' });
+        // Payment was successful, but metadata is missing
+        return res.json({
+          success: true,
+          message: 'Plaćanje uspješno završeno. Kontaktirajte podršku za aktivaciju pretplate.',
+          sessionId: session_id,
+          requiresManualActivation: true
+        });
       }
       
       console.log('[PAYMENT SUCCESS] Metadata userId:', userId, 'type:', typeof userId);
       
       try {
-        // Convert userId to number if needed
-        const userIdNum = typeof userId === 'string' ? parseInt(userId) : userId;
-        console.log('[PAYMENT SUCCESS] Converted userIdNum:', userIdNum);
+        // userId should be a string (cuid)
+        const userIdStr = String(userId);
+        console.log('[PAYMENT SUCCESS] Using userId as string:', userIdStr);
         
         // Activate subscription directly
-        await activateSubscription(userIdNum, plan, credits);
+        await activateSubscription(userIdStr, plan, credits);
         
         res.json({
           success: true,
