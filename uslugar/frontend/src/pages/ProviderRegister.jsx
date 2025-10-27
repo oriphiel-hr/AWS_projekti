@@ -579,11 +579,11 @@ export default function ProviderRegister({ onSuccess }) {
                 🔒 KYC-lite Verifikacija (Opcionalno)
               </h4>
               <p className="text-sm text-gray-700 mb-4">
-                Pretplatite se na upload Rješenja Porezne uprave za provjerljivost. 
+                Učitajte Rješenje Porezne uprave radi lakše provjerljivosti. 
                 Možete to učiniti i nakon registracije.
               </p>
               <div className="text-xs text-gray-600 mb-2">
-                💡 <strong>Savjet:</strong> Ovo ćete moći dodati nakon registracije u Provider Profile sekciji.
+                💡 <strong>Savjet:</strong> Ovo ćete moći dodati nakon registracije u sekciji Pružatelj usluga.
               </div>
             </div>
           );
