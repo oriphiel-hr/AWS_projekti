@@ -203,8 +203,12 @@ r.post('/auto-verify', async (req, res, next) => {
     switch(legalStatus.code) {
       case 'DOO':
       case 'JDOO':
-        // Sudski registar - POKUŠAVAMO provjeru
-        console.log('[Auto-Verify] DOO/JDOO: Pokušavam provjeriti Sudski registar...');
+        // Sudski registar - TEMPORARILY DISABLED
+        console.log('[Auto-Verify] DOO/JDOO: Auto-verification currently disabled - requires manual document upload');
+        
+        // API integration is ready but disabled until credentials are confirmed working
+        // TODO: Re-enable when API is tested and working
+        /*
         
         // REAL API LOGIC - Sudski registar
         try {
@@ -295,13 +299,14 @@ r.post('/auto-verify', async (req, res, next) => {
             stack: apiError.stack
           });
         }
+        */
         
-        // Fallback: treba dokument
+        // For now: always require document
         results = {
           verified: false,
           needsDocument: true,
           badges: [],
-          errors: ['Sudski registar provjera nije dostupna. Učitajte službeni izvadak iz Sudskog registra.']
+          errors: ['Za automatsku provjeru unesite službeni izvadak iz Sudskog registra.']
         };
         break;
         
