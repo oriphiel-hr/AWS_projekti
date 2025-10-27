@@ -142,6 +142,9 @@ model ProviderProfile {
   
   // Featured Profile - PRO users only
   isFeatured    Boolean           @default(false) // Featured badge za PRO korisnike
+  
+  // Approval status za licence (odobrenje admina)
+  approvalStatus ProviderApprovalStatus? @default(WAITING_FOR_APPROVAL) // Status odobrenja
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -540,4 +543,11 @@ enum SubscriptionStatus {
   ACTIVE // Aktivna pretplata
   CANCELLED // Otkazana
   EXPIRED // Istekla
+}
+
+enum ProviderApprovalStatus {
+  WAITING_FOR_APPROVAL // Čeka odobrenje od admina
+  APPROVED // Odobren (može koristiti TRIAL)
+  REJECTED // Odbijen
+  INACTIVE // Neaktivan
 }

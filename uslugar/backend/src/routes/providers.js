@@ -346,7 +346,8 @@ r.post('/upload-license', auth(true, ['PROVIDER']), uploadDocument.single('file'
 
     // Get provider profile
     const provider = await prisma.providerProfile.findUnique({
-      where: { userId: req.user.id }
+      where: { userId: req.user.id },
+      include: { user: true }
     });
 
     if (!provider) {
@@ -370,8 +371,34 @@ r.post('/upload-license', auth(true, ['PROVIDER']), uploadDocument.single('file'
       data: licenseData
     });
 
+    // Update approval status to WAITING_FOR_APPROVAL
+    await prisma.providerProfile.update({
+      where: { userId: req.user.id },
+      data: { 
+        approvalStatus: 'WAITING_FOR_APPROVAL'
+      }
+    });
+
+    // Notify admins that a new provider is waiting for approval
+    const admins = await prisma.user.findMany({
+      where: { role: 'ADMIN' }
+    });
+
+    for (const admin of admins) {
+      await prisma.notification.create({
+        data: {
+          title: 'Novi pružatelj čeka odobrenje',
+          message: `${provider.user.fullName} (${provider.user.email}) je registrirao lice za kategoriju ${category.name}`,
+          type: 'SYSTEM',
+          userId: admin.id,
+          jobId: null,
+          offerId: null
+        }
+      });
+    }
+
     res.json({
-      message: 'License document uploaded successfully',
+      message: 'License document uploaded successfully. Your license is pending admin approval.',
       url: documentUrl,
       license: {
         id: license.id,

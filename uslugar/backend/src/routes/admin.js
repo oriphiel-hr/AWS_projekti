@@ -243,6 +243,134 @@ r.get('/licenses', auth(true, ['ADMIN']), async (req, res, next) => {
   }
 });
 
+// Get pending providers (waiting for approval)
+r.get('/providers/pending', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const providers = await prisma.providerProfile.findMany({
+      where: {
+        approvalStatus: 'WAITING_FOR_APPROVAL'
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            fullName: true,
+            phone: true,
+            city: true,
+            createdAt: true
+          }
+        },
+        licenses: {
+          orderBy: {
+            createdAt: 'desc'
+          }
+        },
+        categories: true,
+        legalStatus: true
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    res.json(providers);
+  } catch (e) {
+    next(e);
+  }
+});
+
+// Approve or reject provider
+r.patch('/providers/:providerId/approval', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const { providerId } = req.params;
+    const { status, notes } = req.body; // status: 'APPROVED' | 'REJECTED'
+
+    if (!status || !['APPROVED', 'REJECTED', 'INACTIVE'].includes(status)) {
+      return res.status(400).json({ error: 'Invalid status. Must be APPROVED, REJECTED, or INACTIVE' });
+    }
+
+    // Get provider with user info
+    const provider = await prisma.providerProfile.findUnique({
+      where: { id: providerId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            fullName: true
+          }
+        },
+        licenses: true
+      }
+    });
+
+    if (!provider) {
+      return res.status(404).json({ error: 'Provider not found' });
+    }
+
+    // Update approval status
+    const updatedProvider = await prisma.providerProfile.update({
+      where: { id: providerId },
+      data: {
+        approvalStatus: status,
+        updatedAt: new Date()
+      },
+      include: {
+        user: true,
+        licenses: true,
+        categories: true
+      }
+    });
+
+    // Send notification to provider
+    const message = status === 'APPROVED' 
+      ? `Vaša registracija je odobrena! Sada možete koristiti TRIAL status i prikazivati svoje usluge.`
+      : status === 'REJECTED'
+      ? `Vaša registracija je odbijena. Razlog: ${notes || 'Nisu zadovoljeni uvjeti.'}`
+      : `Vaš status je ažuriran na INACTIVE.`;
+
+    await prisma.notification.create({
+      data: {
+        title: status === 'APPROVED' ? 'Registracija odobrena!' : status === 'REJECTED' ? 'Registracija odbijena' : 'Status ažuriran',
+        message: message,
+        type: 'SYSTEM',
+        userId: provider.userId,
+        jobId: null,
+        offerId: null
+      }
+    });
+
+    // If approved, ensure they have a subscription or set them to TRIAL
+    if (status === 'APPROVED') {
+      const existingSubscription = await prisma.subscription.findUnique({
+        where: { userId: provider.userId }
+      });
+
+      if (!existingSubscription) {
+        await prisma.subscription.create({
+          data: {
+            userId: provider.userId,
+            plan: 'TRIAL',
+            status: 'ACTIVE',
+            credits: 0,
+            creditsBalance: 0,
+            // Set expiration to 30 days from now
+            expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+          }
+        });
+      }
+    }
+
+    res.json({
+      message: `Provider ${status === 'APPROVED' ? 'approved' : status === 'REJECTED' ? 'rejected' : 'updated'} successfully`,
+      provider: updatedProvider
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
 // Generic CRUD routes for all models
 const MODELS = {
   User: prisma.user,
