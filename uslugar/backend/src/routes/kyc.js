@@ -202,23 +202,27 @@ r.post('/auto-verify', async (req, res, next) => {
     switch(legalStatus.code) {
       case 'DOO':
       case 'JDOO':
-        // Sudski registar (simulacija)
+        // Sudski registar - POKUŠAVAMO provjeru, ali nema pravi API
+        console.log('[Auto-Verify] DOO/JDOO: Trebamo pravi Sudski registar API');
+        // Za sada: treba dokument (pravi API još nije integriran)
         results = {
-          verified: true,
-          needsDocument: false,
-          badges: [{ type: 'SUDSKI', verified: true }],
-          errors: []
+          verified: false,
+          needsDocument: true,
+          badges: [],
+          errors: ['Sudski registar provjera nije dostupna. Učitajte službeni izvadak.']
         };
         break;
         
       case 'SOLE_TRADER':
       case 'PAUSAL':
-        // Obrtni registar (simulacija)
+        // Obrtni registar - POKUŠAVAMO provjeru, ali nema pravi API
+        console.log('[Auto-Verify] Obrt/Pausalni: Trebamo pravi Obrtni registar API');
+        // Za sada: treba dokument (pravi API još nije integriran)
         results = {
-          verified: true,
-          needsDocument: false,
-          badges: [{ type: 'OBRTNI', verified: true }],
-          errors: []
+          verified: false,
+          needsDocument: true,
+          badges: [],
+          errors: ['Obrtni registar provjera nije dostupna. Učitajte službeni izvadak.']
         };
         break;
         
