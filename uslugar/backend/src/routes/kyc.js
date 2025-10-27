@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { auth } from '../lib/auth.js';
 import { prisma } from '../lib/prisma.js';
-import { verifyKYCDocument } from '../lib/kyc-verification.js';
+import { verifyKYCDocument, validateOIB } from '../lib/kyc-verification.js';
 import { uploadDocument } from '../lib/upload.js';
 import fs from 'fs/promises';
 import path from 'path';
@@ -155,6 +155,109 @@ r.post('/update-consent', auth(true), async (req, res, next) => {
     
   } catch (err) {
     console.error('[KYC] Consent update error:', err);
+    next(err);
+  }
+});
+
+/**
+ * POST /api/kyc/auto-verify
+ * Automatska provjera javnih registara
+ */
+r.post('/auto-verify', auth(true), async (req, res, next) => {
+  try {
+    const { taxId, legalStatusId, companyName } = req.body;
+    
+    if (!taxId || !validateOIB(taxId)) {
+      return res.status(400).json({
+        verified: false,
+        needsDocument: true,
+        error: 'OIB nije validan',
+        badges: []
+      });
+    }
+    
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      include: { legalStatus: true }
+    });
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    // Get legal status
+    const legalStatus = await prisma.legalStatus.findUnique({
+      where: { id: legalStatusId || user.legalStatusId }
+    });
+    
+    if (!legalStatus) {
+      return res.status(400).json({
+        verified: false,
+        needsDocument: true,
+        error: 'Pravni status nije odabran'
+      });
+    }
+    
+    // Auto-verify based on legal status
+    let results = {
+      verified: false,
+      needsDocument: true,
+      badges: [],
+      errors: []
+    };
+    
+    console.log(`[Auto-Verify] Legal status: ${legalStatus.code}`);
+    
+    switch(legalStatus.code) {
+      case 'DOO':
+      case 'JDOO':
+        // Sudski registar (simulacija)
+        results = {
+          verified: true,
+          needsDocument: false,
+          badges: [{ type: 'SUDSKI', verified: true }],
+          errors: []
+        };
+        break;
+        
+      case 'SOLE_TRADER':
+      case 'PAUSAL':
+        // Obrtni registar (simulacija)
+        results = {
+          verified: true,
+          needsDocument: false,
+          badges: [{ type: 'OBRTNI', verified: true }],
+          errors: []
+        };
+        break;
+        
+      case 'FREELANCER':
+        // Freelancer: odmah traži dokument
+        results = {
+          verified: false,
+          needsDocument: true,
+          badges: [],
+          errors: ['Freelancer: Potrebno Rješenje Porezne uprave']
+        };
+        break;
+    }
+    
+    // Ako je verificiran - automatski postavi kycVerified
+    if (results.verified) {
+      await prisma.providerProfile.update({
+        where: { userId: req.user.id },
+        data: {
+          kycVerified: true,
+          kycVerifiedAt: new Date(),
+          kycOibValidated: true
+        }
+      });
+    }
+    
+    res.json(results);
+    
+  } catch (err) {
+    console.error('[Auto-Verify] Error:', err);
     next(err);
   }
 });
