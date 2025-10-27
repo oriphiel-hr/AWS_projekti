@@ -546,6 +546,19 @@ async function activateSubscription(userId, plan, credits) {
       throw new Error('Credits is required and must be > 0');
     }
     
+    console.log(`[ACTIVATE SUBSCRIPTION] Checking if user exists...`);
+    
+    // Check if user exists
+    const user = await prisma.user.findUnique({
+      where: { id: userIdStr }
+    });
+    
+    if (!user) {
+      throw new Error(`User with id ${userIdStr} does not exist`);
+    }
+    
+    console.log(`[ACTIVATE SUBSCRIPTION] User found:`, user.email);
+    
     console.log(`[ACTIVATE SUBSCRIPTION] Checking for existing subscription...`);
     
     // Check if subscription exists
