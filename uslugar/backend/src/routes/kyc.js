@@ -211,12 +211,17 @@ r.post('/auto-verify', async (req, res, next) => {
           const clientId = process.env.SUDREG_CLIENT_ID;
           const clientSecret = process.env.SUDREG_CLIENT_SECRET;
           
-          if (!clientId || !clientSecret) {
-            console.log('[Auto-Verify] ❌ Missing SUDREG credentials - clientId:', !!clientId, 'clientSecret:', !!clientSecret);
-            throw new Error('API credentials not configured');
-          }
+          console.log('[Auto-Verify] 📝 Checking environment variables...');
+          console.log('[Auto-Verify] clientId exists:', !!clientId);
+          console.log('[Auto-Verify] clientSecret exists:', !!clientSecret);
           
-          console.log('[Auto-Verify] ✅ Credentials found - attempting OAuth...');
+          if (!clientId || !clientSecret) {
+            console.log('[Auto-Verify] ❌ Missing SUDREG credentials - using fallback');
+            console.log('[Auto-Verify] Will return needsDocument=true');
+            // Don't throw - let it fall through to fallback
+          } else {
+            console.log('[Auto-Verify] ✅ Credentials found - attempting OAuth...');
+          }
           
           // 1. Dohvati OAuth token
           console.log('[Auto-Verify] Requesting OAuth token...');
