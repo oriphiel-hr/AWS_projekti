@@ -631,8 +631,12 @@ async function activateSubscription(userId, plan, credits) {
     try {
       const user = await prisma.user.findUnique({ where: { id: userIdStr } });
       if (user && user.email) {
-        // Get plan price
-        const planPrice = credits * 10; // Approximate price based on credits
+        // Get actual plan price from database
+        const planDetails = await prisma.subscriptionPlan.findUnique({
+          where: { name: plan }
+        });
+        const planPrice = planDetails?.price || 0;
+        
         await sendPaymentConfirmationEmail(
           user.email,
           user.fullName || user.email,
