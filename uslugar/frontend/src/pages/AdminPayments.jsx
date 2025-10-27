@@ -5,6 +5,8 @@ export default function AdminPayments() {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     loadSessions();
@@ -51,6 +53,27 @@ export default function AdminPayments() {
     }
   };
 
+  // Filter sessions
+  const filteredSessions = sessions.filter(session => {
+    // Filter by status
+    if (filterStatus !== 'all' && session.paymentStatus !== filterStatus) {
+      return false;
+    }
+    
+    // Filter by search term
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      return (
+        (session.user?.fullName || '').toLowerCase().includes(searchLower) ||
+        (session.user?.email || session.customerEmail || '').toLowerCase().includes(searchLower) ||
+        session.plan?.toLowerCase().includes(searchLower) ||
+        session.id?.toLowerCase().includes(searchLower)
+      );
+    }
+    
+    return true;
+  });
+
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-8">
@@ -81,7 +104,7 @@ export default function AdminPayments() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
         <div className="bg-white rounded-lg shadow p-6">
           <div className="text-sm font-medium text-gray-500">Ukupno sesija</div>
-          <div className="text-3xl font-bold text-gray-900">{sessions.length}</div>
+          <div className="text-3xl font-bold text-gray-900">{filteredSessions.length} / {sessions.length}</div>
         </div>
         <div className="bg-white rounded-lg shadow p-6">
           <div className="text-sm font-medium text-gray-500">Uspješno plaćeno</div>
@@ -99,6 +122,42 @@ export default function AdminPayments() {
         </div>
       </div>
 
+      {/* Filters */}
+      <div className="bg-white rounded-lg shadow p-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Search */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Pretraga
+            </label>
+            <input
+              type="text"
+              placeholder="Ime, email, plan, session ID..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+
+          {/* Status Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Status
+            </label>
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="all">Svi statusi</option>
+              <option value="paid">Plaćeno</option>
+              <option value="unpaid">Nije plaćeno</option>
+              <option value="complete">Završeno</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
       {/* Sessions Table */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="overflow-x-auto">
@@ -109,7 +168,7 @@ export default function AdminPayments() {
                   Korisnik
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Plan
+                  Paket
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
@@ -126,12 +185,21 @@ export default function AdminPayments() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {sessions.map((session) => (
+              {filteredSessions.map((session) => (
                 <tr key={session.id}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm">
                       <div className="font-medium text-gray-900">
-                        {session.user?.fullName || session.customerEmail || 'N/A'}
+                        {session.user ? (
+                          <a 
+                            href={`#user-profile?id=${session.userId}`}
+                            className="text-blue-600 hover:text-blue-800 hover:underline"
+                          >
+                            {session.user.fullName || session.user.email}
+                          </a>
+                        ) : (
+                          <span>{session.customerEmail || 'N/A'}</span>
+                        )}
                       </div>
                       <div className="text-gray-500 text-xs">
                         {session.user?.email || session.customerEmail || 'N/A'}
@@ -140,8 +208,12 @@ export default function AdminPayments() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        {session.plan}
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        session.plan === 'PRO' ? 'bg-purple-100 text-purple-800' :
+                        session.plan === 'PREMIUM' ? 'bg-blue-100 text-blue-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {session.plan || 'N/A'}
                       </span>
                     </div>
                     <div className="text-xs text-gray-500 mt-1">
