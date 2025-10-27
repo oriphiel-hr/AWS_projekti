@@ -216,26 +216,9 @@ r.post('/auto-verify', async (req, res, next) => {
           console.log('[Auto-Verify] clientSecret exists:', !!clientSecret);
           
           if (!clientId || !clientSecret) {
-            console.log('[Auto-Verify] ❌ Missing SUDREG credentials - using mock fallback');
-            
-            // MOCK FALLBACK za poznate OIB-ove
-            const knownCompanies = {
-              '88070789896': 'Oriphiel d.o.o.'
-            };
-            
-            if (knownCompanies[taxId]) {
-              console.log('[Auto-Verify] ✅ Known company - returning SUCCESS (mock)');
-              results = {
-                verified: true,
-                needsDocument: false,
-                badges: [{ type: 'SUDSKI', verified: true, companyName: knownCompanies[taxId] }],
-                errors: []
-              };
-              break;
-            }
-            
-            // Unknown OIB without credentials
-            throw new Error('API credentials not configured');
+            console.log('[Auto-Verify] ❌ Missing SUDREG credentials');
+            console.log('[Auto-Verify] Will fall through to document upload required');
+            // Don't throw - let it fall through to needsDocument=true
           } else {
             console.log('[Auto-Verify] ✅ Credentials found - attempting OAuth...');
             
@@ -300,23 +283,9 @@ r.post('/auto-verify', async (req, res, next) => {
           console.log('[Auto-Verify] Sudski registar did not confirm active status');
           
         } catch (apiError) {
-          console.log('[Auto-Verify] Sudski registar API error:', apiError.message);
-          
-          // FALLBACK: Ako API ne radi, koristi mock za poznate OIB-ove
-          const knownCompanies = {
-            '88070789896': 'Oriphiel d.o.o.'
-          };
-          
-          if (knownCompanies[taxId]) {
-            console.log('[Auto-Verify] 🎯 API failed for known company - returning SUCCESS (mock)');
-            results = {
-              verified: true,
-              needsDocument: false,
-              badges: [{ type: 'SUDSKI', verified: true, companyName: knownCompanies[taxId] }],
-              errors: []
-            };
-            break;
-          }
+          console.log('[Auto-Verify] ❌ Sudski registar API error:', apiError.message);
+          console.log('[Auto-Verify] Stack:', apiError.stack);
+          // Let it fall through to needsDocument=true
         }
         
         // Fallback: treba dokument
