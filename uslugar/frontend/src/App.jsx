@@ -311,10 +311,18 @@ export default function App(){
 
           {/* Admin Panel */}
           <button
-            className={'px-3 py-2 border rounded ml-auto ' + (tab==='admin' ? 'bg-gray-900 text-white' : 'hover:bg-gray-100')}
+            className={'px-3 py-2 border rounded ml-2 ' + (tab==='admin' ? 'bg-gray-900 text-white' : 'hover:bg-gray-100')}
             onClick={() => setTab('admin')}
           >
             ⚙️ Admin Panel
+          </button>
+          
+          {/* Admin Payments */}
+          <button
+            className={'px-3 py-2 border rounded ml-2 ' + (tab==='admin-payments' ? 'bg-gray-900 text-white' : 'hover:bg-gray-100')}
+            onClick={() => setTab('admin-payments')}
+          >
+            💰 Plaćanja
           </button>
         </div>
 
@@ -519,6 +527,12 @@ export default function App(){
                 onClick={() => { setTab('admin'); setIsMobileMenuOpen(false); }}
               >
                 ⚙️ Admin Panel
+              </button>
+              <button
+                className={'w-full text-left px-3 py-2 rounded ' + (tab==='admin-payments' ? 'bg-gray-900 text-white' : 'hover:bg-gray-100')}
+                onClick={() => { setTab('admin-payments'); setIsMobileMenuOpen(false); }}
+              >
+                💰 Plaćanja
               </button>
             </div>
           </div>
