@@ -29,6 +29,12 @@ export default function ProviderRegister({ onSuccess }) {
   const [emailError, setEmailError] = useState('');
   const [categories, setCategories] = useState([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
+  
+  // Auto-verification state
+  const [autoVerifying, setAutoVerifying] = useState(false);
+  const [verificationResult, setVerificationResult] = useState(null);
+  const [kycDocument, setKycDocument] = useState(null);
+  const [publicConsent, setPublicConsent] = useState(false);
 
   // Učitaj kategorije
   useEffect(() => {
@@ -45,6 +51,45 @@ export default function ProviderRegister({ onSuccess }) {
     };
     loadCategories();
   }, []);
+
+  // Auto-verify kada se unese OIB i odabere legal status
+  useEffect(() => {
+    const autoVerify = async () => {
+      if (!formData.taxId || formData.taxId.length !== 11 || !formData.legalStatusId) {
+        return;
+      }
+      
+      // Validiraj OIB format
+      if (!/^\d{11}$/.test(formData.taxId)) {
+        return;
+      }
+      
+      setAutoVerifying(true);
+      setError('');
+      
+      try {
+        const response = await api.post('/kyc/auto-verify', {
+          taxId: formData.taxId,
+          legalStatusId: formData.legalStatusId,
+          companyName: formData.companyName
+        });
+        
+        setVerificationResult(response.data);
+        console.log('[Auto-Verify] Result:', response.data);
+        
+      } catch (err) {
+        console.error('[Auto-Verify] Error:', err);
+        // Ignore errors - just continue registration
+        setVerificationResult(null);
+      } finally {
+        setAutoVerifying(false);
+      }
+    };
+    
+    // Debounce - čekaj 500ms nakon zadnjeg unosa
+    const timer = setTimeout(autoVerify, 500);
+    return () => clearTimeout(timer);
+  }, [formData.taxId, formData.legalStatusId, formData.companyName]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -566,24 +611,101 @@ export default function ProviderRegister({ onSuccess }) {
           </div>
         </div>
 
+        {/* Auto-Verification Status */}
+        {autoVerifying && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-center space-x-3">
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+              <p className="text-sm text-blue-900">
+                🔍 Brzo provjeravamo vaš OIB u javnim registrima. Obično traje nekoliko sekundi.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Verification Success */}
+        {verificationResult?.verified && !autoVerifying && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <div className="flex items-start space-x-3">
+              <span className="text-green-600 text-xl">✓</span>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-green-900 mb-1">
+                  Verificiran – {verificationResult.badges.map(b => b.type).join(', ')}
+                </p>
+                <p className="text-xs text-green-700">
+                  Potvrđeno u javnim registrima. Nije potreban dokument.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Document Needed */}
+        {verificationResult?.needsDocument && !autoVerifying && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div className="flex items-start space-x-3">
+              <span className="text-yellow-600 text-xl">⚠️</span>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-yellow-900 mb-2">
+                  Nismo mogli potvrditi podatke iz registra
+                </p>
+                <p className="text-xs text-yellow-700 mb-4">
+                  Učitajte službeni izvadak (PDF/screenshot) – prihvaćamo i fotografiju ekrana.
+                </p>
+                
+                {/* Upload Dokumenta */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-2">
+                    Učitaj izvadak iz registra (PDF/JPG/PNG)
+                  </label>
+                  <input
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={(e) => setKycDocument(e.target.files[0])}
+                    className="w-full text-sm text-gray-600 border border-gray-300 rounded-lg p-2"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Opcionalno – možete dodati i nakon registracije
+                  </p>
+                </div>
+                
+                <div className="mt-3">
+                  <label className="flex items-start">
+                    <input
+                      type="checkbox"
+                      checked={publicConsent}
+                      onChange={(e) => setPublicConsent(e.target.checked)}
+                      className="mt-1 h-4 w-4 text-green-600 rounded border-gray-300"
+                    />
+                    <span className="ml-2 text-xs text-gray-700">
+                      Dopuštam prikaz osnovnih podataka (naziv/grad/status) na profilu.
+                    </span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* KYC-lite Verifikacija za Freelancere - Volonterski */}
         {(() => {
           const selectedStatus = legalStatuses.find(s => s.id === formData.legalStatusId);
-          const isFreelancer = selectedStatus?.code === 'FREELANCER' || selectedStatus?.code === 'SOLE_TRADER';
+          const isFreelancer = selectedStatus?.code === 'FREELANCER';
           
-          if (!isFreelancer) return null;
+          if (!isFreelancer || verificationResult?.verified) return null;
           
           return (
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
               <h4 className="text-lg font-semibold text-gray-900 mb-2">
-                🔒 KYC-lite Verifikacija (Opcionalno)
+                📄 Freelancer: Potrebno Rješenje Porezne uprave
               </h4>
               <p className="text-sm text-gray-700 mb-4">
-                Učitajte Rješenje Porezne uprave radi lakše provjerljivosti. 
-                Možete to učiniti i nakon registracije.
+                Ako nemate obrt ni pravnu osobu, učitajte Rješenje Porezne uprave (RPO).
+                <br />
+                <strong>Ovo nije javna objava;</strong> koristimo samo za provjeru.
               </p>
-              <div className="text-xs text-gray-600 mb-2">
-                💡 <strong>Savjet:</strong> Ovo ćete moći dodati nakon registracije u sekciji Pružatelj usluga.
+              <div className="text-xs text-blue-600 mb-2">
+                💡 Možete to dodati i nakon registracije u sekciji Pružatelj usluga.
               </div>
             </div>
           );
