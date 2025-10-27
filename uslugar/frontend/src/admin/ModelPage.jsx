@@ -159,6 +159,67 @@ function Textarea({label, value, onChange, placeholder}){
   )
 }
 
+// Helper function to render cell value with links
+function renderCellValue(value, colName) {
+  const isObject = typeof value === 'object' && value !== null
+  const isLong = typeof value === 'string' && value.length > 50
+  
+  if (isObject) {
+    // Check if it's a user object
+    if (colName === 'user' && value.id && (value.email || value.fullName)) {
+      return (
+        <a 
+          href={`#admin-User?id=${value.id}`}
+          className="text-blue-600 hover:text-blue-800 hover:underline"
+        >
+          👤 {value.fullName || value.email || value.id}
+        </a>
+      )
+    }
+    
+    // Check if it's a job object
+    if (colName === 'job' && value.id && value.title) {
+      return (
+        <a 
+          href={`#admin-Job?id=${value.id}`}
+          className="text-green-600 hover:text-green-800 hover:underline"
+        >
+          📋 {value.title}
+        </a>
+      )
+    }
+    
+    // Check if it's an offer object
+    if (colName === 'offer' && value.id) {
+      return (
+        <a 
+          href={`#admin-Offer?id=${value.id}`}
+          className="text-purple-600 hover:text-purple-800 hover:underline"
+        >
+          💰 Offer {value.id.slice(-8)}
+        </a>
+      )
+    }
+    
+    // Check if it's category
+    if (colName === 'category' && value.id && value.name) {
+      return (
+        <a 
+          href={`#admin-Category?id=${value.id}`}
+          className="text-indigo-600 hover:text-indigo-800 hover:underline"
+        >
+          📂 {value.name}
+        </a>
+      )
+    }
+    
+    // For other objects, just show JSON
+    return JSON.stringify(value)
+  }
+  
+  return String(value)
+}
+
 export default function ModelPage({ model }){
   const [items, setItems] = useState([])
   const [total, setTotal] = useState(0)
@@ -558,24 +619,25 @@ export default function ModelPage({ model }){
                     const value = it[c]
                     const isLong = typeof value === 'string' && value.length > 50
                     const isObject = typeof value === 'object' && value !== null
-                    const displayValue = isObject ? JSON.stringify(value) : String(value)
+                    const displayValue = renderCellValue(value, c)
+                    const isComplexObject = isObject && !(typeof displayValue === 'object')
                     
                     return (
                       <td 
                         key={c} 
                         className="p-3 align-top border-b whitespace-nowrap"
                         style={{ 
-                          maxWidth: isLong || isObject ? '400px' : 'none',
+                          maxWidth: (isLong || (isObject && isComplexObject)) ? '400px' : 'none',
                           minWidth: '120px'
                         }}
                       >
                         <div className="group relative">
-                          <div className={isLong || isObject ? "truncate" : ""}>
+                          <div className={isLong || (isObject && isComplexObject) ? "truncate" : ""}>
                             {displayValue}
                           </div>
-                          {(isLong || isObject) && (
+                          {(isLong || (isObject && isComplexObject)) && (
                             <div className="hidden group-hover:block absolute z-10 bg-gray-900 text-white text-xs rounded p-2 shadow-lg max-w-md break-all left-0 top-full mt-1">
-                              {displayValue}
+                              {typeof displayValue === 'string' ? displayValue : JSON.stringify(value)}
                             </div>
                           )}
                         </div>
