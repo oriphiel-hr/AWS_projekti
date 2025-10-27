@@ -566,6 +566,29 @@ export default function ProviderRegister({ onSuccess }) {
           </div>
         </div>
 
+        {/* KYC-lite Verifikacija za Freelancere - Volonterski */}
+        {(() => {
+          const selectedStatus = legalStatuses.find(s => s.id === formData.legalStatusId);
+          const isFreelancer = selectedStatus?.code === 'FREELANCER' || selectedStatus?.code === 'SOLE_TRADER';
+          
+          if (!isFreelancer) return null;
+          
+          return (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+              <h4 className="text-lg font-semibold text-gray-900 mb-2">
+                🔒 KYC-lite Verifikacija (Opcionalno)
+              </h4>
+              <p className="text-sm text-gray-700 mb-4">
+                Pretplatite se na upload Rješenja Porezne uprave za provjerljivost. 
+                Možete to učiniti i nakon registracije.
+              </p>
+              <div className="text-xs text-gray-600 mb-2">
+                💡 <strong>Savjet:</strong> Ovo ćete moći dodati nakon registracije u Provider Profile sekciji.
+              </div>
+            </div>
+          );
+        })()}
+
         <button
           type="submit"
           disabled={loading}
