@@ -18,7 +18,11 @@ export default function AdminPayments() {
       setError(null);
     } catch (err) {
       console.error('Error loading sessions:', err);
-      setError('Failed to load payment sessions');
+      if (err.response?.status === 401 || err.response?.status === 403) {
+        setError('Nemate pristup admin panelu. Morate biti ulogirani kao admin.');
+      } else {
+        setError('Failed to load payment sessions');
+      }
     } finally {
       setLoading(false);
     }
