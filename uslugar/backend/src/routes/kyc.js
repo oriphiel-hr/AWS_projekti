@@ -206,6 +206,21 @@ r.post('/auto-verify', async (req, res, next) => {
         // Sudski registar - POKUŠAVAMO provjeru
         console.log('[Auto-Verify] DOO/JDOO: Pokušavam provjeriti Sudski registar...');
         
+        // TEMP: MOCK SUCCESS za testiranje frontend-a
+        // TODO: Remove this when real API is added
+        const mockSuccessForTesting = process.env.ENABLE_MOCK_AUTO_VERIFY === 'true';
+        
+        if (mockSuccessForTesting) {
+          console.log('[Auto-Verify] 🧪 MOCK MODE: Returning SUCCESS for DOO');
+          results = {
+            verified: true,
+            needsDocument: false,
+            badges: [{ type: 'SUDSKI', verified: true, companyName: companyName || 'Društvo s ograničenom odgovornošću' }],
+            errors: []
+          };
+          break;
+        }
+        
         try {
           // API Sudskog registra: https://sudreg.pravosudje.hr/
           // Treba: Ocp-Apim-Subscription-Key header
