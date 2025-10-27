@@ -211,6 +211,7 @@ model Job {
   leadPurchases      LeadPurchase[]
   creditTransactions CreditTransaction[] @relation("JobTransactions")
   leadQueue          LeadQueue[]         @relation("JobQueue")
+  notifications      Notification[]
 }
 
 model Offer {
@@ -226,6 +227,7 @@ model Offer {
   userId        String
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
+  notifications Notification[]
 }
 
 model Review {
@@ -296,6 +298,8 @@ model Notification {
   userId    String
   jobId     String? // Povezano s poslom
   offerId   String? // Povezano s ponudom
+  job       Job?             @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  offer     Offer?           @relation(fields: [offerId], references: [id], onDelete: Cascade)
   createdAt DateTime         @default(now())
 }
 
