@@ -166,6 +166,7 @@ export default function ModelPage({ model }){
   const [take, setTake] = useState(25)
   const [where, setWhere] = useState('')
   const [include, setInclude] = useState('')
+  const [searchTerm, setSearchTerm] = useState('')
   const [editItem, setEditItem] = useState(null) // null=zatvoreno, {}=create, obj=edit
   const [rawJson, setRawJson] = useState('{}')
   const [loading, setLoading] = useState(false)
@@ -199,6 +200,20 @@ export default function ModelPage({ model }){
     load() 
   }, [skip, take])
 
+  // Filter items by search term
+  const filteredItems = useMemo(() => {
+    if (!searchTerm) return items;
+    
+    const searchLower = searchTerm.toLowerCase();
+    return items.filter(item => {
+      return Object.values(item).some(value => {
+        if (value === null || value === undefined) return false;
+        const strValue = typeof value === 'object' ? JSON.stringify(value) : String(value);
+        return strValue.toLowerCase().includes(searchLower);
+      });
+    });
+  }, [items, searchTerm]);
+
   // Generiraj kolone čak i kad nema podataka (iz prve stavke ili default polja)
   const cols = useMemo(() => {
     if(items.length === 0) {
@@ -213,6 +228,37 @@ export default function ModelPage({ model }){
   
   const totalPages = Math.ceil(total / take)
   const currentPage = Math.floor(skip / take) + 1
+
+  // Export functions
+  const exportToCSV = () => {
+    const headers = cols.join(',');
+    const rows = filteredItems.map(item => 
+      cols.map(col => {
+        const val = item[col];
+        if (val === null || val === undefined) return '';
+        if (typeof val === 'object') return JSON.stringify(val);
+        return String(val).replace(/"/g, '""');
+      }).join(',')
+    );
+    const csv = [headers, ...rows].join('\n');
+    
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${model}_export_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+  };
+
+  const exportToJSON = () => {
+    const data = JSON.stringify(filteredItems, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${model}_export_${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+  };
 
   function openCreate(){
     const example = MODEL_EXAMPLES[model] || {}
@@ -268,6 +314,11 @@ export default function ModelPage({ model }){
           <h2 className="text-2xl font-bold text-gray-900">{model}</h2>
           <p className="text-sm text-gray-600 mt-1">
             Ukupno <span className="font-semibold text-gray-900">{total}</span> zapisa
+            {searchTerm && (
+              <span className="ml-2">
+                | Filtrirano: <span className="font-semibold text-blue-700">{filteredItems.length}</span>
+              </span>
+            )}
             {total > 0 && (
               <span className="ml-2">
                 | Prikazujem {skip + 1}-{Math.min(skip + take, total)} od {total}
@@ -275,13 +326,37 @@ export default function ModelPage({ model }){
             )}
           </p>
         </div>
-        <button onClick={openCreate} className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-medium">
-          + Kreiraj novi
-        </button>
+        <div className="flex gap-2">
+          <button 
+            onClick={exportToCSV}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+          >
+            📄 CSV
+          </button>
+          <button 
+            onClick={exportToJSON}
+            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium"
+          >
+            📄 JSON
+          </button>
+          <button onClick={openCreate} className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-medium">
+            + Kreiraj novi
+          </button>
+        </div>
       </div>
 
       {/* Controls */}
-      <div className="flex flex-wrap items-end gap-3">
+      <div className="flex flex-wrap items-end gap-3 mb-4">
+        <label className="block flex-1 min-w-64">
+          <div className="text-sm font-medium text-gray-700 mb-1">Pretraga</div>
+          <input
+            type="text"
+            placeholder="Traži u svim poljima..."
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
+          />
+        </label>
         <label className="block">
           <div className="text-sm font-medium text-gray-700 mb-1">Zapisa po stranici</div>
           <select 
@@ -298,6 +373,40 @@ export default function ModelPage({ model }){
         <button onClick={load} className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800">
           🔄 Reload
         </button>
+      </div>
+
+      {/* Stats */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div>
+              <div className="text-sm text-gray-600">
+                {searchTerm ? 'Filtrirano' : 'Prikazano'}
+              </div>
+              <div className="text-2xl font-bold text-blue-700">
+                {searchTerm ? `${filteredItems.length} / ${items.length}` : items.length}
+              </div>
+            </div>
+            <div>
+              <div className="text-sm text-gray-600">Ukupno</div>
+              <div className="text-2xl font-bold text-gray-700">{total}</div>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button 
+              onClick={exportToCSV}
+              className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
+            >
+              📄 Export CSV
+            </button>
+            <button 
+              onClick={exportToJSON}
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+            >
+              📄 Export JSON
+            </button>
+          </div>
+        </div>
       </div>
 
       <details className="border rounded p-3 bg-gray-50">
@@ -406,26 +515,44 @@ export default function ModelPage({ model }){
             </tr>
           </thead>
           <tbody>
-            {items.length === 0 ? (
+            {filteredItems.length === 0 ? (
               <tr>
                 <td colSpan={cols.length + 1} className="p-8 text-center">
                   <div className="flex flex-col items-center justify-center text-gray-500">
-                    <svg className="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                    </svg>
-                    <p className="text-lg font-medium mb-2">Nema zapisa</p>
-                    <p className="text-sm mb-4">Još nema podataka za model {model}</p>
-                    <button 
-                      onClick={openCreate}
-                      className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
-                    >
-                      + Kreiraj prvi zapis
-                    </button>
+                    {searchTerm ? (
+                      <>
+                        <svg className="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        <p className="text-lg font-medium mb-2">Nema rezultata</p>
+                        <p className="text-sm mb-4">Nema zapisa koji odgovaraju pretrazi "{searchTerm}"</p>
+                        <button 
+                          onClick={() => setSearchTerm('')}
+                          className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+                        >
+                          Očisti pretragu
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                        </svg>
+                        <p className="text-lg font-medium mb-2">Nema zapisa</p>
+                        <p className="text-sm mb-4">Još nema podataka za model {model}</p>
+                        <button 
+                          onClick={openCreate}
+                          className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
+                        >
+                          + Kreiraj prvi zapis
+                        </button>
+                      </>
+                    )}
                   </div>
                 </td>
               </tr>
             ) : (
-              items.map(it => (
+              filteredItems.map(it => (
                 <tr key={it.id} className="odd:bg-white even:bg-gray-50 hover:bg-blue-50">
                   {cols.map(c => {
                     const value = it[c]
