@@ -5,6 +5,7 @@ import { verifyKYCDocument, validateOIB } from '../lib/kyc-verification.js';
 import { uploadDocument } from '../lib/upload.js';
 import fs from 'fs/promises';
 import path from 'path';
+import axios from 'axios';
 
 const r = Router();
 
@@ -202,27 +203,120 @@ r.post('/auto-verify', async (req, res, next) => {
     switch(legalStatus.code) {
       case 'DOO':
       case 'JDOO':
-        // Sudski registar - POKUŠAVAMO provjeru, ali nema pravi API
-        console.log('[Auto-Verify] DOO/JDOO: Trebamo pravi Sudski registar API');
-        // Za sada: treba dokument (pravi API još nije integriran)
+        // Sudski registar - POKUŠAVAMO provjeru
+        console.log('[Auto-Verify] DOO/JDOO: Pokušavam provjeriti Sudski registar...');
+        
+        try {
+          // API Sudskog registra: https://sudreg.pravosudje.hr/
+          // Treba: Ocp-Apim-Subscription-Key header
+          // Endpoint: https://sudreg.pravosudje.hr/api/Surad/{oib}
+          
+          const sudResponse = await axios.get(`https://sudreg.pravosudje.hr/api/Surad/${taxId}`, {
+            headers: {
+              'Ocp-Apim-Subscription-Key': process.env.SUDREG_API_KEY || '',
+              'Accept': 'application/json'
+            }
+          }).catch(() => null);
+          
+          if (sudResponse && sudResponse.status === 200) {
+            const sudData = sudResponse.data;
+            console.log('[Auto-Verify] Sudski registar OK:', sudData);
+            
+            // Provjeri da li je aktivan
+            if (sudData.STATUS === 'AKTIVAN' && sudData.RAZLOG_PROMJENE?.toUpperCase() !== 'UKLIJUČEN U OBRIS') {
+              results = {
+                verified: true,
+                needsDocument: false,
+                badges: [{ type: 'SUDSKI', verified: true, companyName: sudData.NAZIV }],
+                errors: []
+              };
+              console.log('[Auto-Verify] ✅ VERIFIED via Sudski registar');
+              break;
+            }
+          }
+        } catch (apiError) {
+          console.log('[Auto-Verify] Sudski registar API nije dostupan:', apiError.message);
+        }
+        
+        // Fallback: treba dokument
         results = {
           verified: false,
           needsDocument: true,
           badges: [],
-          errors: ['Sudski registar provjera nije dostupna. Učitajte službeni izvadak.']
+          errors: ['Sudski registar provjera nije dostupna. Učitajte službeni izvadak iz Sudskog registra.']
         };
         break;
         
       case 'SOLE_TRADER':
       case 'PAUSAL':
-        // Obrtni registar - POKUŠAVAMO provjeru, ali nema pravi API
-        console.log('[Auto-Verify] Obrt/Pausalni: Trebamo pravi Obrtni registar API');
-        // Za sada: treba dokument (pravi API još nije integriran)
+        // Obrtni registar - POKUŠAVAMO provjeru
+        console.log('[Auto-Verify] Obrt/Pausalni: Pokušavam provjeriti Obrtni registar...');
+        
+        try {
+          // Obrtni registar: https://www.obrti.hr/pretraga
+          // Opcija 1: Web scraping (legalno, javni podaci)
+          // Opcija 2: API ako postoji
+          
+          // Za sada: provjeriti da li OIB postoji u našoj bazi (provjera iz profila)
+          const existingOIB = await prisma.user.findFirst({
+            where: {
+              taxId: taxId,
+              role: 'PROVIDER'
+            },
+            include: {
+              providerProfile: true
+            }
+          });
+          
+          if (existingOIB && existingOIB.providerProfile?.kycVerified) {
+            console.log('[Auto-Verify] OIB već verificiran u našoj bazi');
+            results = {
+              verified: true,
+              needsDocument: false,
+              badges: [{ type: 'OBRTNI', verified: true }],
+              errors: []
+            };
+            console.log('[Auto-Verify] ✅ VERIFIED via existing verification');
+            break;
+          }
+          
+          // VIES provjera ako postoji PDV ID
+          if (user?.pdvId && user.pdvId.startsWith('HR')) {
+            try {
+              console.log('[Auto-Verify] Checking VIES for PDV:', user.pdvId);
+              const viesResponse = await axios.post('http://ec.europa.eu/taxation_customs/vies/checkVatService', {
+                headers: {
+                  'Content-Type': 'application/xml'
+                },
+                data: `<?xml version="1.0"?>
+                  <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                    <soap:Body>
+                      <checkVat xmlns="urn:ec.europa.eu:taxud:vies:services:checkVat:types">
+                        <countryCode>HR</countryCode>
+                        <vatNumber>${user.pdvId.substring(2)}</vatNumber>
+                      </checkVat>
+                    </soap:Body>
+                  </soap:Envelope>`
+              }).catch(() => null);
+              
+              if (viesResponse && viesResponse.data) {
+                console.log('[Auto-Verify] VIES verified');
+              }
+            } catch (viesError) {
+              console.log('[Auto-Verify] VIES nije dostupan:', viesError.message);
+            }
+          }
+          
+        } catch (apiError) {
+          console.log('[Auto-Verify] Obrtni registar API nije dostupan:', apiError.message);
+        }
+        
+        // Fallback: treba dokument
         results = {
           verified: false,
           needsDocument: true,
           badges: [],
-          errors: ['Obrtni registar provjera nije dostupna. Učitajte službeni izvadak.']
+          errors: ['Obrtni registar provjera nije dostupna. Učitajte službeni izvadak iz Obrtnog registra.']
         };
         break;
         
