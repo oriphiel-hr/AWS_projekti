@@ -288,10 +288,60 @@ function extractNameFromText(text) {
 }
 
 /**
- * Provjeri Obrtni registar (simulacija - treba integrirati pravi API)
+ * Provjeri Sudski registar (d.o.o., j.d.o.o.)
+ * @param {string} oib - OIB za provjeru
+ * @param {string} companyName - Naziv firme
+ * @returns {Promise<{verified: boolean, active: boolean, data: object}>}
+ */
+export async function checkSudskiRegistar(oib, companyName) {
+  try {
+    console.log('[Sudski Registar] Checking for OIB:', oib, 'Company:', companyName);
+    
+    // TODO: Integrirati pravi API za Sudski registar
+    // Example: https://sudreg.pravosudje.hr/SudregApi/
+    // Ili scraping sa https://sudreg.pravosudje.hr/
+    
+    // Simulacija - u produkciji bi koristili pravi API
+    const response = await fetch(`https://sudreg.pravosudje.hr/api/company?oib=${oib}`, {
+      headers: { 'Accept': 'application/json' }
+    }).catch(() => ({ status: 404 }));
+    
+    if (response.status === 200) {
+      const data = await response.json();
+      return {
+        verified: true,
+        active: data.status === 'AKTIVAN',
+        data: {
+          oib: data.oib,
+          name: data.name,
+          address: data.address,
+          status: data.status,
+          registrationNumber: data.registrationNumber,
+          taxNumber: data.taxNumber
+        }
+      };
+    }
+    
+    // Fallback: nemoguće provjeriti
+    console.log('[Sudski Registar] Not found or API unavailable');
+    return {
+      verified: false,
+      active: false,
+      data: null,
+      note: 'API unavailable'
+    };
+    
+  } catch (error) {
+    console.error('[Sudski Registar] Error:', error);
+    return { verified: false, active: false, data: null, error: error.message };
+  }
+}
+
+/**
+ * Provjeri Obrtni registar (Obrt, Paušalni obrt)
  * @param {string} oib - OIB za provjeru
  * @param {string} companyName - Naziv obrta
- * @returns {Promise<{exists: boolean, data: object}>}
+ * @returns {Promise<{verified: boolean, active: boolean, data: object}>}
  */
 export async function checkObrtniRegistar(oib, companyName) {
   try {
