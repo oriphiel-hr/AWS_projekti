@@ -160,10 +160,10 @@ r.post('/update-consent', auth(true), async (req, res, next) => {
 });
 
 /**
- * POST /api/kyc/auto-verify
+ * POST /api/kyc/auto-verify (PUBLIC - može se koristiti prije registracije)
  * Automatska provjera javnih registara
  */
-r.post('/auto-verify', auth(true), async (req, res, next) => {
+r.post('/auto-verify', async (req, res, next) => {
   try {
     const { taxId, legalStatusId, companyName } = req.body;
     
@@ -176,18 +176,9 @@ r.post('/auto-verify', auth(true), async (req, res, next) => {
       });
     }
     
-    const user = await prisma.user.findUnique({
-      where: { id: req.user.id },
-      include: { legalStatus: true }
-    });
-    
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    
     // Get legal status
     const legalStatus = await prisma.legalStatus.findUnique({
-      where: { id: legalStatusId || user.legalStatusId }
+      where: { id: legalStatusId }
     });
     
     if (!legalStatus) {
@@ -242,8 +233,9 @@ r.post('/auto-verify', auth(true), async (req, res, next) => {
         break;
     }
     
-    // Ako je verificiran - automatski postavi kycVerified
-    if (results.verified) {
+    // Ako je verificiran i korisnik je logiran - postavi kycVerified
+    // (kod se može koristiti i prije registracije za provjeru)
+    if (results.verified && req.user) {
       await prisma.providerProfile.update({
         where: { userId: req.user.id },
         data: {
