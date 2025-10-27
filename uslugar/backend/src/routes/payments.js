@@ -39,7 +39,8 @@ r.get('/config', (req, res) => {
 r.post('/create-checkout', auth(true, ['PROVIDER']), async (req, res, next) => {
   try {
     console.log('[CREATE-CHECKOUT] Endpoint called');
-    console.log('[CREATE-CHECKOUT] req.user:', req.user ? 'EXISTS' : 'MISSING');
+    console.log('[CREATE-CHECKOUT] req.user:', JSON.stringify(req.user));
+    console.log('[CREATE-CHECKOUT] req.user exists:', req.user ? 'YES' : 'NO');
     
     // Check if Stripe is configured
     if (!stripe || !process.env.STRIPE_SECRET_KEY) {
