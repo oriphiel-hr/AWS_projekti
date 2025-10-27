@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Layout from './Layout'
 import ModelPage from './ModelPage'
 import Login from './Login'
+import AdminPayments from '../pages/AdminPayments'
 import api from '../api'
 
 // Model nazivi u PascalCase kako backend očekuje
@@ -87,6 +88,7 @@ export default function AdminRouter(){
           {MODELS.map(m => (
             <Route key={m} path={`/admin/${m}`} element={<ModelPage model={m} />} />
           ))}
+          <Route path="/admin/payments" element={<AdminPayments />} />
         </Route>
       </Routes>
     </BrowserRouter>
