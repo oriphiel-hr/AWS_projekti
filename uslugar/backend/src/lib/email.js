@@ -379,11 +379,42 @@ export const sendAnonymousJobConfirmationEmail = async (toEmail, contactName, jo
   }
 };
 
+// Get plan-specific features
+const getPlanFeatures = (planName) => {
+  const features = {
+    'BASIC': [
+      '10 ekskluzivnih leadova mjesečno',
+      'Pregled leadova bez konkurencije',
+      'Kontakt direktno klijenta',
+      'Email notifikacije za nove leadove'
+    ],
+    'PREMIUM': [
+      '25 ekskluzivnih leadova mjesečno',
+      'Pregled leadova bez konkurencije',
+      'Kontakt direktno klijenta',
+      'AI-kvaliteta leadova',
+      'ROI statistika'
+    ],
+    'PRO': [
+      '50 ekskluzivnih leadova mjesečno',
+      'Pregled leadova bez konkurencije',
+      'Kontakt direktno klijenta',
+      'AI-kvaliteta leadova',
+      'ROI statistika',
+      'Prioritetni support'
+    ]
+  };
+  
+  return features[planName] || features['BASIC'];
+};
+
 export const sendPaymentConfirmationEmail = async (toEmail, fullName, planName, amount, credits) => {
   if (!transporter) {
     console.log('SMTP not configured, skipping payment confirmation email:', toEmail);
     return;
   }
+
+  const features = getPlanFeatures(planName);
 
   try {
     await transporter.sendMail({
@@ -424,10 +455,7 @@ export const sendPaymentConfirmationEmail = async (toEmail, fullName, planName, 
             <div style="background-color: #FFF3CD; border-left: 4px solid #FFC107; padding: 20px; margin: 30px 0; border-radius: 5px;">
               <p style="font-size: 15px; color: #856404; margin: 0;">
                 <strong>💡 Sada možete:</strong><br>
-                • Pregledavati ekskluzivne leadove bez konkurencije<br>
-                • Kontaktirati direktno klijente<br>
-                • Koristiti AI-kvalitetu leadova<br>
-                • Pratiti ROI statistiku
+                ${features.map(f => `• ${f}`).join('<br>')}
               </p>
             </div>
             
