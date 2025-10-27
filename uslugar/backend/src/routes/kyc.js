@@ -212,9 +212,11 @@ r.post('/auto-verify', async (req, res, next) => {
           const clientSecret = process.env.SUDREG_CLIENT_SECRET;
           
           if (!clientId || !clientSecret) {
-            console.log('[Auto-Verify] Sudski registar API: Missing credentials');
+            console.log('[Auto-Verify] ❌ Missing SUDREG credentials - clientId:', !!clientId, 'clientSecret:', !!clientSecret);
             throw new Error('API credentials not configured');
           }
+          
+          console.log('[Auto-Verify] ✅ Credentials found - attempting OAuth...');
           
           // 1. Dohvati OAuth token
           console.log('[Auto-Verify] Requesting OAuth token...');
