@@ -101,21 +101,27 @@ export default function AdminPayments() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
         <div className="bg-white rounded-lg shadow p-6">
-          <div className="text-sm font-medium text-gray-500">Ukupno sesija</div>
+          <div className="text-sm font-medium text-gray-500">Prikaženo sesija</div>
           <div className="text-3xl font-bold text-gray-900">{filteredSessions.length} / {sessions.length}</div>
         </div>
         <div className="bg-white rounded-lg shadow p-6">
-          <div className="text-sm font-medium text-gray-500">Uspješno plaćeno</div>
+          <div className="text-sm font-medium text-gray-500">✅ Plaćeno</div>
           <div className="text-3xl font-bold text-green-600">
-            {sessions.filter(s => s.paymentStatus === 'paid').length}
+            {filteredSessions.filter(s => s.paymentStatus === 'paid').length}
           </div>
         </div>
         <div className="bg-white rounded-lg shadow p-6">
-          <div className="text-sm font-medium text-gray-500">Ukupna zarada</div>
+          <div className="text-sm font-medium text-gray-500">❌ Nije plaćeno</div>
+          <div className="text-3xl font-bold text-red-600">
+            {filteredSessions.filter(s => s.paymentStatus === 'unpaid' || !s.paymentStatus).length}
+          </div>
+        </div>
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="text-sm font-medium text-gray-500">💰 Zarada</div>
           <div className="text-3xl font-bold text-blue-600">
-            {sessions
+            {filteredSessions
               .filter(s => s.paymentStatus === 'paid')
               .reduce((sum, s) => sum + (s.amountTotal || 0), 0) / 100} EUR
           </div>
