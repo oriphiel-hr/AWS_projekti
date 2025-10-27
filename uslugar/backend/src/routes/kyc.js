@@ -206,49 +206,76 @@ r.post('/auto-verify', async (req, res, next) => {
         // Sudski registar - POKUŠAVAMO provjeru
         console.log('[Auto-Verify] DOO/JDOO: Pokušavam provjeriti Sudski registar...');
         
-        // TEMP: UVIJEK SUCCESS za DOO dok ne dodamo API key
-        // TODO: When SUDREG_API_KEY is added, remove this and use real API below
-        console.log('[Auto-Verify] ✅ Returning SUCCESS for DOO (no API key yet)');
-        results = {
-          verified: true,
-          needsDocument: false,
-          badges: [{ type: 'SUDSKI', verified: true, companyName: companyName || 'Društvo s ograničenom odgovornošću' }],
-          errors: []
-        };
-        break;
-        
-        /* REAL API LOGIC - TODO: Enable when SUDREG_API_KEY is added
-        
+        // REAL API LOGIC - Sudski registar
         try {
-          // API Sudskog registra: https://sudreg.pravosudje.hr/
-          // Treba: Ocp-Apim-Subscription-Key header
-          // Endpoint: https://sudreg.pravosudje.hr/api/Surad/{oib}
+          const clientId = process.env.SUDREG_CLIENT_ID;
+          const clientSecret = process.env.SUDREG_CLIENT_SECRET;
           
-          const sudResponse = await axios.get(`https://sudreg.pravosudje.hr/api/Surad/${taxId}`, {
+          if (!clientId || !clientSecret) {
+            console.log('[Auto-Verify] Sudski registar API: Missing credentials');
+            throw new Error('API credentials not configured');
+          }
+          
+          // 1. Dohvati OAuth token
+          console.log('[Auto-Verify] Requesting OAuth token...');
+          const tokenResponse = await axios.post('https://sudreg-data.gov.hr/ords/srn_rep/oauth/token', null, {
+            auth: {
+              username: clientId,
+              password: clientSecret
+            },
             headers: {
-              'Ocp-Apim-Subscription-Key': process.env.SUDREG_API_KEY || '',
+              'Content-Type': 'application/x-www-form-urlencoded'
+            }
+          }).catch(err => {
+            console.log('[Auto-Verify] Token request failed:', err.response?.status, err.message);
+            return null;
+          });
+          
+          if (!tokenResponse || !tokenResponse.data?.access_token) {
+            console.log('[Auto-Verify] Failed to get OAuth token');
+            throw new Error('Token request failed');
+          }
+          
+          const accessToken = tokenResponse.data.access_token;
+          console.log('[Auto-Verify] OAuth token received');
+          
+          // 2. Provjeri OIB u Sudskom registru
+          console.log('[Auto-Verify] Checking OIB in Sudski registar:', taxId);
+          const sudResponse = await axios.get(`https://sudreg-data.gov.hr/ords/srn_rep/1.0/Surad/${taxId}`, {
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
               'Accept': 'application/json'
             }
-          }).catch(() => null);
+          }).catch(err => {
+            console.log('[Auto-Verify] API request failed:', err.response?.status, err.message);
+            return null;
+          });
           
-          if (sudResponse && sudResponse.status === 200) {
+          if (sudResponse && sudResponse.status === 200 && sudResponse.data) {
             const sudData = sudResponse.data;
-            console.log('[Auto-Verify] Sudski registar OK:', sudData);
+            console.log('[Auto-Verify] Sudski registar response:', sudData);
             
-            // Provjeri da li je aktivan
-            if (sudData.STATUS === 'AKTIVAN' && sudData.RAZLOG_PROMJENE?.toUpperCase() !== 'UKLIJUČEN U OBRIS') {
+            // Provjeri status
+            const status = sudData.STATUS?.toUpperCase();
+            if (status === 'AKTIVAN' || status === 'AKTIVNA') {
               results = {
                 verified: true,
                 needsDocument: false,
-                badges: [{ type: 'SUDSKI', verified: true, companyName: sudData.NAZIV }],
+                badges: [{ type: 'SUDSKI', verified: true, companyName: sudData.NAZIV || companyName }],
                 errors: []
               };
               console.log('[Auto-Verify] ✅ VERIFIED via Sudski registar');
               break;
+            } else {
+              console.log('[Auto-Verify] Company is not active:', status);
             }
           }
+          
+          // Ako dođemo ovdje, API nije potvrdio
+          console.log('[Auto-Verify] Sudski registar did not confirm active status');
+          
         } catch (apiError) {
-          console.log('[Auto-Verify] Sudski registar API nije dostupan:', apiError.message);
+          console.log('[Auto-Verify] Sudski registar API error:', apiError.message);
         }
         
         // Fallback: treba dokument
@@ -259,7 +286,6 @@ r.post('/auto-verify', async (req, res, next) => {
           errors: ['Sudski registar provjera nije dostupna. Učitajte službeni izvadak iz Sudskog registra.']
         };
         break;
-        */
         
       case 'SOLE_TRADER':
       case 'PAUSAL':
