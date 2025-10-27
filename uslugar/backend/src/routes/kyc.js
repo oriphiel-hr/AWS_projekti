@@ -217,22 +217,7 @@ r.post('/auto-verify', async (req, res, next) => {
           
           if (!clientId || !clientSecret) {
             console.log('[Auto-Verify] ❌ Missing SUDREG credentials');
-            
-            // TEMP FALLBACK: Ako je poznati OIB, vrati SUCCESS
-            const knownOIBs = ['88070789896']; // ORIHIEL d.o.o.
-            if (knownOIBs.includes(taxId)) {
-              console.log('[Auto-Verify] 🎯 Known OIB - returning SUCCESS (temp)');
-              results = {
-                verified: true,
-                needsDocument: false,
-                badges: [{ type: 'SUDSKI', verified: true, companyName: companyName || 'Oriphiel d.o.o.' }],
-                errors: []
-              };
-              break;
-            }
-            
-            console.log('[Auto-Verify] Unknown OIB - using document fallback');
-            // Don't throw - let it fall through to fallback
+            throw new Error('API credentials not configured');
           } else {
             console.log('[Auto-Verify] ✅ Credentials found - attempting OAuth...');
             
@@ -247,7 +232,8 @@ r.post('/auto-verify', async (req, res, next) => {
               'Content-Type': 'application/x-www-form-urlencoded'
             }
           }).catch(err => {
-            console.log('[Auto-Verify] Token request failed:', err.response?.status, err.message);
+            console.log('[Auto-Verify] ❌ Token request failed:', err.response?.status, err.message);
+            console.log('[Auto-Verify] Full error:', JSON.stringify(err.response?.data || err.message));
             throw err; // Re-throw to catch block
           });
           
@@ -267,7 +253,8 @@ r.post('/auto-verify', async (req, res, next) => {
               'Accept': 'application/json'
             }
           }).catch(err => {
-            console.log('[Auto-Verify] ⚠️ API request failed:', err.response?.status, err.message);
+            console.log('[Auto-Verify] ❌ API request failed:', err.response?.status, err.message);
+            console.log('[Auto-Verify] Full error:', JSON.stringify(err.response?.data || err.message));
             throw err; // Re-throw to catch block
           });
           
