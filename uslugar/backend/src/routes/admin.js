@@ -396,7 +396,25 @@ Object.keys(MODELS).forEach(modelName => {
       const { skip = 0, take = 25, where: whereStr, include: includeStr } = req.query;
       
       const where = whereStr ? JSON.parse(whereStr) : {};
-      const include = includeStr ? JSON.parse(includeStr) : undefined;
+      
+      // Default include based on model
+      let defaultInclude = undefined;
+      if (modelName === 'Notification') {
+        defaultInclude = { user: true, job: true, offer: true };
+      } else if (modelName === 'Job') {
+        defaultInclude = { user: true, category: true, assignedProvider: true };
+      } else if (modelName === 'Offer') {
+        defaultInclude = { user: true, job: true };
+      } else if (modelName === 'Review') {
+        defaultInclude = { from: true, to: true };
+      } else if (modelName === 'User') {
+        defaultInclude = { providerProfile: true, legalStatus: true };
+      } else if (modelName === 'ProviderProfile') {
+        defaultInclude = { user: true, categories: true, legalStatus: true };
+      }
+      
+      // Use provided include or default
+      const include = includeStr ? JSON.parse(includeStr) : defaultInclude;
       
       const [items, total] = await Promise.all([
         model.findMany({
@@ -420,7 +438,25 @@ Object.keys(MODELS).forEach(modelName => {
     try {
       const { id } = req.params;
       const { include: includeStr } = req.query;
-      const include = includeStr ? JSON.parse(includeStr) : undefined;
+      
+      // Default include based on model
+      let defaultInclude = undefined;
+      if (modelName === 'Notification') {
+        defaultInclude = { user: true, job: true, offer: true };
+      } else if (modelName === 'Job') {
+        defaultInclude = { user: true, category: true, assignedProvider: true };
+      } else if (modelName === 'Offer') {
+        defaultInclude = { user: true, job: true };
+      } else if (modelName === 'Review') {
+        defaultInclude = { from: true, to: true };
+      } else if (modelName === 'User') {
+        defaultInclude = { providerProfile: true, legalStatus: true };
+      } else if (modelName === 'ProviderProfile') {
+        defaultInclude = { user: true, categories: true, legalStatus: true };
+      }
+      
+      // Use provided include or default
+      const include = includeStr ? JSON.parse(includeStr) : defaultInclude;
       
       const item = await model.findUnique({
         where: { id },
