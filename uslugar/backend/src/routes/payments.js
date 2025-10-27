@@ -484,8 +484,8 @@ r.get('/success', async (req, res, next) => {
       
       console.log(`[PAYMENT SUCCESS] Parsed values - userId: ${userId}, plan: ${plan}, credits: ${credits}`);
       
-      // Check if userId is valid
-      if (!userId || userId === 'NaN' || userId === 'undefined' || isNaN(parseInt(userId))) {
+      // Check if userId is valid (CUID is always a string, not a number)
+      if (!userId || typeof userId !== 'string' || userId.length < 5) {
         console.error('[PAYMENT SUCCESS] No valid userId found in session metadata');
         console.error('[PAYMENT SUCCESS] Available metadata keys:', Object.keys(session.metadata || {}));
         // Payment was successful, but metadata is missing
