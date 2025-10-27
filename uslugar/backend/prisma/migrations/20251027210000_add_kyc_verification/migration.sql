@@ -1,0 +1,15 @@
+-- AlterTable
+ALTER TABLE "ProviderProfile" ADD COLUMN IF NOT EXISTS "kycVerified" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "ProviderProfile" ADD COLUMN IF NOT EXISTS "kycDocumentUrl" TEXT;
+ALTER TABLE "ProviderProfile" ADD COLUMN IF NOT EXISTS "kycExtractedOib" TEXT;
+ALTER TABLE "ProviderProfile" ADD COLUMN IF NOT EXISTS "kycExtractedName" TEXT;
+ALTER TABLE "ProviderProfile" ADD COLUMN IF NOT EXISTS "kycDocumentType" TEXT;
+ALTER TABLE "ProviderProfile" ADD COLUMN IF NOT EXISTS "kycPublicConsent" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "ProviderProfile" ADD COLUMN IF NOT EXISTS "kycVerificationNotes" TEXT;
+ALTER TABLE "ProviderProfile" ADD COLUMN IF NOT EXISTS "kycVerifiedAt" TIMESTAMP(3);
+ALTER TABLE "ProviderProfile" ADD COLUMN IF NOT EXISTS "kycOcrVerified" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "ProviderProfile" ADD COLUMN IF NOT EXISTS "kycOibValidated" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "ProviderProfile" ADD COLUMN IF NOT EXISTS "kycObrtnRegChecked" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "ProviderProfile" ADD COLUMN IF NOT EXISTS "kycKamaraChecked" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "ProviderProfile" ADD COLUMN IF NOT EXISTS "kycViesChecked" BOOLEAN NOT NULL DEFAULT false;
+

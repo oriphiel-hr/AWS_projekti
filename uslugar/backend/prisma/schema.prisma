@@ -146,6 +146,21 @@ model ProviderProfile {
   // Approval status za licence (odobrenje admina)
   approvalStatus ProviderApprovalStatus? @default(WAITING_FOR_APPROVAL) // Status odobrenja
 
+  // KYC VERIFICATION - KYC-lite verifikacija za freelancere/samostalne djelatnike
+  kycVerified              Boolean      @default(false) // Verificiran status
+  kycDocumentUrl           String? // URL Rješenja Porezne uprave
+  kycExtractedOib          String? // OIB extrahiran iz dokumenta
+  kycExtractedName         String? // Ime extrahirano iz dokumenta
+  kycDocumentType          String? // Tip dokumenta (RPO_SOLUTION, OBRT_REGISTRY, etc.)
+  kycPublicConsent        Boolean      @default(false) // Izjava korisnika za javni prikaz podataka
+  kycVerificationNotes     String? // Admin bilješke
+  kycVerifiedAt            DateTime? // Datum verifikacije
+  kycOcrVerified           Boolean      @default(false) // OCR verifikacija prošla
+  kycOibValidated          Boolean      @default(false) // OIB algoritamski validiran
+  kycObrtnRegChecked       Boolean      @default(false) // Provjeren Obrtnim registrom
+  kycKamaraChecked         Boolean      @default(false) // Provjeren komorskim imenikom (odvjetnik/liječnik/arhitekt)
+  kycViesChecked           Boolean      @default(false) // Provjeren VIES (PDV)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

@@ -45,6 +45,11 @@ const ProviderCard = ({ provider, onViewProfile, onContact }) => {
                 {provider.isFeatured && (
                   <span className="ml-2 text-yellow-500 text-sm">⭐ Featured</span>
                 )}
+                {provider.kycVerified && (
+                  <span className="ml-2 text-green-600 text-sm" title="Verificiran pružatelj usluga">
+                    ✓ Verificiran
+                  </span>
+                )}
               </h3>
             </div>
             <div className="flex items-center space-x-1">
