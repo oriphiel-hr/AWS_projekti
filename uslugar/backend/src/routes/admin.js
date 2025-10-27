@@ -4,6 +4,63 @@ import { auth } from '../lib/auth.js';
 
 const r = Router();
 
+// KYC Metrike - Admin Dashboard
+r.get('/kyc-metrics', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    // Total registrations
+    const totalRegistrations = await prisma.user.count({
+      where: { role: 'PROVIDER' }
+    });
+    
+    // Verified providers
+    const verifiedProviders = await prisma.providerProfile.count({
+      where: { kycVerified: true }
+    });
+    
+    // Document uploaded (not yet verified)
+    const withDocument = await prisma.providerProfile.count({
+      where: { kycDocumentUrl: { not: null }, kycVerified: false }
+    });
+    
+    // Never verified
+    const neverVerified = totalRegistrations - verifiedProviders - withDocument;
+    
+    // By legal status
+    const byStatus = await prisma.$queryRaw`
+      SELECT ls.code, ls.name, COUNT(pp.id) as count
+      FROM "ProviderProfile" pp
+      JOIN "User" u ON pp."userId" = u."id"
+      LEFT JOIN "LegalStatus" ls ON u."legalStatusId" = ls."id"
+      WHERE u."role" = 'PROVIDER'
+      GROUP BY ls.code, ls.name
+      ORDER BY count DESC
+    `;
+    
+    // Avg verification time
+    const avgTime = await prisma.$queryRaw`
+      SELECT AVG(EXTRACT(EPOCH FROM ("kycVerifiedAt" - "createdAt")) / 60) as avg_minutes
+      FROM "ProviderProfile"
+      WHERE "kycVerifiedAt" IS NOT NULL
+    `;
+    
+    const metrics = {
+      total: totalRegistrations,
+      verified: verifiedProviders,
+      pendingDocument: withDocument,
+      neverVerified,
+      verificationRate: totalRegistrations > 0 
+        ? ((verifiedProviders / totalRegistrations) * 100).toFixed(1) + '%'
+        : '0%',
+      byStatus: byStatus,
+      avgVerificationMinutes: avgTime[0]?.avg_minutes ? avgTime[0].avg_minutes.toFixed(0) : 'N/A'
+    };
+    
+    res.json(metrics);
+  } catch (err) {
+    next(err);
+  }
+});
+
 // Dodaj nedostajuće kategorije - potpuno javni endpoint (MUST be before generic routes)
 r.post('/add-categories', async (req, res, next) => {
   try {
