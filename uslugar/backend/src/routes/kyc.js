@@ -224,10 +224,10 @@ r.post('/auto-verify', async (req, res, next) => {
           console.log('[Auto-Verify] ✅ Step 1 SUCCESS: Credentials found');
           console.log('[Auto-Verify] 📞 Step 2: Requesting OAuth token...');
           
-          // OAuth request - simple and clean approach
+          // OAuth request - using correct endpoint
           console.log('[Auto-Verify] Attempting OAuth token request...');
           const tokenResponse = await axios.post(
-            'https://sudreg-data.gov.hr/ords/srn_rep/oauth/token',
+            'https://sudreg-data.gov.hr/api/oauth/token',
             'grant_type=client_credentials',
             {
               auth: {
