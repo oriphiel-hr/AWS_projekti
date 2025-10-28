@@ -608,6 +608,7 @@ r.post('/auto-verify', async (req, res, next) => {
           
         } catch (scrapingError) {
           console.log('[Auto-Verify] Scraping error:', scrapingError.message);
+          console.log('[Auto-Verify] Error stack:', scrapingError.stack);
           
           // Smart fallback: OIB je već validiran (kontrolna znamenka), 
           // legal status je obrt, pa možemo automatski verificirati
