@@ -359,6 +359,35 @@ r.post('/auto-verify', async (req, res, next) => {
                 badgeCount: badges.length,
                 errors: []
               };
+              
+              // Spremi badge status u bazu ako user postoji
+              if (req.user) {
+                try {
+                  const badgeData = {
+                    BUSINESS: {
+                      verified: true,
+                      source: 'SUDSKI_REGISTAR',
+                      date: new Date().toISOString(),
+                      companyName: companyName
+                    }
+                  };
+                  
+                  await prisma.providerProfile.update({
+                    where: { userId: req.user.id },
+                    data: {
+                      badgeData: badgeData,
+                      kycVerified: true,
+                      kycVerifiedAt: new Date()
+                    }
+                  });
+                  
+                  console.log('[Auto-Verify] ✅ Badge data saved to database');
+                } catch (dbError) {
+                  console.error('[Auto-Verify] ⚠️ Failed to save badge data:', dbError);
+                  // Continue without failing
+                }
+              }
+              
               break;
             } else {
               console.log('[Auto-Verify] ⚠️ Step 3: Company not active, status:', status);
@@ -523,6 +552,157 @@ r.post('/verify/:userId', auth(true), async (req, res, next) => {
     
   } catch (err) {
     console.error('[KYC] Admin verification error:', err);
+    next(err);
+  }
+});
+
+/**
+ * POST /api/kyc/verify-identity
+ * Verify Identity badge - Email/Phone/DNS verification
+ * 
+ * Body:
+ * - type: 'email' | 'phone' | 'dns'
+ * - value: string (email/phone/domain)
+ */
+r.post('/verify-identity', auth(true), async (req, res, next) => {
+  try {
+    const user = req.user;
+    
+    if (user.role !== 'PROVIDER') {
+      return res.status(403).json({ 
+        error: 'Samo pružatelji usluga mogu verificirati identitet' 
+      });
+    }
+    
+    const { type, value } = req.body;
+    
+    if (!type || !value) {
+      return res.status(400).json({ 
+        error: 'Type i value su obavezni' 
+      });
+    }
+    
+    // Get provider profile
+    const providerProfile = await prisma.providerProfile.findUnique({
+      where: { userId: user.id }
+    });
+    
+    if (!providerProfile) {
+      return res.status(404).json({ 
+        error: 'Provider profile not found' 
+      });
+    }
+    
+    let updateData = {};
+    
+    switch (type) {
+      case 'email':
+        // Verify email domain matches company domain
+        const companyEmailDomain = value.split('@')[1];
+        const userEmailDomain = user.email.split('@')[1];
+        
+        if (companyEmailDomain !== userEmailDomain) {
+          return res.status(400).json({ 
+            error: 'Email domena se ne podudara s domenom tvrtke' 
+          });
+        }
+        
+        updateData = {
+          identityEmailVerified: true
+        };
+        break;
+        
+      case 'phone':
+        updateData = {
+          identityPhoneVerified: true
+        };
+        break;
+        
+      case 'dns':
+        updateData = {
+          identityDnsVerified: true
+        };
+        break;
+        
+      default:
+        return res.status(400).json({ 
+          error: 'Invalid verification type' 
+        });
+    }
+    
+    // Update provider profile
+    const updatedProfile = await prisma.providerProfile.update({
+      where: { userId: user.id },
+      data: updateData
+    });
+    
+    res.json({
+      success: true,
+      message: 'Identity verificiran',
+      data: updatedProfile
+    });
+    
+  } catch (err) {
+    console.error('[KYC] Identity verification error:', err);
+    next(err);
+  }
+});
+
+/**
+ * POST /api/kyc/upload-safety-badge
+ * Upload Safety badge - Insurance policy document
+ * 
+ * Body:
+ * - document: File (PDF/JPG/PNG)
+ */
+r.post('/upload-safety-badge', auth(true), uploadDocument.single('document'), async (req, res, next) => {
+  try {
+    const user = req.user;
+    
+    if (!req.file) {
+      return res.status(400).json({ 
+        error: 'Dokument je obavezan',
+        message: 'Molimo priložite policu osiguranja u PDF, JPG ili PNG formatu' 
+      });
+    }
+    
+    if (user.role !== 'PROVIDER') {
+      await fs.unlink(path.join('./uploads', req.file.filename));
+      return res.status(403).json({ 
+        error: 'Samo pružatelji usluga mogu uploadati police osiguranja' 
+      });
+    }
+    
+    const documentUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+    
+    // Get provider profile
+    const providerProfile = await prisma.providerProfile.findUnique({
+      where: { userId: user.id }
+    });
+    
+    if (!providerProfile) {
+      return res.status(404).json({ 
+        error: 'Provider profile not found' 
+      });
+    }
+    
+    // Update provider profile with insurance URL
+    const updatedProfile = await prisma.providerProfile.update({
+      where: { userId: user.id },
+      data: {
+        safetyInsuranceUrl: documentUrl,
+        safetyInsuranceUploadedAt: new Date()
+      }
+    });
+    
+    res.json({
+      success: true,
+      message: 'Polica osiguranja uspješno uploadana',
+      data: updatedProfile
+    });
+    
+  } catch (err) {
+    console.error('[KYC] Safety badge upload error:', err);
     next(err);
   }
 });

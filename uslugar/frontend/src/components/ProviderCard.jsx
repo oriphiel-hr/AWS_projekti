@@ -45,12 +45,25 @@ const ProviderCard = ({ provider, onViewProfile, onContact }) => {
                 {provider.isFeatured && (
                   <span className="ml-2 text-yellow-500 text-sm">⭐ Featured</span>
                 )}
+              </h3>
+              {/* Badge System */}
+              <div className="flex flex-wrap gap-1 mt-1">
                 {provider.kycVerified && (
-                  <span className="ml-2 text-green-600 text-sm" title="Verificiran pružatelj usluga">
-                    ✓ Verificiran
+                  <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs border border-green-300" title="Business Badge - Potvrđeno u javnim registrima">
+                    ✓ Business
                   </span>
                 )}
-              </h3>
+                {(provider.identityEmailVerified || provider.identityPhoneVerified || provider.identityDnsVerified) && (
+                  <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs border border-purple-300" title="Identity Badge - Identitet verificiran">
+                    ✓ Identity
+                  </span>
+                )}
+                {provider.safetyInsuranceUrl && (
+                  <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs border border-yellow-300" title="Safety Badge - Polica osiguranja">
+                    ✓ Safety
+                  </span>
+                )}
+              </div>
             </div>
             <div className="flex items-center space-x-1">
               {renderStars(provider.ratingAvg)}

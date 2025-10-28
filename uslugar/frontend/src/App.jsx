@@ -898,16 +898,48 @@ export default function App(){
               </p>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {providers.map(provider => (
-                <ProviderCard
-                  key={provider.id}
-                  provider={provider}
-                  onViewProfile={handleViewProviderProfile}
-                  onContact={handleContactProvider}
-                />
-              ))}
-            </div>
+            {/* Sortiraj providere po broju bedževa */}
+            {(() => {
+              const sortedProviders = [...providers].sort((a, b) => {
+                // Izračunaj broj badge-ova
+                const getBadgeCount = (provider) => {
+                  let count = 0;
+                  
+                  // Business badge (iz badgeData ili kycVerified)
+                  if (provider.kycVerified || (provider.badgeData && provider.badgeData.BUSINESS?.verified)) count++;
+                  
+                  // Identity badge
+                  if (provider.identityEmailVerified || provider.identityPhoneVerified || provider.identityDnsVerified) count++;
+                  
+                  // Safety badge
+                  if (provider.safetyInsuranceUrl) count++;
+                  
+                  return count;
+                };
+                
+                const countA = getBadgeCount(a);
+                const countB = getBadgeCount(b);
+                
+                // Sortiraj po broju badge-ova (desc), zatim po rating (desc)
+                if (countB !== countA) {
+                  return countB - countA;
+                }
+                return (b.ratingAvg || 0) - (a.ratingAvg || 0);
+              });
+              
+              return (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {sortedProviders.map(provider => (
+                    <ProviderCard
+                      key={provider.id}
+                      provider={provider}
+                      onViewProfile={handleViewProviderProfile}
+                      onContact={handleContactProvider}
+                    />
+                  ))}
+                </div>
+              );
+            })()}
             
             {providers.length === 0 && (
               <div className="text-center py-12">

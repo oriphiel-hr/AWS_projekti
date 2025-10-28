@@ -1066,6 +1066,80 @@ export default function ProviderProfile({ onSuccess }) {
             </div>
           ) : null}
 
+          {/* Identity Badge Verifikacija */}
+          <div className="mt-8 bg-purple-50 border border-purple-200 rounded-lg p-6">
+            <h4 className="text-lg font-semibold text-gray-900 mb-4">
+              🆔 Identity Badge (Anti-impersonation)
+            </h4>
+            <p className="text-sm text-gray-600 mb-4">
+              Verificirajte svoj identitet kako biste dobili Identity badge.
+            </p>
+            
+            <div className="space-y-3">
+              {profile.identityEmailVerified && (
+                <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg p-3">
+                  <span className="text-sm font-medium text-green-900">
+                    ✓ Email verificiran
+                  </span>
+                </div>
+              )}
+              {profile.identityPhoneVerified && (
+                <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg p-3">
+                  <span className="text-sm font-medium text-green-900">
+                    ✓ Telefon verificiran
+                  </span>
+                </div>
+              )}
+              {profile.identityDnsVerified && (
+                <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg p-3">
+                  <span className="text-sm font-medium text-green-900">
+                    ✓ DNS verificiran
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Safety Badge */}
+          <div className="mt-8 bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+            <h4 className="text-lg font-semibold text-gray-900 mb-4">
+              🛡️ Safety Badge (Opcijski)
+            </h4>
+            <p className="text-sm text-gray-600 mb-4">
+              Uploadajte policu osiguranja radi dodatne sigurnosti.
+            </p>
+            
+            {profile.safetyInsuranceUrl ? (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                <span className="text-sm font-medium text-green-900">
+                  ✓ Polica osiguranja uploadana
+                </span>
+                <a 
+                  href={profile.safetyInsuranceUrl} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:underline block mt-2"
+                >
+                  Pogledaj policu
+                </a>
+              </div>
+            ) : (
+              <form encType="multipart/form-data" className="space-y-3">
+                <input
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  className="w-full text-sm text-gray-600 border border-gray-300 rounded-lg p-2"
+                />
+                <button
+                  type="button"
+                  className="w-full bg-yellow-600 text-white py-2 px-4 rounded-lg hover:bg-yellow-700"
+                >
+                  Uploadaj policu osiguranja
+                </button>
+              </form>
+            )}
+          </div>
+
           {/* Licence i ovlaštenja */}
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
             <h4 className="text-sm font-semibold text-yellow-900 mb-2">
