@@ -232,9 +232,10 @@ model Job {
   acceptedOfferId       String?
   chatRooms             ChatRoom[]          @relation("jobChatRooms")
   leadPurchases         LeadPurchase[]
-  creditTransactions    CreditTransaction[] @relation("JobTransactions")
-  leadQueue             LeadQueue[]         @relation("JobQueue")
+  creditTransactions    CreditTransaction[]   @relation("JobTransactions")
+  leadQueue             LeadQueue[]            @relation("JobQueue")
   notifications         Notification[]
+  reviews               Review[]               // Recenzije ostavljene na ovom job-u
 }
 
 model Offer {
@@ -257,11 +258,17 @@ model Review {
   id         String   @id @default(cuid())
   rating     Int
   comment    String?
+  job        Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  jobId      String   // Job na kojem su radili zajedno
   from       User     @relation("reviewsGiven", fields: [fromUserId], references: [id], onDelete: Cascade)
   fromUserId String
   to         User     @relation("reviewsReceived", fields: [toUserId], references: [id], onDelete: Cascade)
   toUserId   String
   createdAt  DateTime @default(now())
+  
+  @@unique([jobId, fromUserId]) // Jedna recenzija po job-u od svake strane
+  @@index([jobId])
+  @@index([toUserId])
 }
 
 enum Role {

@@ -18,6 +18,7 @@ r.get('/', auth(true, ['ADMIN']), async (req, res, next) => {
       prisma.review.findMany({
         where,
         include: {
+          job: { select: { id: true, title: true } },
           from: { select: { id: true, fullName: true, email: true } },
           to: { select: { id: true, fullName: true, email: true } }
         },
@@ -43,6 +44,7 @@ r.get('/user/:userId', async (req, res, next) => {
       prisma.review.findMany({
         where: { toUserId: userId },
         include: {
+          job: { select: { id: true, title: true } },
           from: { select: { id: true, fullName: true, email: true } }
         },
         orderBy: { createdAt: 'desc' },
@@ -57,46 +59,98 @@ r.get('/user/:userId', async (req, res, next) => {
 });
 
 // POST /api/reviews - Kreiranje novog review-a
-r.post('/', auth(true, ['USER']), async (req, res, next) => {
+r.post('/', auth(true), async (req, res, next) => {
   try {
-    const { toUserId, rating, comment } = req.body;
-    if (!toUserId || !rating) return res.status(400).json({ error: 'Missing fields' });
+    const { toUserId, rating, comment, jobId } = req.body;
+    if (!toUserId || !rating || !jobId) {
+      return res.status(400).json({ 
+        error: 'Missing required fields: toUserId, rating, jobId' 
+      });
+    }
     
-    // Provjeri da li korisnik već ima review za ovog providera
+    // Provjeri da li job postoji i da su useri uključeni u transakciju
+    const job = await prisma.job.findUnique({
+      where: { id: jobId },
+      include: {
+        user: true,
+        assignedProvider: true,
+        acceptedOffer: true
+      }
+    });
+    
+    if (!job) {
+      return res.status(404).json({ error: 'Job not found' });
+    }
+    
+    // Validacija: Provjeri da su korisnici povezani preko job-a
+    let isValidReview = false;
+    
+    if (req.user.role === 'USER') {
+      // Korisnik mora biti vlasnik job-a
+      if (job.userId === req.user.id && job.assignedProviderId === toUserId) {
+        isValidReview = true;
+      }
+    } else if (req.user.role === 'PROVIDER') {
+      // Pružatelj mora biti assignedProvider
+      if (job.assignedProviderId === req.user.id && job.userId === toUserId) {
+        isValidReview = true;
+      }
+    }
+    
+    if (!isValidReview) {
+      return res.status(403).json({ 
+        error: 'Niste autorizirani da ostavite recenziju za ovog korisnika. Morate biti povezani preko job-a.' 
+      });
+    }
+    
+    // Provjeri da li korisnik već ima review za ovaj job
     const existingReview = await prisma.review.findFirst({
-      where: { fromUserId: req.user.id, toUserId }
+      where: { 
+        fromUserId: req.user.id, 
+        jobId 
+      }
     });
     
     if (existingReview) {
-      return res.status(400).json({ error: 'Već ste ocijenili ovog izvođača radova' });
+      return res.status(400).json({ error: 'Već ste ocijenili ovaj posao' });
     }
     
     const review = await prisma.review.create({
       data: { 
+        jobId,
         toUserId, 
         rating: Number(rating), 
         comment: comment || '', 
         fromUserId: req.user.id 
       },
       include: {
+        job: {
+          select: { id: true, title: true }
+        },
         from: { select: { id: true, fullName: true, email: true } },
         to: { select: { id: true, fullName: true, email: true } }
       }
     });
 
-    // update aggregates
-    const aggr = await prisma.review.aggregate({
-      where: { toUserId },
-      _avg: { rating: true },
-      _count: { rating: true }
-    });
-    await prisma.providerProfile.updateMany({
-      where: { userId: toUserId },
-      data: { ratingAvg: aggr._avg.rating || 0, ratingCount: aggr._count.rating }
-    });
+    // Update aggregates - samo za provider profile
+    const toUser = await prisma.user.findUnique({ where: { id: toUserId } });
+    if (toUser?.role === 'PROVIDER') {
+      const aggr = await prisma.review.aggregate({
+        where: { toUserId },
+        _avg: { rating: true },
+        _count: { rating: true }
+      });
+      await prisma.providerProfile.updateMany({
+        where: { userId: toUserId },
+        data: { ratingAvg: aggr._avg.rating || 0, ratingCount: aggr._count.rating }
+      });
+    }
 
     res.status(201).json(review);
-  } catch (e) { next(e); }
+  } catch (e) { 
+    console.error('[REVIEWS] Error creating review:', e);
+    next(e); 
+  }
 });
 
 // PUT /api/reviews/:id - Ažuriranje review-a
