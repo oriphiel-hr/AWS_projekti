@@ -203,14 +203,111 @@ r.post('/auto-verify', async (req, res, next) => {
     switch(legalStatus.code) {
       case 'DOO':
       case 'JDOO':
-        // Sudski registar - TEMPORARILY DISABLED
-        console.log('[Auto-Verify] DOO/JDOO: Auto-verification currently disabled - requires manual document upload');
+        // Sudski registar - DEBUGGING MODE
+        console.log('[Auto-Verify] 🔍 DEBUGGING: DOO/JDOO API verification');
         
-        // API integration is ready but disabled until credentials are confirmed working
-        // TODO: Re-enable when API is tested and working
-        // Code is available in git history if needed
+        try {
+          const clientId = process.env.SUDREG_CLIENT_ID;
+          const clientSecret = process.env.SUDREG_CLIENT_SECRET;
+          
+          console.log('[Auto-Verify] 📋 Step 1: Checking credentials');
+          console.log('[Auto-Verify]   - clientId exists:', !!clientId);
+          console.log('[Auto-Verify]   - clientSecret exists:', !!clientSecret);
+          console.log('[Auto-Verify]   - clientId value:', clientId?.substring(0, 10) + '...');
+          console.log('[Auto-Verify]   - clientSecret value:', clientSecret?.substring(0, 10) + '...');
+          
+          if (!clientId || !clientSecret) {
+            console.log('[Auto-Verify] ❌ Step 1 FAILED: Missing credentials');
+            throw new Error('Missing SUDREG credentials');
+          }
+          
+          console.log('[Auto-Verify] ✅ Step 1 SUCCESS: Credentials found');
+          console.log('[Auto-Verify] 📞 Step 2: Requesting OAuth token...');
+          
+          const tokenResponse = await axios.post(
+            'https://sudreg-data.gov.hr/ords/srn_rep/oauth/token',
+            null,
+            {
+              auth: {
+                username: clientId,
+                password: clientSecret
+              },
+              headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+              }
+            }
+          ).catch(err => {
+            console.log('[Auto-Verify] ❌ Step 2 FAILED: OAuth request error');
+            console.log('[Auto-Verify]   - Status:', err.response?.status);
+            console.log('[Auto-Verify]   - StatusText:', err.response?.statusText);
+            console.log('[Auto-Verify]   - Data:', JSON.stringify(err.response?.data));
+            console.log('[Auto-Verify]   - Message:', err.message);
+            throw err;
+          });
+          
+          console.log('[Auto-Verify] Step 2 Response received');
+          console.log('[Auto-Verify]   - Status:', tokenResponse?.status);
+          console.log('[Auto-Verify]   - Has access_token:', !!tokenResponse?.data?.access_token);
+          
+          if (!tokenResponse?.data?.access_token) {
+            console.log('[Auto-Verify] ❌ Step 2 FAILED: No access token in response');
+            throw new Error('No access token received');
+          }
+          
+          const accessToken = tokenResponse.data.access_token;
+          console.log('[Auto-Verify] ✅ Step 2 SUCCESS: Token received');
+          console.log('[Auto-Verify] 🏢 Step 3: Checking OIB in Sudski registar:', taxId);
+          
+          const sudResponse = await axios.get(
+            `https://sudreg-data.gov.hr/ords/srn_rep/1.0/Surad/${taxId}`,
+            {
+              headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Accept': 'application/json'
+              }
+            }
+          ).catch(err => {
+            console.log('[Auto-Verify] ❌ Step 3 FAILED: API request error');
+            console.log('[Auto-Verify]   - Status:', err.response?.status);
+            console.log('[Auto-Verify]   - StatusText:', err.response?.statusText);
+            console.log('[Auto-Verify]   - Data:', JSON.stringify(err.response?.data));
+            console.log('[Auto-Verify]   - Message:', err.message);
+            throw err;
+          });
+          
+          console.log('[Auto-Verify] Step 3 Response received');
+          console.log('[Auto-Verify]   - Status:', sudResponse?.status);
+          console.log('[Auto-Verify]   - Data:', JSON.stringify(sudResponse?.data));
+          
+          if (sudResponse?.status === 200 && sudResponse.data) {
+            const sudData = sudResponse.data;
+            const status = sudData.STATUS?.toUpperCase();
+            console.log('[Auto-Verify]   - Company status:', status);
+            
+            if (status === 'AKTIVAN' || status === 'AKTIVNA') {
+              console.log('[Auto-Verify] ✅ Step 3 SUCCESS: Company is ACTIVE');
+              results = {
+                verified: true,
+                needsDocument: false,
+                badges: [{ type: 'SUDSKI', verified: true, companyName: sudData.NAZIV || companyName }],
+                errors: []
+              };
+              break;
+            } else {
+              console.log('[Auto-Verify] ⚠️ Step 3: Company not active, status:', status);
+            }
+          }
+          
+          console.log('[Auto-Verify] ⚠️ Step 3: Did not confirm active status');
+          
+        } catch (apiError) {
+          console.log('[Auto-Verify] ❌ CRITICAL ERROR in API verification');
+          console.log('[Auto-Verify] Error type:', apiError.name);
+          console.log('[Auto-Verify] Error message:', apiError.message);
+          console.log('[Auto-Verify] Error stack:', apiError.stack);
+        }
         
-        // For now: always require document
+        // Fallback: require document
         results = {
           verified: false,
           needsDocument: true,
