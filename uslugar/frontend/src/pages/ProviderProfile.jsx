@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../api';
 import KYCVerification from '../components/KYCVerification';
 import SafetyBadgeUpload from '../components/SafetyBadgeUpload';
+import IdentityBadgeVerification from '../components/IdentityBadgeVerification';
 
 export default function ProviderProfile({ onSuccess }) {
   const [profile, setProfile] = useState(null);
@@ -1073,10 +1074,11 @@ export default function ProviderProfile({ onSuccess }) {
               🆔 Identity Badge (Anti-impersonation)
             </h4>
             <p className="text-sm text-gray-600 mb-4">
-              Verificirajte svoj identitet kako biste dobili Identity badge.
+              Verificirajte svoj identitet kako biste dobili Identity badge i povećali povjerenje korisnika.
             </p>
             
-            <div className="space-y-3">
+            {/* Show verified badges */}
+            <div className="space-y-3 mb-4">
               {profile.identityEmailVerified && (
                 <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg p-3">
                   <span className="text-sm font-medium text-green-900">
@@ -1099,6 +1101,9 @@ export default function ProviderProfile({ onSuccess }) {
                 </div>
               )}
             </div>
+            
+            {/* Verifikacija form */}
+            <IdentityBadgeVerification profile={profile} onUpdated={loadProfile} />
           </div>
 
           {/* Safety Badge */}
