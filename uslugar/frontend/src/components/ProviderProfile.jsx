@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import ReviewList from './ReviewList';
 import api from '../api';
+import { QRCodeSVG } from 'qrcode.react';
 
 const ProviderProfile = ({ providerId, onClose }) => {
   const [provider, setProvider] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [currentUserId, setCurrentUserId] = useState(null);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   useEffect(() => {
     fetchProvider();
@@ -45,6 +47,27 @@ const ProviderProfile = ({ providerId, onClose }) => {
         ★
       </span>
     ));
+  };
+
+  // Share profile functionality
+  const getShareableLink = () => {
+    const baseUrl = window.location.origin;
+    return `${baseUrl}/#provider/${providerId}`;
+  };
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(getShareableLink());
+    alert('Link kopiran u međuspremnik!');
+  };
+
+  const shareOnFacebook = () => {
+    const url = encodeURIComponent(getShareableLink());
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank');
+  };
+
+  const shareOnLinkedIn = () => {
+    const url = encodeURIComponent(getShareableLink());
+    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}`, '_blank');
   };
 
   if (loading) {
@@ -103,12 +126,21 @@ const ProviderProfile = ({ providerId, onClose }) => {
                 </div>
               </div>
             </div>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 text-2xl"
-            >
-              ×
-            </button>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => setShowShareModal(true)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+              >
+                <span>📤</span>
+                <span>Dijeli</span>
+              </button>
+              <button
+                onClick={onClose}
+                className="text-gray-400 hover:text-gray-600 text-2xl"
+              >
+                ×
+              </button>
+            </div>
           </div>
         </div>
 
@@ -204,6 +236,73 @@ const ProviderProfile = ({ providerId, onClose }) => {
           />
         </div>
       </div>
+
+      {/* Share Modal */}
+      {showShareModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]">
+          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-2xl font-bold text-gray-900">Dijeli profil</h3>
+              <button
+                onClick={() => setShowShareModal(false)}
+                className="text-gray-400 hover:text-gray-600 text-2xl"
+              >
+                ×
+              </button>
+            </div>
+
+            {/* QR Code */}
+            <div className="flex justify-center mb-6">
+              <div className="bg-white p-4 rounded-lg border-2 border-gray-200">
+                <QRCodeSVG value={getShareableLink()} size={200} />
+              </div>
+            </div>
+
+            {/* Shareable Link */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Link profila:
+              </label>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="text"
+                  value={getShareableLink()}
+                  readOnly
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600"
+                />
+                <button
+                  onClick={copyToClipboard}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  📋 Kopiraj
+                </button>
+              </div>
+            </div>
+
+            {/* Social Share Buttons */}
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={shareOnFacebook}
+                className="flex items-center justify-center space-x-2 px-4 py-3 bg-[#1877F2] text-white rounded-lg hover:bg-[#166FE5]"
+              >
+                <span>📘</span>
+                <span>Facebook</span>
+              </button>
+              <button
+                onClick={shareOnLinkedIn}
+                className="flex items-center justify-center space-x-2 px-4 py-3 bg-[#0A66C2] text-white rounded-lg hover:bg-[#004182]"
+              >
+                <span>💼</span>
+                <span>LinkedIn</span>
+              </button>
+            </div>
+
+            <p className="text-xs text-gray-500 mt-4 text-center">
+              Skeniraj QR kod ili kopiraj link da dijeliš ovaj profil
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
