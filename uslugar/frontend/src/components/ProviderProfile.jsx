@@ -52,6 +52,7 @@ const ProviderProfile = ({ providerId, onClose }) => {
   // Share profile functionality
   const getShareableLink = () => {
     const baseUrl = window.location.origin;
+    // providerId je userId u ovom slučaju
     return `${baseUrl}/#provider/${providerId}`;
   };
 
