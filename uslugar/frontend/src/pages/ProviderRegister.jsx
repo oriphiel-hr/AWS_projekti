@@ -638,11 +638,18 @@ export default function ProviderRegister({ onSuccess }) {
             <div className="flex items-start space-x-3">
               <span className="text-green-600 text-xl">✓</span>
               <div className="flex-1">
-                <p className="text-sm font-semibold text-green-900 mb-1">
-                  Verificiran – {verificationResult.badges.map(b => b.type).join(', ')}
-                </p>
+                <div className="flex items-center gap-2 mb-2">
+                  {verificationResult.badges.map((badge, idx) => (
+                    <span key={idx} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-300">
+                      ✓ {badge.type} ({badge.source})
+                    </span>
+                  ))}
+                </div>
                 <p className="text-xs text-green-700">
-                  Potvrđeno u javnim registrima. Nije potreban dokument.
+                  {verificationResult.badges[0]?.description || 'Potvrđeno u javnim registrima. Nije potreban dokument.'}
+                </p>
+                <p className="text-xs text-green-600 mt-1">
+                  {verificationResult.badgeCount > 0 && `Dodijeljeno ${verificationResult.badgeCount} badge-a`}
                 </p>
               </div>
             </div>

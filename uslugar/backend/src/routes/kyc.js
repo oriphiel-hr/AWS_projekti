@@ -341,10 +341,22 @@ r.post('/auto-verify', async (req, res, next) => {
               
               const companyName = sudData.skracena_tvrtka?.ime || sudData.tvrtka?.ime || companyName;
               
+              // Building comprehensive badge system
+              const badges = [
+                { 
+                  type: 'BUSINESS', 
+                  source: 'SUDSKI_REGISTAR', 
+                  verified: true, 
+                  companyName: companyName,
+                  description: 'Potvrđeno u Sudskom registru - Aktivna firma'
+                }
+              ];
+              
               results = {
                 verified: true,
                 needsDocument: false,
-                badges: [{ type: 'SUDSKI', verified: true, companyName: companyName }],
+                badges: badges,
+                badgeCount: badges.length,
                 errors: []
               };
               break;
