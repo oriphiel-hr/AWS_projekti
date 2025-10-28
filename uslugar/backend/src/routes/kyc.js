@@ -272,7 +272,8 @@ r.post('/auto-verify', async (req, res, next) => {
                 `https://sudreg-data.gov.hr/api/javni/detalji_subjekta`,
                 {
                   params: {
-                    OIB: taxId
+                    tip_identifikatora: 'oib',
+                    identifikator: taxId
                   },
                   headers: {
                     'Authorization': `Bearer ${accessToken}`,
