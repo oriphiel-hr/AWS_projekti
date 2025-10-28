@@ -269,7 +269,7 @@ r.post('/auto-verify', async (req, res, next) => {
             
             try {
               sudResponse = await axios.get(
-                `https://sudreg-data.gov.hr/ords/srn_rep/v1/detalji_subjekta`,
+                `https://sudreg-data.gov.hr/api/javni/subjekta`,
                 {
                   params: {
                     OIB: taxId
