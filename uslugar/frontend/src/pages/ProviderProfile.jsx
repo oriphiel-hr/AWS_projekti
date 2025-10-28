@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
 import KYCVerification from '../components/KYCVerification';
+import SafetyBadgeUpload from '../components/SafetyBadgeUpload';
 
 export default function ProviderProfile({ onSuccess }) {
   const [profile, setProfile] = useState(null);
@@ -1111,32 +1112,20 @@ export default function ProviderProfile({ onSuccess }) {
             
             {profile.safetyInsuranceUrl ? (
               <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                <span className="text-sm font-medium text-green-900">
+                <span className="text-sm font-medium text-green-900 block mb-2">
                   ✓ Polica osiguranja uploadana
                 </span>
                 <a 
                   href={profile.safetyInsuranceUrl} 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline block mt-2"
+                  className="text-blue-600 hover:underline inline-block"
                 >
-                  Pogledaj policu
+                  📄 Pogledaj policu
                 </a>
               </div>
             ) : (
-              <form encType="multipart/form-data" className="space-y-3">
-                <input
-                  type="file"
-                  accept=".pdf,.jpg,.jpeg,.png"
-                  className="w-full text-sm text-gray-600 border border-gray-300 rounded-lg p-2"
-                />
-                <button
-                  type="button"
-                  className="w-full bg-yellow-600 text-white py-2 px-4 rounded-lg hover:bg-yellow-700"
-                >
-                  Uploadaj policu osiguranja
-                </button>
-              </form>
+              <SafetyBadgeUpload onUploaded={loadProfile} />
             )}
           </div>
 
