@@ -414,74 +414,59 @@ r.post('/auto-verify', async (req, res, next) => {
         
       case 'SOLE_TRADER':
       case 'PAUSAL':
-        // Obrtni registar - POKUŠAVAMO provjeru
-        console.log('[Auto-Verify] Obrt/Pausalni: Pokušavam provjeriti Obrtni registar...');
+        // Obrtni registar - Traži dokument za provjeru
+        console.log('[Auto-Verify] Obrt/Pausalni: Zahtijeva dokument iz Obrtnog registra');
         
-        try {
-          // Obrtni registar: https://www.obrti.hr/pretraga
-          // Opcija 1: Web scraping (legalno, javni podaci)
-          // Opcija 2: API ako postoji
+        // Provjeri da li već postoji verificirani profil u našoj bazi
+        const existingOIB = await prisma.user.findFirst({
+          where: {
+            taxId: taxId,
+            role: 'PROVIDER'
+          },
+          include: {
+            providerProfile: true
+          }
+        });
+        
+        if (existingOIB && existingOIB.providerProfile?.kycVerified) {
+          console.log('[Auto-Verify] OIB već verificiran u našoj bazi');
           
-          // Za sada: provjeriti da li OIB postoji u našoj bazi (provjera iz profila)
-          const existingOIB = await prisma.user.findFirst({
-            where: {
-              taxId: taxId,
-              role: 'PROVIDER'
-            },
-            include: {
-              providerProfile: true
-            }
-          });
-          
-          if (existingOIB && existingOIB.providerProfile?.kycVerified) {
-            console.log('[Auto-Verify] OIB već verificiran u našoj bazi');
-            results = {
+          const badges = [
+            { 
+              type: 'BUSINESS', 
+              source: 'OBRTNI_REGISTAR', 
               verified: true,
-              needsDocument: false,
-              badges: [{ type: 'OBRTNI', verified: true }],
-              errors: []
-            };
-            console.log('[Auto-Verify] ✅ VERIFIED via existing verification');
-            break;
-          }
-          
-          // VIES provjera ako postoji PDV ID
-          if (user?.pdvId && user.pdvId.startsWith('HR')) {
-            try {
-              console.log('[Auto-Verify] Checking VIES for PDV:', user.pdvId);
-              const viesResponse = await axios.post('http://ec.europa.eu/taxation_customs/vies/checkVatService', {
-                headers: {
-                  'Content-Type': 'application/xml'
-                },
-                data: `<?xml version="1.0"?>
-                  <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
-                    <soap:Body>
-                      <checkVat xmlns="urn:ec.europa.eu:taxud:vies:services:checkVat:types">
-                        <countryCode>HR</countryCode>
-                        <vatNumber>${user.pdvId.substring(2)}</vatNumber>
-                      </checkVat>
-                    </soap:Body>
-                  </soap:Envelope>`
-              }).catch(() => null);
-              
-              if (viesResponse && viesResponse.data) {
-                console.log('[Auto-Verify] VIES verified');
-              }
-            } catch (viesError) {
-              console.log('[Auto-Verify] VIES nije dostupan:', viesError.message);
+              description: 'Potvrđeno u našoj bazi podataka'
             }
-          }
+          ];
           
-        } catch (apiError) {
-          console.log('[Auto-Verify] Obrtni registar API nije dostupan:', apiError.message);
+          results = {
+            verified: true,
+            needsDocument: false,
+            badges: badges,
+            badgeCount: badges.length,
+            errors: []
+          };
+          console.log('[Auto-Verify] ✅ VERIFIED via existing verification');
+          break;
+        }
+          
+          // Zbog nedostupnosti javnog API-ja za Obrtni registar, 
+          // korisnik mora uploadati službeni izvadak
+          
+        } catch (error) {
+          console.log('[Auto-Verify] Obrt verificiran u bazi:', error.message);
         }
         
-        // Fallback: treba dokument
+        // Fallback: treba dokument (Obrtni registar nema javni API)
+        console.log('[Auto-Verify] Obrt: Traži se dokument iz Obrtnog registra');
         results = {
           verified: false,
           needsDocument: true,
           badges: [],
-          errors: ['Obrtni registar provjera nije dostupna. Učitajte službeni izvadak iz Obrtnog registra.']
+          errors: [
+            'Za obrte i paušalne obrte potreban je izvadak iz Obrtnog registra. Možete ga downloadati besplatno na https://www.obrti.hr/pretraga'
+          ]
         };
         break;
         
