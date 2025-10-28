@@ -224,9 +224,10 @@ r.post('/auto-verify', async (req, res, next) => {
           console.log('[Auto-Verify] ✅ Step 1 SUCCESS: Credentials found');
           console.log('[Auto-Verify] 📞 Step 2: Requesting OAuth token...');
           
+          // Try OAuth with proper grant_type parameter
           const tokenResponse = await axios.post(
             'https://sudreg-data.gov.hr/ords/srn_rep/oauth/token',
-            null,
+            'grant_type=client_credentials',
             {
               auth: {
                 username: clientId,
@@ -272,6 +273,13 @@ r.post('/auto-verify', async (req, res, next) => {
             console.log('[Auto-Verify]   - StatusText:', err.response?.statusText);
             console.log('[Auto-Verify]   - Data:', JSON.stringify(err.response?.data));
             console.log('[Auto-Verify]   - Message:', err.message);
+            
+            // If 503 (Service Unavailable), it's Sudreg database issue, not our credentials
+            if (err.response?.status === 503) {
+              console.log('[Auto-Verify] ⚠️ Sudreg database is down/unavailable - this is their problem, not ours');
+              throw new Error('Sudreg service temporarily unavailable');
+            }
+            
             throw err;
           });
           
