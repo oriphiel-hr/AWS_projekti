@@ -326,12 +326,14 @@ r.post('/auto-verify', async (req, res, next) => {
           
           console.log('[Auto-Verify] Step 3 Response received');
           console.log('[Auto-Verify]   - Status:', sudResponse?.status);
-          console.log('[Auto-Verify]   - Data:', JSON.stringify(sudResponse?.data));
+          console.log('[Auto-Verify]   - Data keys:', Object.keys(sudResponse?.data || {}));
           
           if (sudResponse?.status === 200 && sudResponse.data) {
             const sudData = sudResponse.data;
             const status = sudData.status; // 1 = aktivna, 0 = neaktivna
-            console.log('[Auto-Verify]   - Company status:', status);
+            console.log('[Auto-Verify]   - SudData keys:', Object.keys(sudData));
+            console.log('[Auto-Verify]   - SudData.status:', status);
+            console.log('[Auto-Verify]   - SudData.status type:', typeof status);
             
             // status === 1 means company is active
             if (status === 1) {
