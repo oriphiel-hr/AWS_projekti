@@ -330,15 +330,19 @@ r.post('/auto-verify', async (req, res, next) => {
           
           if (sudResponse?.status === 200 && sudResponse.data) {
             const sudData = sudResponse.data;
-            const status = sudData.STATUS?.toUpperCase();
+            const status = sudData.status; // 1 = aktivna, 0 = neaktivna
             console.log('[Auto-Verify]   - Company status:', status);
             
-            if (status === 'AKTIVAN' || status === 'AKTIVNA') {
+            // status === 1 means company is active
+            if (status === 1) {
               console.log('[Auto-Verify] ✅ Step 3 SUCCESS: Company is ACTIVE');
+              
+              const companyName = sudData.skracena_tvrtka?.ime || sudData.tvrtka?.ime || companyName;
+              
               results = {
                 verified: true,
                 needsDocument: false,
-                badges: [{ type: 'SUDSKI', verified: true, companyName: sudData.NAZIV || companyName }],
+                badges: [{ type: 'SUDSKI', verified: true, companyName: companyName }],
                 errors: []
               };
               break;
