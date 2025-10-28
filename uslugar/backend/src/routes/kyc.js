@@ -463,6 +463,8 @@ r.post('/auto-verify', async (req, res, next) => {
           
           const baseUrl = 'https://pretrazivac-obrta.gov.hr/pretraga.htm';
           
+          console.log('[Auto-Verify] 🔍 GET request to:', baseUrl);
+          
           // Pokušaj prvo dobiti stranicu
           const pageResponse = await axios.get(baseUrl, {
             headers: {
