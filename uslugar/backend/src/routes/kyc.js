@@ -605,53 +605,6 @@ r.post('/auto-verify', async (req, res, next) => {
           }
           
           break;
-              
-              const badges = [
-                { 
-                  type: 'BUSINESS', 
-                  source: 'OBRTNI_REGISTAR', 
-                  verified: true,
-                  description: 'Potvrđeno u Pretraživaču obrta'
-                }
-              ];
-              
-              results = {
-                verified: true,
-                needsDocument: false,
-                badges: badges,
-                badgeCount: badges.length,
-                errors: []
-              };
-              
-              // Spremi badge status u bazu ako user postoji
-              if (req.user) {
-                try {
-                  const badgeData = {
-                    BUSINESS: {
-                      verified: true,
-                      source: 'OBRTNI_REGISTAR',
-                      date: new Date().toISOString()
-                    }
-                  };
-                  
-                  await prisma.providerProfile.update({
-                    where: { userId: req.user.id },
-                    data: {
-                      badgeData: badgeData,
-                      kycVerified: true,
-                      kycVerifiedAt: new Date()
-                    }
-                  });
-                  
-                  console.log('[Auto-Verify] ✅ Badge data saved to database (Obrtni)');
-                } catch (dbError) {
-                  console.error('[Auto-Verify] ⚠️ Failed to save badge data:', dbError);
-                }
-              }
-              
-              break;
-            }
-          }
           
         } catch (scrapingError) {
           console.log('[Auto-Verify] Scraping error:', scrapingError.message);
