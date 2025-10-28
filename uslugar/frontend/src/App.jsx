@@ -167,7 +167,13 @@ export default function App(){
         // Fetch and display provider
         api.get(`/providers/${providerId}`)
           .then(response => {
-            setSelectedProvider(response.data);
+            // API vraća { user, reviews } gdje user ima providerProfile
+            const providerData = {
+              ...response.data.user.providerProfile,
+              user: response.data.user,
+              reviews: response.data.reviews
+            };
+            setSelectedProvider(providerData);
             setTab('providers'); // Switch to providers tab
           })
           .catch(err => {
@@ -1007,7 +1013,7 @@ export default function App(){
       {/* Provider Profile Modal */}
       {selectedProvider && (
         <ProviderProfileModal
-          providerId={selectedProvider.user.id}
+          providerId={selectedProvider.userId || selectedProvider.user?.id}
           onClose={handleCloseProviderProfile}
         />
       )}
