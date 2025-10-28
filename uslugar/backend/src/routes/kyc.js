@@ -260,29 +260,68 @@ r.post('/auto-verify', async (req, res, next) => {
           console.log('[Auto-Verify] ✅ Step 2 SUCCESS: Token received');
           console.log('[Auto-Verify] 🏢 Step 3: Checking OIB in Sudski registar:', taxId);
           
-          const sudResponse = await axios.get(
-            `https://sudreg-data.gov.hr/ords/srn_rep/1.0/Surad/${taxId}`,
-            {
-              headers: {
-                'Authorization': `Bearer ${accessToken}`,
-                'Accept': 'application/json'
+          // Try API call with retry logic (Sudreg database may be down)
+          let sudResponse = null;
+          let lastError = null;
+          
+          for (let attempt = 1; attempt <= 3; attempt++) {
+            console.log(`[Auto-Verify]   Attempt ${attempt}/3...`);
+            
+            try {
+              sudResponse = await axios.get(
+                `https://sudreg-data.gov.hr/ords/srn_rep/v1/detalji_subjekta`,
+                {
+                  params: {
+                    OIB: taxId
+                  },
+                  headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Accept': 'application/json'
+                  },
+                  timeout: 10000 // 10 second timeout
+                }
+              );
+              
+              // Success - break out of retry loop
+              console.log(`[Auto-Verify]   ✅ Attempt ${attempt} succeeded!`);
+              break;
+              
+            } catch (err) {
+              lastError = err;
+              console.log(`[Auto-Verify]   ❌ Attempt ${attempt} failed:`, err.response?.status);
+              
+              // If 503 (Service Unavailable), retry after delay
+              if (err.response?.status === 503 && attempt < 3) {
+                console.log('[Auto-Verify]   ⏳ Sudreg database is down, retrying in 2 seconds...');
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                continue;
               }
+              
+              // Other errors or max retries reached
+              console.log('[Auto-Verify]   Error details:', {
+                status: err.response?.status,
+                statusText: err.response?.statusText,
+                data: err.response?.data,
+                message: err.message
+              });
+              
+              // If it's 503 and not last attempt, retry
+              if (err.response?.status === 503 && attempt < 3) {
+                continue;
+              }
+              
+              // Otherwise break (non-retryable error or max attempts)
+              break;
             }
-          ).catch(err => {
-            console.log('[Auto-Verify] ❌ Step 3 FAILED: API request error');
-            console.log('[Auto-Verify]   - Status:', err.response?.status);
-            console.log('[Auto-Verify]   - StatusText:', err.response?.statusText);
-            console.log('[Auto-Verify]   - Data:', JSON.stringify(err.response?.data));
-            console.log('[Auto-Verify]   - Message:', err.message);
-            
-            // If 503 (Service Unavailable), it's Sudreg database issue, not our credentials
-            if (err.response?.status === 503) {
-              console.log('[Auto-Verify] ⚠️ Sudreg database is down/unavailable - this is their problem, not ours');
-              throw new Error('Sudreg service temporarily unavailable');
-            }
-            
-            throw err;
-          });
+          }
+          
+          // After retry loop
+          if (!sudResponse && lastError) {
+            console.log('[Auto-Verify] ❌ All 3 attempts failed');
+            console.log('[Auto-Verify] Last error status:', lastError.response?.status);
+            console.log('[Auto-Verify] Last error data:', JSON.stringify(lastError.response?.data));
+            throw lastError;
+          }
           
           console.log('[Auto-Verify] Step 3 Response received');
           console.log('[Auto-Verify]   - Status:', sudResponse?.status);
