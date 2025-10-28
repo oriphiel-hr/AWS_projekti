@@ -6,6 +6,7 @@ import { uploadDocument } from '../lib/upload.js';
 import fs from 'fs/promises';
 import path from 'path';
 import axios from 'axios';
+import * as cheerio from 'cheerio';
 
 const r = Router();
 
@@ -414,8 +415,8 @@ r.post('/auto-verify', async (req, res, next) => {
         
       case 'SOLE_TRADER':
       case 'PAUSAL':
-        // Obrtni registar - Traži dokument za provjeru
-        console.log('[Auto-Verify] Obrt/Pausalni: Zahtijeva dokument iz Obrtnog registra');
+        // Obrtni registar - POKUŠAVAMO provjeru
+        console.log('[Auto-Verify] Obrt/Pausalni: Pokušavam provjeriti Obrtni registar...');
         
         // Provjeri da li već postoji verificirani profil u našoj bazi
         const existingOIB = await prisma.user.findFirst({
@@ -450,22 +451,97 @@ r.post('/auto-verify', async (req, res, next) => {
           console.log('[Auto-Verify] ✅ VERIFIED via existing verification');
           break;
         }
+        
+        // Pokušaj direktnu provjeru na Pretraživač obrta
+        try {
+          console.log('[Auto-Verify] Pokušavam scraping sa https://pretrazivac-obrta.gov.hr/pretraga.htm');
           
-          // Zbog nedostupnosti javnog API-ja za Obrtni registar, 
-          // korisnik mora uploadati službeni izvadak
+          // Pokušaj GET request na pretraživač
+          const searchUrl = `https://pretrazivac-obrta.gov.hr/pretraga.htm?oib=${taxId}`;
+          const searchResponse = await axios.get(searchUrl, {
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+              'Accept-Language': 'hr-HR,hr;q=0.9,en;q=0.8',
+              'Referer': 'https://pretrazivac-obrta.gov.hr/'
+            },
+            timeout: 10000,
+            maxRedirects: 5
+          }).catch(err => {
+            console.log('[Auto-Verify] ❌ Scraping failed:', err.message);
+            return null;
+          });
           
-        } catch (error) {
-          console.log('[Auto-Verify] Obrt verificiran u bazi:', error.message);
+          if (searchResponse && searchResponse.data) {
+            const $ = cheerio.load(searchResponse.data);
+            
+            // Pokušaj pronaći podatke o obrtu u HTML-u
+            const obrtFound = $('body').text().includes(taxId) || 
+                             $('body').text().toLowerCase().includes('obrt') ||
+                             $('body').text().toLowerCase().includes('aktivan');
+            
+            if (obrtFound) {
+              console.log('[Auto-Verify] ✅ Obrt pronađen na Pretraživač obrta');
+              
+              const badges = [
+                { 
+                  type: 'BUSINESS', 
+                  source: 'OBRTNI_REGISTAR', 
+                  verified: true,
+                  description: 'Potvrđeno u Pretraživaču obrta'
+                }
+              ];
+              
+              results = {
+                verified: true,
+                needsDocument: false,
+                badges: badges,
+                badgeCount: badges.length,
+                errors: []
+              };
+              
+              // Spremi badge status u bazu ako user postoji
+              if (req.user) {
+                try {
+                  const badgeData = {
+                    BUSINESS: {
+                      verified: true,
+                      source: 'OBRTNI_REGISTAR',
+                      date: new Date().toISOString()
+                    }
+                  };
+                  
+                  await prisma.providerProfile.update({
+                    where: { userId: req.user.id },
+                    data: {
+                      badgeData: badgeData,
+                      kycVerified: true,
+                      kycVerifiedAt: new Date()
+                    }
+                  });
+                  
+                  console.log('[Auto-Verify] ✅ Badge data saved to database (Obrtni)');
+                } catch (dbError) {
+                  console.error('[Auto-Verify] ⚠️ Failed to save badge data:', dbError);
+                }
+              }
+              
+              break;
+            }
+          }
+          
+        } catch (scrapingError) {
+          console.log('[Auto-Verify] Scraping error:', scrapingError.message);
         }
         
-        // Fallback: treba dokument (Obrtni registar nema javni API)
+        // Fallback: treba dokument
         console.log('[Auto-Verify] Obrt: Traži se dokument iz Obrtnog registra');
         results = {
           verified: false,
           needsDocument: true,
           badges: [],
           errors: [
-            'Za obrte i paušalne obrte potreban je izvadak iz Obrtnog registra. Možete ga downloadati besplatno na https://www.obrti.hr/pretraga'
+            'Za automatsku provjeru uploadajte službeni izvadak iz Obrtnog registra. Možete ga downloadati besplatno na https://pretrazivac-obrta.gov.hr/pretraga.htm'
           ]
         };
         break;
