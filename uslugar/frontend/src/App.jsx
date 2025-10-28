@@ -9,6 +9,7 @@ import Login from './pages/Login';
 import UserRegister from './pages/UserRegister';
 import ProviderRegister from './pages/ProviderRegister';
 import ProviderProfile from './pages/ProviderProfile';
+import ProviderProfileModal from './components/ProviderProfile';
 import UpgradeToProvider from './pages/UpgradeToProvider';
 import VerifyEmail from './pages/VerifyEmail';
 import ForgotPassword from './pages/ForgotPassword';
@@ -158,12 +159,33 @@ export default function App(){
     const handleHashChange = () => {
       const hash = window.location.hash?.slice(1).split('?')[0];
       const validTabs = ['admin', 'login', 'register-user', 'register-provider', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'user', 'leads', 'my-leads', 'roi', 'subscription', 'pricing', 'providers', 'categories', 'documentation'];
+      
+      // Check for provider direct link: #provider/{providerId}
+      const providerMatch = hash.match(/^provider\/(.+)$/);
+      if (providerMatch) {
+        const providerId = providerMatch[1];
+        // Fetch and display provider
+        api.get(`/providers/${providerId}`)
+          .then(response => {
+            setSelectedProvider(response.data);
+            setTab('providers'); // Switch to providers tab
+          })
+          .catch(err => {
+            console.error('Error loading provider:', err);
+            setTab('providers');
+          });
+        return;
+      }
+      
       if (validTabs.includes(hash)) {
         setTab(hash);
       } else if (!hash) {
         setTab('user');
       }
     };
+    
+    // Check initial hash on load
+    handleHashChange();
     
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
@@ -984,7 +1006,7 @@ export default function App(){
 
       {/* Provider Profile Modal */}
       {selectedProvider && (
-        <ProviderProfile
+        <ProviderProfileModal
           providerId={selectedProvider.user.id}
           onClose={handleCloseProviderProfile}
         />
