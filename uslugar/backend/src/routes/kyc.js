@@ -569,32 +569,41 @@ r.post('/auto-verify', async (req, res, next) => {
               console.log('[Auto-Verify] 🔍 Table HTML length:', tableHTML.length);
               console.log('[Auto-Verify] 🔍 Table text preview:', tableText.substring(0, 500));
               
-              // Provjeri da li rezultati sadrže OIB i indikatore aktivnog obrta
-              const hasOIB = resultsText.includes(taxId);
-              const hasAktivan = resultsText.toLowerCase().includes('u radu') || 
-                                resultsText.toLowerCase().includes('aktivan') || 
-                                resultsText.toLowerCase().includes('upisan') ||
-                                resultsText.toLowerCase().includes('obavlja djelatnost') ||
-                                resultsText.toLowerCase().includes('registriran') ||
-                                resultsText.toLowerCase().includes('stanje:') ||
-                                resultsText.toLowerCase().includes('stanje u radu') ||
-                                resultsText.toLowerCase().includes('status');
+              // PROVJERI direktno u raw HTML-u (ne samo u text())
+              const hasOIBinHTML = resultsHTML.includes(taxId) || resultsText.includes(taxId);
               
-              console.log('[Auto-Verify] 🔍 Results contain OIB:', hasOIB);
+              // Provjeri indikatore aktivnosti u HTML-u
+              const htmlLower = resultsHTML.toLowerCase();
+              const hasAktivan = htmlLower.includes('u radu') || 
+                                htmlLower.includes('aktivan') || 
+                                htmlLower.includes('upisan') ||
+                                htmlLower.includes('obavlja djelatnost') ||
+                                htmlLower.includes('registriran') ||
+                                htmlLower.includes('stanje:') ||
+                                htmlLower.includes('stanje u radu') ||
+                                htmlLower.includes('status') ||
+                                htmlLower.includes('radna') ||
+                                htmlLower.includes('djelatnost') ||
+                                htmlLower.includes('obrt');
+              
+              console.log('[Auto-Verify] 🔍 Results contain OIB (HTML check):', hasOIBinHTML);
               console.log('[Auto-Verify] 🔍 Results contain active indicators:', hasAktivan);
-              console.log('[Auto-Verify] 🔍 Full body contains OIB:', searchResponse.data.includes(taxId));
               
-              // Provjeri da li postoji poruka "nema rezultata"
-              const nemaRezultata = resultsText.toLowerCase().includes('nema rezultata') ||
-                                   resultsText.toLowerCase().includes('nema podataka') ||
-                                   resultsText.toLowerCase().includes('pretraga nije dala rezultata') ||
-                                   resultsText.toLowerCase().includes('nijedan obrt');
+              // Provjeri da li postoji poruka "nema rezultata" (u HTML-u)
+              const nemaRezultata = htmlLower.includes('nema rezultata') ||
+                                   htmlLower.includes('nema podataka') ||
+                                   htmlLower.includes('pretraga nije dala rezultata') ||
+                                   htmlLower.includes('nijedan obrt') ||
+                                   htmlLower.includes('0 rezultata') ||
+                                   htmlLower.includes('rezultata pretrage');
               
               console.log('[Auto-Verify] 🔍 Nema rezultata message:', nemaRezultata);
+              console.log('[Auto-Verify] 🔍 Has OIB in HTML:', hasOIBinHTML);
+              console.log('[Auto-Verify] 🔍 Has active indicators:', hasAktivan);
               
               if (nemaRezultata) {
                 console.log('[Auto-Verify] ⚠️ Obrt NIJE pronađen u registru (nema rezultata poruka)');
-              } else if (hasOIB && hasAktivan) {
+              } else if (hasOIBinHTML && hasAktivan) {
                 console.log('[Auto-Verify] ✅ Obrt PRONAĐEN i AKTIVAN u rezultatima pretrage!');
                 
                 const badges = [
