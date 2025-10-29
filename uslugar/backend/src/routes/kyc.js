@@ -552,13 +552,33 @@ r.post('/auto-verify', async (req, res, next) => {
               console.log('[Auto-Verify] 🔍 Response headers:', Object.keys(searchResponse.headers));
               
               // KORAK 4: Parse rezultate pretrage
-              const $results = cheerio.load(searchResponse.data);
-              const resultsText = $results('body').text();
               const resultsHTML = searchResponse.data;
+              
+              // PROVJERI: Da li je ovo F5 Big-IP WAF challenge stranica?
+              const isWAFChallenge = resultsHTML.includes('window["bobcmn"]') ||
+                                    resultsHTML.includes('window["failureConfig"]') ||
+                                    resultsHTML.includes('TSPD_101') ||
+                                    resultsHTML.includes('something went wrong') ||
+                                    resultsHTML.includes('support id');
+              
+              console.log('[Auto-Verify] 🔍 Is WAF challenge page:', isWAFChallenge);
+              
+              if (isWAFChallenge) {
+                console.log('[Auto-Verify] 🚫 Server blokira pristup - F5 Big-IP WAF challenge');
+                console.log('[Auto-Verify] ⚠️ Scraping nije moguć zbog WAF zaštite');
+                // Nastavi na fallback - traži dokument
+                // Nema break, ide dalje na fallback
+              }
+              
+              const $results = cheerio.load(resultsHTML);
+              const resultsText = $results('body').text();
               
               console.log('[Auto-Verify] 🔍 Results page length (text):', resultsText.length);
               console.log('[Auto-Verify] 🔍 Results page length (HTML):', resultsHTML.length);
-              console.log('[Auto-Verify] 🔍 HTML preview (first 2000 chars):', resultsHTML.substring(0, 2000));
+              
+              if (!isWAFChallenge) {
+                console.log('[Auto-Verify] 🔍 HTML preview (first 2000 chars):', resultsHTML.substring(0, 2000));
+              }
               
               // Traži tablicu s rezultatima
               const resultsTable = $results('table.results, table.pretraga, #rezultati, .rezultati-pretrage').first();
@@ -571,6 +591,12 @@ r.post('/auto-verify', async (req, res, next) => {
               
               // VAŽNO: Provjeri da li OIB postoji u REZULTATIMA pretrage, ne u formi!
               // Problem: hasOIBinHTML provjerava bilo gdje u HTML-u, uključujući i u formi koju smo poslali
+              
+              // Ako je WAF challenge, preskoči provjeru rezultata
+              if (isWAFChallenge) {
+                console.log('[Auto-Verify] ⚠️ WAF challenge detected - skipping result check');
+                // Nema break - ide dalje na fallback
+              } else {
               
               const htmlLower = resultsHTML.toLowerCase();
               
@@ -632,35 +658,36 @@ r.post('/auto-verify', async (req, res, next) => {
               
               console.log('[Auto-Verify] 🔍 Has OIB in RESULTS (not form):', hasOIBinResults);
               
-              // VAŽNO: OIB treba postojati U REZULTATIMA, i NE smije biti poruka "nema rezultata"
-              if (nemaRezultata) {
-                console.log('[Auto-Verify] ⚠️ Obrt NIJE pronađen u registru (nema rezultata poruka)');
-              } else if (hasOIBinResults && !nemaRezultata && resultsHTML.length > 5000) {
-                console.log('[Auto-Verify] ✅ Obrt PRONAĐEN (OIB postoji u HTML rezultatima)');
-                console.log('[Auto-Verify] ✅ Obrt PRONAĐEN u rezultatima pretrage! (OIB exists in HTML)');
-                
-                const badges = [
-                  { 
-                    type: 'BUSINESS', 
-                    source: 'OBRTNI_REGISTAR', 
+                // VAŽNO: OIB treba postojati U REZULTATIMA, i NE smije biti poruka "nema rezultata"
+                if (nemaRezultata) {
+                  console.log('[Auto-Verify] ⚠️ Obrt NIJE pronađen u registru (nema rezultata poruka)');
+                } else if (hasOIBinResults && !nemaRezultata && resultsHTML.length > 5000) {
+                  console.log('[Auto-Verify] ✅ Obrt PRONAĐEN (OIB postoji u HTML rezultatima)');
+                  console.log('[Auto-Verify] ✅ Obrt PRONAĐEN u rezultatima pretrage! (OIB exists in HTML)');
+                  
+                  const badges = [
+                    { 
+                      type: 'BUSINESS', 
+                      source: 'OBRTNI_REGISTAR', 
+                      verified: true,
+                      description: 'Potvrđeno u Obrtnom registru'
+                    }
+                  ];
+                  
+                  results = {
                     verified: true,
-                    description: 'Potvrđeno u Obrtnom registru'
-                  }
-                ];
-                
-                results = {
-                  verified: true,
-                  needsDocument: false,
-                  badges: badges,
-                  badgeCount: badges.length,
-                  errors: []
-                };
-                
-                console.log('[Auto-Verify] ✅ Obrt verificiran (Pronađen u rezultatima pretrage)');
-                break;
-              } else {
-                console.log('[Auto-Verify] ⚠️ Obrt nije pronađen ili nije aktivan u rezultatima');
-              }
+                    needsDocument: false,
+                    badges: badges,
+                    badgeCount: badges.length,
+                    errors: []
+                  };
+                  
+                  console.log('[Auto-Verify] ✅ Obrt verificiran (Pronađen u rezultatima pretrage)');
+                  break;
+                } else {
+                  console.log('[Auto-Verify] ⚠️ Obrt nije pronađen ili nije aktivan u rezultatima');
+                }
+              } // end if (!isWAFChallenge)
               
             } catch (searchErr) {
               console.log('[Auto-Verify] ❌ Search POST failed:', searchErr.response?.status);
