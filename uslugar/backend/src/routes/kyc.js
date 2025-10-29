@@ -446,77 +446,109 @@ r.post('/auto-verify', async (req, res, next) => {
           console.log('[Auto-Verify] 📍 OIB za provjeru:', taxId);
           
           const baseUrl = 'https://pretrazivac-obrta.gov.hr/pretraga.htm';
-          let pageResponse = null;
           
-          // Pokušaj 1: Standardni pristup
-          console.log('[Auto-Verify] 🔍 Attempt 1: Standard headers');
+          // KORAK 1: Dobij formu (GET)
+          console.log('[Auto-Verify] 🔍 Step 1: Getting form page...');
+          let formPage = null;
+          
           try {
-            pageResponse = await axios.get(baseUrl, {
+            formPage = await axios.get(baseUrl, {
               headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-                'Accept-Language': 'hr-HR,hr;q=0.9,en;q=0.8',
-                'Accept-Encoding': 'gzip, deflate, br'
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                'Accept-Language': 'hr-HR,hr;q=0.9,en;q=0.8'
               },
               timeout: 15000,
               maxRedirects: 5
             });
           } catch (err) {
-            console.log('[Auto-Verify] ❌ Attempt 1 failed:', err.response?.status);
-            console.log('[Auto-Verify] Error data:', err.response?.data);
-            
-            // Provjeri da li je "URL rejected" greška
+            console.log('[Auto-Verify] ❌ Failed to get form page:', err.response?.status);
             if (err.response?.data && typeof err.response.data === 'string') {
               if (err.response.data.includes('URL was rejected') || 
                   err.response.data.includes('support ID')) {
                 console.log('[Auto-Verify] 🚫 Pretraživač obrta blokira pristup - WAF/CSP zaštita');
               }
             }
-            
-            // Pokušaj 2: Minimalni headers
-            console.log('[Auto-Verify] 🔍 Attempt 2: Minimal headers');
-            try {
-              pageResponse = await axios.get(baseUrl, {
-                headers: {
-                  'User-Agent': 'Mozilla/5.0 (compatible; ObrtniRegistarBot/1.0)',
-                  'Accept': 'text/html'
-                },
-                timeout: 10000,
-                maxRedirects: 3
-              });
-            } catch (err2) {
-              console.log('[Auto-Verify] ❌ Attempt 2 failed:', err2.response?.status);
-              console.log('[Auto-Verify] 🚫 Sve pokušaje neuspješni - Pretraživač obrta nedostupan');
-              pageResponse = null;
-            }
           }
           
-          console.log('[Auto-Verify] 🔍 Page response status:', pageResponse?.status);
-          console.log('[Auto-Verify] 🔍 Page response length:', pageResponse?.data?.length);
-          
-          if (pageResponse && pageResponse.data) {
-            const $ = cheerio.load(pageResponse.data);
+          if (!formPage || !formPage.data) {
+            console.log('[Auto-Verify] ⚠️ Cannot get form page - skipping scraping');
+          } else {
+            console.log('[Auto-Verify] ✅ Form page loaded');
             
-            // Provjeri da li ima podatke o obrtu
-            const bodyText = $('body').text();
-            const hasOIB = bodyText.includes(taxId);
-            const hasObrt = bodyText.toLowerCase().includes('obrt');
+            // KORAK 2: Parse formu i nađi action URL i input polja
+            const $ = cheerio.load(formPage.data);
+            const form = $('form').first();
+            const formAction = form.attr('action') || baseUrl;
+            const formMethod = form.attr('method') || 'post';
             
-            console.log('[Auto-Verify] 🔍 Body contains OIB:', hasOIB);
-            console.log('[Auto-Verify] 🔍 Body contains "obrt":', hasObrt);
-            console.log('[Auto-Verify] 🔍 Body preview (first 500 chars):', bodyText.substring(0, 500));
+            console.log('[Auto-Verify] 🔍 Form action:', formAction);
+            console.log('[Auto-Verify] 🔍 Form method:', formMethod);
             
-            // PROVJERI da li stranica SADRŽI PODATKE o obrtu
-            if (hasOIB || hasObrt) {
-              console.log('[Auto-Verify] ✅ Pronađeni su podaci o obrtu u Pretraživaču obrta');
+            // Nađi sva input polja
+            const formData = {};
+            $('form input, form select').each((i, elem) => {
+              const name = $(elem).attr('name');
+              const value = $(elem).attr('value') || '';
+              const type = $(elem).attr('type');
               
-              // Da li postoje dodatni pokazatelji da je obrt aktivan?
-              const hasAktivan = bodyText.toLowerCase().includes('aktivan') || 
-                                bodyText.toLowerCase().includes('upisan') ||
-                                bodyText.toLowerCase().includes('obavlja djelatnost');
+              if (name && type !== 'submit' && type !== 'button') {
+                formData[name] = value;
+              }
+            });
+            
+            // Postavi OIB u form podatke
+            // Pokušaj pronaći input polje za OIB (može biti 'oib', 'OIB', 'taxId', itd.)
+            const oibFieldName = Object.keys(formData).find(key => 
+              key.toLowerCase().includes('oib') || 
+              key.toLowerCase().includes('tax') ||
+              key.toLowerCase().includes('pib')
+            ) || 'oib'; // fallback
+            
+            formData[oibFieldName] = taxId;
+            
+            console.log('[Auto-Verify] 🔍 OIB field name:', oibFieldName);
+            console.log('[Auto-Verify] 🔍 Form data keys:', Object.keys(formData));
+            
+            // KORAK 3: Pošalji POST zahtjev s OIB parametrom
+            console.log('[Auto-Verify] 🔍 Step 2: Submitting search with OIB:', taxId);
+            
+            try {
+              const searchUrl = formAction.startsWith('http') ? formAction : `https://pretrazivac-obrta.gov.hr/${formAction}`;
               
-              if (hasAktivan) {
-                console.log('[Auto-Verify] ✅ Obrt je AKTIVAN u registru');
+              const searchResponse = await axios.post(searchUrl, new URLSearchParams(formData).toString(), {
+                headers: {
+                  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                  'Accept-Language': 'hr-HR,hr;q=0.9,en;q=0.8',
+                  'Content-Type': 'application/x-www-form-urlencoded',
+                  'Referer': baseUrl
+                },
+                timeout: 15000,
+                maxRedirects: 5
+              });
+              
+              console.log('[Auto-Verify] ✅ Search response status:', searchResponse.status);
+              
+              // KORAK 4: Parse rezultate pretrage
+              const $results = cheerio.load(searchResponse.data);
+              const resultsText = $results('body').text();
+              
+              console.log('[Auto-Verify] 🔍 Results page length:', resultsText.length);
+              console.log('[Auto-Verify] 🔍 Results preview (first 500 chars):', resultsText.substring(0, 500));
+              
+              // Provjeri da li rezultati sadrže OIB i indikatore aktivnog obrta
+              const hasOIB = resultsText.includes(taxId);
+              const hasAktivan = resultsText.toLowerCase().includes('aktivan') || 
+                                resultsText.toLowerCase().includes('upisan') ||
+                                resultsText.toLowerCase().includes('obavlja djelatnost') ||
+                                resultsText.toLowerCase().includes('registriran');
+              
+              console.log('[Auto-Verify] 🔍 Results contain OIB:', hasOIB);
+              console.log('[Auto-Verify] 🔍 Results contain active indicators:', hasAktivan);
+              
+              if (hasOIB && hasAktivan) {
+                console.log('[Auto-Verify] ✅ Obrt PRONAĐEN i AKTIVAN u rezultatima pretrage!');
                 
                 const badges = [
                   { 
@@ -535,13 +567,15 @@ r.post('/auto-verify', async (req, res, next) => {
                   errors: []
                 };
                 
-                console.log('[Auto-Verify] ✅ Obrt verificiran (Pronađen u Pretraživaču obrta)');
+                console.log('[Auto-Verify] ✅ Obrt verificiran (Pronađen u rezultatima pretrage)');
                 break;
               } else {
-                console.log('[Auto-Verify] ⚠️ Obrt postoji, ali status nije potvrđen');
+                console.log('[Auto-Verify] ⚠️ Obrt nije pronađen ili nije aktivan u rezultatima');
               }
-            } else {
-              console.log('[Auto-Verify] ⚠️ Nema podataka o ovom obrtu u Pretraživaču obrta');
+              
+            } catch (searchErr) {
+              console.log('[Auto-Verify] ❌ Search POST failed:', searchErr.response?.status);
+              console.log('[Auto-Verify] Error:', searchErr.message);
             }
           }
           
