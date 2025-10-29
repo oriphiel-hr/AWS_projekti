@@ -191,6 +191,21 @@ r.post('/auto-verify', async (req, res, next) => {
       });
     }
     
+    // Validate OIB first
+    const isOIBValid = validateOIB(taxId);
+    console.log(`[Auto-Verify] OIB validation: ${isOIBValid ? 'VALID' : 'INVALID'}`);
+    
+    if (!isOIBValid) {
+      console.log(`[Auto-Verify] ❌ OIB kontrolna znamenka NIJE validna!`);
+      return res.status(400).json({
+        verified: false,
+        needsDocument: true,
+        error: 'OIB nije validan (kontrolna znamenka ne odgovara)',
+        badges: [],
+        errors: ['OIB kontrolna znamenka nije validna']
+      });
+    }
+    
     // Auto-verify based on legal status
     let results = {
       verified: false,
@@ -556,109 +571,12 @@ r.post('/auto-verify', async (req, res, next) => {
             }
           }
           
-          // Ako scraping nije uspio, pokušaj "smart verification"
-          // OIB je već validiran (kontrolna znamenka), i legal status je obrt
-          console.log('[Auto-Verify] 🔄 Smart verification: OIB validan + legal status obrt');
-          
-          const badges = [
-            { 
-              type: 'BUSINESS', 
-              source: 'OBRTNI_REGISTAR', 
-              verified: true,
-              description: 'Potvrđeno - OIB validan i pravni status obrta'
-            }
-          ];
-          
-          results = {
-            verified: true,
-            needsDocument: false,
-            badges: badges,
-            badgeCount: badges.length,
-            errors: []
-          };
-          
-          console.log('[Auto-Verify] ✅ Obrt verificiran (OIB + legal status)');
-          
-          // Spremi badge status u bazu ako user postoji
-          if (req.user) {
-            try {
-              const badgeData = {
-                BUSINESS: {
-                  verified: true,
-                  source: 'OBRTNI_REGISTAR',
-                  date: new Date().toISOString(),
-                  method: 'smart_verification'
-                }
-              };
-              
-              await prisma.providerProfile.update({
-                where: { userId: req.user.id },
-                data: {
-                  badgeData: badgeData,
-                  kycVerified: true,
-                  kycVerifiedAt: new Date()
-                }
-              });
-              
-              console.log('[Auto-Verify] ✅ Badge data saved to database (Obrtni)');
-            } catch (dbError) {
-              console.error('[Auto-Verify] ⚠️ Failed to save badge data:', dbError);
-            }
-          }
-          
-          break;
+          // Scraping nije uspio - zahtijeva dokument
+          console.log('[Auto-Verify] ⚠️ Scraping nije potvrdio podatke u registru');
           
         } catch (scrapingError) {
           console.log('[Auto-Verify] Scraping error:', scrapingError.message);
           console.log('[Auto-Verify] Error stack:', scrapingError.stack);
-          
-          // Smart fallback: OIB je već validiran (kontrolna znamenka), 
-          // legal status je obrt, pa možemo automatski verificirati
-          const badges = [
-            { 
-              type: 'BUSINESS', 
-              source: 'OBRTNI_REGISTAR', 
-              verified: true,
-              description: 'Potvrđeno - OIB validan i pravni status obrta'
-            }
-          ];
-          
-          results = {
-            verified: true,
-            needsDocument: false,
-            badges: badges,
-            badgeCount: badges.length,
-            errors: []
-          };
-          
-          console.log('[Auto-Verify] ✅ Obrt verificiran (OIB validation fallback)');
-          
-          // Spremi badge status
-          if (req.user) {
-            try {
-              const badgeData = {
-                BUSINESS: {
-                  verified: true,
-                  source: 'OBRTNI_REGISTAR',
-                  date: new Date().toISOString(),
-                  method: 'oib_validation'
-                }
-              };
-              
-              await prisma.providerProfile.update({
-                where: { userId: req.user.id },
-                data: {
-                  badgeData: badgeData,
-                  kycVerified: true,
-                  kycVerifiedAt: new Date()
-                }
-              });
-              
-              console.log('[Auto-Verify] ✅ Badge data saved (Obrtni fallback)');
-            } catch (dbError) {
-              console.error('[Auto-Verify] ⚠️ DB error:', dbError.message);
-            }
-          }
         }
         
         // Ako došli ovdje, verificiran
