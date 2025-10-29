@@ -506,40 +506,19 @@ r.post('/auto-verify', async (req, res, next) => {
             console.log('[Auto-Verify] 🔍 Body contains "obrt":', hasObrt);
             console.log('[Auto-Verify] 🔍 Body preview (first 200 chars):', bodyText.substring(0, 200));
             
-            // Za sada, ako stranica ima smisla, pretpostavimo da je obrt validan
-            // (jer imamo OIB i legal status)
+            // Provjeravamo da li stranica ima smisla
             if (pageResponse.status === 200) {
-              console.log('[Auto-Verify] ✅ Pretraživač obrta dostupan, proširujemo provjeru');
+              console.log('[Auto-Verify] ✅ Pretraživač obrta dostupan');
+              console.log('[Auto-Verify] 🔍 Provjeri podatke u HTML-u...');
               
-              // Ako imamo OIB i legal status za obrt, možemo smart fallback:
-              // Pretpostavimo da je validan ako imamo OIB (kontrolna znamenka je već validirana)
-              // i legal status obrta
-              
-              const badges = [
-                { 
-                  type: 'BUSINESS', 
-                  source: 'OBRTNI_REGISTAR', 
-                  verified: true,
-                  description: 'Potvrđeno - OIB validan i pravni status obrta'
-                }
-              ];
-              
-              results = {
-                verified: true,
-                needsDocument: false,
-                badges: badges,
-                badgeCount: badges.length,
-                errors: []
-              };
-              
-              console.log('[Auto-Verify] ✅ Obrt verificiran (smart fallback)');
-              // Ne spremamo badge u bazu ovdje - bit će spremljen tek nakon registracije
-              break;
+              // DO NOTHING - samo log
+              // Nije verificiran jer nema API podataka
+              console.log('[Auto-Verify] ⚠️ Pretraživač dostupan, ali bez stvarnih podataka o obrtu');
             }
           }
           
-          // Scraping nije uspio - zahtijeva dokument
-          console.log('[Auto-Verify] ⚠️ Scraping nije potvrdio podatke u registru');
+          // Ako nije verificiran - zahtijeva dokument
+          console.log('[Auto-Verify] ⚠️ Ne možemo automatski verificirati - traži se dokument');
           
         } catch (scrapingError) {
           console.log('[Auto-Verify] Scraping error:', scrapingError.message);
