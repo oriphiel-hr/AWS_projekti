@@ -558,7 +558,7 @@ r.post('/auto-verify', async (req, res, next) => {
               
               console.log('[Auto-Verify] 🔍 Results page length (text):', resultsText.length);
               console.log('[Auto-Verify] 🔍 Results page length (HTML):', resultsHTML.length);
-              console.log('[Auto-Verify] 🔍 Results preview (first 1000 chars):', resultsText.substring(0, 1000));
+              console.log('[Auto-Verify] 🔍 HTML preview (first 2000 chars):', resultsHTML.substring(0, 2000));
               
               // Traži tablicu s rezultatima
               const resultsTable = $results('table.results, table.pretraga, #rezultati, .rezultati-pretrage').first();
@@ -601,9 +601,11 @@ r.post('/auto-verify', async (req, res, next) => {
               console.log('[Auto-Verify] 🔍 Has OIB in HTML:', hasOIBinHTML);
               console.log('[Auto-Verify] 🔍 Has active indicators:', hasAktivan);
               
+              // Ako OIB postoji u HTML-u, to znači da je obrt pronađen
               if (nemaRezultata) {
                 console.log('[Auto-Verify] ⚠️ Obrt NIJE pronađen u registru (nema rezultata poruka)');
-              } else if (hasOIBinHTML && !nemaRezultata) {
+              } else if (hasOIBinHTML) {
+                console.log('[Auto-Verify] ✅ Obrt PRONAĐEN (OIB postoji u HTML rezultatima)');
                 console.log('[Auto-Verify] ✅ Obrt PRONAĐEN u rezultatima pretrage! (OIB exists in HTML)');
                 
                 const badges = [
