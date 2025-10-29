@@ -445,22 +445,32 @@ r.post('/auto-verify', async (req, res, next) => {
           console.log('[Auto-Verify] 📍 Pokušavam scraping sa https://pretrazivac-obrta.gov.hr');
           console.log('[Auto-Verify] 📍 OIB za provjeru:', taxId);
           
-          const baseUrl = 'https://pretrazivac-obrta.gov.hr/pretraga.htm';
+          const baseUrl = 'https://pretrazivac-obrta.gov.hr/pretraga';
           
-          // KORAK 1: Dobij formu (GET)
+          // KORAK 1: Dobij formu (GET) - VAŽNO: čuvaj cookies za session
           console.log('[Auto-Verify] 🔍 Step 1: Getting form page...');
           let formPage = null;
+          let cookies = ''; // Čuvamo cookies za session
+          
+          // Koristimo axios instance s cookie jar
+          const axiosInstance = axios.create({
+            timeout: 15000,
+            maxRedirects: 5,
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36',
+              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+              'Accept-Language': 'hr,en;q=0.9',
+              'Accept-Encoding': 'gzip, deflate, br'
+            }
+          });
           
           try {
-            formPage = await axios.get(baseUrl, {
-              headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                'Accept-Language': 'hr-HR,hr;q=0.9,en;q=0.8'
-              },
-              timeout: 15000,
-              maxRedirects: 5
-            });
+            formPage = await axiosInstance.get(baseUrl);
+            // Ekstrahiraj cookies iz response headers
+            if (formPage.headers['set-cookie']) {
+              cookies = formPage.headers['set-cookie'].map(c => c.split(';')[0]).join('; ');
+              console.log('[Auto-Verify] ✅ Cookies extracted:', cookies.substring(0, 100) + '...');
+            }
           } catch (err) {
             console.log('[Auto-Verify] ❌ Failed to get form page:', err.response?.status);
             if (err.response?.data && typeof err.response.data === 'string') {
@@ -476,56 +486,66 @@ r.post('/auto-verify', async (req, res, next) => {
           } else {
             console.log('[Auto-Verify] ✅ Form page loaded');
             
-            // KORAK 2: Parse formu i nađi action URL i input polja
-            const $ = cheerio.load(formPage.data);
-            const form = $('form').first();
-            const formAction = form.attr('action') || baseUrl;
-            const formMethod = form.attr('method') || 'post';
+            // KORAK 2: Kreiraj payload prema stvarnoj strukturi
+            console.log('[Auto-Verify] 🔍 Step 2: Building search payload...');
             
-            console.log('[Auto-Verify] 🔍 Form action:', formAction);
-            console.log('[Auto-Verify] 🔍 Form method:', formMethod);
+            // Prema payload-u koji ste dali
+            const formData = new URLSearchParams();
             
-            // Nađi sva input polja
-            const formData = {};
-            $('form input, form select').each((i, elem) => {
-              const name = $(elem).attr('name');
-              const value = $(elem).attr('value') || '';
-              const type = $(elem).attr('type');
-              
-              if (name && type !== 'submit' && type !== 'button') {
-                formData[name] = value;
-              }
-            });
+            // OIB vlasnika (glavno polje za pretragu)
+            formData.append('vlasnikOib', taxId);
+            formData.append('_pretraziVlasnikaUPasivi', 'on');
             
-            // Postavi OIB u form podatke
-            // Pokušaj pronaći input polje za OIB (može biti 'oib', 'OIB', 'taxId', itd.)
-            const oibFieldName = Object.keys(formData).find(key => 
-              key.toLowerCase().includes('oib') || 
-              key.toLowerCase().includes('tax') ||
-              key.toLowerCase().includes('pib')
-            ) || 'oib'; // fallback
+            // Status checkboxovi (svi na true)
+            formData.append('obrtStanjeURadu', 'true');
+            formData.append('_obrtStanjeURadu', 'on');
+            formData.append('obrtStanjePrivObust', 'true');
+            formData.append('_obrtStanjePrivObust', 'on');
+            formData.append('obrtStanjeMirovanje', 'true');
+            formData.append('_obrtStanjeMirovanje', 'on');
+            formData.append('obrtStanjeBezPocetka', 'true');
+            formData.append('_obrtStanjeBezPocetka', 'on');
+            formData.append('obrtStanjeOdjava', 'true');
+            formData.append('_obrtStanjeOdjava', 'on');
+            formData.append('obrtStanjePreseljen', 'true');
+            formData.append('_obrtStanjePreseljen', 'on');
             
-            formData[oibFieldName] = taxId;
+            // Ostali parametri (prazni, ali potrebni)
+            formData.append('obrtNaziv', '');
+            formData.append('obrtMbo', '');
+            formData.append('obrtTduId', '');
+            formData.append('vlasnikImePrezime', '');
+            formData.append('djelatnost2025Id', '');
+            formData.append('_pretezitaDjelatnost2025', 'on');
+            formData.append('djelatnostId', '');
+            formData.append('_pretezitaDjelatnost', 'on');
             
-            console.log('[Auto-Verify] 🔍 OIB field name:', oibFieldName);
-            console.log('[Auto-Verify] 🔍 Form data keys:', Object.keys(formData));
+            // Recaptcha token - pokušavamo bez njega prvo, ili mock
+            // Ako treba, možemo koristiti proxy servis za reCAPTCHA, ali za sada probajmo bez
+            formData.append('recaptchaToken', ''); // Prazan token - možda će proći
+            formData.append('action', 'validate_captcha');
+            formData.append('trazi', 'Traži');
+            
+            console.log('[Auto-Verify] 🔍 Payload built with vlasnikOib:', taxId);
             
             // KORAK 3: Pošalji POST zahtjev s OIB parametrom
-            console.log('[Auto-Verify] 🔍 Step 2: Submitting search with OIB:', taxId);
+            console.log('[Auto-Verify] 🔍 Step 3: Submitting search POST...');
             
             try {
-              const searchUrl = formAction.startsWith('http') ? formAction : `https://pretrazivac-obrta.gov.hr/${formAction}`;
+              const searchUrl = 'https://pretrazivac-obrta.gov.hr/pretraga';
               
-              const searchResponse = await axios.post(searchUrl, new URLSearchParams(formData).toString(), {
+              const searchResponse = await axiosInstance.post(searchUrl, formData.toString(), {
                 headers: {
-                  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                  'Accept-Language': 'hr-HR,hr;q=0.9,en;q=0.8',
                   'Content-Type': 'application/x-www-form-urlencoded',
-                  'Referer': baseUrl
-                },
-                timeout: 15000,
-                maxRedirects: 5
+                  'Referer': baseUrl,
+                  'Origin': 'https://pretrazivac-obrta.gov.hr',
+                  'Cookie': cookies, // Koristi cookies iz GET requesta
+                  'Sec-Fetch-Dest': 'document',
+                  'Sec-Fetch-Mode': 'navigate',
+                  'Sec-Fetch-Site': 'same-origin',
+                  'Sec-Fetch-User': '?1',
+                  'Upgrade-Insecure-Requests': '1'
+                }
               });
               
               console.log('[Auto-Verify] ✅ Search response status:', searchResponse.status);
