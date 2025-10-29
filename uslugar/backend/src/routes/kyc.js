@@ -611,23 +611,31 @@ r.post('/auto-verify', async (req, res, next) => {
                 });
               }
               
-              // Ako još nismo našli, provjeri da li je OIB u tekstu koji NIJE dio forme
-              // (ukloni form elemente iz pretrage)
+              // Ako još nismo našli, provjeri da li postoji tekst koji NIJE dio forme i NIJE samo HTML markup
               if (!hasOIBinResults) {
-                const $bodyWithoutForm = cheerio.load(resultsHTML);
-                $bodyWithoutForm('form, input, select, button').remove();
-                const bodyWithoutFormText = $bodyWithoutForm('body').text();
-                hasOIBinResults = bodyWithoutFormText.includes(taxId) && bodyWithoutFormText.length > 50;
-                console.log('[Auto-Verify] 🔍 Body without form contains OIB:', hasOIBinResults);
-                console.log('[Auto-Verify] 🔍 Body without form length:', bodyWithoutFormText.length);
+                // Ukloni sve forme i provjeri da li postoji čist tekst koji nije samo HTML
+                const $clean = cheerio.load(resultsHTML);
+                $clean('form, input, select, button, script, style').remove();
+                const cleanText = $clean('body').text().trim();
+                
+                // Provjeri da li postoji značajan sadržaj (rezultati) i da OIB postoji u tom sadržaju
+                const significantContent = cleanText.length > 200; // Mora biti dovoljno teksta (rezultati)
+                const oibInCleanText = cleanText.includes(taxId);
+                
+                hasOIBinResults = significantContent && oibInCleanText;
+                
+                console.log('[Auto-Verify] 🔍 Clean text length:', cleanText.length);
+                console.log('[Auto-Verify] 🔍 Significant content exists:', significantContent);
+                console.log('[Auto-Verify] 🔍 OIB in clean text:', oibInCleanText);
+                console.log('[Auto-Verify] 🔍 Clean text preview:', cleanText.substring(0, 300));
               }
               
               console.log('[Auto-Verify] 🔍 Has OIB in RESULTS (not form):', hasOIBinResults);
               
-              // Ako OIB postoji u REZULTATIMA pretrage (ne u formi), to znači da je obrt pronađen
+              // VAŽNO: OIB treba postojati U REZULTATIMA, i NE smije biti poruka "nema rezultata"
               if (nemaRezultata) {
                 console.log('[Auto-Verify] ⚠️ Obrt NIJE pronađen u registru (nema rezultata poruka)');
-              } else if (hasOIBinResults && !nemaRezultata) {
+              } else if (hasOIBinResults && !nemaRezultata && resultsHTML.length > 5000) {
                 console.log('[Auto-Verify] ✅ Obrt PRONAĐEN (OIB postoji u HTML rezultatima)');
                 console.log('[Auto-Verify] ✅ Obrt PRONAĐEN u rezultatima pretrage! (OIB exists in HTML)');
                 
