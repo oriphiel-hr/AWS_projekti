@@ -504,21 +504,49 @@ r.post('/auto-verify', async (req, res, next) => {
             
             console.log('[Auto-Verify] 🔍 Body contains OIB:', hasOIB);
             console.log('[Auto-Verify] 🔍 Body contains "obrt":', hasObrt);
-            console.log('[Auto-Verify] 🔍 Body preview (first 200 chars):', bodyText.substring(0, 200));
+            console.log('[Auto-Verify] 🔍 Body preview (first 500 chars):', bodyText.substring(0, 500));
             
-            // Provjeravamo da li stranica ima smisla
-            if (pageResponse.status === 200) {
-              console.log('[Auto-Verify] ✅ Pretraživač obrta dostupan');
-              console.log('[Auto-Verify] 🔍 Provjeri podatke u HTML-u...');
+            // PROVJERI da li stranica SADRŽI PODATKE o obrtu
+            if (hasOIB || hasObrt) {
+              console.log('[Auto-Verify] ✅ Pronađeni su podaci o obrtu u Pretraživaču obrta');
               
-              // DO NOTHING - samo log
-              // Nije verificiran jer nema API podataka
-              console.log('[Auto-Verify] ⚠️ Pretraživač dostupan, ali bez stvarnih podataka o obrtu');
+              // Da li postoje dodatni pokazatelji da je obrt aktivan?
+              const hasAktivan = bodyText.toLowerCase().includes('aktivan') || 
+                                bodyText.toLowerCase().includes('upisan') ||
+                                bodyText.toLowerCase().includes('obavlja djelatnost');
+              
+              if (hasAktivan) {
+                console.log('[Auto-Verify] ✅ Obrt je AKTIVAN u registru');
+                
+                const badges = [
+                  { 
+                    type: 'BUSINESS', 
+                    source: 'OBRTNI_REGISTAR', 
+                    verified: true,
+                    description: 'Potvrđeno u Obrtnom registru'
+                  }
+                ];
+                
+                results = {
+                  verified: true,
+                  needsDocument: false,
+                  badges: badges,
+                  badgeCount: badges.length,
+                  errors: []
+                };
+                
+                console.log('[Auto-Verify] ✅ Obrt verificiran (Pronađen u Pretraživaču obrta)');
+                break;
+              } else {
+                console.log('[Auto-Verify] ⚠️ Obrt postoji, ali status nije potvrđen');
+              }
+            } else {
+              console.log('[Auto-Verify] ⚠️ Nema podataka o ovom obrtu u Pretraživaču obrta');
             }
           }
           
           // Ako nije verificiran - zahtijeva dokument
-          console.log('[Auto-Verify] ⚠️ Ne možemo automatski verificirati - traži se dokument');
+          console.log('[Auto-Verify] ⚠️ Automatska provjera neuspješna - traži se dokument');
           
         } catch (scrapingError) {
           console.log('[Auto-Verify] Scraping error:', scrapingError.message);
