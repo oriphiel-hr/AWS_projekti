@@ -472,30 +472,51 @@ r.post('/auto-verify', async (req, res, next) => {
           console.log('[Auto-Verify] 📍 Pokušavam scraping sa https://pretrazivac-obrta.gov.hr');
           console.log('[Auto-Verify] 📍 OIB za provjeru:', taxId);
           
-          // Obrtni registar web scraping
-          // Web stranica koristi POST formu, ne GET query params
-          // Hajde da prvo dobijemo stranicu, pa submitamo formu
-          
           const baseUrl = 'https://pretrazivac-obrta.gov.hr/pretraga.htm';
+          let pageResponse = null;
           
-          console.log('[Auto-Verify] 🔍 GET request to:', baseUrl);
-          
-          // Pokušaj prvo dobiti stranicu
-          const pageResponse = await axios.get(baseUrl, {
-            headers: {
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-              'Accept-Language': 'hr-HR,hr;q=0.9,en;q=0.8',
-              'Accept-Encoding': 'gzip, deflate, br'
-            },
-            timeout: 15000,
-            maxRedirects: 5
-          }).catch(err => {
-            console.log('[Auto-Verify] ❌ Failed to fetch page:', err.message);
-            console.log('[Auto-Verify] Error code:', err.code);
-            console.log('[Auto-Verify] Error status:', err.response?.status);
-            return null;
-          });
+          // Pokušaj 1: Standardni pristup
+          console.log('[Auto-Verify] 🔍 Attempt 1: Standard headers');
+          try {
+            pageResponse = await axios.get(baseUrl, {
+              headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                'Accept-Language': 'hr-HR,hr;q=0.9,en;q=0.8',
+                'Accept-Encoding': 'gzip, deflate, br'
+              },
+              timeout: 15000,
+              maxRedirects: 5
+            });
+          } catch (err) {
+            console.log('[Auto-Verify] ❌ Attempt 1 failed:', err.response?.status);
+            console.log('[Auto-Verify] Error data:', err.response?.data);
+            
+            // Provjeri da li je "URL rejected" greška
+            if (err.response?.data && typeof err.response.data === 'string') {
+              if (err.response.data.includes('URL was rejected') || 
+                  err.response.data.includes('support ID')) {
+                console.log('[Auto-Verify] 🚫 Pretraživač obrta blokira pristup - WAF/CSP zaštita');
+              }
+            }
+            
+            // Pokušaj 2: Minimalni headers
+            console.log('[Auto-Verify] 🔍 Attempt 2: Minimal headers');
+            try {
+              pageResponse = await axios.get(baseUrl, {
+                headers: {
+                  'User-Agent': 'Mozilla/5.0 (compatible; ObrtniRegistarBot/1.0)',
+                  'Accept': 'text/html'
+                },
+                timeout: 10000,
+                maxRedirects: 3
+              });
+            } catch (err2) {
+              console.log('[Auto-Verify] ❌ Attempt 2 failed:', err2.response?.status);
+              console.log('[Auto-Verify] 🚫 Sve pokušaje neuspješni - Pretraživač obrta nedostupan');
+              pageResponse = null;
+            }
+          }
           
           console.log('[Auto-Verify] 🔍 Page response status:', pageResponse?.status);
           console.log('[Auto-Verify] 🔍 Page response length:', pageResponse?.data?.length);
@@ -591,7 +612,7 @@ r.post('/auto-verify', async (req, res, next) => {
           needsDocument: true,
           badges: [],
           errors: [
-            'Za dodatnu provjeru uploadajte službeni izvadak iz Obrtnog registra. Možete ga downloadati besplatno na https://pretrazivac-obrta.gov.hr/pretraga.htm'
+            'Automatska provjera Obrtnog registra trenutno nije dostupna (WAF zaštita). Molimo uploadajte službeni izvadak iz Obrtnog registra. Možete ga downloadati besplatno na https://pretrazivac-obrta.gov.hr/pretraga.htm'
           ]
         };
         break;
