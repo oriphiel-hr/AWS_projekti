@@ -603,8 +603,8 @@ r.post('/auto-verify', async (req, res, next) => {
               
               if (nemaRezultata) {
                 console.log('[Auto-Verify] ⚠️ Obrt NIJE pronađen u registru (nema rezultata poruka)');
-              } else if (hasOIBinHTML && hasAktivan) {
-                console.log('[Auto-Verify] ✅ Obrt PRONAĐEN i AKTIVAN u rezultatima pretrage!');
+              } else if (hasOIBinHTML && !nemaRezultata) {
+                console.log('[Auto-Verify] ✅ Obrt PRONAĐEN u rezultatima pretrage! (OIB exists in HTML)');
                 
                 const badges = [
                   { 
