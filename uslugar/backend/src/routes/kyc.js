@@ -569,25 +569,10 @@ r.post('/auto-verify', async (req, res, next) => {
               console.log('[Auto-Verify] 🔍 Table HTML length:', tableHTML.length);
               console.log('[Auto-Verify] 🔍 Table text preview:', tableText.substring(0, 500));
               
-              // PROVJERI direktno u raw HTML-u (ne samo u text())
-              const hasOIBinHTML = resultsHTML.includes(taxId) || resultsText.includes(taxId);
+              // VAŽNO: Provjeri da li OIB postoji u REZULTATIMA pretrage, ne u formi!
+              // Problem: hasOIBinHTML provjerava bilo gdje u HTML-u, uključujući i u formi koju smo poslali
               
-              // Provjeri indikatore aktivnosti u HTML-u
               const htmlLower = resultsHTML.toLowerCase();
-              const hasAktivan = htmlLower.includes('u radu') || 
-                                htmlLower.includes('aktivan') || 
-                                htmlLower.includes('upisan') ||
-                                htmlLower.includes('obavlja djelatnost') ||
-                                htmlLower.includes('registriran') ||
-                                htmlLower.includes('stanje:') ||
-                                htmlLower.includes('stanje u radu') ||
-                                htmlLower.includes('status') ||
-                                htmlLower.includes('radna') ||
-                                htmlLower.includes('djelatnost') ||
-                                htmlLower.includes('obrt');
-              
-              console.log('[Auto-Verify] 🔍 Results contain OIB (HTML check):', hasOIBinHTML);
-              console.log('[Auto-Verify] 🔍 Results contain active indicators:', hasAktivan);
               
               // Provjeri da li postoji poruka "nema rezultata" (u HTML-u)
               const nemaRezultata = htmlLower.includes('nema rezultata') ||
@@ -595,16 +580,54 @@ r.post('/auto-verify', async (req, res, next) => {
                                    htmlLower.includes('pretraga nije dala rezultata') ||
                                    htmlLower.includes('nijedan obrt') ||
                                    htmlLower.includes('0 rezultata') ||
-                                   htmlLower.includes('rezultata pretrage');
+                                   htmlLower.includes('rezultata pretrage') ||
+                                   htmlLower.includes('pretraga ne sadrži rezultate');
               
               console.log('[Auto-Verify] 🔍 Nema rezultata message:', nemaRezultata);
-              console.log('[Auto-Verify] 🔍 Has OIB in HTML:', hasOIBinHTML);
-              console.log('[Auto-Verify] 🔍 Has active indicators:', hasAktivan);
               
-              // Ako OIB postoji u HTML-u, to znači da je obrt pronađen
+              // Traži OIB u rezultatima (tablice, liste, itd.) - NE u formi
+              let hasOIBinResults = false;
+              
+              // Pokušaj pronaći OIB u tablici rezultata
+              if (resultsTable.length > 0 && tableHTML.length > 0) {
+                const tableContainsOIB = tableHTML.includes(taxId) || tableText.includes(taxId);
+                console.log('[Auto-Verify] 🔍 Table contains OIB:', tableContainsOIB);
+                if (tableContainsOIB) {
+                  hasOIBinResults = true;
+                }
+              }
+              
+              // Ako nema tablice, traži OIB u rezultatima (div-ovi koji nisu forma)
+              if (!hasOIBinResults) {
+                // Traži div-ove koji nisu dio forme i sadrže OIB
+                const resultDivs = $results('div[id*="rezultat"], div[class*="rezultat"], div[id*="result"], div[class*="result"], div[id*="pretraga"]');
+                resultDivs.each((i, elem) => {
+                  const divHTML = $results(elem).html() || '';
+                  if (divHTML.includes(taxId) && divHTML.length > 100) { // Provjeri da nije samo forma
+                    hasOIBinResults = true;
+                    console.log('[Auto-Verify] 🔍 Found OIB in result div:', i);
+                    return false; // break
+                  }
+                });
+              }
+              
+              // Ako još nismo našli, provjeri da li je OIB u tekstu koji NIJE dio forme
+              // (ukloni form elemente iz pretrage)
+              if (!hasOIBinResults) {
+                const $bodyWithoutForm = cheerio.load(resultsHTML);
+                $bodyWithoutForm('form, input, select, button').remove();
+                const bodyWithoutFormText = $bodyWithoutForm('body').text();
+                hasOIBinResults = bodyWithoutFormText.includes(taxId) && bodyWithoutFormText.length > 50;
+                console.log('[Auto-Verify] 🔍 Body without form contains OIB:', hasOIBinResults);
+                console.log('[Auto-Verify] 🔍 Body without form length:', bodyWithoutFormText.length);
+              }
+              
+              console.log('[Auto-Verify] 🔍 Has OIB in RESULTS (not form):', hasOIBinResults);
+              
+              // Ako OIB postoji u REZULTATIMA pretrage (ne u formi), to znači da je obrt pronađen
               if (nemaRezultata) {
                 console.log('[Auto-Verify] ⚠️ Obrt NIJE pronađen u registru (nema rezultata poruka)');
-              } else if (hasOIBinHTML) {
+              } else if (hasOIBinResults && !nemaRezultata) {
                 console.log('[Auto-Verify] ✅ Obrt PRONAĐEN (OIB postoji u HTML rezultatima)');
                 console.log('[Auto-Verify] ✅ Obrt PRONAĐEN u rezultatima pretrage! (OIB exists in HTML)');
                 
