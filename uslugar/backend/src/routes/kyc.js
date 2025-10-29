@@ -441,6 +441,7 @@ r.post('/auto-verify', async (req, res, next) => {
         }
         
         // Pokušaj direktnu provjeru na Pretraživač obrta
+        let wasWAFBlocked = false; // Flag za praćenje WAF blokade
         try {
           console.log('[Auto-Verify] 📍 Pokušavam scraping sa https://pretrazivac-obrta.gov.hr');
           console.log('[Auto-Verify] 📍 OIB za provjeru:', taxId);
@@ -564,9 +565,10 @@ r.post('/auto-verify', async (req, res, next) => {
               console.log('[Auto-Verify] 🔍 Is WAF challenge page:', isWAFChallenge);
               
               if (isWAFChallenge) {
+                wasWAFBlocked = true; // Postavi flag
                 console.log('[Auto-Verify] 🚫 Server blokira pristup - F5 Big-IP WAF challenge');
                 console.log('[Auto-Verify] ⚠️ Scraping nije moguć zbog WAF zaštite');
-                // Nastavi na fallback - traži dokument
+                // Nastavi na fallback - smart verification
                 // Nema break, ide dalje na fallback
               }
               
@@ -708,37 +710,45 @@ r.post('/auto-verify', async (req, res, next) => {
           break;
         }
         
-        // Smart fallback: Ako je WAF blokirao, možemo koristiti smart verification
+        // Smart fallback: Ako je WAF blokirao, koristimo smart verification
         // (OIB je već validiran, legal status je obrt - to je dovoljno osnovno provjere)
-        const wasWAFBlocked = false; // Provjeri iz konteksta (postavit ću iznad)
-        
         console.log('[Auto-Verify] 🔄 Checking smart fallback options...');
+        console.log('[Auto-Verify] 🔍 Was WAF blocked:', wasWAFBlocked);
         
-        // Fallback: treba dokument (ali smart verification kao alternativa)
-        console.log('[Auto-Verify] Obrt: Traži se dokument iz Obrtnog registra (ili smart verification)');
+        if (wasWAFBlocked) {
+          // Smart verification: Ako je OIB validan i legal status je obrt, možemo dati osnovnu verifikaciju
+          console.log('[Auto-Verify] ✅ Applying smart verification (WAF blocked, but OIB + legal status valid)');
+          
+          results = {
+            verified: true, // Smart verification
+            needsDocument: false, // Nije obavezno (može dodati kasnije)
+            badges: [
+              { 
+                type: 'BUSINESS', 
+                source: 'OBRTNI_REGISTAR', 
+                verified: true,
+                description: 'Potvrđeno - OIB validan i pravni status obrta (automatska provjera nije dostupna zbog WAF zaštite)'
+              }
+            ],
+            badgeCount: 1,
+            errors: [
+              'Napomena: Automatska provjera Obrtnog registra nije dostupna zbog WAF zaštite. Verificirano na osnovu validiranog OIB-a i pravnog statusa. Za dodatnu provjeru možete uploadati službeni izvadak na https://pretrazivac-obrta.gov.hr/pretraga.htm'
+            ],
+            warning: true // Dodaj warning flag
+          };
+          break;
+        }
         
-        // Smart verification: Ako je OIB validan i legal status je obrt, možemo dati osnovnu verifikaciju
-        // ali s jasnom porukom da je to "osnovna" provjera
-        const smartVerification = {
-          verified: true, // Smart verification
-          needsDocument: false, // Nije obavezno (može dodati kasnije)
-          badges: [
-            { 
-              type: 'BUSINESS', 
-              source: 'OBRTNI_REGISTAR', 
-              verified: true,
-              description: 'Potvrđeno - OIB validan i pravni status obrta (automatska provjera nije dostupna zbog WAF zaštite)'
-            }
-          ],
-          badgeCount: 1,
+        // Ako WAF NIJE blokirao, ali nema rezultata - traži dokument
+        console.log('[Auto-Verify] Obrt: Traži se dokument iz Obrtnog registra');
+        results = {
+          verified: false,
+          needsDocument: true,
+          badges: [],
           errors: [
-            'Napomena: Automatska provjera Obrtnog registra nije dostupna zbog WAF zaštite. Verificirano na osnovu validiranog OIB-a i pravnog statusa. Za dodatnu provjeru možete uploadati službeni izvadak na https://pretrazivac-obrta.gov.hr/pretraga.htm'
-          ],
-          warning: true // Dodaj warning flag
+            'Automatska provjera Obrtnog registra trenutno nije dostupna. Molimo uploadajte službeni izvadak iz Obrtnog registra. Možete ga downloadati besplatno na https://pretrazivac-obrta.gov.hr/pretraga.htm'
+          ]
         };
-        
-        results = smartVerification;
-        console.log('[Auto-Verify] ✅ Smart verification applied (OIB + legal status)');
         break;
         
       case 'FREELANCER':
