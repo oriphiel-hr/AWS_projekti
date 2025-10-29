@@ -376,34 +376,7 @@ r.post('/auto-verify', async (req, res, next) => {
                 errors: []
               };
               
-              // Spremi badge status u bazu ako user postoji
-              if (req.user) {
-                try {
-                  const badgeData = {
-                    BUSINESS: {
-                      verified: true,
-                      source: 'SUDSKI_REGISTAR',
-                      date: new Date().toISOString(),
-                      companyName: companyName
-                    }
-                  };
-                  
-                  await prisma.providerProfile.update({
-                    where: { userId: req.user.id },
-                    data: {
-                      badgeData: badgeData,
-                      kycVerified: true,
-                      kycVerifiedAt: new Date()
-                    }
-                  });
-                  
-                  console.log('[Auto-Verify] ✅ Badge data saved to database');
-                } catch (dbError) {
-                  console.error('[Auto-Verify] ⚠️ Failed to save badge data:', dbError);
-                  // Continue without failing
-                }
-              }
-              
+              // Ne spremamo badge u bazu ovdje - bit će spremljen tek nakon registracije
               break;
             } else {
               console.log('[Auto-Verify] ⚠️ Step 3: Company not active, status:', status);
@@ -560,34 +533,7 @@ r.post('/auto-verify', async (req, res, next) => {
               };
               
               console.log('[Auto-Verify] ✅ Obrt verificiran (smart fallback)');
-              
-              // Spremi badge status u bazu ako user postoji
-              if (req.user) {
-                try {
-                  const badgeData = {
-                    BUSINESS: {
-                      verified: true,
-                      source: 'OBRTNI_REGISTAR',
-                      date: new Date().toISOString(),
-                      method: 'smart_fallback'
-                    }
-                  };
-                  
-                  await prisma.providerProfile.update({
-                    where: { userId: req.user.id },
-                    data: {
-                      badgeData: badgeData,
-                      kycVerified: true,
-                      kycVerifiedAt: new Date()
-                    }
-                  });
-                  
-                  console.log('[Auto-Verify] ✅ Badge data saved to database (Obrtni)');
-                } catch (dbError) {
-                  console.error('[Auto-Verify] ⚠️ Failed to save badge data:', dbError);
-                }
-              }
-              
+              // Ne spremamo badge u bazu ovdje - bit će spremljen tek nakon registracije
               break;
             }
           }
@@ -628,19 +574,8 @@ r.post('/auto-verify', async (req, res, next) => {
         break;
     }
     
-    // Ako je verificiran i korisnik je logiran - postavi kycVerified
-    // (kod se može koristiti i prije registracije za provjeru)
-    if (results.verified && req.user) {
-      await prisma.providerProfile.update({
-        where: { userId: req.user.id },
-        data: {
-          kycVerified: true,
-          kycVerifiedAt: new Date(),
-          kycOibValidated: true
-        }
-      });
-    }
-    
+    // Ne spremamo badge u bazu ovdje - auto-verify samo vraća rezultate
+    // Badge će biti spremljen tek nakon što korisnik klikne "Registriraj se"
     res.json(results);
     
   } catch (err) {

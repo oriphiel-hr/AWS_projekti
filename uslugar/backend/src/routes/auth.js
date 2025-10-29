@@ -4,6 +4,8 @@ import { prisma } from '../lib/prisma.js';
 import { hashPassword, verifyPassword, signToken, auth } from '../lib/auth.js';
 import { sendVerificationEmail, sendPasswordResetEmail } from '../lib/email.js';
 import { deleteUserWithRelations } from '../lib/delete-helpers.js';
+import axios from 'axios';
+import { validateOIB } from '../lib/kyc-verification.js';
 
 const r = Router();
 
@@ -80,7 +82,7 @@ r.post('/register', async (req, res, next) => {
     const user = await prisma.user.create({ data: userData });
     
     if (role === 'PROVIDER') {
-      await prisma.providerProfile.create({ 
+      const providerProfile = await prisma.providerProfile.create({ 
         data: { 
           userId: user.id, 
           bio: '', 
@@ -90,6 +92,83 @@ r.post('/register', async (req, res, next) => {
           companyName
         } 
       });
+      
+      // Auto-verify i dodijeli badge ako je moguće (tek nakon registracije)
+      try {
+        if (taxId && legalStatusId && validateOIB(taxId)) {
+          const legalStatus = await prisma.legalStatus.findUnique({
+            where: { id: legalStatusId }
+          });
+          
+          if (legalStatus) {
+            let badgeData = null;
+            let isVerified = false;
+            
+            // Sudski registar za d.o.o./j.d.o.o.
+            if (legalStatus.code === 'DOO' || legalStatus.code === 'JDOO') {
+              try {
+                const clientId = process.env.SUDREG_CLIENT_ID;
+                const clientSecret = process.env.SUDREG_CLIENT_SECRET;
+                
+                if (clientId && clientSecret) {
+                  const tokenResponse = await axios.post(
+                    'https://sudreg-data.gov.hr/api/oauth/token',
+                    'grant_type=client_credentials',
+                    {
+                      auth: { username: clientId, password: clientSecret },
+                      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+                    }
+                  ).catch(() => null);
+                  
+                  if (tokenResponse?.data?.access_token) {
+                    const sudResponse = await axios.get(
+                      'https://sudreg-data.gov.hr/api/javni/detalji_subjekta',
+                      {
+                        params: { tip_identifikatora: 'oib', identifikator: taxId },
+                        headers: { 'Authorization': `Bearer ${tokenResponse.data.access_token}` },
+                        timeout: 10000
+                      }
+                    ).catch(() => null);
+                    
+                    if (sudResponse?.data?.status === 1) {
+                      const companyNameFromSud = sudResponse.data.skracena_tvrtka?.ime || sudResponse.data.tvrtka?.ime || companyName;
+                      badgeData = {
+                        BUSINESS: {
+                          verified: true,
+                          source: 'SUDSKI_REGISTAR',
+                          date: new Date().toISOString(),
+                          companyName: companyNameFromSud
+                        }
+                      };
+                      isVerified = true;
+                      console.log('[Register] ✅ Auto-verified via Sudski registar');
+                    }
+                  }
+                }
+              } catch (err) {
+                console.log('[Register] ⚠️ Auto-verify failed (Sudski):', err.message);
+              }
+            }
+            
+            // Spremi badge ako je verificiran
+            if (badgeData && isVerified) {
+              await prisma.providerProfile.update({
+                where: { userId: user.id },
+                data: {
+                  badgeData: badgeData,
+                  kycVerified: true,
+                  kycVerifiedAt: new Date(),
+                  kycOibValidated: true
+                }
+              });
+              console.log('[Register] ✅ Badge saved after registration');
+            }
+          }
+        }
+      } catch (verifyError) {
+        console.error('[Register] Error during auto-verify:', verifyError);
+        // Ne blokiraj registraciju ako auto-verify faila
+      }
     }
     
     // Pošalji verification email - OBAVEZNO
