@@ -549,25 +549,52 @@ r.post('/auto-verify', async (req, res, next) => {
               });
               
               console.log('[Auto-Verify] ✅ Search response status:', searchResponse.status);
+              console.log('[Auto-Verify] 🔍 Response headers:', Object.keys(searchResponse.headers));
               
               // KORAK 4: Parse rezultate pretrage
               const $results = cheerio.load(searchResponse.data);
               const resultsText = $results('body').text();
+              const resultsHTML = searchResponse.data;
               
-              console.log('[Auto-Verify] 🔍 Results page length:', resultsText.length);
-              console.log('[Auto-Verify] 🔍 Results preview (first 500 chars):', resultsText.substring(0, 500));
+              console.log('[Auto-Verify] 🔍 Results page length (text):', resultsText.length);
+              console.log('[Auto-Verify] 🔍 Results page length (HTML):', resultsHTML.length);
+              console.log('[Auto-Verify] 🔍 Results preview (first 1000 chars):', resultsText.substring(0, 1000));
+              
+              // Traži tablicu s rezultatima
+              const resultsTable = $results('table.results, table.pretraga, #rezultati, .rezultati-pretrage').first();
+              const tableHTML = resultsTable.html() || '';
+              const tableText = resultsTable.text() || '';
+              
+              console.log('[Auto-Verify] 🔍 Has results table:', resultsTable.length > 0);
+              console.log('[Auto-Verify] 🔍 Table HTML length:', tableHTML.length);
+              console.log('[Auto-Verify] 🔍 Table text preview:', tableText.substring(0, 500));
               
               // Provjeri da li rezultati sadrže OIB i indikatore aktivnog obrta
               const hasOIB = resultsText.includes(taxId);
-              const hasAktivan = resultsText.toLowerCase().includes('aktivan') || 
+              const hasAktivan = resultsText.toLowerCase().includes('u radu') || 
+                                resultsText.toLowerCase().includes('aktivan') || 
                                 resultsText.toLowerCase().includes('upisan') ||
                                 resultsText.toLowerCase().includes('obavlja djelatnost') ||
-                                resultsText.toLowerCase().includes('registriran');
+                                resultsText.toLowerCase().includes('registriran') ||
+                                resultsText.toLowerCase().includes('stanje:') ||
+                                resultsText.toLowerCase().includes('stanje u radu') ||
+                                resultsText.toLowerCase().includes('status');
               
               console.log('[Auto-Verify] 🔍 Results contain OIB:', hasOIB);
               console.log('[Auto-Verify] 🔍 Results contain active indicators:', hasAktivan);
+              console.log('[Auto-Verify] 🔍 Full body contains OIB:', searchResponse.data.includes(taxId));
               
-              if (hasOIB && hasAktivan) {
+              // Provjeri da li postoji poruka "nema rezultata"
+              const nemaRezultata = resultsText.toLowerCase().includes('nema rezultata') ||
+                                   resultsText.toLowerCase().includes('nema podataka') ||
+                                   resultsText.toLowerCase().includes('pretraga nije dala rezultata') ||
+                                   resultsText.toLowerCase().includes('nijedan obrt');
+              
+              console.log('[Auto-Verify] 🔍 Nema rezultata message:', nemaRezultata);
+              
+              if (nemaRezultata) {
+                console.log('[Auto-Verify] ⚠️ Obrt NIJE pronađen u registru (nema rezultata poruka)');
+              } else if (hasOIB && hasAktivan) {
                 console.log('[Auto-Verify] ✅ Obrt PRONAĐEN i AKTIVAN u rezultatima pretrage!');
                 
                 const badges = [
