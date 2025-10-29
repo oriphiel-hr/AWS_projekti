@@ -150,7 +150,7 @@ r.post('/register', async (req, res, next) => {
               }
             }
             
-            // Spremi badge ako je verificiran
+            // Spremi badge ako je STVARNO verificiran (samo ako Sudski API potvrdi)
             if (badgeData && isVerified) {
               await prisma.providerProfile.update({
                 where: { userId: user.id },
@@ -161,7 +161,9 @@ r.post('/register', async (req, res, next) => {
                   kycOibValidated: true
                 }
               });
-              console.log('[Register] ✅ Badge saved after registration');
+              console.log('[Register] ✅ Badge saved - verified by Sudski registar');
+            } else {
+              console.log('[Register] ⚠️ Badge NOT saved - verification failed or company not active');
             }
           }
         }
