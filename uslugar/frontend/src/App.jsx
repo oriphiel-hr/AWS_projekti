@@ -519,6 +519,12 @@ export default function App(){
                 </button>
                 <button
                   className="w-full text-left px-3 py-2 rounded hover:bg-gray-100"
+                  onClick={() => { setTab('team-locations'); setIsMobileMenuOpen(false); }}
+                >
+                  📍 Tim Lokacije
+                </button>
+                <button
+                  className="w-full text-left px-3 py-2 rounded hover:bg-gray-100"
                   onClick={() => { setTab('roi'); setIsMobileMenuOpen(false); }}
                 >
                   📊 ROI
