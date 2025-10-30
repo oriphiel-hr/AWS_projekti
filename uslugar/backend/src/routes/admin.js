@@ -127,7 +127,9 @@ r.post('/cleanup/non-master', auth(true, ['ADMIN']), async (req, res, next) => {
     }
     result.deleted.users = { count: usersDeleted };
 
-    // Note: Master data preserved: Category, SubscriptionPlan, LegalStatus, ADMIN user
+    // IMPORTANT: Preserve testing data
+    // Do NOT delete TestPlan/TestItem/TestRun/TestRunItem (explicitly ensured by not touching them here)
+    // Note: Master data preserved: Category, SubscriptionPlan, LegalStatus, ADMIN user, and all Testing models
     res.json({ success: true, ...result });
   } catch (e) {
     next(e);

@@ -40,7 +40,7 @@ export default function AdminDataCleanup(){
           <p className="font-semibold">Upozorenje</p>
           <ul className="list-disc ml-5 mt-1 text-sm">
             <li>Bit će obrisani transakcijski podaci: Chat, Ponude, Poslovi, Recenzije, Notifikacije, Pretplate, Provider profili i svi korisnici koji nisu ADMIN.</li>
-            <li>Sačuvat će se: ADMIN korisnik, Kategorije, Pretplatnički planovi, Pravni statusi.</li>
+            <li>Sačuvat će se: ADMIN korisnik, Kategorije, Pretplatnički planovi, Pravni statusi, <strong>Testiranje (Admin → Testiranje: planovi, stavke i runovi)</strong>.</li>
             <li>Akcija je nepovratna.</li>
           </ul>
         </div>
