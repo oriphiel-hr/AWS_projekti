@@ -1,5 +1,5 @@
--- CreateTable
-CREATE TABLE "ProviderTeamLocation" (
+-- CreateTable (with IF NOT EXISTS check)
+CREATE TABLE IF NOT EXISTS "ProviderTeamLocation" (
     "id" TEXT NOT NULL,
     "providerId" TEXT NOT NULL,
     "name" TEXT NOT NULL,
@@ -22,18 +22,23 @@ CREATE TABLE "ProviderTeamLocation" (
     CONSTRAINT "ProviderTeamLocation_pkey" PRIMARY KEY ("id")
 );
 
--- CreateIndex
-CREATE INDEX "ProviderTeamLocation_providerId_idx" ON "ProviderTeamLocation"("providerId");
+-- CreateIndex (with IF NOT EXISTS)
+CREATE INDEX IF NOT EXISTS "ProviderTeamLocation_providerId_idx" ON "ProviderTeamLocation"("providerId");
 
--- CreateIndex
-CREATE INDEX "ProviderTeamLocation_isActive_idx" ON "ProviderTeamLocation"("isActive");
+CREATE INDEX IF NOT EXISTS "ProviderTeamLocation_isActive_idx" ON "ProviderTeamLocation"("isActive");
 
--- CreateIndex
-CREATE INDEX "ProviderTeamLocation_isPrimary_idx" ON "ProviderTeamLocation"("isPrimary");
+CREATE INDEX IF NOT EXISTS "ProviderTeamLocation_isPrimary_idx" ON "ProviderTeamLocation"("isPrimary");
 
--- CreateIndex
-CREATE INDEX "ProviderTeamLocation_city_idx" ON "ProviderTeamLocation"("city");
+CREATE INDEX IF NOT EXISTS "ProviderTeamLocation_city_idx" ON "ProviderTeamLocation"("city");
 
--- AddForeignKey
-ALTER TABLE "ProviderTeamLocation" ADD CONSTRAINT "ProviderTeamLocation_providerId_fkey" FOREIGN KEY ("providerId") REFERENCES "ProviderProfile"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+-- AddForeignKey (with IF NOT EXISTS check)
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'ProviderTeamLocation_providerId_fkey'
+    ) THEN
+        ALTER TABLE "ProviderTeamLocation" ADD CONSTRAINT "ProviderTeamLocation_providerId_fkey" 
+        FOREIGN KEY ("providerId") REFERENCES "ProviderProfile"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    END IF;
+END $$;
 
