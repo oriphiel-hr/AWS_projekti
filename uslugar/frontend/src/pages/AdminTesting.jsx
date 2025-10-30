@@ -101,6 +101,118 @@ function PlanEditor({ onSaved }){
   )
 }
 
+function PresetPlanEditor({ preset, onSaved }){
+  const base = {
+    AUTH: [
+      { title: 'Registracija korisnika (osoba)', description: 'Registracija bez pravnog statusa', expectedResult: 'Uspješna registracija bez polja za firmu', dataVariations: { examples: ['ispravan email', 'neispravan email', 'slaba lozinka', 'duplikat email'] } },
+      { title: 'Registracija korisnika (firma/obrt)', description: 'Registracija s pravnim statusom', expectedResult: 'Obavezni: pravni status ≠ INDIVIDUAL, OIB, (osim FREELANCER) naziv firme', dataVariations: { examples: ['FREELANCER bez naziva firme (dozvoljeno)', 'DOO bez naziva (greška)', 'neispravan OIB (greška)', 'ispravan OIB (prolazi)'] } },
+      { title: 'Verifikacija emaila', description: 'Otvaranje linka za verifikaciju', expectedResult: 'Korisnik označen kao verified', dataVariations: { examples: ['link vrijedi', 'istekao link'] } },
+      { title: 'Prijava i odjava', description: 'Login s ispravnim/neispr. podacima', expectedResult: 'Ispravno: prijava, Neispravno: greška', dataVariations: { examples: ['kriva lozinka', 'nepostojeći email'] } },
+      { title: 'Zaboravljena lozinka i reset', description: 'Slanje emaila i promjena lozinke', expectedResult: 'Reset token radi, lozinka promijenjena', dataVariations: { examples: ['token nevažeći', 'token istekao'] } },
+    ],
+    ONBOARDING: [
+      { title: 'Nadogradnja na providera', description: 'Odabir pravnog statusa i OIB', expectedResult: 'INDIVIDUAL nije dopušten; OIB obavezan; validacija', dataVariations: { examples: ['FREELANCER bez naziva (prolazi)', 'DOO bez naziva (greška)', 'neispravan OIB', 'ispravan OIB'] } },
+      { title: 'Profil providera', description: 'Popunjavanje i kategorije', expectedResult: 'Maks 5 kategorija', dataVariations: { examples: ['0 kategorija', '5 kategorija', '6 kategorija (blok)'] } },
+      { title: 'Portfolio slike', description: 'Upload više slika', expectedResult: 'Slike vidljive i spremljene', dataVariations: { examples: ['bez slika', 'više slika'] } },
+    ],
+    KYC: [
+      { title: 'KYC: Upload dokumenta', description: 'PDF/JPG/PNG + consent', expectedResult: 'Status pending/verified', dataVariations: { examples: ['bez consent (greška)', 'nepodržan format', 'validan PDF'] } },
+      { title: 'KYC: Ekstrakcija OIB-a', description: 'Uparen s profilom', expectedResult: 'OIB match => verified', dataVariations: { examples: ['mismatch (review)', 'match (verified)'] } },
+    ],
+    JOBS: [
+      { title: 'Objava posla', description: 'Kreiranje sa/bez slika', expectedResult: 'Posao vidljiv na listi', dataVariations: { examples: ['bez slika', 'više slika', 's budžetom', 'bez budžeta'] } },
+      { title: 'Filtri i pretraga posla', description: 'Kategorija/grad/budžet', expectedResult: 'Lista filtrirana', dataVariations: { examples: ['bez rezultata', 'više rezultata'] } },
+    ],
+    LEADS: [
+      { title: 'Dostupni leadovi', description: 'Provider pregleda leadove', expectedResult: 'Lista s filterima', dataVariations: { examples: ['grad', 'kategorija', 'min/max budžet'] } },
+      { title: 'Kupnja ekskluzivnog leada', description: 'Dedukcija kredita', expectedResult: 'Lead u Mojim leadovima', dataVariations: { examples: ['dovoljno kredita', 'nedovoljno (greška)'] } },
+      { title: 'Ponuda na posao', description: 'Slanje ponude', expectedResult: 'Ponuda spremljena, notifikacija klijentu', dataVariations: { examples: ['cijena + pregovaranje', 'procijenjeni dani', 'insufficient credits'] } },
+      { title: 'ROI statusi', description: 'Kontaktiran/konvertiran/refund', expectedResult: 'Statusevi i ROI se ažuriraju', dataVariations: { examples: ['kontaktiran', 'konvertiran', 'refund'] } },
+    ],
+    CHAT: [
+      { title: 'Chat: slanje poruke', description: 'Korisnik ↔ Provider', expectedResult: 'Poruka vidljiva', dataVariations: { examples: ['više poruka', 'prazna poruka (blok)'] } },
+      { title: 'Notifikacije', description: 'Prikaz i označavanje pročitanim', expectedResult: 'Nove notifikacije vidljive', dataVariations: { examples: ['ponuda primljena', 'ponuda prihvaćena'] } },
+    ],
+    SUBS: [
+      { title: 'Pretplata: odabir plana', description: 'BASIC/PREMIUM/PRO', expectedResult: 'Plan odabran, krediti dodijeljeni', dataVariations: { examples: ['najpopularniji plan', 'skriven plan'] } },
+      { title: 'Plaćanje', description: 'Simulacija uspjeh/neuspjeh', expectedResult: 'Uspjeh: aktivna, neuspjeh: bez promjene', dataVariations: { examples: ['success', 'fail', 'retry'] } },
+    ],
+    ADMIN: [
+      { title: 'Admin: odobrenja providera', description: 'Approve/Reject/Inactive', expectedResult: 'Status ažuriran + notifikacija', dataVariations: { examples: ['APPROVED', 'REJECTED', 'INACTIVE'] } },
+      { title: 'Admin: KYC metrike', description: 'Provjera brojeva/vremena', expectedResult: 'Metrike vraćaju vrijednosti', dataVariations: { examples: ['bez verifikacija', 'više verificiranih'] } },
+    ],
+  }
+
+  const mapPresetToDefaults = (key) => {
+    if (key === 'ALL') {
+      return [
+        ...base.AUTH,
+        ...base.ONBOARDING,
+        ...base.KYC,
+        ...base.JOBS,
+        ...base.LEADS,
+        ...base.CHAT,
+        ...base.SUBS,
+        ...base.ADMIN,
+      ]
+    }
+    return base[key] || []
+  }
+
+  const [items, setItems] = useState(() => mapPresetToDefaults(preset))
+  const [name, setName] = useState(() => {
+    if (preset==='ALL') return 'Sve domene - E2E'
+    const labels = { AUTH:'Auth', ONBOARDING:'Onboarding', KYC:'KYC', JOBS:'Jobs', LEADS:'Leads i Ponude', CHAT:'Chat i Notifikacije', SUBS:'Pretplate i Plaćanja', ADMIN:'Admin' }
+    return `Plan: ${labels[preset] || preset}`
+  })
+  const [description, setDescription] = useState('Automatski generiran plan prema odabranoj domeni')
+  const [category, setCategory] = useState(() => preset)
+
+  // Sync items on preset change
+  React.useEffect(() => {
+    setItems(mapPresetToDefaults(preset).map((it) => ({ ...it })))
+    setCategory(preset)
+    const labels = { AUTH:'Auth', ONBOARDING:'Onboarding', KYC:'KYC', JOBS:'Jobs', LEADS:'Leads i Ponude', CHAT:'Chat i Notifikacije', SUBS:'Pretplate i Plaćanja', ADMIN:'Admin' }
+    setName(preset==='ALL' ? 'Sve domene - E2E' : `Plan: ${labels[preset] || preset}`)
+  }, [preset])
+
+  const handleSave = async () => {
+    const payload = { name, description, category, items: items.map((it, idx) => ({ ...it, order: idx })) }
+    const res = await api.post('/testing/plans', payload)
+    onSaved?.(res.data)
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <input className="border rounded px-3 py-2" placeholder="Naziv plana" value={name} onChange={e => setName(e.target.value)} />
+        <input className="border rounded px-3 py-2" placeholder="Kategorija" value={category} onChange={e => setCategory(e.target.value)} />
+        <input className="border rounded px-3 py-2" placeholder="Opis" value={description} onChange={e => setDescription(e.target.value)} />
+      </div>
+      <div className="space-y-3">
+        {items.map((it, idx) => (
+          <div key={idx} className="border rounded p-3">
+            <div className="flex justify-between items-center mb-2">
+              <h4 className="font-semibold">Stavka #{idx+1}</h4>
+              <button onClick={() => setItems(prev => prev.filter((_, i) => i !== idx))} className="text-red-600 text-sm">Ukloni</button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <input className="border rounded px-3 py-2" placeholder="Naslov" value={it.title} onChange={e => setItems(prev => prev.map((x, i) => i===idx ? { ...x, title: e.target.value } : x))} />
+              <input className="border rounded px-3 py-2" placeholder="Očekivani rezultat" value={it.expectedResult} onChange={e => setItems(prev => prev.map((x, i) => i===idx ? { ...x, expectedResult: e.target.value } : x))} />
+              <textarea className="border rounded px-3 py-2 md:col-span-2" placeholder="Opis" value={it.description} onChange={e => setItems(prev => prev.map((x, i) => i===idx ? { ...x, description: e.target.value } : x))} />
+              <textarea className="border rounded px-3 py-2 md:col-span-2" placeholder="Primjeri (zarezom odvojeni)" value={(it.dataVariations?.examples||[]).join(', ')} onChange={e => setItems(prev => prev.map((x, i) => i===idx ? { ...x, dataVariations: { examples: e.target.value.split(',').map(s=>s.trim()).filter(Boolean) } } : x))} />
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="flex gap-2">
+        <button onClick={() => setItems(prev => [...prev, { title: '', description: '', expectedResult: '', dataVariations: { examples: [] } }])} className="px-3 py-2 bg-gray-100 rounded">+ Dodaj stavku</button>
+        <button onClick={handleSave} className="px-4 py-2 bg-indigo-600 text-white rounded">Spremi plan</button>
+      </div>
+    </div>
+  )
+}
+
 function RunExecutor({ plan, onClose }){
   const [run, setRun] = useState(null)
   const [uploading, setUploading] = useState(false)
@@ -210,6 +322,7 @@ export default function AdminTesting(){
   const [plans, setPlans] = useState([])
   const [runs, setRuns] = useState([])
   const [activePlan, setActivePlan] = useState(null)
+  const [preset, setPreset] = useState('ALL')
 
   const load = async () => {
     const [p, r] = await Promise.all([
@@ -269,7 +382,25 @@ export default function AdminTesting(){
       )}
 
       {tab === 'new' && (
-        <PlanEditor onSaved={() => { setTab('plans'); load(); }} />
+        <div className="space-y-4">
+          <div className="flex flex-wrap gap-2">
+            {[
+              {key:'ALL',label:'Sve domene'},
+              {key:'AUTH',label:'Auth'},
+              {key:'ONBOARDING',label:'Onboarding'},
+              {key:'KYC',label:'KYC'},
+              {key:'JOBS',label:'Jobs'},
+              {key:'LEADS',label:'Leads/Offers'},
+              {key:'CHAT',label:'Chat/Notifikacije'},
+              {key:'SUBS',label:'Pretplate/Plaćanja'},
+              {key:'ADMIN',label:'Admin'}
+            ].map(p => (
+              <button key={p.key} onClick={() => setPreset(p.key)} className={`px-3 py-2 rounded ${preset===p.key?'bg-indigo-600 text-white':'bg-gray-100'}`}>{p.label}</button>
+            ))}
+          </div>
+
+          <PresetPlanEditor preset={preset} onSaved={() => { setTab('plans'); load(); }} />
+        </div>
       )}
 
       {activePlan && (
