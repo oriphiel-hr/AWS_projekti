@@ -15,6 +15,12 @@ export default function LeadMarketplace() {
   const [purchasing, setPurchasing] = useState(null);
 
   useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setLoading(false);
+      setError('Za pristup ekskluzivnim leadovima potrebno je prijaviti se kao pružatelj usluga.');
+      return;
+    }
     loadLeads();
     loadCredits();
   }, []);
@@ -25,7 +31,11 @@ export default function LeadMarketplace() {
       const response = await getAvailableLeads(filters);
       setLeads(response.data.leads);
     } catch (err) {
-      setError(err.response?.data?.error || 'Greška pri učitavanju leadova');
+      if (err?.response?.status === 401) {
+        setError('Nedostaje prijava. Prijavite se ili registrirajte kao pružatelj usluga.');
+      } else {
+        setError(err.response?.data?.error || 'Greška pri učitavanju leadova');
+      }
     } finally {
       setLoading(false);
     }
@@ -36,6 +46,10 @@ export default function LeadMarketplace() {
       const response = await getCreditsBalance();
       setCreditsBalance(response.data.balance);
     } catch (err) {
+      if (err?.response?.status === 401) {
+        // already handled by banner above; keep silent
+        return;
+      }
       console.error('Error loading credits:', err);
     }
   };
@@ -135,6 +149,10 @@ export default function LeadMarketplace() {
       {error && (
         <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded">
           <p className="text-sm text-red-700">{error}</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button onClick={() => { window.location.hash = '#login' }} className="px-3 py-2 bg-red-600 text-white rounded">Prijava</button>
+            <button onClick={() => { window.location.hash = '#register-provider' }} className="px-3 py-2 bg-white border rounded">Registriraj se kao pružatelj</button>
+          </div>
         </div>
       )}
 
