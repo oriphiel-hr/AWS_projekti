@@ -575,6 +575,18 @@ Object.keys(MODELS).forEach(modelName => {
   r.delete(`/${modelName}/:id`, auth(true, ['ADMIN']), async (req, res, next) => {
     try {
       const { id } = req.params;
+
+      // Protect ADMIN user from deletion
+      if (modelName === 'User') {
+        const user = await prisma.user.findUnique({ where: { id }, select: { role: true, email: true } });
+        if (!user) {
+          return res.status(404).json({ error: 'Not found' });
+        }
+        if (user.role === 'ADMIN') {
+          return res.status(400).json({ error: 'ADMIN korisnika nije moguće obrisati' });
+        }
+      }
+
       await model.delete({ where: { id } });
       res.json({ success: true });
     } catch (e) {

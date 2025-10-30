@@ -648,7 +648,12 @@ export default function ModelPage({ model }){
                     <button onClick={()=>openEdit(it)} className="px-3 py-1 bg-blue-600 text-white text-sm rounded mr-2 hover:bg-blue-700">
                       Edit
                     </button>
-                    <button onClick={()=>remove(it.id)} className="px-3 py-1 bg-rose-600 text-white text-sm rounded hover:bg-rose-700">
+                    <button 
+                      onClick={()=>remove(it.id)} 
+                      disabled={model === 'User' && it.role === 'ADMIN'}
+                      title={model === 'User' && it.role === 'ADMIN' ? 'ADMIN korisnika nije moguće obrisati' : ''}
+                      className={`px-3 py-1 text-white text-sm rounded ${model === 'User' && it.role === 'ADMIN' ? 'bg-rose-300 cursor-not-allowed' : 'bg-rose-600 hover:bg-rose-700'}`}
+                    >
                       Delete
                     </button>
                   </td>
