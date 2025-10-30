@@ -1023,15 +1023,12 @@ export default function ProviderProfile({ onSuccess }) {
                   <li>• Leadovi se automatski filtriraju po aktivnim lokacijama</li>
                 </ul>
               </div>
-              <button
-                onClick={() => {
-                  window.location.hash = 'team-locations';
-                  window.location.reload(); // Refresh da se učit novi tab
-                }}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors whitespace-nowrap ml-4"
+              <a
+                href="#team-locations"
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors whitespace-nowrap ml-4 inline-block text-center"
               >
                 📍 Upravljaj lokacijama
-              </button>
+              </a>
             </div>
           </div>
 
