@@ -116,7 +116,7 @@ model User {
   whiteLabel         WhiteLabel?         @relation("UserWhiteLabel")
 
   // Testing runs authored by this user (admin)
-  testRuns          TestRun[]
+  testRuns          TestRun[]               @relation("TestRunAuthor")
 }
 
 model ProviderProfile {
@@ -656,7 +656,7 @@ model TestPlan {
   updatedAt   DateTime   @updatedAt
 
   items       TestItem[]
-  runs        TestRun[]
+  runs        TestRun[]    @relation("TestPlanRuns")
 
   @@index([name])
 }
@@ -680,10 +680,10 @@ model TestItem {
 
 model TestRun {
   id         String        @id @default(cuid())
-  plan       TestPlan      @relation(fields: [planId], references: [id], onDelete: Cascade)
+  plan       TestPlan      @relation("TestPlanRuns", fields: [planId], references: [id], onDelete: Cascade)
   planId     String
   name       String
-  createdBy  User?         @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdBy  User?         @relation("TestRunAuthor", fields: [createdById], references: [id], onDelete: SetNull)
   createdById String?
   status     TestRunStatus @default(DRAFT)
   notes      String?
