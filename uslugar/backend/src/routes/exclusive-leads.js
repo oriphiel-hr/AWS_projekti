@@ -110,7 +110,9 @@ r.post('/purchases/:purchaseId/converted', auth(true, ['PROVIDER']), async (req,
   }
 });
 
-// Zatraži refund za lead
+// Zatraži povrat za lead (Request Refund)
+// PRAVNO: Platforma ne provodi povrate sredstava samostalno.
+// Povrati se provode putem ovlaštene platne institucije u skladu s PSD2 pravilima.
 r.post('/purchases/:purchaseId/refund', auth(true, ['PROVIDER']), async (req, res, next) => {
   try {
     const { purchaseId } = req.params;
@@ -121,7 +123,7 @@ r.post('/purchases/:purchaseId/refund', auth(true, ['PROVIDER']), async (req, re
     res.json({
       success: true,
       purchase: updated,
-      message: 'Credits refunded successfully'
+      message: 'Zahtjev za povrat je poslan. Povrati se provode putem ovlaštene platne institucije (Stripe Payments Europe Ltd.) u skladu s PSD2 pravilima. Krediti će biti vraćeni u skladu s pravilima pružatelja usluga plaćanja.'
     });
   } catch (e) {
     next(e);

@@ -61,17 +61,17 @@ export default function MyLeads() {
   };
 
   const handleRefund = async (purchaseId) => {
-    const reason = prompt('Razlog za refund:') || 'Klijent nije odgovorio';
+    const reason = prompt('Razlog za zahtjev povrata:') || 'Klijent nije odgovorio';
     
     const confirmed = window.confirm(
-      `Zatražiti refund?\n\nKrediti će biti vraćeni na vaš račun.\nRazlog: ${reason}`
+      `Zatražiti povrat?\n\nUslugar prosljeđuje vaš zahtjev ovlaštenoj platnoj instituciji (Stripe Payments Europe) radi obrade povrata.\nOdluku o povratu donosi platna institucija uz uvid u dokaze.\n\nRazlog: ${reason}`
     );
 
     if (!confirmed) return;
 
     try {
-      await requestRefund(purchaseId, reason);
-      alert('✅ Refund uspješan! Krediti vraćeni.');
+      const response = await requestRefund(purchaseId, reason);
+      alert(`✅ Zahtjev za povrat je poslan!\n\n${response.data?.message || 'Vaš zahtjev će biti obrađen putem ovlaštene platne institucije u skladu s PSD2 pravilima.'}`);
       loadLeads();
       loadCredits();
     } catch (err) {
@@ -262,7 +262,7 @@ export default function MyLeads() {
                       onClick={() => handleRefund(purchase.id)}
                       className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
                     >
-                      💰 Refund
+                      💬 Zatraži povrat
                     </button>
                   </>
                 )}
@@ -279,7 +279,7 @@ export default function MyLeads() {
                       onClick={() => handleRefund(purchase.id)}
                       className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
                     >
-                      💰 Refund
+                      💬 Zatraži povrat
                     </button>
                   </>
                 )}
@@ -343,7 +343,7 @@ export default function MyLeads() {
           <li>📞 <strong>Kontaktirajte brzo:</strong> Klijenti cijene brzu reakciju - nazovite u roku 1 sata!</li>
           <li>💬 <strong>Budite profesionalni:</strong> Prvi dojam je ključan za konverziju</li>
           <li>📊 <strong>Pratite ROI:</strong> Fokusirajte se na leadove sa visokim quality scorom</li>
-          <li>💰 <strong>Refund:</strong> Ako klijent ne odgovara, zatražite refund i dobijte kredite nazad</li>
+          <li>💬 <strong>Zahtjev za povrat:</strong> Ako klijent ne odgovara, zatražite povrat. Uslugar prosljeđuje zahtjev ovlaštenoj platnoj instituciji radi obrade.</li>
         </ul>
       </div>
     </div>

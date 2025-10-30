@@ -204,7 +204,14 @@ export async function markLeadConverted(purchaseId, providerId, revenue = 0) {
 }
 
 /**
- * Refundiraj lead (klijent nije odgovorio)
+ * Zatraži povrat za lead (klijent nije odgovorio)
+ * 
+ * PRAVNO: Platforma ne provodi povrate sredstava samostalno.
+ * Povrati se provode isključivo putem ovlaštene platne institucije
+ * (Stripe Payments Europe Ltd.) u skladu s PSD2 pravilima.
+ * 
+ * Ova funkcija priprema zahtjev za povrat i vraća interne kredite.
+ * Ako lead kupnja koristi Stripe Payment Intent, refund se prosljeđuje Stripe-u.
  */
 export async function refundLead(purchaseId, providerId, reason = 'Client unresponsive') {
   const purchase = await prisma.leadPurchase.findUnique({
@@ -221,22 +228,34 @@ export async function refundLead(purchaseId, providerId, reason = 'Client unresp
   }
 
   if (purchase.status === 'REFUNDED') {
-    throw new Error('Lead already refunded');
+    throw new Error('Zahtjev za povrat već je obrađen');
   }
 
   if (purchase.status === 'CONVERTED') {
-    throw new Error('Cannot refund converted lead');
+    throw new Error('Ne može se zatražiti povrat za uspješno konvertirani lead');
   }
 
-  // Vrati kredite
+  // Napomena: Ako se u budućnosti lead kupnja radi kroz Stripe Payment Intent,
+  // ovdje bi se dodao Stripe Refund API poziv:
+  // if (purchase.stripePaymentIntentId) {
+  //   await stripe.refunds.create({
+  //     payment_intent: purchase.stripePaymentIntentId,
+  //     amount: purchase.creditsSpent * 100, // u centima
+  //     reason: 'requested_by_customer',
+  //     metadata: { leadId: purchase.jobId, reason }
+  //   });
+  // }
+
+  // Vrati interne kredite (za slučajeve gdje se koriste internal credits, ne Stripe direktno)
+  // Ovaj korak se zadržava za kompatibilnost dok se ne implementira puni Stripe escrow model
   await refundCredits(
     providerId,
     purchase.creditsSpent,
-    `Refund: ${purchase.job.title} - ${reason}`,
+    `Zahtjev za povrat: ${purchase.job.title} - ${reason}`,
     purchase.id
   );
 
-  // Ažuriraj purchase
+  // Ažuriraj purchase status
   const updated = await prisma.leadPurchase.update({
     where: { id: purchaseId },
     data: {
@@ -255,7 +274,7 @@ export async function refundLead(purchaseId, providerId, reason = 'Client unresp
     }
   });
 
-  console.log(`[LEAD] Refunded ${purchase.creditsSpent} credits to provider ${providerId} for lead ${purchase.jobId}`);
+  console.log(`[LEAD] Zahtjev za povrat obrađen: ${purchase.creditsSpent} kredita vraćeno provideru ${providerId} za lead ${purchase.jobId}`);
 
   return updated;
 }
