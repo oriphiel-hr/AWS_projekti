@@ -1005,6 +1005,34 @@ export default function ProviderProfile({ onSuccess }) {
               }`}
               placeholder="Zagreb i okolica"
             />
+            <p className="text-xs text-gray-500 mt-1">Za napredno upravljanje višestrukim lokacijama i radijusima, koristite Tim Lokacije</p>
+          </div>
+
+          {/* Tim Lokacije sekcija */}
+          <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+            <div className="flex justify-between items-start">
+              <div>
+                <h4 className="text-md font-semibold text-gray-900 mb-1">📍 Tim Lokacije</h4>
+                <p className="text-sm text-gray-600">
+                  Upravljajte višestrukim tim lokacijama, radijusima pokrivanja i geo-inteligentnim leadovima.
+                </p>
+                <ul className="text-xs text-gray-500 mt-2 space-y-1">
+                  <li>• Definirajte više lokacija (npr. Zagreb, Split, Osijek)</li>
+                  <li>• Postavite radijus pokrivanja po lokaciji</li>
+                  <li>• Aktivirajte/deaktivirate lokacije po potrebi</li>
+                  <li>• Leadovi se automatski filtriraju po aktivnim lokacijama</li>
+                </ul>
+              </div>
+              <button
+                onClick={() => {
+                  window.location.hash = 'team-locations';
+                  window.location.reload(); // Refresh da se učit novi tab
+                }}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors whitespace-nowrap ml-4"
+              >
+                📍 Upravljaj lokacijama
+              </button>
+            </div>
           </div>
 
           <div className="flex items-center">
