@@ -3,6 +3,21 @@ import React from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { MODELS } from './router'
 
+const MODEL_LABELS = {
+  User: 'Korisnici',
+  ProviderProfile: 'Profili pružatelja',
+  Category: 'Kategorije',
+  Job: 'Poslovi',
+  Offer: 'Ponude',
+  Review: 'Recenzije',
+  Notification: 'Notifikacije',
+  ChatRoom: 'Chat sobe',
+  ChatMessage: 'Chat poruke',
+  Subscription: 'Pretplate',
+  SubscriptionPlan: 'Pretplatnički planovi',
+  LegalStatus: 'Pravni status'
+}
+
 export default function Layout({ user, onLogout }){
   return (
     <div className="min-h-screen bg-gray-100">
@@ -50,7 +65,7 @@ export default function Layout({ user, onLogout }){
                     }`
                   }
                 >
-                  {m}
+                  {MODEL_LABELS[m] || m}
                 </NavLink>
               ))}
               
