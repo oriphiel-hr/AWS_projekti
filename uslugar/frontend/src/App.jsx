@@ -45,7 +45,7 @@ export default function App(){
   const [tab, setTab] = useState(() => {
     const hash = window.location.hash?.slice(1).split('?')[0];
     const validTabs = ['admin', 'login', 'register-user', 'register-provider', 'provider-profile', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'leads', 'my-leads', 'roi', 'subscription', 'subscription-success', 'pricing', 'providers', 'documentation', 'faq', 'about', 'contact', 'time-landing'];
-    return validTabs.includes(hash) ? hash : 'user';
+    return validTabs.includes(hash) ? hash : 'time-landing';
   });
 
   // USER tab state
