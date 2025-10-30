@@ -585,3 +585,85 @@ enum ProviderApprovalStatus {
   REJECTED // Odbijen
   INACTIVE // Neaktivan
 }
+
+// ============================================================
+// TESTING SYSTEM - Plans, Items, Runs
+// ============================================================
+
+enum TestRunStatus {
+  DRAFT
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum TestItemStatus {
+  PENDING
+  PASS
+  FAIL
+  BLOCKED
+  NOT_APPLICABLE
+}
+
+model TestPlan {
+  id          String     @id @default(cuid())
+  name        String
+  description String?
+  category    String? // npr. "Korisnik", "Provider", "KYC"
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  items       TestItem[]
+
+  @@index([name])
+}
+
+model TestItem {
+  id             String    @id @default(cuid())
+  plan           TestPlan  @relation(fields: [planId], references: [id], onDelete: Cascade)
+  planId         String
+  title          String
+  description    String?
+  expectedResult String?
+  dataVariations Json? // npr. { examples: ["ispravan OIB", "neispravan OIB"] }
+  order          Int       @default(0)
+  createdAt      DateTime  @default(now())
+
+  runItems       TestRunItem[]
+
+  @@index([planId])
+  @@index([order])
+}
+
+model TestRun {
+  id         String        @id @default(cuid())
+  plan       TestPlan      @relation(fields: [planId], references: [id], onDelete: Cascade)
+  planId     String
+  name       String
+  createdBy  User?         @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdById String?
+  status     TestRunStatus @default(DRAFT)
+  notes      String?
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  items      TestRunItem[]
+
+  @@index([planId])
+  @@index([status])
+}
+
+model TestRunItem {
+  id          String         @id @default(cuid())
+  run         TestRun        @relation(fields: [runId], references: [id], onDelete: Cascade)
+  runId       String
+  item        TestItem       @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  itemId      String
+  status      TestItemStatus @default(PENDING)
+  comment     String?
+  screenshots String[]       // URL-ovi slika (upload API)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@unique([runId, itemId])
+  @@index([runId])
+}

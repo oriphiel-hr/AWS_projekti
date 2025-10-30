@@ -18,6 +18,7 @@ import uploadRouter from './routes/upload.js'
 import notificationsRouter from './routes/notifications.js'
 import chatRouter from './routes/chat.js'
 import subscriptionsRouter from './routes/subscriptions.js'
+import testingRouter from './routes/testing.js'
 import { initSocket } from './lib/socket.js'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -267,6 +268,7 @@ app.use('/api/upload', uploadRouter)
 app.use('/api/notifications', notificationsRouter)
 app.use('/api/chat', chatRouter)
 app.use('/api/subscriptions', subscriptionsRouter)
+app.use('/api/testing', testingRouter)
 // USLUGAR EXCLUSIVE API routes
 app.use('/api/exclusive/leads', exclusiveLeadsRouter)
 app.use('/api/exclusive/roi', providerROIRouter)
