@@ -127,3 +127,27 @@ export const exportCreditsHistoryCSV = () => {
     responseType: 'blob'
   });
 };
+
+// ============================================================
+// TEAM LOCATIONS (GEO-DYNAMIC)
+// ============================================================
+
+export const getTeamLocations = () => {
+  return api.get('/providers/me/team-locations');
+};
+
+export const createTeamLocation = (data) => {
+  return api.post('/providers/me/team-locations', data);
+};
+
+export const updateTeamLocation = (locationId, data) => {
+  return api.put(`/providers/me/team-locations/${locationId}`, data);
+};
+
+export const deleteTeamLocation = (locationId) => {
+  return api.delete(`/providers/me/team-locations/${locationId}`);
+};
+
+export const toggleTeamLocationActive = (locationId) => {
+  return api.patch(`/providers/me/team-locations/${locationId}/toggle-active`);
+};

@@ -174,6 +174,46 @@ model ProviderProfile {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // GEO-DYNAMIC LOCATIONS - Multiple team locations per provider
+  teamLocations ProviderTeamLocation[]
+}
+
+// Geo-dynamic team locations (mobilni timovi, više lokacija)
+model ProviderTeamLocation {
+  id          String   @id @default(cuid())
+  provider    ProviderProfile @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  providerId  String
+  
+  // Lokacija tima
+  name        String  // npr. "Tim A - Dalmacija", "Sjedište Zagreb"
+  city        String  // Grad
+  latitude    Float?  // GPS koordinata
+  longitude   Float?  // GPS koordinata
+  address     String? // Puna adresa (opcionalno)
+  postalCode  String? // Poštanski broj
+  
+  // Geo-pokrivanje
+  radiusKm    Int     @default(50) // Radijus pokrivanja u km (npr. 80 km)
+  isActive    Boolean @default(true) // Privremeno aktivirati/deaktivirati
+  isPrimary   Boolean @default(false) // Glavna lokacija (administrativno sjedište)
+  
+  // Metapodaci
+  notes       String? // Napomene (npr. "Tim je ovdje do kraja ožujka")
+  lastActiveAt DateTime? // Kada je tim zadnji put aktivan bio na ovoj lokaciji
+  
+  // Statistika po regiji
+  leadsReceived Int @default(0)
+  leadsAccepted  Int @default(0)
+  leadsConverted Int @default(0)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([providerId])
+  @@index([isActive])
+  @@index([isPrimary])
+  @@index([city])
 }
 
 model Category {

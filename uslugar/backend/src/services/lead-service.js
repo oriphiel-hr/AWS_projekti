@@ -2,6 +2,7 @@
 import { prisma } from '../lib/prisma.js';
 import { deductCredits, refundCredits } from './credit-service.js';
 import { notifyProvider, notifyClient } from '../lib/notifications.js';
+import { isWithinRadius, findClosestTeamLocation, sortJobsByDistance } from '../lib/geo-utils.js';
 
 /**
  * Kupi ekskluzivan lead
@@ -325,12 +326,18 @@ async function updateProviderROI(providerId, updates) {
 }
 
 /**
- * Dohvati dostupne leadove za kategoriju providera
+ * Dohvati dostupne leadove za kategoriju providera (GEO-INTELIGENTNO)
+ * Filtrira po aktivnim tim lokacijama i radijusu pokrivanja
  */
 export async function getAvailableLeads(providerId, filters = {}) {
   const provider = await prisma.providerProfile.findUnique({
     where: { userId: providerId },
-    include: { categories: true }
+    include: { 
+      categories: true,
+      teamLocations: {
+        where: { isActive: true } // Samo aktivne lokacije
+      }
+    }
   });
 
   if (!provider) {
@@ -339,6 +346,11 @@ export async function getAvailableLeads(providerId, filters = {}) {
 
   const categoryIds = provider.categories.map(c => c.id);
 
+  if (categoryIds.length === 0) {
+    return []; // Nema kategorija = nema leadova
+  }
+
+  // Osnovni filter
   const where = {
     isExclusive: true,
     leadStatus: 'AVAILABLE',
@@ -348,7 +360,8 @@ export async function getAvailableLeads(providerId, filters = {}) {
     ...filters
   };
 
-  const leads = await prisma.job.findMany({
+  // Dohvati sve leadove koji odgovaraju kategoriji
+  let leads = await prisma.job.findMany({
     where,
     include: {
       user: {
@@ -359,12 +372,25 @@ export async function getAvailableLeads(providerId, filters = {}) {
         }
       },
       category: true
-    },
-    orderBy: [
-      { qualityScore: 'desc' },
-      { createdAt: 'desc' }
-    ]
+    }
   });
+
+  // Ako provider ima aktivne tim lokacije, filtriraj po geo-udaljenosti
+  if (provider.teamLocations && provider.teamLocations.length > 0) {
+    leads = leads.filter(job => {
+      // Provjeri je li job u radijusu bilo koje aktivne lokacije
+      return provider.teamLocations.some(location => {
+        const { isWithinRadius } = isWithinRadius(location, job);
+        return isWithinRadius;
+      });
+    });
+
+    // Sortiraj po udaljenosti do najbliže lokacije
+    leads = sortJobsByDistance(leads, provider.teamLocations);
+  } else {
+    // Fallback: ako nema tim lokacije, sortiraj po quality score
+    leads = leads.sort((a, b) => (b.qualityScore || 0) - (a.qualityScore || 0));
+  }
 
   return leads;
 }

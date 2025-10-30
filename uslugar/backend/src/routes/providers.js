@@ -420,4 +420,187 @@ r.post('/upload-license', auth(true, ['PROVIDER']), uploadDocument.single('file'
   }
 });
 
+// ============================================================
+// GEO-DYNAMIC TEAM LOCATIONS
+// ============================================================
+
+// Get all team locations for current provider
+r.get('/me/team-locations', auth(true, ['PROVIDER']), async (req, res, next) => {
+  try {
+    const provider = await prisma.providerProfile.findUnique({
+      where: { userId: req.user.id },
+      select: { id: true }
+    });
+
+    if (!provider) {
+      return res.status(404).json({ error: 'Provider profile not found' });
+    }
+
+    const locations = await prisma.providerTeamLocation.findMany({
+      where: { providerId: provider.id },
+      orderBy: [{ isPrimary: 'desc' }, { isActive: 'desc' }, { createdAt: 'desc' }]
+    });
+
+    res.json(locations);
+  } catch (e) { next(e); }
+});
+
+// Create new team location
+r.post('/me/team-locations', auth(true, ['PROVIDER']), async (req, res, next) => {
+  try {
+    const provider = await prisma.providerProfile.findUnique({
+      where: { userId: req.user.id },
+      select: { id: true }
+    });
+
+    if (!provider) {
+      return res.status(404).json({ error: 'Provider profile not found' });
+    }
+
+    const { name, city, latitude, longitude, address, postalCode, radiusKm = 50, isActive = true, isPrimary = false, notes } = req.body;
+
+    // Ako je nova lokacija primary, makni primary s ostalih
+    if (isPrimary) {
+      await prisma.providerTeamLocation.updateMany({
+        where: { providerId: provider.id, isPrimary: true },
+        data: { isPrimary: false }
+      });
+    }
+
+    const location = await prisma.providerTeamLocation.create({
+      data: {
+        providerId: provider.id,
+        name,
+        city,
+        latitude,
+        longitude,
+        address,
+        postalCode,
+        radiusKm: parseInt(radiusKm) || 50,
+        isActive,
+        isPrimary,
+        notes,
+        lastActiveAt: isActive ? new Date() : null
+      }
+    });
+
+    res.status(201).json(location);
+  } catch (e) { next(e); }
+});
+
+// Update team location
+r.put('/me/team-locations/:locationId', auth(true, ['PROVIDER']), async (req, res, next) => {
+  try {
+    const { locationId } = req.params;
+    const provider = await prisma.providerProfile.findUnique({
+      where: { userId: req.user.id },
+      select: { id: true }
+    });
+
+    if (!provider) {
+      return res.status(404).json({ error: 'Provider profile not found' });
+    }
+
+    // Provjeri vlasništvo
+    const location = await prisma.providerTeamLocation.findUnique({
+      where: { id: locationId }
+    });
+
+    if (!location || location.providerId !== provider.id) {
+      return res.status(404).json({ error: 'Location not found' });
+    }
+
+    const { name, city, latitude, longitude, address, postalCode, radiusKm, isActive, isPrimary, notes } = req.body;
+
+    // Ako je nova lokacija primary, makni primary s ostalih
+    if (isPrimary && !location.isPrimary) {
+      await prisma.providerTeamLocation.updateMany({
+        where: { providerId: provider.id, isPrimary: true, id: { not: locationId } },
+        data: { isPrimary: false }
+      });
+    }
+
+    const updated = await prisma.providerTeamLocation.update({
+      where: { id: locationId },
+      data: {
+        name,
+        city,
+        latitude,
+        longitude,
+        address,
+        postalCode,
+        radiusKm: radiusKm ? parseInt(radiusKm) : undefined,
+        isActive: isActive !== undefined ? isActive : undefined,
+        isPrimary: isPrimary !== undefined ? isPrimary : undefined,
+        notes,
+        lastActiveAt: isActive ? new Date() : location.lastActiveAt
+      }
+    });
+
+    res.json(updated);
+  } catch (e) { next(e); }
+});
+
+// Delete team location
+r.delete('/me/team-locations/:locationId', auth(true, ['PROVIDER']), async (req, res, next) => {
+  try {
+    const { locationId } = req.params;
+    const provider = await prisma.providerProfile.findUnique({
+      where: { userId: req.user.id },
+      select: { id: true }
+    });
+
+    if (!provider) {
+      return res.status(404).json({ error: 'Provider profile not found' });
+    }
+
+    const location = await prisma.providerTeamLocation.findUnique({
+      where: { id: locationId }
+    });
+
+    if (!location || location.providerId !== provider.id) {
+      return res.status(404).json({ error: 'Location not found' });
+    }
+
+    await prisma.providerTeamLocation.delete({
+      where: { id: locationId }
+    });
+
+    res.json({ success: true });
+  } catch (e) { next(e); }
+});
+
+// Quick update: Set location as active/inactive (toggle)
+r.patch('/me/team-locations/:locationId/toggle-active', auth(true, ['PROVIDER']), async (req, res, next) => {
+  try {
+    const { locationId } = req.params;
+    const provider = await prisma.providerProfile.findUnique({
+      where: { userId: req.user.id },
+      select: { id: true }
+    });
+
+    if (!provider) {
+      return res.status(404).json({ error: 'Provider profile not found' });
+    }
+
+    const location = await prisma.providerTeamLocation.findUnique({
+      where: { id: locationId }
+    });
+
+    if (!location || location.providerId !== provider.id) {
+      return res.status(404).json({ error: 'Location not found' });
+    }
+
+    const updated = await prisma.providerTeamLocation.update({
+      where: { id: locationId },
+      data: {
+        isActive: !location.isActive,
+        lastActiveAt: !location.isActive ? new Date() : location.lastActiveAt
+      }
+    });
+
+    res.json(updated);
+  } catch (e) { next(e); }
+});
+
 export default r;

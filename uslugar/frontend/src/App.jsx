@@ -25,6 +25,7 @@ import PaymentSuccess from './pages/PaymentSuccess';
 import LeadMarketplace from './pages/LeadMarketplace';
 import ROIDashboard from './pages/ROIDashboard';
 import MyLeads from './pages/MyLeads';
+import TeamLocations from './pages/TeamLocations';
 import SubscriptionPlans from './pages/SubscriptionPlans';
 import CreditsWidget from './components/CreditsWidget';
 // Navigation components
@@ -44,7 +45,7 @@ export default function App(){
   // TAB: 'user' | 'admin' | 'login' | 'register-user' | 'register-provider' | 'upgrade-to-provider' | 'verify' | 'forgot-password' | 'reset-password' | 'leads' | 'my-leads' | 'roi' | 'subscription' | 'pricing' | 'providers' | 'documentation' | 'faq'
   const [tab, setTab] = useState(() => {
     const hash = window.location.hash?.slice(1).split('?')[0];
-    const validTabs = ['admin', 'login', 'register-user', 'register-provider', 'provider-profile', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'leads', 'my-leads', 'roi', 'subscription', 'subscription-success', 'pricing', 'providers', 'documentation', 'faq', 'about', 'contact', 'time-landing'];
+    const validTabs = ['admin', 'login', 'register-user', 'register-provider', 'provider-profile', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'leads', 'my-leads', 'roi', 'subscription', 'subscription-success', 'pricing', 'providers', 'documentation', 'faq', 'about', 'contact', 'time-landing', 'team-locations'];
     return validTabs.includes(hash) ? hash : 'time-landing';
   });
 
@@ -784,6 +785,12 @@ export default function App(){
       {tab === 'my-leads' && (
         <section id="my-leads" className="tab-section">
           <MyLeads />
+        </section>
+      )}
+
+      {tab === 'team-locations' && (
+        <section id="team-locations" className="tab-section">
+          <TeamLocations />
         </section>
       )}
 
