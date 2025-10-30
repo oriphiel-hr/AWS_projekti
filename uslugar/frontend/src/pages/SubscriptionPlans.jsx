@@ -104,7 +104,12 @@ export default function SubscriptionPlans() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className="relative">
+      {/* Subtle gradient background */}
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-slate-50 via-white to-slate-50" />
+      <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-green-100 blur-3xl opacity-40" />
+      <div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-blue-100 blur-3xl opacity-40" />
+      <div className="relative max-w-7xl mx-auto px-4 py-8">
       <Toast
         message={toast.message}
         type={toast.type}
@@ -316,7 +321,7 @@ export default function SubscriptionPlans() {
         </div>
       </div>
 
-      {/* FAQ */}
+      {/* FAQ + Quick Links */}
       <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-8">
         <h2 className="text-2xl font-bold text-gray-900 mb-6">Često Postavljana Pitanja</h2>
         
@@ -359,6 +364,31 @@ export default function SubscriptionPlans() {
             </p>
           </details>
         </div>
+
+        {/* Quick Links */}
+        <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <a href="#leads" className="group bg-white rounded-xl border border-gray-200 p-4 hover:shadow transition-shadow inline-flex items-center justify-between">
+            <div>
+              <div className="text-gray-900 font-semibold">Dostupni leadovi</div>
+              <div className="text-sm text-gray-600">Pregled aktivnih leadova</div>
+            </div>
+            <span className="text-gray-400 group-hover:text-gray-600">→</span>
+          </a>
+          <a href="#register-provider" className="group bg-white rounded-xl border border-gray-200 p-4 hover:shadow transition-shadow inline-flex items-center justify-between">
+            <div>
+              <div className="text-gray-900 font-semibold">Registriraj se kao Pružatelj</div>
+              <div className="text-sm text-gray-600">Započni s EXCLUSIVE leadovima</div>
+            </div>
+            <span className="text-gray-400 group-hover:text-gray-600">→</span>
+          </a>
+          <a href="#contact" className="group bg-white rounded-xl border border-gray-200 p-4 hover:shadow transition-shadow inline-flex items-center justify-between">
+            <div>
+              <div className="text-gray-900 font-semibold">Kontakt podrška</div>
+              <div className="text-sm text-gray-600">support@uslugar.hr</div>
+            </div>
+            <span className="text-gray-400 group-hover:text-gray-600">→</span>
+          </a>
+        </div>
       </div>
 
       {/* CTA */}
@@ -372,6 +402,7 @@ export default function SubscriptionPlans() {
         <p className="text-sm text-gray-500 mt-4">
           Imate pitanja? Kontaktirajte nas na support@uslugar.hr
         </p>
+      </div>
       </div>
     </div>
   );

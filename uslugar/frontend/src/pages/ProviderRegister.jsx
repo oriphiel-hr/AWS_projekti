@@ -177,6 +177,13 @@ export default function ProviderRegister({ onSuccess }) {
         setLoading(false);
         return;
       }
+
+      // Obavezna izjava (mekana provjera)
+      if (!publicConsent) {
+        setError('Morate potvrditi izjavu o odgovornosti za točnost OIB-a i status poslovnog subjekta.');
+        setLoading(false);
+        return;
+      }
       
       // Provjeri da li je naziv firme obavezan (osim za freelancere)
       const selectedStatus = legalStatuses.find(s => s.id === formData.legalStatusId);
@@ -218,6 +225,13 @@ export default function ProviderRegister({ onSuccess }) {
       // Update profila
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       await api.put('/providers/me', profileData);
+
+      // Ažuriraj consent (GDPR/izjava) nakon registracije
+      try {
+        await api.post('/kyc/update-consent', { publicConsent: true });
+      } catch (consentErr) {
+        console.error('Consent update error:', consentErr);
+      }
       
       // Prikaži success message
       setSuccess(true);
@@ -597,6 +611,12 @@ export default function ProviderRegister({ onSuccess }) {
               ) : (
                 <p className="text-xs text-gray-500 mt-1">11 brojeva</p>
               )}
+              {/* Meka izjava o odgovornosti */}
+              {formData.legalStatusId && (
+                <div className="mt-2 text-xs text-gray-700 bg-gray-50 border border-gray-200 rounded p-2">
+                  🧾 Unosom OIB-a potvrđujem da je moj poslovni subjekt aktivan i nije u blokadi. Platforma može provjeriti točnost kroz javne registre.
+                </div>
+              )}
             </div>
 
             <div>
@@ -618,6 +638,25 @@ export default function ProviderRegister({ onSuccess }) {
               )}
             </div>
           </div>
+        </div>
+
+        {/* Izjava (meka provjera) */}
+        <div className="space-y-3 bg-purple-50 border border-purple-200 p-4 rounded-lg">
+          <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+            <span className="mr-2">🧾</span> Izjava o odgovornosti
+          </h3>
+          <p className="text-sm text-gray-700">
+            Unosom OIB-a potvrđujem da je moj poslovni subjekt aktivan i nije u blokadi. Platforma može provjeriti točnost kroz javne registre.
+          </p>
+          <label className="flex items-start space-x-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={publicConsent}
+              onChange={e => setPublicConsent(e.target.checked)}
+              className="mt-1 h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+            />
+            <span className="text-sm text-gray-800">Potvrđujem ovu izjavu (obavezno)</span>
+          </label>
         </div>
 
         {/* Auto-Verification Status */}
@@ -656,17 +695,22 @@ export default function ProviderRegister({ onSuccess }) {
           </div>
         )}
 
-        {/* Document Needed */}
-        {verificationResult?.needsDocument && !autoVerifying && (
+        {/* Document Needed - za obrt/paušal uvijek traži upload zbog WAF */}
+        {(() => {
+          const selectedStatus = legalStatuses.find(s => s.id === formData.legalStatusId);
+          const isObrt = selectedStatus?.code === 'SOLE_TRADER' || selectedStatus?.code === 'PAUSAL';
+          const needsDoc = verificationResult?.needsDocument || isObrt;
+          if (!needsDoc || autoVerifying) return null;
+          return (
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
             <div className="flex items-start space-x-3">
               <span className="text-yellow-600 text-xl">⚠️</span>
               <div className="flex-1">
                 <p className="text-sm font-semibold text-yellow-900 mb-2">
-                  Nismo mogli potvrditi podatke iz registra
+                  Nismo mogli automatski potvrditi podatke iz registra
                 </p>
                 <p className="text-xs text-yellow-700 mb-4">
-                  Učitajte službeni izvadak (PDF/screenshot) – prihvaćamo i fotografiju ekrana.
+                  Automatska provjera nije dostupna zbog WAF zaštite Obrtnog registra. Molimo učitajte službeni izvadak (PDF/screenshot) – prihvaćamo i fotografiju ekrana.
                 </p>
                 
                 {/* Upload Dokumenta */}
@@ -701,7 +745,8 @@ export default function ProviderRegister({ onSuccess }) {
               </div>
             </div>
           </div>
-        )}
+          );
+        })()}
 
         {/* KYC-lite Verifikacija za Freelancere - Volonterski */}
         {(() => {

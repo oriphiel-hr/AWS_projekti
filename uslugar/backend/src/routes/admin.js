@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { prisma } from '../lib/prisma.js';
 import { auth } from '../lib/auth.js';
+import { deleteUserWithRelations } from '../lib/delete-helpers.js';
 
 const r = Router();
 
@@ -67,6 +68,69 @@ r.get('/kyc-metrics', auth(true, ['ADMIN']), async (req, res, next) => {
     res.json(metrics);
   } catch (err) {
     next(err);
+  }
+});
+
+// Admin cleanup: delete non-master data, preserve ADMIN user and master tables
+r.post('/cleanup/non-master', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    // Optional: preserveEmails array to keep certain users
+    const { preserveEmails = [] } = req.body || {};
+
+    const result = { deleted: {} };
+
+    // 1) Delete chat messages and rooms first
+    result.deleted.chatMessages = await prisma.chatMessage.deleteMany({});
+    result.deleted.chatRooms = await prisma.chatRoom.deleteMany({});
+
+    // 2) Reviews, Notifications
+    result.deleted.reviews = await prisma.review.deleteMany({});
+    result.deleted.notifications = await prisma.notification.deleteMany({});
+
+    // 3) Offers, Jobs
+    result.deleted.offers = await prisma.offer.deleteMany({});
+    result.deleted.jobs = await prisma.job.deleteMany({});
+
+    // 4) Subscriptions
+    result.deleted.subscriptions = await prisma.subscription.deleteMany({});
+
+    // 5) Provider profiles (disconnect categories per profile to clear m2m)
+    const providers = await prisma.providerProfile.findMany({ select: { id: true, userId: true } });
+    for (const p of providers) {
+      await prisma.providerProfile.update({
+        where: { id: p.id },
+        data: { categories: { set: [] } }
+      });
+    }
+    result.deleted.providerProfiles = await prisma.providerProfile.deleteMany({});
+
+    // 6) WhiteLabel settings (if any)
+    if (prisma.whiteLabel) {
+      result.deleted.whiteLabels = await prisma.whiteLabel.deleteMany({});
+    }
+
+    // 7) Users except ADMIN and optionally preserved emails
+    // Use delete helpers if needed per-user for safety; but relations already deleted above
+    const usersToDelete = await prisma.user.findMany({
+      where: {
+        role: { not: 'ADMIN' },
+        email: preserveEmails.length ? { notIn: preserveEmails } : undefined
+      },
+      select: { id: true }
+    });
+
+    let usersDeleted = 0;
+    for (const u of usersToDelete) {
+      // direct delete is safe as relations are already removed
+      await prisma.user.delete({ where: { id: u.id } });
+      usersDeleted++;
+    }
+    result.deleted.users = { count: usersDeleted };
+
+    // Note: Master data preserved: Category, SubscriptionPlan, LegalStatus, ADMIN user
+    res.json({ success: true, ...result });
+  } catch (e) {
+    next(e);
   }
 });
 

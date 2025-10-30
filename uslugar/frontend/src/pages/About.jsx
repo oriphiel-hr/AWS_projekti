@@ -79,7 +79,7 @@ const About = () => {
                 📞 Kontakt
               </h3>
               <p className="text-gray-700">
-                <strong>Telefon:</strong> <a href="tel:+385915618258" className="text-blue-600 hover:underline">091 561 8258</a><br />
+                <strong>Telefon:</strong> <a href="tel:+385915618258" className="inline-flex items-center gap-2 text-blue-700 hover:text-blue-900 hover:underline underline-offset-2 px-2 py-1 rounded bg-blue-50 hover:bg-blue-100 border border-blue-100 transition-colors">📞 091 561 8258</a><br />
                 <strong>Kontakt osoba:</strong> Tomislav Kranjec, direktor
               </p>
             </div>

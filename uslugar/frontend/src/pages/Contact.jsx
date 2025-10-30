@@ -47,9 +47,10 @@ const Contact = () => {
                   <p className="text-gray-700">
                     <a 
                       href="tel:+385915618258" 
-                      className="text-blue-600 hover:underline font-semibold"
+                      className="inline-flex items-center gap-2 text-blue-700 hover:text-blue-900 hover:underline underline-offset-2 px-2 py-1 rounded bg-blue-50 hover:bg-blue-100 border border-blue-100 transition-colors font-semibold"
+                      title="Nazovi"
                     >
-                      091 561 8258
+                      📞 091 561 8258
                     </a>
                   </p>
                 </div>

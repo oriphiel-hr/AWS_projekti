@@ -710,43 +710,14 @@ r.post('/auto-verify', async (req, res, next) => {
           break;
         }
         
-        // Smart fallback: Ako je WAF blokirao, koristimo smart verification
-        // (OIB je već validiran, legal status je obrt - to je dovoljno osnovno provjere)
-        console.log('[Auto-Verify] 🔄 Checking smart fallback options...');
-        console.log('[Auto-Verify] 🔍 Was WAF blocked:', wasWAFBlocked);
-        
-        if (wasWAFBlocked) {
-          // Smart verification: Ako je OIB validan i legal status je obrt, možemo dati osnovnu verifikaciju
-          console.log('[Auto-Verify] ✅ Applying smart verification (WAF blocked, but OIB + legal status valid)');
-          
-          results = {
-            verified: true, // Smart verification
-            needsDocument: false, // Nije obavezno (može dodati kasnije)
-            badges: [
-              { 
-                type: 'BUSINESS', 
-                source: 'OBRTNI_REGISTAR', 
-                verified: true,
-                description: 'Potvrđeno - OIB validan i pravni status obrta (automatska provjera nije dostupna zbog WAF zaštite)'
-              }
-            ],
-            badgeCount: 1,
-            errors: [
-              'Napomena: Automatska provjera Obrtnog registra nije dostupna zbog WAF zaštite. Verificirano na osnovu validiranog OIB-a i pravnog statusa. Za dodatnu provjeru možete uploadati službeni izvadak na https://pretrazivac-obrta.gov.hr/pretraga.htm'
-            ],
-            warning: true // Dodaj warning flag
-          };
-          break;
-        }
-        
-        // Ako WAF NIJE blokirao, ali nema rezultata - traži dokument
+        // Bez smart fallbacka: uvijek traži dokument ako scraping nije potvrdio
         console.log('[Auto-Verify] Obrt: Traži se dokument iz Obrtnog registra');
         results = {
           verified: false,
           needsDocument: true,
           badges: [],
           errors: [
-            'Automatska provjera Obrtnog registra trenutno nije dostupna. Molimo uploadajte službeni izvadak iz Obrtnog registra. Možete ga downloadati besplatno na https://pretrazivac-obrta.gov.hr/pretraga.htm'
+            'Automatska provjera Obrtnog registra nije dostupna. Molimo uploadajte službeni izvadak iz Obrtnog registra. Možete ga besplatno preuzeti na https://pretrazivac-obrta.gov.hr/pretraga.htm'
           ]
         };
         break;

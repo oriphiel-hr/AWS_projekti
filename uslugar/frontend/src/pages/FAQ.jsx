@@ -103,13 +103,15 @@ const FAQ = () => {
         <div className="space-x-4">
           <a
             href="mailto:support@uslugar.hr"
-            className="inline-block bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+            className="inline-flex items-center gap-2 text-blue-700 hover:text-blue-900 hover:underline underline-offset-2 px-3 py-2 rounded-lg bg-blue-50 hover:bg-blue-100 border border-blue-100 transition-colors"
+            title="Pošalji email podršci"
           >
             📧 Kontaktiraj podršku
           </a>
           <a
             href="#documentation"
-            className="inline-block bg-green-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-green-700 transition-colors"
+            className="inline-flex items-center gap-2 text-green-700 hover:text-green-900 hover:underline underline-offset-2 px-3 py-2 rounded-lg bg-green-50 hover:bg-green-100 border border-green-100 transition-colors"
+            title="Pogledaj dokumentaciju"
           >
             📚 Pregledaj dokumentaciju
           </a>

@@ -72,6 +72,24 @@ const ProviderCard = ({ provider, onViewProfile, onContact }) => {
               </span>
             </div>
           </div>
+          {/* Trust labels */}
+          <div className="flex flex-wrap gap-1 mt-1">
+            {provider.kycVerified && (
+              <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded text-[11px] border border-emerald-200" title="Poslovni status provjeren">
+                🟣 Poslovni status provjeren
+              </span>
+            )}
+            {provider.kycVerified && (provider.legalStatus?.code === 'DOO' || provider.legalStatus?.code === 'JDOO') && (
+              <span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded text-[11px] border border-blue-200" title="OIB potvrđen (SudReg)">
+                🟢 OIB potvrđen (SudReg)
+              </span>
+            )}
+            {!provider.kycVerified && (
+              <span className="px-2 py-0.5 bg-orange-50 text-orange-700 rounded text-[11px] border border-orange-200" title="Profil u reviziji">
+                ⛔ Profil u reviziji
+              </span>
+            )}
+          </div>
 
           {provider.bio && (
             <p className="text-gray-600 mb-3 line-clamp-2">{provider.bio}</p>
@@ -126,9 +144,15 @@ const ProviderCard = ({ provider, onViewProfile, onContact }) => {
                 href={provider.website}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-600 hover:text-blue-800 text-sm"
+                className="inline-flex items-center gap-2 text-sm text-blue-700 hover:text-blue-900 hover:underline underline-offset-2 px-2 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 border border-blue-100 transition-colors"
+                title="Otvori web stranicu u novoj kartici"
               >
-                🌐 {provider.website}
+                <span className="text-base">🌐</span>
+                <span className="truncate max-w-[220px]">{provider.website.replace(/^https?:\/\//, '')}</span>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 opacity-80">
+                  <path d="M12.293 2.293a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L14 5.414V13a1 1 0 11-2 0V5.414L9.707 7.707A1 1 0 018.293 6.293l4-4z" />
+                  <path d="M3 9a2 2 0 012-2h3a1 1 0 010 2H5v6h10v-3a1 1 0 112 0v3a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                </svg>
               </a>
             </div>
           )}
