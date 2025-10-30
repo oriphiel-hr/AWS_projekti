@@ -15,6 +15,7 @@ import VerifyEmail from './pages/VerifyEmail';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import Pricing from './pages/Pricing';
+import TimeLanding from './pages/TimeLanding';
 import Documentation from './pages/Documentation';
 import FAQ from './pages/FAQ';
 import About from './pages/About';
@@ -43,7 +44,7 @@ export default function App(){
   // TAB: 'user' | 'admin' | 'login' | 'register-user' | 'register-provider' | 'upgrade-to-provider' | 'verify' | 'forgot-password' | 'reset-password' | 'leads' | 'my-leads' | 'roi' | 'subscription' | 'pricing' | 'providers' | 'documentation' | 'faq'
   const [tab, setTab] = useState(() => {
     const hash = window.location.hash?.slice(1).split('?')[0];
-    const validTabs = ['admin', 'login', 'register-user', 'register-provider', 'provider-profile', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'leads', 'my-leads', 'roi', 'subscription', 'subscription-success', 'pricing', 'providers', 'documentation', 'faq', 'about', 'contact'];
+    const validTabs = ['admin', 'login', 'register-user', 'register-provider', 'provider-profile', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'leads', 'my-leads', 'roi', 'subscription', 'subscription-success', 'pricing', 'providers', 'documentation', 'faq', 'about', 'contact', 'time-landing'];
     return validTabs.includes(hash) ? hash : 'user';
   });
 
@@ -705,6 +706,12 @@ export default function App(){
       {tab === 'admin' && (
         <section id="admin" className="tab-section">
           <AdminRouter />
+        </section>
+      )}
+
+      {tab === 'time-landing' && (
+        <section id="time-landing" className="tab-section">
+          <TimeLanding />
         </section>
       )}
 
