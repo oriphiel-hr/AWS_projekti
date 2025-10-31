@@ -864,9 +864,48 @@ r.post('/verify-identity', auth(true), async (req, res, next) => {
         break;
         
       case 'dns':
-        updateData = {
-          identityDnsVerified: true
-        };
+        // Provjeri DNS TXT zapis
+        try {
+          const dns = await import('dns').then(m => m.promises);
+          const domain = value.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0];
+          
+          console.log(`[KYC] Checking DNS TXT records for domain: ${domain}`);
+          
+          // Provjeri TXT zapise
+          const txtRecords = await dns.resolveTxt(domain).catch((err) => {
+            console.error('[KYC] DNS resolution error:', err);
+            throw new Error(`Neuspješno rješavanje DNS zapisa za domenu ${domain}. Provjerite da li je domena ispravno unesena.`);
+          });
+          
+          // Traži verifikacijski TXT zapis
+          // Format: "uslugar-verification=USER_ID" ili samo USER_ID
+          const allTxtRecords = txtRecords.flat().join(' ');
+          const verificationPattern = new RegExp(`uslugar-verification=(${user.id}|${user.id.substring(0, 8)})`, 'i');
+          
+          console.log(`[KYC] TXT records found:`, txtRecords);
+          console.log(`[KYC] Looking for pattern: uslugar-verification=${user.id}`);
+          
+          if (!verificationPattern.test(allTxtRecords)) {
+            return res.status(400).json({ 
+              error: `DNS TXT verifikacijski zapis nije pronađen za domenu ${domain}.`,
+              hint: `Dodajte TXT zapis u DNS postavke: uslugar-verification=${user.id.substring(0, 12)}... (ili puni ID: ${user.id})`,
+              domain: domain,
+              userId: user.id
+            });
+          }
+          
+          console.log(`[KYC] ✅ DNS verification successful for domain: ${domain}`);
+          
+          updateData = {
+            identityDnsVerified: true
+          };
+        } catch (dnsError) {
+          console.error('[KYC] DNS verification error:', dnsError);
+          return res.status(400).json({ 
+            error: `Greška pri provjeri DNS zapisa: ${dnsError.message}`,
+            hint: 'Provjerite da li je domena ispravno unesena (npr. vasafirma.hr, bez http:// ili www.)'
+          });
+        }
         break;
         
       default:
