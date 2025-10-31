@@ -839,6 +839,25 @@ r.post('/verify-identity', auth(true), async (req, res, next) => {
         break;
         
       case 'phone':
+        // Provjeri da li je telefon već verificiran preko SMS verifikacije
+        const userWithPhone = await prisma.user.findUnique({
+          where: { id: user.id },
+          select: { phoneVerified: true, phone: true }
+        });
+        
+        if (!userWithPhone?.phoneVerified) {
+          return res.status(400).json({ 
+            error: 'Telefon mora biti verificiran SMS kodom prije Identity Badge verifikacije. Molimo prvo verificirajte telefon u profilu.' 
+          });
+        }
+        
+        // Provjeri da li se broj telefona podudara
+        if (userWithPhone.phone && value && userWithPhone.phone !== value) {
+          return res.status(400).json({ 
+            error: 'Uneseni telefonski broj se ne podudara s verificiranim brojem u profilu.' 
+          });
+        }
+        
         updateData = {
           identityPhoneVerified: true
         };

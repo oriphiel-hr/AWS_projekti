@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import api from '../api';
+import PhoneVerification from './PhoneVerification';
 
 export default function IdentityBadgeVerification({ profile, onUpdated }) {
   const [verifying, setVerifying] = useState(false);
@@ -7,10 +8,17 @@ export default function IdentityBadgeVerification({ profile, onUpdated }) {
   const [value, setValue] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [phoneVerified, setPhoneVerified] = useState(false); // Za SMS workflow
 
   const handleVerify = async () => {
+    // Za telefon, ne pozivamo direktno - koristimo PhoneVerification komponentu
+    if (verificationType === 'phone') {
+      setError('Molimo unesite telefonski broj i verificirajte ga SMS kodom');
+      return;
+    }
+
     if (!value) {
-      setError(`Molimo unesite ${verificationType === 'email' ? 'email adresu' : verificationType === 'phone' ? 'telefonski broj' : 'domenu'}`);
+      setError(`Molimo unesite ${verificationType === 'email' ? 'email adresu' : 'domenu'}`);
       return;
     }
 
@@ -23,7 +31,7 @@ export default function IdentityBadgeVerification({ profile, onUpdated }) {
         value: value
       });
 
-      setSuccess(`✓ ${verificationType === 'email' ? 'Email' : verificationType === 'phone' ? 'Telefon' : 'DNS'} je verificiran!`);
+      setSuccess(`✓ ${verificationType === 'email' ? 'Email' : 'DNS'} je verificiran!`);
       
       // Refresh profile
       if (onUpdated) onUpdated();
@@ -40,6 +48,34 @@ export default function IdentityBadgeVerification({ profile, onUpdated }) {
       setError(errorMsg);
     } finally {
       setVerifying(false);
+    }
+  };
+
+  // Callback kada se SMS kod uspješno verificira
+  const handlePhoneVerified = async () => {
+    try {
+      // Ažuriraj backend da je telefon verificiran
+      await api.post('/kyc/verify-identity', {
+        type: 'phone',
+        value: value
+      });
+      
+      setPhoneVerified(true);
+      setSuccess('✓ Telefon je verificiran!');
+      
+      // Refresh profile
+      if (onUpdated) onUpdated();
+      
+      // Reset
+      setTimeout(() => {
+        setValue('');
+        setSuccess('');
+        setPhoneVerified(false);
+      }, 3000);
+      
+    } catch (err) {
+      console.error('Phone verification update error:', err);
+      setError('Greška pri ažuriranju statusa verifikacije');
     }
   };
 
@@ -84,31 +120,61 @@ export default function IdentityBadgeVerification({ profile, onUpdated }) {
         </div>
       </div>
 
-      {/* Input Field */}
+      {/* Input Field & Verification */}
       {!profile.identityEmailVerified && !profile.identityPhoneVerified && !profile.identityDnsVerified && (
-        <div className="space-y-2">
-          <input
-            type={verificationType === 'email' ? 'email' : verificationType === 'phone' ? 'tel' : 'text'}
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            placeholder={
-              verificationType === 'email' 
-                ? 'info@vasafirma.hr'
-                : verificationType === 'phone'
-                ? '+385 98 123 4567'
-                : 'vasafirma.hr'
-            }
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-          />
-          
-          <button
-            onClick={handleVerify}
-            disabled={!value || verifying}
-            className="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-          >
-            {verifying ? 'Verificiram...' : '✓ Verificiraj'}
-          </button>
-        </div>
+        <>
+          {/* Za Email i DNS - standardni input */}
+          {verificationType !== 'phone' && (
+            <div className="space-y-2">
+              <input
+                type={verificationType === 'email' ? 'email' : 'text'}
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+                placeholder={
+                  verificationType === 'email' 
+                    ? 'info@vasafirma.hr'
+                    : 'vasafirma.hr'
+                }
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
+              
+              <button
+                onClick={handleVerify}
+                disabled={!value || verifying}
+                className="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              >
+                {verifying ? 'Verificiram...' : '✓ Verificiraj'}
+              </button>
+            </div>
+          )}
+
+          {/* Za Telefon - koristimo PhoneVerification komponentu */}
+          {verificationType === 'phone' && (
+            <div className="space-y-4">
+              <input
+                type="tel"
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+                placeholder="+385 98 123 4567"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
+              
+              {value && (
+                <PhoneVerification
+                  phone={value}
+                  onVerified={handlePhoneVerified}
+                  currentPhone={value}
+                />
+              )}
+              
+              {!value && (
+                <p className="text-sm text-gray-500 text-center">
+                  Unesite telefonski broj da biste započeli SMS verifikaciju
+                </p>
+              )}
+            </div>
+          )}
+        </>
       )}
 
       {/* Messages */}
