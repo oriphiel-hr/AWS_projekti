@@ -151,15 +151,42 @@ export default function IdentityBadgeVerification({ profile, onUpdated }) {
           {/* Za Telefon - koristimo PhoneVerification komponentu */}
           {verificationType === 'phone' && (
             <div className="space-y-4">
-              <input
-                type="tel"
-                value={value}
-                onChange={(e) => setValue(e.target.value)}
-                placeholder="+385 98 123 4567"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              />
+              <div>
+                <input
+                  type="tel"
+                  value={value}
+                  onChange={(e) => {
+                    // Ukloni sve što nije broj ili +
+                    let cleaned = e.target.value.replace(/[^\d+]/g, '');
+                    // Osiguraj da počinje s +385
+                    if (cleaned && !cleaned.startsWith('+385')) {
+                      if (cleaned.startsWith('385')) {
+                        cleaned = '+' + cleaned;
+                      } else if (cleaned.startsWith('0')) {
+                        cleaned = '+385' + cleaned.substring(1);
+                      } else {
+                        cleaned = '+385' + cleaned;
+                      }
+                    }
+                    // Ograniči na +385 + 8-9 znamenki
+                    if (cleaned.startsWith('+385')) {
+                      const digits = cleaned.substring(4);
+                      if (digits.length <= 9) {
+                        setValue(cleaned);
+                      }
+                    } else if (cleaned === '+') {
+                      setValue(cleaned);
+                    }
+                  }}
+                  placeholder="+385912345678"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Format: +385XXXXXXXXX (npr. +385912345678)
+                </p>
+              </div>
               
-              {value && (
+              {value && value.startsWith('+385') && value.length >= 12 && (
                 <PhoneVerification
                   phone={value}
                   onVerified={handlePhoneVerified}
@@ -167,9 +194,9 @@ export default function IdentityBadgeVerification({ profile, onUpdated }) {
                 />
               )}
               
-              {!value && (
+              {(!value || !value.startsWith('+385') || value.length < 12) && (
                 <p className="text-sm text-gray-500 text-center">
-                  Unesite telefonski broj da biste započeli SMS verifikaciju
+                  Unesite telefonski broj u formatu +385XXXXXXXXX da biste započeli SMS verifikaciju
                 </p>
               )}
             </div>
