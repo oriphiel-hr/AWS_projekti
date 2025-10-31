@@ -35,6 +35,7 @@ import supportRouter from './routes/support.js'
 import whitelabelRouter from './routes/whitelabel.js'
 import paymentsRouter from './routes/payments.js'
 import kycRouter from './routes/kyc.js'
+import smsVerificationRouter from './routes/sms-verification.js'
 import { startQueueScheduler } from './lib/queueScheduler.js'
 import { checkExpiringSubscriptions } from './lib/subscription-reminder.js'
 
@@ -278,6 +279,7 @@ app.use('/api/support', supportRouter)
 app.use('/api/whitelabel', whitelabelRouter)
 app.use('/api/payments', paymentsRouter)
 app.use('/api/kyc', kycRouter)
+app.use('/api/sms-verification', smsVerificationRouter)
 
 // basic error handler
 app.use((err, _req, res, _next) => {

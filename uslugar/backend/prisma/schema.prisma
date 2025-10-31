@@ -83,6 +83,11 @@ model User {
   fullName             String
   role                 Role         @default(USER)
   phone                String?
+  phoneVerified        Boolean      @default(false) // SMS verifikacija telefona
+  phoneVerificationCode String?      @unique // 6-digit SMS kod
+  phoneVerificationExpires DateTime? // Istek SMS verifikacijskog koda (10 min)
+  phoneVerificationAttempts Int     @default(0) // Broj pokušaja verifikacije (max 5)
+  phoneVerifiedAt      DateTime? // Kada je telefon verificiran
   city                 String?
   latitude             Float? // Geolokacija
   longitude            Float? // Geolokacija

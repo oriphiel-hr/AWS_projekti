@@ -3,6 +3,7 @@ import api from '../api';
 import KYCVerification from '../components/KYCVerification';
 import SafetyBadgeUpload from '../components/SafetyBadgeUpload';
 import IdentityBadgeVerification from '../components/IdentityBadgeVerification';
+import PhoneVerification from '../components/PhoneVerification';
 
 export default function ProviderProfile({ onSuccess, onNavigate }) {
   const [profile, setProfile] = useState(null);
@@ -915,6 +916,32 @@ export default function ProviderProfile({ onSuccess, onNavigate }) {
               className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-600"
             />
             <p className="text-xs text-gray-500 mt-1">Email se ne može mijenjati</p>
+          </div>
+
+          {/* Phone Verification */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Telefon
+            </label>
+            <input
+              type="tel"
+              value={profile.user?.phone || ''}
+              disabled
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-600"
+              placeholder="+385912345678"
+            />
+            <p className="text-xs text-gray-500 mt-1 mb-3">
+              Broj telefona se postavlja pri registraciji. Verificirajte telefon za SMS obavijesti.
+            </p>
+            <PhoneVerification 
+              phone={profile.user?.phone}
+              currentPhone={profile.user?.phone}
+              onVerified={() => {
+                // Refresh profile nakon verifikacije
+                fetchProfile();
+                setSuccess('Telefon uspješno verificiran!');
+              }}
+            />
           </div>
 
           <div>

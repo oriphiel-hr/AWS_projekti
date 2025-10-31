@@ -24,25 +24,25 @@ dotenv.config();
  */
 export async function sendSMS(phone, message) {
   try {
-    // TODO: Uncomment when Twilio is configured
-    /*
-    const twilio = require('twilio');
-    const client = twilio(
-      process.env.TWILIO_ACCOUNT_SID,
-      process.env.TWILIO_AUTH_TOKEN
-    );
+    // Twilio integration
+    if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_PHONE_NUMBER) {
+      const twilio = (await import('twilio')).default;
+      const client = twilio(
+        process.env.TWILIO_ACCOUNT_SID,
+        process.env.TWILIO_AUTH_TOKEN
+      );
+      
+      const result = await client.messages.create({
+        body: message,
+        from: process.env.TWILIO_PHONE_NUMBER,
+        to: phone
+      });
+      
+      console.log(`✅ SMS poslan via Twilio: ${result.sid}`);
+      return { success: true, sid: result.sid, mode: 'twilio' };
+    }
     
-    const result = await client.messages.create({
-      body: message,
-      from: process.env.TWILIO_PHONE_NUMBER,
-      to: phone
-    });
-    
-    console.log(`✅ SMS poslan: ${result.sid}`);
-    return { success: true, sid: result.sid };
-    */
-    
-    // Simulation mode (for development)
+    // Simulation mode (for development when Twilio not configured)
     console.log(`📱 [SMS SIMULATION] To: ${phone}`);
     console.log(`   Message: ${message}`);
     
