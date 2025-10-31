@@ -37,10 +37,30 @@ r.post('/send', auth(true), async (req, res, next) => {
       return res.status(400).json({ error: 'Telefon je već verificiran' });
     }
 
-    // Provjeri rate limiting (max 5 pokušaja u 1 satu)
+    // Provjeri da li već postoji aktivan kod
+    const hasActiveCode = user?.phoneVerificationCode && 
+                         user?.phoneVerificationExpires && 
+                         new Date(user.phoneVerificationExpires) > new Date();
+    
+    // Ako postoji aktivan kod, vrati ga umjesto stvaranja novog
+    if (hasActiveCode) {
+      const shouldReturnCode = process.env.NODE_ENV === 'development' || true; // Uvijek vraćaj kod ako postoji
+      return res.json({
+        message: 'Već postoji aktivan verifikacijski kod. Koristite postojeći kod.',
+        code: shouldReturnCode ? user.phoneVerificationCode : undefined, // Vrati postojeći kod
+        smsMode: 'existing',
+        smsSuccess: false,
+        expiresAt: user.phoneVerificationExpires,
+        attemptsRemaining: 5 - (user?.phoneVerificationAttempts || 0)
+      });
+    }
+    
+    // Provjeri rate limiting (max 5 pokušaja u 1 satu) - SAMO ako nema aktivnog koda
     if (user?.phoneVerificationAttempts >= 5) {
       return res.status(429).json({ 
-        error: 'Previše pokušaja. Molimo pričekajte 1 sat prije sljedećeg pokušaja.' 
+        error: 'Previše pokušaja slanja SMS koda (5/5). Molimo pričekajte 1 sat prije sljedećeg pokušaja.',
+        hasActiveCode: false,
+        attemptsRemaining: 0
       });
     }
 
@@ -237,12 +257,22 @@ r.get('/status', auth(true), async (req, res, next) => {
       return res.status(404).json({ error: 'Korisnik nije pronađen' });
     }
 
+    const hasActiveCode = user.phoneVerificationExpires && new Date() < user.phoneVerificationExpires;
+    const shouldReturnCode = process.env.NODE_ENV === 'development' || true; // Uvijek vraćaj kod za testiranje
+    
+    // Dohvati kod ako postoji
+    const fullUser = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: { phoneVerificationCode: true }
+    });
+    
     res.json({
       phone: user.phone,
       phoneVerified: user.phoneVerified || false,
       phoneVerifiedAt: user.phoneVerifiedAt,
-      hasActiveCode: user.phoneVerificationExpires && new Date() < user.phoneVerificationExpires,
-      attemptsRemaining: Math.max(0, 5 - (user.phoneVerificationAttempts || 0))
+      hasActiveCode: hasActiveCode,
+      attemptsRemaining: Math.max(0, 5 - (user.phoneVerificationAttempts || 0)),
+      code: (hasActiveCode && shouldReturnCode && fullUser?.phoneVerificationCode) ? fullUser.phoneVerificationCode : undefined // Vrati kod ako postoji
     });
 
   } catch (error) {

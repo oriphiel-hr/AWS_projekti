@@ -78,7 +78,23 @@ const PhoneVerification = ({ phone, onVerified, currentPhone }) => {
       await checkStatus();
     } catch (err) {
       console.error('SMS send error:', err);
-      setError(err.response?.data?.error || 'Greška pri slanju SMS koda');
+      
+      // Posebno rukovanje za 429 (Too Many Requests)
+      if (err.response?.status === 429) {
+        const errorMsg = err.response?.data?.error || 'Previše pokušaja. Molimo pričekajte 1 sat prije sljedećeg pokušaja.';
+        setError(errorMsg);
+        
+        // Provjeri da li već postoji aktivan kod
+        setTimeout(async () => {
+          await checkStatus();
+          if (status?.hasActiveCode && status?.code) {
+            setSuccess(`Koristite postojeći kod: ${status.code}`);
+            setError('');
+          }
+        }, 500);
+      } else {
+        setError(err.response?.data?.error || 'Greška pri slanju SMS koda');
+      }
     } finally {
       setLoading(false);
     }
