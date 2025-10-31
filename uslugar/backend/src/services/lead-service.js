@@ -108,7 +108,7 @@ export async function purchaseLead(jobId, providerId) {
           ...job.user,
           // Skrij kontakt informacije - pay-per-contact model
           email: undefined,
-          phoneNumber: undefined
+          phone: undefined
         }
       },
       creditsRemaining: balance,
@@ -379,7 +379,7 @@ export async function getAvailableLeads(providerId, filters = {}) {
           city: true,
           clientVerification: true,
           email: true, // Treba nam za provjeru unlock statusa
-          phoneNumber: true // Treba nam za provjeru unlock statusa
+          phone: true // Treba nam za provjeru unlock statusa
         }
       },
       category: true,
@@ -426,7 +426,7 @@ export async function getAvailableLeads(providerId, filters = {}) {
       user: {
         ...lead.user,
         email: isContactUnlocked ? lead.user.email : undefined,
-        phoneNumber: isContactUnlocked ? lead.user.phoneNumber : undefined,
+        phone: isContactUnlocked ? lead.user.phone : undefined,
         // Dodaj flag da frontend zna je li kontakt otključan
         contactUnlocked: isContactUnlocked,
         purchaseId: purchase?.id || null
@@ -451,7 +451,7 @@ export async function unlockContact(jobId, providerId) {
         select: {
           fullName: true,
           email: true,
-          phoneNumber: true,
+          phone: true,
           city: true,
           clientVerification: true
         }
@@ -545,16 +545,15 @@ export async function getMyLeads(providerId, status = null) {
     include: {
       job: {
         include: {
-          user: {
-            select: {
-              fullName: true,
-              email: true,
-              phoneNumber: true,
-              phone: true, // Legacy support
-              city: true,
-              clientVerification: true
-            }
-          },
+      user: {
+        select: {
+          fullName: true,
+          email: true,
+          phone: true,
+          city: true,
+          clientVerification: true
+        }
+      },
           category: true
         }
       }
@@ -570,7 +569,6 @@ export async function getMyLeads(providerId, status = null) {
       user: {
         ...purchase.job.user,
         email: purchase.contactUnlocked ? purchase.job.user.email : undefined,
-        phoneNumber: purchase.contactUnlocked ? purchase.job.user.phoneNumber : undefined,
         phone: purchase.contactUnlocked ? purchase.job.user.phone : undefined
       }
     }

@@ -273,7 +273,7 @@ export default function MyLeads() {
                     </div>
                     <div>
                       <p className="text-gray-600">Telefon:</p>
-                      <p className="font-semibold">{purchase.job.user.phoneNumber || purchase.job.user.phone || 'Nije navedeno'}</p>
+                      <p className="font-semibold">{purchase.job.user.phone || 'Nije navedeno'}</p>
                     </div>
                   </div>
                 ) : (
