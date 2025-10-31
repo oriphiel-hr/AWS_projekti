@@ -152,6 +152,7 @@ export default function App(){
   useEffect(() => {
     const currentHash = window.location.hash?.slice(1).split('?')[0];
     if (tab && currentHash !== tab) {
+      console.log('🟡 Sync hash: tab=', tab, 'currentHash=', currentHash);
       window.location.hash = '#' + tab;
     }
   }, [tab]);
@@ -160,7 +161,7 @@ export default function App(){
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash?.slice(1).split('?')[0];
-      const validTabs = ['admin', 'login', 'register-user', 'register-provider', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'user', 'leads', 'my-leads', 'roi', 'subscription', 'pricing', 'providers', 'categories', 'documentation'];
+      const validTabs = ['admin', 'login', 'register-user', 'register-provider', 'provider-profile', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'leads', 'my-leads', 'roi', 'subscription', 'subscription-success', 'pricing', 'providers', 'documentation', 'faq', 'about', 'contact', 'time-landing', 'team-locations'];
       
       // Check for provider direct link: #provider/{providerId}
       const providerMatch = hash.match(/^provider\/(.+)$/);
@@ -757,9 +758,16 @@ export default function App(){
 
       {tab === 'provider-profile' && (
         <section id="provider-profile" className="tab-section">
-          <ProviderProfile onSuccess={() => {
-            // Refresh data if needed
-          }} />
+          <ProviderProfile 
+            onSuccess={() => {
+              // Refresh data if needed
+            }}
+            onNavigate={(tabName) => {
+              console.log('🟢 App.jsx: onNavigate pozvan s tabName:', tabName);
+              setTab(tabName);
+              console.log('🟢 App.jsx: setTab pozvan, trenutni tab će biti:', tabName);
+            }}
+          />
         </section>
       )}
 
@@ -802,6 +810,7 @@ export default function App(){
 
       {tab === 'team-locations' && (
         <section id="team-locations" className="tab-section">
+          {console.log('🟣 Rendering TeamLocations component, tab=', tab)}
           <TeamLocations />
         </section>
       )}

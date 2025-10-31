@@ -4,7 +4,7 @@ import KYCVerification from '../components/KYCVerification';
 import SafetyBadgeUpload from '../components/SafetyBadgeUpload';
 import IdentityBadgeVerification from '../components/IdentityBadgeVerification';
 
-export default function ProviderProfile({ onSuccess }) {
+export default function ProviderProfile({ onSuccess, onNavigate }) {
   const [profile, setProfile] = useState(null);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -1023,12 +1023,25 @@ export default function ProviderProfile({ onSuccess }) {
                   <li>• Leadovi se automatski filtriraju po aktivnim lokacijama</li>
                 </ul>
               </div>
-              <a
-                href="#team-locations"
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log('🔵 Gumb kliknut! onNavigate:', onNavigate);
+                  if (onNavigate) {
+                    console.log('✅ Pozivam onNavigate("team-locations")');
+                    onNavigate('team-locations');
+                  } else {
+                    console.log('⚠️ onNavigate nije dostupan, koristim hash navigation');
+                    window.location.hash = '#team-locations';
+                  }
+                }}
+                style={{ cursor: 'pointer', zIndex: 10, position: 'relative' }}
                 className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors whitespace-nowrap ml-4 inline-block text-center"
               >
                 📍 Upravljaj lokacijama
-              </a>
+              </button>
             </div>
           </div>
 
