@@ -62,14 +62,15 @@ export async function purchaseLead(jobId, providerId) {
       jobId
     );
 
-    // 5. Kreiraj LeadPurchase zapis
+    // 5. Kreiraj LeadPurchase zapis (BEZ otključavanja kontakta - pay-per-contact)
     const purchase = await prisma.leadPurchase.create({
       data: {
         jobId,
         providerId,
         creditsSpent: leadPrice,
         leadPrice,
-        status: 'ACTIVE'
+        status: 'ACTIVE',
+        contactUnlocked: false // Kontakt nije otključan - provider mora plaćati dodatno
       }
     });
 
@@ -101,9 +102,17 @@ export async function purchaseLead(jobId, providerId) {
     return {
       success: true,
       purchase,
-      job,
+      job: {
+        ...job,
+        user: {
+          ...job.user,
+          // Skrij kontakt informacije - pay-per-contact model
+          email: undefined,
+          phoneNumber: undefined
+        }
+      },
       creditsRemaining: balance,
-      message: 'Lead successfully purchased! Contact the client now.'
+      message: 'Lead successfully purchased! Unlock contact to see client details.'
     };
 
   } catch (error) {
@@ -368,10 +377,22 @@ export async function getAvailableLeads(providerId, filters = {}) {
         select: {
           fullName: true,
           city: true,
-          clientVerification: true
+          clientVerification: true,
+          email: true, // Treba nam za provjeru unlock statusa
+          phoneNumber: true // Treba nam za provjeru unlock statusa
         }
       },
-      category: true
+      category: true,
+      leadPurchases: {
+        where: {
+          providerId,
+          status: { not: 'REFUNDED' }
+        },
+        select: {
+          contactUnlocked: true,
+          id: true
+        }
+      }
     }
   });
 
@@ -380,8 +401,8 @@ export async function getAvailableLeads(providerId, filters = {}) {
     leads = leads.filter(job => {
       // Provjeri je li job u radijusu bilo koje aktivne lokacije
       return provider.teamLocations.some(location => {
-        const { isWithinRadius } = isWithinRadius(location, job);
-        return isWithinRadius;
+        const result = isWithinRadius(location, job);
+        return result.isWithinRadius;
       });
     });
 
@@ -392,7 +413,122 @@ export async function getAvailableLeads(providerId, filters = {}) {
     leads = leads.sort((a, b) => (b.qualityScore || 0) - (a.qualityScore || 0));
   }
 
+  // Pay-per-contact: Skrij kontakt informacije (kontakt se otključava nakon kupovine + unlock)
+  leads = leads.map(lead => {
+    const purchase = lead.leadPurchases?.[0];
+    // Kontakt je vidljiv samo ako:
+    // - Lead je već kupljen I kontakt je otključan
+    // Inače je skriven (prije kupovine ili nakon kupovine bez unlock-a)
+    const isContactUnlocked = purchase?.contactUnlocked === true;
+    
+    return {
+      ...lead,
+      user: {
+        ...lead.user,
+        email: isContactUnlocked ? lead.user.email : undefined,
+        phoneNumber: isContactUnlocked ? lead.user.phoneNumber : undefined,
+        // Dodaj flag da frontend zna je li kontakt otključan
+        contactUnlocked: isContactUnlocked,
+        purchaseId: purchase?.id || null
+      },
+      leadPurchases: undefined // Ne vraćamo leadPurchases u response
+    };
+  });
+
   return leads;
+}
+
+/**
+ * Otključaj kontakt za lead (Pay-per-contact model)
+ * Naplaćuje 1 kredit za otključavanje kontakta
+ */
+export async function unlockContact(jobId, providerId) {
+  // 1. Provjeri postoji li job
+  const job = await prisma.job.findUnique({
+    where: { id: jobId },
+    include: {
+      user: {
+        select: {
+          fullName: true,
+          email: true,
+          phoneNumber: true,
+          city: true,
+          clientVerification: true
+        }
+      },
+      category: true
+    }
+  });
+
+  if (!job) {
+    throw new Error('Job not found');
+  }
+
+  // 2. Provjeri postoji li LeadPurchase (provider mora prvo kupiti lead)
+  let purchase = await prisma.leadPurchase.findFirst({
+    where: {
+      jobId,
+      providerId,
+      status: { not: 'REFUNDED' }
+    }
+  });
+
+  if (!purchase) {
+    throw new Error('You must purchase this lead first before unlocking contact');
+  }
+
+  // 3. Provjeri je li kontakt već otključan
+  if (purchase.contactUnlocked) {
+    // Vrati puni lead s kontaktom
+    return {
+      success: true,
+      purchase,
+      job,
+      message: 'Contact already unlocked'
+    };
+  }
+
+  // 4. Naplati 1 kredit za otključavanje kontakta
+  const unlockCost = 1; // 1 kredit za otključavanje kontakta
+  
+  try {
+    const { balance, transaction } = await deductCredits(
+      providerId,
+      unlockCost,
+      `Unlock contact: ${job.title}`,
+      jobId,
+      purchase.id
+    );
+
+    // 5. Ažuriraj LeadPurchase - označi kontakt kao otključan
+    purchase = await prisma.leadPurchase.update({
+      where: { id: purchase.id },
+      data: {
+        contactUnlocked: true,
+        contactUnlockedAt: new Date(),
+        creditsSpent: purchase.creditsSpent + unlockCost // Dodaj unlock cost na ukupan iznos
+      }
+    });
+
+    // 6. Ažuriraj ROI statistiku
+    await updateProviderROI(providerId, {
+      creditsSpent: unlockCost
+    });
+
+    console.log(`[LEAD] Provider ${providerId} unlocked contact for lead ${jobId} (cost: ${unlockCost} credits)`);
+
+    return {
+      success: true,
+      purchase,
+      job,
+      creditsRemaining: balance,
+      message: 'Contact unlocked successfully! You can now contact the client.'
+    };
+
+  } catch (error) {
+    console.error('[LEAD] Unlock contact failed:', error);
+    throw error;
+  }
 }
 
 /**
@@ -413,8 +549,10 @@ export async function getMyLeads(providerId, status = null) {
             select: {
               fullName: true,
               email: true,
-              phone: true,
-              city: true
+              phoneNumber: true,
+              phone: true, // Legacy support
+              city: true,
+              clientVerification: true
             }
           },
           category: true
@@ -424,6 +562,18 @@ export async function getMyLeads(providerId, status = null) {
     orderBy: { createdAt: 'desc' }
   });
 
-  return purchases;
+  // Pay-per-contact: Skrij kontakt informacije ako nisu otključane
+  return purchases.map(purchase => ({
+    ...purchase,
+    job: {
+      ...purchase.job,
+      user: {
+        ...purchase.job.user,
+        email: purchase.contactUnlocked ? purchase.job.user.email : undefined,
+        phoneNumber: purchase.contactUnlocked ? purchase.job.user.phoneNumber : undefined,
+        phone: purchase.contactUnlocked ? purchase.job.user.phone : undefined
+      }
+    }
+  }));
 }
 

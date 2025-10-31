@@ -8,7 +8,8 @@ import {
   markLeadConverted,
   refundLead,
   getAvailableLeads,
-  getMyLeads
+  getMyLeads,
+  unlockContact
 } from '../services/lead-service.js';
 import {
   getCreditsBalance,
@@ -44,7 +45,7 @@ r.get('/available', auth(true, ['PROVIDER']), async (req, res, next) => {
   }
 });
 
-// Kupi ekskluzivan lead
+// Kupi ekskluzivan lead (pay-per-contact: NE otključava kontakt)
 r.post('/:jobId/purchase', auth(true, ['PROVIDER']), async (req, res, next) => {
   try {
     const { jobId } = req.params;
@@ -57,6 +58,23 @@ r.post('/:jobId/purchase', auth(true, ['PROVIDER']), async (req, res, next) => {
     const status = e.message.includes('Insufficient credits') ? 402 :
                    e.message.includes('not available') ? 410 :
                    e.message.includes('already') ? 409 : 400;
+    res.status(status).json({ error: e.message });
+  }
+});
+
+// Otključaj kontakt za kupljeni lead (Pay-per-contact: naplaćuje 1 kredit)
+r.post('/:jobId/unlock-contact', auth(true, ['PROVIDER']), async (req, res, next) => {
+  try {
+    const { jobId } = req.params;
+    const providerId = req.user.id;
+    
+    const result = await unlockContact(jobId, providerId);
+    
+    res.json(result);
+  } catch (e) {
+    const status = e.message.includes('Insufficient credits') ? 402 :
+                   e.message.includes('must purchase') ? 400 :
+                   e.message.includes('not found') ? 404 : 400;
     res.status(status).json({ error: e.message });
   }
 });

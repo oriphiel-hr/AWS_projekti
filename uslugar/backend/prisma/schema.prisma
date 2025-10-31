@@ -441,21 +441,23 @@ model SubscriptionPlan {
 
 // Kupljeni ekskluzivni leadovi (1 lead = 1 provider)
 model LeadPurchase {
-  id           String             @id @default(cuid())
-  job          Job                @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  jobId        String
-  provider     User               @relation(fields: [providerId], references: [id], onDelete: Cascade)
-  providerId   String
-  creditsSpent Int // Broj kredita potrošenih za kupovinu
-  leadPrice    Int // Cijena leada u trenutku kupnje
-  status       LeadPurchaseStatus @default(ACTIVE)
-  contactedAt  DateTime? // Kada je provider kontaktirao klijenta
-  convertedAt  DateTime? // Kada je lead konvertiran u posao
-  refundedAt   DateTime? // Kada je izvršena refundacija
-  refundReason String? // Razlog refundacije
-  notes        String? // Dodatne bilješke
-  createdAt    DateTime           @default(now())
-  updatedAt    DateTime           @updatedAt
+  id               String             @id @default(cuid())
+  job              Job                @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  jobId            String
+  provider         User               @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  providerId       String
+  creditsSpent     Int // Broj kredita potrošenih za kupovinu
+  leadPrice        Int // Cijena leada u trenutku kupnje
+  status           LeadPurchaseStatus @default(ACTIVE)
+  contactUnlocked  Boolean            @default(false) // Pay-per-contact: je li kontakt otključan
+  contactUnlockedAt DateTime? // Kada je kontakt otključan
+  contactedAt      DateTime? // Kada je provider kontaktirao klijenta
+  convertedAt      DateTime? // Kada je lead konvertiran u posao
+  refundedAt       DateTime? // Kada je izvršena refundacija
+  refundReason     String? // Razlog refundacije
+  notes            String? // Dodatne bilješke
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
 
   creditTransactions CreditTransaction[]
 
