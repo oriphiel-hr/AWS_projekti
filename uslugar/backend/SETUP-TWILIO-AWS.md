@@ -28,9 +28,10 @@ cd uslugar/backend
 **Ako trebaš ažurirati credentials, editaj script:**
 ```powershell
 # U setup-twilio-secrets.ps1 promijeni:
-$twilioAccountSID = "AC5616e4c456d9f0354ef1f5a61c7734e6"
-$twilioAuthToken = "a9731cee5a2547cd1e9cbc461721b3a4"
-$twilioPhoneNumber = "+18027276987"
+# ⚠️ ZAMIJENI SA TVOJIM TWILIO CREDENTIALS!
+$twilioAccountSID = "YOUR_ACCOUNT_SID_HERE"
+$twilioAuthToken = "YOUR_AUTH_TOKEN_HERE"
+$twilioPhoneNumber = "YOUR_PHONE_NUMBER_HERE"
 ```
 
 ### Korak 2: Ažuriraj ECS Task Definition
@@ -60,9 +61,9 @@ Ovo će:
 4. **Plaintext** (ne JSON):
    ```
    {
-     "TWILIO_ACCOUNT_SID": "AC5616e4c456d9f0354ef1f5a61c7734e6",
-     "TWILIO_AUTH_TOKEN": "a9731cee5a2547cd1e9cbc461721b3a4",
-     "TWILIO_PHONE_NUMBER": "+18027276987"
+     "TWILIO_ACCOUNT_SID": "YOUR_ACCOUNT_SID_HERE",
+     "TWILIO_AUTH_TOKEN": "YOUR_AUTH_TOKEN_HERE",
+     "TWILIO_PHONE_NUMBER": "YOUR_PHONE_NUMBER_HERE"
    }
    ```
 5. Secret name: `uslugar-twilio-config`

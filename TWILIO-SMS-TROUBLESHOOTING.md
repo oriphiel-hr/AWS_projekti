@@ -99,9 +99,9 @@ SMS kod je poslan! Kod za testiranje: 123456
 aws secretsmanager create-secret \
   --name uslugar-twilio-config \
   --secret-string '{
-    "TWILIO_ACCOUNT_SID": "AC5616e4c456d9f0354ef1f5a61c7734e6",
-    "TWILIO_AUTH_TOKEN": "a9731cee5a2547cd1e9cbc461721b3a4",
-    "TWILIO_PHONE_NUMBER": "+18027276987"
+    "TWILIO_ACCOUNT_SID": "YOUR_ACCOUNT_SID_HERE",
+    "TWILIO_AUTH_TOKEN": "YOUR_AUTH_TOKEN_HERE",
+    "TWILIO_PHONE_NUMBER": "YOUR_PHONE_NUMBER_HERE"
   }' \
   --region eu-north-1
 ```

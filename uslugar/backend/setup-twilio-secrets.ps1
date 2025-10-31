@@ -15,9 +15,11 @@ $existingSecretArn = "arn:aws:secretsmanager:${region}:${accountId}:secret:uslug
 $secretName = "uslugar-twilio-config"
 
 # Twilio credentials (update these!)
-$twilioAccountSID = "AC5616e4c456d9f0354ef1f5a61c7734e6"
-$twilioAuthToken = "a9731cee5a2547cd1e9cbc461721b3a4"
-$twilioPhoneNumber = "+18027276987"
+# ⚠️ DO NOT COMMIT REAL CREDENTIALS TO GIT!
+# Set these values before running the script, or use environment variables
+$twilioAccountSID = $env:TWILIO_ACCOUNT_SID ?? "YOUR_ACCOUNT_SID_HERE"
+$twilioAuthToken = $env:TWILIO_AUTH_TOKEN ?? "YOUR_AUTH_TOKEN_HERE"
+$twilioPhoneNumber = $env:TWILIO_PHONE_NUMBER ?? "YOUR_PHONE_NUMBER_HERE"
 
 Write-Host "📝 Twilio Configuration:" -ForegroundColor Yellow
 Write-Host "   Account SID: $twilioAccountSID"
