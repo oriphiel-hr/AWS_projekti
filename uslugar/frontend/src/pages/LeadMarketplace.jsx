@@ -1,6 +1,6 @@
 // USLUGAR EXCLUSIVE - Lead Marketplace
 import React, { useState, useEffect } from 'react';
-import { getAvailableLeads, purchaseLead, getCreditsBalance } from '../api/exclusive';
+import { getAvailableLeads, purchaseLead, getCreditsBalance, unlockContact } from '../api/exclusive';
 
 export default function LeadMarketplace() {
   const [leads, setLeads] = useState([]);
@@ -13,6 +13,7 @@ export default function LeadMarketplace() {
     maxBudget: ''
   });
   const [purchasing, setPurchasing] = useState(null);
+  const [unlocking, setUnlocking] = useState(null);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -61,7 +62,7 @@ export default function LeadMarketplace() {
     }
 
     const confirmed = window.confirm(
-      `Kupiti ovaj ekskluzivan lead za ${leadPrice} kredita?\n\nNakon kupovine, samo vi ćete imati pristup ovom klijentu.`
+      `Kupiti ovaj ekskluzivan lead za ${leadPrice} kredita?\n\nNakon kupovine, morat ćete dodatno platiti 1 kredit da biste vidjeli kontakt klijenta (Pay-per-contact model).`
     );
 
     if (!confirmed) return;
@@ -84,6 +85,36 @@ export default function LeadMarketplace() {
       setError(errorMsg);
     } finally {
       setPurchasing(null);
+    }
+  };
+
+  const handleUnlockContact = async (jobId) => {
+    if (creditsBalance < 1) {
+      setError(`Nemate dovoljno kredita! Potrebno: 1 kredit za otključavanje kontakta.`);
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Otključati kontakt klijenta?\n\nCijena: 1 kredit\n\nNakon otključavanja, vidjet ćete email i telefon klijenta.`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setUnlocking(jobId);
+      const response = await unlockContact(jobId);
+      
+      alert(`✅ Kontakt uspješno otključan!\n\nPreostalo kredita: ${response.data.creditsRemaining}\n\n${response.data.message}`);
+      
+      // Refresh leadova i kredita
+      loadLeads();
+      loadCredits();
+      
+    } catch (err) {
+      const errorMsg = err.response?.data?.error || 'Greška pri otključavanju kontakta';
+      setError(errorMsg);
+    } finally {
+      setUnlocking(null);
     }
   };
 
@@ -277,7 +308,7 @@ export default function LeadMarketplace() {
 
                   {/* Disclaimer */}
                   <p className="text-xs text-gray-500 mt-2 text-center">
-                    Ekskluzivan lead - samo vi ćete dobiti kontakt
+                    Ekskluzivan lead - nakon kupovine, otključaj kontakt za 1 dodatni kredit
                   </p>
                 </div>
               </div>
@@ -288,8 +319,10 @@ export default function LeadMarketplace() {
 
       {/* Info Box */}
       <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-blue-900 mb-2">ℹ️ Kako funkcionira?</h3>
+        <h3 className="text-lg font-semibold text-blue-900 mb-2">ℹ️ Kako funkcionira Pay-per-contact model?</h3>
         <ul className="text-sm text-blue-800 space-y-1">
+          <li>✅ <strong>Kupovina leada:</strong> Plaćate za ekskluzivni pristup leadu (vidite naslov, opis, lokaciju)</li>
+          <li>✅ <strong>Otključavanje kontakta:</strong> Dodatno 1 kredit za email i telefon klijenta</li>
           <li>✅ <strong>Ekskluzivnost:</strong> Samo vi ćete imati pristup ovom klijentu</li>
           <li>✅ <strong>Refund:</strong> Ako klijent ne odgovori, vraćamo kredite</li>
           <li>✅ <strong>AI Scoring:</strong> Leadovi ocjenjeni prema kvaliteti (0-100)</li>

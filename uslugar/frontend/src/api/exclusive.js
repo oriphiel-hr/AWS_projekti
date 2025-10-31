@@ -19,6 +19,10 @@ export const purchaseLead = (jobId) => {
   return api.post(`/exclusive/leads/${jobId}/purchase`);
 };
 
+export const unlockContact = (jobId) => {
+  return api.post(`/exclusive/leads/${jobId}/unlock-contact`);
+};
+
 export const getMyLeads = (status = null) => {
   const params = status ? `?status=${status}` : '';
   return api.get(`/exclusive/leads/my-leads${params}`);

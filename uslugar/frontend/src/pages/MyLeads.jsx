@@ -1,6 +1,6 @@
 // USLUGAR EXCLUSIVE - My Leads Page
 import React, { useState, useEffect } from 'react';
-import { getMyLeads, markLeadContacted, markLeadConverted, requestRefund, getCreditsBalance, exportMyLeadsCSV, exportCreditsHistoryCSV } from '../api/exclusive';
+import { getMyLeads, markLeadContacted, markLeadConverted, requestRefund, getCreditsBalance, exportMyLeadsCSV, exportCreditsHistoryCSV, unlockContact } from '../api/exclusive';
 
 export default function MyLeads() {
   const [leads, setLeads] = useState([]);
@@ -9,6 +9,7 @@ export default function MyLeads() {
   const [filter, setFilter] = useState('ALL');
   const [selectedLead, setSelectedLead] = useState(null);
   const [creditsBalance, setCreditsBalance] = useState(0);
+  const [unlocking, setUnlocking] = useState(null);
 
   useEffect(() => {
     loadLeads();
@@ -57,6 +58,36 @@ export default function MyLeads() {
       loadLeads();
     } catch (err) {
       alert('Greška: ' + (err.response?.data?.error || 'Neuspjelo'));
+    }
+  };
+
+  const handleUnlockContact = async (jobId, purchaseId) => {
+    if (creditsBalance < 1) {
+      alert(`Nemate dovoljno kredita! Potrebno: 1 kredit za otključavanje kontakta.`);
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Otključati kontakt klijenta?\n\nCijena: 1 kredit\n\nNakon otključavanja, vidjet ćete email i telefon klijenta.`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setUnlocking(purchaseId);
+      const response = await unlockContact(jobId);
+      
+      alert(`✅ Kontakt uspješno otključan!\n\nPreostalo kredita: ${response.data.creditsRemaining}\n\n${response.data.message}`);
+      
+      // Refresh leadova i kredita
+      loadLeads();
+      loadCredits();
+      
+    } catch (err) {
+      const errorMsg = err.response?.data?.error || 'Greška pri otključavanju kontakta';
+      alert(errorMsg);
+    } finally {
+      setUnlocking(null);
     }
   };
 
@@ -218,23 +249,60 @@ export default function MyLeads() {
                 </span>
               </div>
 
-              {/* Client Contact Info (only for purchased leads) */}
-              <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-                <p className="text-xs font-semibold text-green-900 mb-2">📞 KONTAKT KLIJENTA (EKSKLUZIVNO):</p>
-                <div className="grid md:grid-cols-3 gap-3 text-sm">
-                  <div>
-                    <p className="text-gray-600">Ime:</p>
-                    <p className="font-semibold">{purchase.job.user.fullName}</p>
+              {/* Client Contact Info (Pay-per-contact model) */}
+              <div className={`mb-4 p-4 border rounded-lg ${
+                purchase.contactUnlocked 
+                  ? 'bg-green-50 border-green-200' 
+                  : 'bg-yellow-50 border-yellow-200'
+              }`}>
+                <p className={`text-xs font-semibold mb-2 ${
+                  purchase.contactUnlocked ? 'text-green-900' : 'text-yellow-900'
+                }`}>
+                  {purchase.contactUnlocked ? '📞 KONTAKT KLIJENTA (EKSKLUZIVNO):' : '🔒 KONTAKT NIJE OTKLJUČAN'}
+                </p>
+                
+                {purchase.contactUnlocked ? (
+                  <div className="grid md:grid-cols-3 gap-3 text-sm">
+                    <div>
+                      <p className="text-gray-600">Ime:</p>
+                      <p className="font-semibold">{purchase.job.user.fullName}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600">Email:</p>
+                      <p className="font-semibold">{purchase.job.user.email || 'Nije navedeno'}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600">Telefon:</p>
+                      <p className="font-semibold">{purchase.job.user.phoneNumber || purchase.job.user.phone || 'Nije navedeno'}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-gray-600">Email:</p>
-                    <p className="font-semibold">{purchase.job.user.email}</p>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="text-sm text-yellow-800">
+                      <p className="font-semibold mb-1">Za kontakt klijenta potrebno je otključati:</p>
+                      <ul className="list-disc list-inside space-y-1">
+                        <li>Ime klijenta: <span className="font-semibold">{purchase.job.user.fullName}</span> (vidljivo)</li>
+                        <li>Email i telefon: 🔒 <span className="font-semibold">Otključaj za 1 kredit</span></li>
+                      </ul>
+                    </div>
+                    <button
+                      onClick={() => handleUnlockContact(purchase.jobId, purchase.id)}
+                      disabled={unlocking === purchase.id || creditsBalance < 1}
+                      className="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                    >
+                      {unlocking === purchase.id ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Otključavam...
+                        </>
+                      ) : creditsBalance < 1 ? (
+                        <>🔒 Nedovoljno kredita (potrebno: 1)</>
+                      ) : (
+                        <>🔓 Otključaj kontakt (1 kredit)</>
+                      )}
+                    </button>
                   </div>
-                  <div>
-                    <p className="text-gray-600">Telefon:</p>
-                    <p className="font-semibold">{purchase.job.user.phone || 'Nije navedeno'}</p>
-                  </div>
-                </div>
+                )}
               </div>
 
               {/* Lead Info */}
