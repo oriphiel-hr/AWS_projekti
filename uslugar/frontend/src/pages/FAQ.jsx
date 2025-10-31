@@ -60,7 +60,7 @@ const FAQ = () => {
     },
     {
       question: "Što je trial period?",
-      answer: "Novi korisnici dobivaju 7 dana besplatno s 2 kredita da probaju platformu."
+      answer: "Novi korisnici dobivaju 7 dana besplatno s 5 kredita da probaju platformu."
     },
     {
       question: "Kako se ažuriraju krediti?",

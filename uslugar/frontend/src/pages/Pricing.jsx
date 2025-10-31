@@ -61,9 +61,9 @@ export default function Pricing({ setTab }) {
           displayName: 'TRIAL',
           price: 0,
           currency: 'EUR',
-          credits: 2,
+          credits: 5,
           features: [
-            '2 ekskluzivna leada (besplatno)',
+            '5 ekskluzivnih leadova (besplatno)',
             '1 lead = 1 izvođač',
             '7 dana probni period',
             'ROI statistika',
