@@ -183,6 +183,64 @@ const ProviderProfile = ({ providerId, onClose }) => {
               </span>
             )}
           </div>
+
+          {/* Reputation Metrics */}
+          {(provider.avgResponseTimeMinutes > 0 || provider.conversionRate > 0) && (
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">⚡ Reputacija</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {provider.avgResponseTimeMinutes > 0 && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600 mb-1">Prosječno vrijeme odgovora</p>
+                        <p className="text-2xl font-bold text-blue-700">
+                          {provider.avgResponseTimeMinutes < 60 
+                            ? `${Math.round(provider.avgResponseTimeMinutes)} min`
+                            : provider.avgResponseTimeMinutes < 1440
+                            ? `${Math.round(provider.avgResponseTimeMinutes / 60)} h`
+                            : `${Math.round(provider.avgResponseTimeMinutes / 1440)} d`}
+                        </p>
+                        {provider.totalResponseTimeTracked > 0 && (
+                          <p className="text-xs text-gray-500 mt-1">
+                            Izračunato iz {provider.totalResponseTimeTracked} odgovora
+                          </p>
+                        )}
+                      </div>
+                      <span className="text-3xl">⏱️</span>
+                    </div>
+                    {provider.avgResponseTimeMinutes <= 60 && (
+                      <div className="mt-2 text-xs text-green-700 bg-green-100 px-2 py-1 rounded">
+                        ✓ Brz odgovor
+                      </div>
+                    )}
+                  </div>
+                )}
+                {provider.conversionRate > 0 && (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600 mb-1">Stopa konverzije</p>
+                        <p className="text-2xl font-bold text-green-700">
+                          {provider.conversionRate.toFixed(1)}%
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Leadovi → Uspešni poslovi
+                        </p>
+                      </div>
+                      <span className="text-3xl">📈</span>
+                    </div>
+                    {provider.conversionRate >= 50 && (
+                      <div className="mt-2 text-xs text-green-700 bg-green-100 px-2 py-1 rounded">
+                        ✓ Iznad prosjeka
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Bio */}
           {provider.bio && (
             <div>

@@ -1636,14 +1636,34 @@ export default function ProviderProfile({ onSuccess, onNavigate }) {
               <div className="text-2xl font-bold text-green-600">{profile.ratingCount || 0}</div>
               <div className="text-sm text-gray-600">Broj recenzija</div>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">{formData.categoryIds.length}</div>
-              <div className="text-sm text-gray-600">Kategorije</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-orange-600">{formData.experience || 0}</div>
-              <div className="text-sm text-gray-600">Godine iskustva</div>
-            </div>
+            {profile.avgResponseTimeMinutes > 0 && (
+              <div className="text-center">
+                <div className="text-2xl font-bold text-indigo-600">
+                  {profile.avgResponseTimeMinutes < 60 
+                    ? `${Math.round(profile.avgResponseTimeMinutes)}m`
+                    : `${Math.round(profile.avgResponseTimeMinutes / 60)}h`}
+                </div>
+                <div className="text-sm text-gray-600">Vrijeme odgovora</div>
+              </div>
+            )}
+            {profile.conversionRate > 0 && (
+              <div className="text-center">
+                <div className="text-2xl font-bold text-emerald-600">{profile.conversionRate.toFixed(1)}%</div>
+                <div className="text-sm text-gray-600">Konverzija</div>
+              </div>
+            )}
+            {(!profile.avgResponseTimeMinutes || profile.avgResponseTimeMinutes === 0) && (
+              <div className="text-center">
+                <div className="text-2xl font-bold text-purple-600">{formData.categoryIds.length}</div>
+                <div className="text-sm text-gray-600">Kategorije</div>
+              </div>
+            )}
+            {(!profile.conversionRate || profile.conversionRate === 0) && (
+              <div className="text-center">
+                <div className="text-2xl font-bold text-orange-600">{formData.experience || 0}</div>
+                <div className="text-sm text-gray-600">Godine iskustva</div>
+              </div>
+            )}
           </div>
         </div>
 
