@@ -44,7 +44,7 @@ export async function sendExpiryReminder(subscription, daysLeft, user) {
       
       <h3>Što dobivam s TRIAL-om?</h3>
       <ul>
-        <li>✅ 2 besplatna leada</li>
+        <li>✅ 5 besplatnih leadova</li>
         <li>✅ Ekskluzivni leadovi (1:1, bez konkurencije)</li>
         <li>✅ ROI statistika</li>
         <li>✅ Refund ako klijent ne odgovori</li>

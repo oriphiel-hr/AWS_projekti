@@ -46,7 +46,7 @@ r.get('/me', auth(true, ['PROVIDER']), async (req, res, next) => {
           plan: 'TRIAL',
           status: 'ACTIVE',
           credits: 0,
-          creditsBalance: 2, // 2 besplatna leada za probati
+          creditsBalance: 5, // 5 besplatnih leadova za probati
           expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 dana trial
         }
       });
@@ -55,7 +55,7 @@ r.get('/me', auth(true, ['PROVIDER']), async (req, res, next) => {
       await prisma.notification.create({
         data: {
           title: 'Dobrodošli u Uslugar EXCLUSIVE!',
-          message: 'Dobili ste 2 besplatna leada da probate našu platformu. Nadogradite pretplatu za više.',
+          message: 'Dobili ste 5 besplatnih leadova da probate našu platformu. Nadogradite pretplatu za više.',
           type: 'SYSTEM',
           userId: req.user.id
         }

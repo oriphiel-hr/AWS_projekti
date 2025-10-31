@@ -430,7 +430,7 @@ const server = httpServer.listen(PORT, () => {
   console.log(`[OK] Socket.io ready for real-time chat`)
   console.log(`[OK] USLUGAR EXCLUSIVE features: Exclusive Leads, Credits, ROI Dashboard, AI Scoring, Queue Model`)
   console.log(`[OK] Queue Scheduler: Active (checks expired leads every hour)`)
-  console.log(`[OK] Subscription plans: TRIAL (2 free), BASIC (39€), PREMIUM (89€), PRO (149€)`)
+  console.log(`[OK] Subscription plans: TRIAL (5 free), BASIC (39€), PREMIUM (89€), PRO (149€)`)
   console.log(`[OK] All routes registered successfully`)
 })
 const shutdown = async () => {
