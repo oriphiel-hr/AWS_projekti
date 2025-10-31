@@ -77,18 +77,41 @@ r.post('/send', auth(true), async (req, res, next) => {
     });
 
     // Pošalji SMS
+    let smsResult = null;
     try {
-      await sendVerificationCode(phone, code);
-      console.log(`[SMS Verification] Code sent to ${phone} for user ${userId}`);
+      smsResult = await sendVerificationCode(phone, code);
+      console.log(`[SMS Verification] SMS result:`, {
+        success: smsResult.success,
+        mode: smsResult.mode,
+        sid: smsResult.sid,
+        error: smsResult.error
+      });
+      
+      if (smsResult.mode === 'simulation' || smsResult.needsVerification) {
+        console.log(`[SMS Verification] SIMULATION MODE - Returning code in response for testing`);
+      }
     } catch (smsError) {
       console.error('[SMS Verification] Failed to send SMS:', smsError);
-      // Ne vraćaj grešku - korisnik će vidjeti kod u simulaciji ili će se retry
+      // Ako je simulation mode ili error, vraćamo kod u response za testiranje
+      console.warn('[SMS Verification] SMS failed, but continuing with code in response');
     }
 
+    // Uvijek vraćamo kod ako je simulation mode ili ako je development
+    // Također vraćamo kod ako Twilio ne radi (za testiranje)
+    const shouldReturnCode = 
+      process.env.NODE_ENV === 'development' || 
+      !smsResult || 
+      smsResult.mode === 'simulation' || 
+      smsResult.needsVerification ||
+      !smsResult.success;
+
     res.json({ 
-      message: 'SMS verifikacijski kod je poslan. Kod važi 10 minuta.',
-      // U developmentu vraćamo kod za testiranje (ukloni u production!)
-      ...(process.env.NODE_ENV === 'development' && { code })
+      message: smsResult?.success 
+        ? 'SMS verifikacijski kod je poslan. Kod važi 10 minuta.'
+        : 'SMS nije poslan (Twilio nije konfiguriran ili broj nije verificiran). Kod za testiranje:',
+      code: shouldReturnCode ? code : undefined, // Vraćamo kod za testiranje
+      smsMode: smsResult?.mode || 'simulation',
+      smsSuccess: smsResult?.success || false
     });
 
   } catch (error) {

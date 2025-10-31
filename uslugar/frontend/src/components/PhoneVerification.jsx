@@ -59,20 +59,25 @@ const PhoneVerification = ({ phone, onVerified, currentPhone }) => {
 
     try {
       const response = await sendVerificationCode(phoneToVerify);
-      setSuccess(response.data.message || 'SMS kod je poslan! Provjerite telefon.');
+      
+      // Ako je SMS mode simulation ili ako je kod vraćen, prikaži ga
+      if (response.data.code) {
+        const codeMessage = response.data.smsSuccess 
+          ? `SMS kod je poslan! Kod za testiranje: ${response.data.code}`
+          : `SMS nije poslan (Twilio issue). Kod za testiranje: ${response.data.code}`;
+        setSuccess(codeMessage);
+        console.log('🔑 SMS Code (test):', response.data.code);
+      } else {
+        setSuccess(response.data.message || 'SMS kod je poslan! Provjerite telefon.');
+      }
+      
       setCountdown(60); // 60 sekundi countdown
       setCanResend(false);
       
-      // U developmentu prikaži kod (ako je vraćen)
-      if (response.data.code) {
-        console.log('🔑 SMS Code (dev):', response.data.code);
-        setSuccess(`SMS kod je poslan! Kod (dev): ${response.data.code}`);
-      }
-      
       // Ažuriraj status odmah da se prikaže forma za unos koda
-      // Backend će postaviti phoneVerificationExpires pa će hasActiveCode biti true
       await checkStatus();
     } catch (err) {
+      console.error('SMS send error:', err);
       setError(err.response?.data?.error || 'Greška pri slanju SMS koda');
     } finally {
       setLoading(false);

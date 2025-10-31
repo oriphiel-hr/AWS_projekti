@@ -24,26 +24,63 @@ dotenv.config();
  */
 export async function sendSMS(phone, message) {
   try {
+    // Provjeri Twilio konfiguraciju
+    const hasTwilioConfig = process.env.TWILIO_ACCOUNT_SID && 
+                           process.env.TWILIO_AUTH_TOKEN && 
+                           process.env.TWILIO_PHONE_NUMBER;
+    
+    console.log('[SMS Service] Twilio config check:', {
+      hasAccountSID: !!process.env.TWILIO_ACCOUNT_SID,
+      hasAuthToken: !!process.env.TWILIO_AUTH_TOKEN,
+      hasPhoneNumber: !!process.env.TWILIO_PHONE_NUMBER,
+      phoneNumber: process.env.TWILIO_PHONE_NUMBER || 'NOT SET'
+    });
+    
     // Twilio integration
-    if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_PHONE_NUMBER) {
-      const twilio = (await import('twilio')).default;
-      const client = twilio(
-        process.env.TWILIO_ACCOUNT_SID,
-        process.env.TWILIO_AUTH_TOKEN
-      );
-      
-      const result = await client.messages.create({
-        body: message,
-        from: process.env.TWILIO_PHONE_NUMBER,
-        to: phone
-      });
-      
-      console.log(`✅ SMS poslan via Twilio: ${result.sid}`);
-      return { success: true, sid: result.sid, mode: 'twilio' };
+    if (hasTwilioConfig) {
+      try {
+        const twilio = (await import('twilio')).default;
+        const client = twilio(
+          process.env.TWILIO_ACCOUNT_SID,
+          process.env.TWILIO_AUTH_TOKEN
+        );
+        
+        console.log(`[SMS Service] Sending SMS via Twilio to ${phone} from ${process.env.TWILIO_PHONE_NUMBER}`);
+        
+        const result = await client.messages.create({
+          body: message,
+          from: process.env.TWILIO_PHONE_NUMBER,
+          to: phone
+        });
+        
+        console.log(`✅ SMS poslan via Twilio: ${result.sid}, Status: ${result.status}`);
+        return { success: true, sid: result.sid, mode: 'twilio', status: result.status };
+      } catch (twilioError) {
+        console.error('❌ Twilio SMS error:', twilioError);
+        console.error('   Error code:', twilioError.code);
+        console.error('   Error message:', twilioError.message);
+        
+        // Ako je Twilio trial i broj nije verificiran
+        if (twilioError.code === 21608 || twilioError.message?.includes('verified')) {
+          console.warn('⚠️ Twilio trial: Broj mora biti verificiran u Twilio konzoli');
+          // Fallback na simulation mode
+          console.log(`📱 [SMS SIMULATION - Twilio error] To: ${phone}`);
+          console.log(`   Message: ${message}`);
+          return { 
+            success: false, 
+            error: twilioError.message,
+            sid: 'sm_error_' + Date.now(),
+            mode: 'simulation',
+            needsVerification: true
+          };
+        }
+        
+        throw twilioError;
+      }
     }
     
     // Simulation mode (for development when Twilio not configured)
-    console.log(`📱 [SMS SIMULATION] To: ${phone}`);
+    console.log(`📱 [SMS SIMULATION - No Twilio config] To: ${phone}`);
     console.log(`   Message: ${message}`);
     
     return { 
