@@ -68,6 +68,10 @@ const PhoneVerification = ({ phone, onVerified, currentPhone }) => {
         console.log('🔑 SMS Code (dev):', response.data.code);
         setSuccess(`SMS kod je poslan! Kod (dev): ${response.data.code}`);
       }
+      
+      // Ažuriraj status odmah da se prikaže forma za unos koda
+      // Backend će postaviti phoneVerificationExpires pa će hasActiveCode biti true
+      await checkStatus();
     } catch (err) {
       setError(err.response?.data?.error || 'Greška pri slanju SMS koda');
     } finally {
@@ -172,8 +176,8 @@ const PhoneVerification = ({ phone, onVerified, currentPhone }) => {
         </button>
       )}
 
-      {/* Verify code form */}
-      {status?.hasActiveCode && (
+      {/* Verify code form - prikaži ako je SMS poslan (ima success poruku) ili ako ima aktivni kod */}
+      {(status?.hasActiveCode || success.includes('poslan')) && (
         <form onSubmit={handleVerifyCode} className="space-y-3">
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
@@ -192,6 +196,11 @@ const PhoneVerification = ({ phone, onVerified, currentPhone }) => {
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-lg tracking-widest"
               autoFocus
             />
+            {status?.attemptsRemaining !== undefined && (
+              <p className="text-xs text-gray-500 mt-1 text-center">
+                Preostalo pokušaja: {status.attemptsRemaining}
+              </p>
+            )}
           </div>
 
           <button
@@ -211,6 +220,37 @@ const PhoneVerification = ({ phone, onVerified, currentPhone }) => {
             {countdown > 0 ? `Pošalji novi kod (${countdown}s)` : '📱 Pošalji novi kod'}
           </button>
         </form>
+      )}
+      
+      {/* Fallback: ako je SMS poslan ali status još nije ažuriran, prikaži formu ručno */}
+      {success.includes('poslan') && !status?.hasActiveCode && (
+        <div className="space-y-3">
+          <p className="text-xs text-gray-600 text-center">
+            Provjerite telefon za SMS kod, ili unesite kod koji ste primili:
+          </p>
+          <form onSubmit={handleVerifyCode} className="space-y-3">
+            <input
+              type="text"
+              value={code}
+              onChange={(e) => {
+                const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+                setCode(value);
+                setError('');
+              }}
+              placeholder="123456"
+              maxLength={6}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-lg tracking-widest"
+              autoFocus
+            />
+            <button
+              type="submit"
+              disabled={loading || code.length !== 6}
+              className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+            >
+              {loading ? 'Verificiranje...' : '✓ Verificiraj'}
+            </button>
+          </form>
+        </div>
       )}
     </div>
   );
