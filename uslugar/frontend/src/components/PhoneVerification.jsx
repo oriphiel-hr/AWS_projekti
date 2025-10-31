@@ -32,6 +32,10 @@ const PhoneVerification = ({ phone, onVerified, currentPhone }) => {
       if (response.data.phoneVerified) {
         setSuccess('Telefon je verificiran!');
         onVerified?.();
+      } else if (response.data.hasActiveCode && response.data.code && !success && !error) {
+        // Ako postoji aktivan kod, prikaži ga
+        setSuccess(`Postojeći kod za verifikaciju: ${response.data.code}`);
+        setError(''); // Očisti error ako postoji
       }
     } catch (err) {
       console.error('Status check error:', err);
