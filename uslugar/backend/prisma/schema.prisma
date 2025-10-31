@@ -128,6 +128,12 @@ model ProviderProfile {
   portfolio     Json? // Portfolio slike i radovi
   ratingAvg     Float        @default(0)
   ratingCount   Int          @default(0)
+  
+  // REPUTATION SYSTEM - Response time & conversion tracking
+  avgResponseTimeMinutes Float @default(0) // Prosječno vrijeme odgovora u minutama
+  totalResponseTimeTracked Int @default(0) // Broj trackanih odgovora (za izračun prosjeka)
+  conversionRate Float @default(0) // Stopa konverzije leadova (iz ProviderROI, cached za brzi pristup)
+  
   serviceArea   String?
   specialties   String[] // Specijalizacije pružatelja
   experience    Int? // Godine iskustva

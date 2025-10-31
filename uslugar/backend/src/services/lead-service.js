@@ -141,13 +141,43 @@ export async function markLeadContacted(purchaseId, providerId) {
     return purchase; // Already marked
   }
 
+  const now = new Date();
   const updated = await prisma.leadPurchase.update({
     where: { id: purchaseId },
     data: {
       status: 'CONTACTED',
-      contactedAt: new Date()
+      contactedAt: now
     }
   });
+
+  // REPUTATION: Izračunaj response time
+  // Response time = vrijeme između unlock-a kontakta (ili kupovine ako nije unlock-ano) i kontakta
+  const referenceTime = updated.contactUnlockedAt || purchase.createdAt;
+  const responseTimeMinutes = Math.round((now.getTime() - referenceTime.getTime()) / (1000 * 60)); // u minutama
+
+  // Ažuriraj ProviderProfile - avgResponseTimeMinutes
+  if (responseTimeMinutes > 0 && responseTimeMinutes < 10080) { // Valid range: 0-7 dana (sprječava outlier-e)
+    const profile = await prisma.providerProfile.findUnique({
+      where: { userId: providerId },
+      select: { avgResponseTimeMinutes: true, totalResponseTimeTracked: true }
+    });
+
+    if (profile) {
+      // Rolling average: (stari_prosjek * broj_uzoraka + novi_response) / (broj_uzoraka + 1)
+      const newCount = profile.totalResponseTimeTracked + 1;
+      const newAvg = ((profile.avgResponseTimeMinutes * profile.totalResponseTimeTracked) + responseTimeMinutes) / newCount;
+
+      await prisma.providerProfile.update({
+        where: { userId: providerId },
+        data: {
+          avgResponseTimeMinutes: newAvg,
+          totalResponseTimeTracked: newCount
+        }
+      });
+
+      console.log(`[REPUTATION] Provider ${providerId} response time: ${responseTimeMinutes}min (avg: ${newAvg.toFixed(1)}min)`);
+    }
+  }
 
   // Ažuriraj Job status
   await prisma.job.update({
@@ -313,13 +343,19 @@ async function updateProviderROI(providerId, updates) {
     }
   });
 
+  // Re-fetch da dobijemo ažurirane vrijednosti
+  const updatedRoi = await prisma.providerROI.findUnique({
+    where: { providerId }
+  });
+
   // Izračunaj conversion rate i ROI
-  if (roi.totalLeadsPurchased > 0) {
-    const conversionRate = (roi.totalLeadsConverted / roi.totalLeadsPurchased) * 100;
+  let conversionRate = 0;
+  if (updatedRoi && updatedRoi.totalLeadsPurchased > 0) {
+    conversionRate = (updatedRoi.totalLeadsConverted / updatedRoi.totalLeadsPurchased) * 100;
     const avgCreditPrice = 10; // 10 EUR po kreditu (konfiguriše se)
-    const totalInvested = roi.totalCreditsSpent * avgCreditPrice;
-    const roiPercent = totalInvested > 0 ? ((roi.totalRevenue - totalInvested) / totalInvested) * 100 : 0;
-    const avgLeadValue = roi.totalLeadsConverted > 0 ? roi.totalRevenue / roi.totalLeadsConverted : 0;
+    const totalInvested = updatedRoi.totalCreditsSpent * avgCreditPrice;
+    const roiPercent = totalInvested > 0 ? ((updatedRoi.totalRevenue - totalInvested) / totalInvested) * 100 : 0;
+    const avgLeadValue = updatedRoi.totalLeadsConverted > 0 ? updatedRoi.totalRevenue / updatedRoi.totalLeadsConverted : 0;
 
     await prisma.providerROI.update({
       where: { providerId },
@@ -329,9 +365,18 @@ async function updateProviderROI(providerId, updates) {
         avgLeadValue
       }
     });
+
+    // REPUTATION: Cache conversionRate u ProviderProfile za brzi pristup
+    await prisma.providerProfile.update({
+      where: { userId: providerId },
+      data: { conversionRate }
+    }).catch(() => {
+      // Ignoriraj ako profile ne postoji (ne bi trebalo, ali za sigurnost)
+      console.warn(`[REPUTATION] ProviderProfile not found for ${providerId}`);
+    });
   }
 
-  return roi;
+  return updatedRoi || roi;
 }
 
 /**

@@ -59,14 +59,37 @@ export async function findTopProviders(job, limit = 5) {
     console.log(`   Nakon filtriranja po licencama: ${providers.length}`)
   }
   
-  // Sortiraj po ocjeni i broju recenzija
+  // Sortiraj po REPUTATION SCORE (napredni algoritam)
   providers.sort((a, b) => {
-    // Prvo po ocjeni
-    if (b.ratingAvg !== a.ratingAvg) {
-      return b.ratingAvg - a.ratingAvg
+    // Reputation Score = kombinacija rating, response time, conversion rate
+    
+    // 1. Rating (40% weight)
+    const ratingScoreA = a.ratingAvg * 0.4 + (a.ratingCount > 10 ? 0.5 : a.ratingCount / 20) * 0.4;
+    const ratingScoreB = b.ratingAvg * 0.4 + (b.ratingCount > 10 ? 0.5 : b.ratingCount / 20) * 0.4;
+    
+    // 2. Response Time (30% weight) - niže = bolje
+    // Normalizacija: 0-60min = 1.0, 60-240min = 0.5, 240+ = 0.1
+    const responseTimeScoreA = a.avgResponseTimeMinutes <= 0 ? 0.5 : // Nema podataka
+      a.avgResponseTimeMinutes <= 60 ? 1.0 :
+      a.avgResponseTimeMinutes <= 240 ? 0.5 : 0.1;
+    const responseTimeScoreB = b.avgResponseTimeMinutes <= 0 ? 0.5 :
+      b.avgResponseTimeMinutes <= 60 ? 1.0 :
+      b.avgResponseTimeMinutes <= 240 ? 0.5 : 0.1;
+    
+    // 3. Conversion Rate (30% weight)
+    const conversionScoreA = a.conversionRate / 100; // 0-1
+    const conversionScoreB = b.conversionRate / 100;
+    
+    // Kombinirani score
+    const scoreA = ratingScoreA * 0.4 + responseTimeScoreA * 0.3 + conversionScoreA * 0.3;
+    const scoreB = ratingScoreB * 0.4 + responseTimeScoreB * 0.3 + conversionScoreB * 0.3;
+    
+    if (Math.abs(scoreB - scoreA) > 0.01) {
+      return scoreB - scoreA; // Viši score = bolji
     }
-    // Zatim po broju ocjena (više ocjena = pouzdaniji)
-    return b.ratingCount - a.ratingCount
+    
+    // Fallback: ako su scoreovi gotovo jednaki, koristi rating count
+    return b.ratingCount - a.ratingCount;
   })
   
   const topProviders = providers.slice(0, limit)
