@@ -226,24 +226,84 @@ r.post('/register', async (req, res, next) => {
 
 r.post('/login', async (req, res, next) => {
   try {
-    const { email, password } = req.body;
-    console.log('[LOGIN] Attempting login for email:', email);
+    const { email, password, role } = req.body; // Optional role parameter
+    console.log('[LOGIN] Attempting login for email:', email, 'role:', role || 'any');
     
-    const user = await prisma.user.findUnique({ where: { email } });
-    if (!user) {
-      console.log('[LOGIN] User not found:', email);
-      return res.status(401).json({ error: 'Invalid credentials' });
+    // Find user(s) with this email
+    // If role is specified, try to find that specific user first
+    let user = null;
+    
+    if (role) {
+      // Try to find user with specific role
+      user = await prisma.user.findUnique({ 
+        where: { 
+          email_role: {
+            email: email,
+            role: role
+          }
+        } 
+      });
     }
     
-    const ok = await verifyPassword(password, user.passwordHash);
-    if (!ok) {
+    // If not found or role not specified, find any user with this email
+    if (!user) {
+      const users = await prisma.user.findMany({ where: { email } });
+      if (users.length === 0) {
+        console.log('[LOGIN] User not found:', email);
+        return res.status(401).json({ error: 'Invalid credentials' });
+      }
+      
+      // If multiple users with same email, try to verify password for each
+      // This allows same email with different roles to have different passwords
+      if (users.length > 1) {
+        // If role specified but not found, return error
+        if (role) {
+          return res.status(401).json({ 
+            error: 'Invalid credentials',
+            message: `Korisnik s emailom ${email} i ulogom ${role} nije pronađen. Molimo provjerite ulogu.`
+          });
+        }
+        
+        // Try to find user with matching password
+        for (const u of users) {
+          const ok = await verifyPassword(password, u.passwordHash);
+          if (ok) {
+            user = u;
+            break;
+          }
+        }
+      } else {
+        // Single user, verify password
+        const ok = await verifyPassword(password, users[0].passwordHash);
+        if (ok) {
+          user = users[0];
+        }
+      }
+    } else {
+      // User found with specific role, verify password
+      const ok = await verifyPassword(password, user.passwordHash);
+      if (!ok) {
+        user = null;
+      }
+    }
+    
+    if (!user) {
       console.log('[LOGIN] Password mismatch for:', email);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
     
-    console.log('[LOGIN] Successful login for:', email);
+    console.log('[LOGIN] Successful login for:', email, 'role:', user.role);
     const token = signToken({ id: user.id, email: user.email, role: user.role, name: user.fullName });
-    res.json({ token, user: { id: user.id, email: user.email, role: user.role, fullName: user.fullName, isVerified: user.isVerified } });
+    res.json({ 
+      token, 
+      user: { 
+        id: user.id, 
+        email: user.email, 
+        role: user.role, 
+        fullName: user.fullName, 
+        isVerified: user.isVerified 
+      } 
+    });
   } catch (e) {
     console.error('[LOGIN] Error:', e);
     next(e);
@@ -290,8 +350,13 @@ r.post('/resend-verification', async (req, res, next) => {
     const { email } = req.body;
     if (!email) return res.status(400).json({ error: 'Email required' });
     
-    const user = await prisma.user.findUnique({ where: { email } });
-    if (!user) return res.status(404).json({ error: 'User not found' });
+    // Find user by email (can be multiple with different roles)
+    // For verification resend, we'll use the first user found
+    const users = await prisma.user.findMany({ where: { email } });
+    if (users.length === 0) return res.status(404).json({ error: 'User not found' });
+    
+    // Use first user (or could iterate through all if needed)
+    const user = users[0];
     if (user.isVerified) return res.status(400).json({ error: 'Email already verified' });
     
     // Generiraj novi token
@@ -314,14 +379,18 @@ r.post('/forgot-password', async (req, res, next) => {
     const { email } = req.body;
     if (!email) return res.status(400).json({ error: 'Email required' });
     
-    const user = await prisma.user.findUnique({ where: { email } });
+    // Find user by email (can be multiple with different roles)
+    const users = await prisma.user.findMany({ where: { email } });
     
     // Security: Uvijek vrati success, čak i ako user ne postoji
     // Ovo sprječava da napadač zna koji email-ovi postoje u sustavu
-    if (!user) {
+    if (users.length === 0) {
       console.log('Forgot password attempt for non-existent email:', email);
       return res.json({ message: 'If that email exists, a password reset link has been sent.' });
     }
+    
+    // Use first user for password reset
+    const user = users[0];
     
     // Generiraj reset token (32 byte random hex)
     const resetPasswordToken = randomBytes(32).toString('hex');
