@@ -6,8 +6,25 @@ import { uploadDocument, getImageUrl } from '../lib/upload.js';
 const r = Router();
 
 // get current provider profile - MUST be before /:userId route
-r.get('/me', auth(true, ['PROVIDER']), async (req, res, next) => {
+// Get current user's provider profile
+// Dozvoljeno za PROVIDER, ADMIN i USER-e koji su tvrtke/obrti (imaju legalStatusId)
+r.get('/me', auth(true, ['PROVIDER', 'ADMIN', 'USER']), async (req, res, next) => {
   try {
+    // Provjeri da li USER ima legalStatusId (tvrtka/obrt)
+    if (req.user.role === 'USER') {
+      const userCheck = await prisma.user.findUnique({
+        where: { id: req.user.id },
+        select: { legalStatusId: true }
+      });
+      
+      if (!userCheck || !userCheck.legalStatusId) {
+        return res.status(403).json({ 
+          error: 'Nemate pristup',
+          message: 'Ovaj endpoint je dostupan samo za tvrtke/obrte ili pružatelje usluga.'
+        });
+      }
+    }
+    
     let provider = await prisma.providerProfile.findUnique({
       where: { userId: req.user.id },
       include: {
@@ -119,8 +136,24 @@ r.get('/:userId', async (req, res, next) => {
 });
 
 // update provider profile
-r.put('/me', auth(true, ['PROVIDER']), async (req, res, next) => {
+// Dozvoljeno za PROVIDER, ADMIN i USER-e koji su tvrtke/obrti (imaju legalStatusId)
+r.put('/me', auth(true, ['PROVIDER', 'ADMIN', 'USER']), async (req, res, next) => {
   try {
+    // Provjeri da li USER ima legalStatusId (tvrtka/obrt)
+    if (req.user.role === 'USER') {
+      const userCheck = await prisma.user.findUnique({
+        where: { id: req.user.id },
+        select: { legalStatusId: true }
+      });
+      
+      if (!userCheck || !userCheck.legalStatusId) {
+        return res.status(403).json({ 
+          error: 'Nemate pristup',
+          message: 'Ovaj endpoint je dostupan samo za tvrtke/obrte ili pružatelje usluga.'
+        });
+      }
+    }
+    
     const { 
       bio, 
       serviceArea, 
