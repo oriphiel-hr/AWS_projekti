@@ -26,6 +26,7 @@ import PaymentSuccess from './pages/PaymentSuccess';
 import LeadMarketplace from './pages/LeadMarketplace';
 import ROIDashboard from './pages/ROIDashboard';
 import MyLeads from './pages/MyLeads';
+import MyJobs from './pages/MyJobs';
 import TeamLocations from './pages/TeamLocations';
 import SubscriptionPlans from './pages/SubscriptionPlans';
 import CreditsWidget from './components/CreditsWidget';
