@@ -264,7 +264,7 @@ const Documentation = () => {
         { name: "Payment success/failure handling", implemented: true },
         { name: "Povrat na platformu nakon plaćanja", implemented: true },
         { name: "Sigurnosno skladištenje Stripe secret key u AWS Secrets Manager", implemented: true },
-        { name: "Fakturiranje", implemented: false },
+        { name: "Fakturiranje (PDF fakture za pretplate i kupovine)", implemented: false, deprecated: false },
         { name: "Povrat novca za pretplate (refund subscription payment)", implemented: false }
       ]
     },
