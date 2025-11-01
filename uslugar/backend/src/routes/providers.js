@@ -62,15 +62,6 @@ r.get('/me', auth(true, ['PROVIDER']), async (req, res, next) => {
         user: {
           include: {
             legalStatus: true
-          },
-          select: {
-            id: true,
-            email: true,
-            fullName: true,
-            phone: true,
-            phoneVerified: true,
-            phoneVerifiedAt: true,
-            legalStatus: true
           }
         },
         categories: true

@@ -844,7 +844,7 @@ export default function ProviderProfile({ onSuccess, onNavigate }) {
                 <div className="flex-1">
                   <p className="text-sm font-medium text-green-900">📱 Telefon</p>
                   <p className="text-xs text-green-700">
-                    {profile.identityPhoneVerifiedAt || profile.user?.phoneVerifiedAt
+                    {(profile.identityPhoneVerifiedAt || profile.user?.phoneVerifiedAt)
                       ? `Verificiran: ${new Date(profile.identityPhoneVerifiedAt || profile.user?.phoneVerifiedAt).toLocaleDateString('hr-HR')}`
                       : 'Verificiran'}
                   </p>
