@@ -34,7 +34,7 @@ import CreditsWidget from './components/CreditsWidget';
 import DropdownMenu from './components/DropdownMenu';
 import MobileMenu from './components/MobileMenu';
 
-function useAuth() {
+export function useAuth() {
   const [token, setToken] = useState(localStorage.getItem('token'));
   function saveToken(t) { localStorage.setItem('token', t); setToken(t); }
   function logout(){ localStorage.removeItem('token'); setToken(null); }
