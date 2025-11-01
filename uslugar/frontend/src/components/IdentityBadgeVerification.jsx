@@ -138,6 +138,7 @@ export default function IdentityBadgeVerification({ profile, onUpdated }) {
         </label>
         <div className="flex gap-2">
           <button
+            type="button"
             onClick={() => setVerificationType('email')}
             className={`flex-1 px-4 py-2 rounded-lg border ${
               verificationType === 'email'
@@ -148,6 +149,7 @@ export default function IdentityBadgeVerification({ profile, onUpdated }) {
             📧 Email
           </button>
           <button
+            type="button"
             onClick={() => setVerificationType('phone')}
             className={`flex-1 px-4 py-2 rounded-lg border ${
               verificationType === 'phone'
@@ -158,6 +160,7 @@ export default function IdentityBadgeVerification({ profile, onUpdated }) {
             📱 Telefon
           </button>
           <button
+            type="button"
             onClick={() => setVerificationType('dns')}
             className={`flex-1 px-4 py-2 rounded-lg border ${
               verificationType === 'dns'
