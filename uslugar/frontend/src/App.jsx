@@ -245,6 +245,24 @@ export default function App(){
             📞 Kontakt
           </button>
 
+          {/* Direct Registration Links */}
+          {!token && (
+            <>
+              <button
+                className={'px-3 py-2 border rounded ' + (tab==='register-user' ? 'bg-green-600 text-white' : 'border-green-600 text-green-600 hover:bg-green-50')}
+                onClick={() => setTab('register-user')}
+              >
+                👤 Registracija korisnika
+              </button>
+              <button
+                className={'px-3 py-2 border rounded ' + (tab==='register-provider' ? 'bg-blue-600 text-white' : 'border-blue-600 text-blue-600 hover:bg-blue-50')}
+                onClick={() => setTab('register-provider')}
+              >
+                🏢 Registracija pružatelja
+              </button>
+            </>
+          )}
+
           {/* Dropdown Menus */}
           {!token && (
             <>
@@ -441,6 +459,22 @@ export default function App(){
               >
                 📞 Kontakt
               </button>
+              {!token && (
+                <>
+                  <button
+                    className={'w-full text-left px-3 py-2 rounded ' + (tab==='register-user' ? 'bg-green-600 text-white' : 'hover:bg-gray-100')}
+                    onClick={() => { setTab('register-user'); setIsMobileMenuOpen(false); }}
+                  >
+                    👤 Registracija korisnika
+                  </button>
+                  <button
+                    className={'w-full text-left px-3 py-2 rounded ' + (tab==='register-provider' ? 'bg-blue-600 text-white' : 'hover:bg-gray-100')}
+                    onClick={() => { setTab('register-provider'); setIsMobileMenuOpen(false); }}
+                  >
+                    🏢 Registracija pružatelja
+                  </button>
+                </>
+              )}
             </div>
           </div>
 
