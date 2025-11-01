@@ -1,82 +1,85 @@
-# 🚀 Ručno Pokretanje Deployment-a
+# 🚀 Deployment - Pokreni Sada
 
-## Problem
+## ✅ Rješenje 1: GitHub Actions (Najbrže - Preporučeno)
 
-Promjene su pushane na GitHub, ali GitHub Actions workflow-i se nisu pokrenuli automatski ili nisu završili.
+### Backend Deployment:
 
----
+1. **Otvori GitHub:**
+   - https://github.com/oriphiel-hr/AWS_projekti/actions/workflows/backend-uslugar-ecs.yml
 
-## ✅ Rješenje: Ručno Pokreni Workflow-ove
-
-### Opcija 1: Preko GitHub Web Interface
-
-1. **Idi na GitHub repo:** https://github.com/oriphiel-hr/AWS_projekti
-2. **Klikni "Actions" tab**
-3. **Odaberi workflow:**
-
-   **Backend:**
-   - Odaberi: **"Backend - Reuse existing Task Definition (ECR→ECS)"**
-   - Klikni **"Run workflow"** → **"Run workflow"**
-
-   **Frontend:**
-   - Odaberi: **"Frontend - Build & Deploy (Hostinger)"**
-   - Klikni **"Run workflow"** → **"Run workflow"**
-
-4. **Pratite progress** u real-time
+2. **Klikni "Run workflow" → "Run workflow"**
+   - Workflow će automatski:
+     - Buildati Docker image
+     - Pushati na AWS ECR
+     - Deployati na ECS
+   
+3. **Čekaj 5-10 minuta**
 
 ---
 
-### Opcija 2: Preko GitHub CLI (ako imaš gh)
+### Frontend Deployment:
+
+1. **Otvori GitHub:**
+   - https://github.com/oriphiel-hr/AWS_projekti/actions/workflows/frontend-uslugar.yml
+
+2. **Klikni "Run workflow" → "Run workflow"**
+   - Workflow će automatski:
+     - Buildati React frontend
+     - Deployati na Hostinger FTP
+   
+3. **Čekaj 3-5 minuta**
+
+---
+
+## ✅ Rješenje 2: Ručni Deployment (PowerShell)
+
+### Backend:
 
 ```powershell
-# Backend deployment
-gh workflow run "Backend - Reuse existing Task Definition (ECR→ECS).yml"
+cd C:\GIT_PROJEKTI\AWS\AWS_projekti\uslugar\backend
+.\deploy-manual.ps1
+```
 
-# Frontend deployment
-gh workflow run "Frontend - Build & Deploy (Hostinger).yml"
+### Frontend:
+
+```powershell
+cd C:\GIT_PROJEKTI\AWS\AWS_projekti\uslugar\frontend
+npm ci
+npm run build
+# Zatim uploadaj dist/ folder na Hostinger FTP
 ```
 
 ---
 
-### Opcija 3: Push Dummy Commit (trigger automatski)
+## 📊 Provjera Deploymenta
 
-```powershell
-cd C:\GIT_PROJEKTI\AWS\AWS_projekti
-
-# Napravi prazan commit da triggera workflow
-git commit --allow-empty -m "trigger: Deploy backend and frontend changes"
-
-# Push
-git push origin main
+### Backend:
+```bash
+curl https://uslugar.api.oriph.io/api/health
 ```
 
-Ovo će automatski triggerati oba workflow-a (backend i frontend).
-
----
-
-## 🔍 Provjera Statusa Deployment-a
-
-### GitHub Actions:
-- https://github.com/oriphiel-hr/AWS_projekti/actions
-
-### AWS ECS Status:
-```powershell
-aws ecs describe-services --cluster apps-cluster --services uslugar-service-2gk1f1mv --region eu-north-1 --query 'services[0].{Status:status,RunningCount:runningCount,DesiredCount:desiredCount,TaskDefinition:taskDefinition}'
+### Frontend:
+```bash
+curl https://uslugar.oriph.io
 ```
 
 ---
 
-## ⚡ Brzi Deployment
+## 🔍 Status Promjena za Deployment:
 
-**Jednostavno:**
-1. Idi na GitHub Actions
-2. Klikni "Run workflow" za backend i frontend
-3. Čekaj ~5-10 minuta
+✅ **DNS verifikacija** - Implementirana provjera TXT zapisa  
+✅ **Email verifikacija** - Radi (provjerava domenu)  
+✅ **SMS verifikacija** - Radi (s rate limiting i simulation mode fallback)  
+✅ **Rate limiting fix** - Vraća postojeći kod umjesto 429 error  
+✅ **Backend kod** - Spreman  
+✅ **Frontend kod** - Spreman  
 
-**Ili:**
-```powershell
-cd C:\GIT_PROJEKTI\AWS\AWS_projekti
-git commit --allow-empty -m "trigger: Deploy"
-git push origin main
-```
+---
 
+## ⚡ Najbrži Način:
+
+**Idi na GitHub i pokreni workflow-e ručno:**
+- Backend: https://github.com/oriphiel-hr/AWS_projekti/actions/workflows/backend-uslugar-ecs.yml
+- Frontend: https://github.com/oriphiel-hr/AWS_projekti/actions/workflows/frontend-uslugar.yml
+
+**Vrijeme:** ~10-15 minuta ukupno
