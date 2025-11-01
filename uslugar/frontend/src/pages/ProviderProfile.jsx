@@ -818,7 +818,7 @@ export default function ProviderProfile({ onSuccess, onNavigate }) {
         </div>
       )}
 
-      {/* Status Verifikacije i Badgeovi */}
+          {/* Status Verifikacije i Značke */}
       {profile && (
         <div className="mb-6 bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-lg p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
@@ -886,29 +886,29 @@ export default function ProviderProfile({ onSuccess, onNavigate }) {
             )}
           </div>
           
-          {/* Badge-ovi ispod statusa verifikacije */}
+          {/* Značke ispod statusa verifikacije */}
           {(profile.identityEmailVerified || profile.identityPhoneVerified || profile.identityDnsVerified || (profile.badgeData?.BUSINESS?.verified === true) || profile.kycVerified) && (
             <div className="mt-4 pt-4 border-t border-purple-200">
-              <h4 className="text-sm font-semibold text-gray-900 mb-3">🏅 Badge-ovi</h4>
+              <h4 className="text-sm font-semibold text-gray-900 mb-3">🏅 Značke</h4>
               <div className="flex flex-wrap gap-2">
                 {profile.identityEmailVerified && (
                   <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-800 border border-green-300 rounded-full text-xs font-medium">
-                    <span className="text-green-600">📧</span> Email Badge
+                    <span className="text-green-600">📧</span> Email Značka
                   </span>
                 )}
                 {profile.identityPhoneVerified && (
                   <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-800 border border-green-300 rounded-full text-xs font-medium">
-                    <span className="text-green-600">📱</span> Telefon Badge
+                    <span className="text-green-600">📱</span> Telefon Značka
                   </span>
                 )}
                 {profile.identityDnsVerified && (
                   <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-800 border border-green-300 rounded-full text-xs font-medium">
-                    <span className="text-green-600">🌐</span> DNS Badge
+                    <span className="text-green-600">🌐</span> DNS Značka
                   </span>
                 )}
                 {((profile.badgeData?.BUSINESS?.verified === true) || profile.kycVerified) && (
                   <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-800 border border-green-300 rounded-full text-xs font-medium">
-                    <span className="text-green-600">🏢</span> Tvrtka/Obrt Badge
+                    <span className="text-green-600">🏢</span> Tvrtka/Obrt Značka
                   </span>
                 )}
               </div>
@@ -1190,13 +1190,13 @@ export default function ProviderProfile({ onSuccess, onNavigate }) {
           {/* Identity Badge Verifikacija */}
           <div className="mt-8 bg-purple-50 border border-purple-200 rounded-lg p-6">
             <h4 className="text-lg font-semibold text-gray-900 mb-4">
-              🆔 Identity Badge (Anti-impersonation)
+              🆔 Identity Značka (Anti-impersonation)
             </h4>
             <p className="text-sm text-gray-600 mb-4">
-              Verificirajte svoj identitet kako biste dobili Identity badge i povećali povjerenje korisnika.
+              Verificirajte svoj identitet kako biste dobili Identity značku i povećali povjerenje korisnika.
             </p>
             
-            {/* Show verified badges */}
+            {/* Show verified značke */}
             <div className="space-y-3 mb-4">
               {profile.identityEmailVerified && (
                 <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg p-3">
@@ -1228,7 +1228,7 @@ export default function ProviderProfile({ onSuccess, onNavigate }) {
           {/* Safety Badge */}
           <div className="mt-8 bg-yellow-50 border border-yellow-200 rounded-lg p-6">
             <h4 className="text-lg font-semibold text-gray-900 mb-4">
-              🛡️ Safety Badge (Opcijski)
+              🛡️ Safety Značka (Opcijski)
             </h4>
             <p className="text-sm text-gray-600 mb-4">
               Uploadajte policu osiguranja radi dodatne sigurnosti.

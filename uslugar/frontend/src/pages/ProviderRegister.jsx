@@ -548,7 +548,7 @@ export default function ProviderRegister({ onSuccess }) {
             Pravni status (obavezno)
           </h3>
           <p className="text-sm text-gray-700">
-            <strong>Prema zakonu</strong>, svi pružatelji usluga moraju biti registrirani kao obrt, firma ili samostalni djelatnik.
+            <strong>Prema zakonu</strong>, svi pružatelji usluga moraju biti registrirani kao obrt, tvrtka ili samostalni djelatnik.
           </p>
           
           <div>
@@ -678,7 +678,7 @@ export default function ProviderRegister({ onSuccess }) {
                   {verificationResult.badges[0]?.description || 'Potvrđeno u javnim registrima. Nije potreban dokument.'}
                 </p>
                 <p className="text-xs text-green-600 mt-1">
-                  {verificationResult.badgeCount > 0 && `Dodijeljeno ${verificationResult.badgeCount} badge-a`}
+                  {verificationResult.badgeCount > 0 && `Dodijeljeno ${verificationResult.badgeCount} značke${verificationResult.badgeCount === 1 ? '' : 'a'}`}
                 </p>
               </div>
             </div>

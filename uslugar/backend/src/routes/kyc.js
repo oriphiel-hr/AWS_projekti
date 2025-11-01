@@ -844,7 +844,7 @@ r.post('/verify-identity', auth(true), async (req, res, next) => {
         
         if (!userWithPhone?.phoneVerified) {
           return res.status(400).json({ 
-            error: 'Telefon mora biti verificiran SMS kodom prije Identity Badge verifikacije. Molimo prvo verificirajte telefon u profilu.' 
+            error: 'Telefon mora biti verificiran SMS kodom prije Identity Značke verifikacije. Molimo prvo verificirajte telefon u profilu.' 
           });
         }
         

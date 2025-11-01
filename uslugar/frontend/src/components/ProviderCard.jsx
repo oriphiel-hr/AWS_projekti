@@ -49,17 +49,17 @@ const ProviderCard = ({ provider, onViewProfile, onContact }) => {
               {/* Badge System */}
               <div className="flex flex-wrap gap-1 mt-1">
                 {provider.kycVerified && (
-                  <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs border border-green-300" title="Business Badge - Potvrđeno u javnim registrima">
+                  <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs border border-green-300" title="Business Značka - Potvrđeno u javnim registrima">
                     ✓ Business
                   </span>
                 )}
                 {(provider.identityEmailVerified || provider.identityPhoneVerified || provider.identityDnsVerified) && (
-                  <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs border border-purple-300" title="Identity Badge - Identitet verificiran">
+                  <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs border border-purple-300" title="Identity Značka - Identitet verificiran">
                     ✓ Identity
                   </span>
                 )}
                 {provider.safetyInsuranceUrl && (
-                  <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs border border-yellow-300" title="Safety Badge - Polica osiguranja">
+                  <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs border border-yellow-300" title="Safety Značka - Polica osiguranja">
                     ✓ Safety
                   </span>
                 )}

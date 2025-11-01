@@ -64,7 +64,7 @@ export default function UserRegister({ onSuccess }) {
         return;
       }
 
-      // VALIDACIJA: Ako se registrira kao firma, svi podaci su OBAVEZNI
+      // VALIDACIJA: Ako se registrira kao tvrtka, svi podaci su OBAVEZNI
       if (isCompany) {
         if (!formData.legalStatusId) {
           setError('Pravni status je obavezan za firme/obrte. Odaberite pravni oblik vašeg poslovanja.');
@@ -267,7 +267,7 @@ export default function UserRegister({ onSuccess }) {
           </div>
         </div>
 
-        {/* Firma checkbox */}
+        {/* Tvrtka checkbox */}
         <div className="border-t pt-6">
           <label className="flex items-center">
             <input
@@ -277,12 +277,12 @@ export default function UserRegister({ onSuccess }) {
               className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
             />
             <span className="ml-2 text-sm font-medium text-gray-700">
-              Registriram se kao firma / obrt
+              Registriram se kao tvrtka / obrt
             </span>
           </label>
         </div>
 
-        {/* Podaci o firmi (ako je firma) */}
+        {/* Podaci o tvrtki (ako je tvrtka) */}
         {isCompany && (
           <div className="space-y-4 bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
             <h3 className="text-lg font-semibold text-gray-900 flex items-center">

@@ -104,7 +104,7 @@ export default function IdentityBadgeVerification({ profile, onUpdated }) {
         });
         
         setPhoneVerified(true);
-        setSuccess('✓ Telefon je verificiran i Identity badge dodijeljen!');
+        setSuccess('✓ Telefon je verificiran i Identity značka dodijeljena!');
         
         // Refresh profile da se prikaže novi status
         if (onUpdated) {
@@ -118,7 +118,7 @@ export default function IdentityBadgeVerification({ profile, onUpdated }) {
           setPhoneVerified(false);
         }, 3000);
       } else {
-        setError('Telefon mora biti prvo SMS verificiran prije dodjeljivanja Identity badge-a');
+        setError('Telefon mora biti prvo SMS verificiran prije dodjeljivanja Identity značke');
       }
       
     } catch (err) {

@@ -99,7 +99,7 @@ export default function SafetyBadgeUpload({ onUploaded }) {
       </button>
       
       <p className="text-xs text-gray-500">
-        Polica osiguranja daje vam dodatni ✓ Safety badge, što povećava kredibilitet i povjerenje korisnika.
+        Polica osiguranja daje vam dodatnu ✓ Safety značku, što povećava kredibilitet i povjerenje korisnika.
       </p>
     </div>
   );
