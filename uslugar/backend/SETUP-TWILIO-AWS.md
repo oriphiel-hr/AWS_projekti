@@ -118,7 +118,7 @@ aws logs tail /ecs/uslugar-backend --since 5m --region eu-north-1 | Select-Strin
   hasAccountSID: true,
   hasAuthToken: true,
   hasPhoneNumber: true,
-  phoneNumber: '+18027276987'
+  phoneNumber: '+1XXXXXXXXXX'  # Tvoj Twilio phone number
 }
 ```
 
@@ -127,7 +127,7 @@ aws logs tail /ecs/uslugar-backend --since 5m --region eu-north-1 | Select-Strin
 1. Pošalji SMS kod preko frontend-a
 2. Provjeri backend logove:
    ```
-   [SMS Service] Sending SMS via Twilio to +385... from +18027276987
+   [SMS Service] Sending SMS via Twilio to +385... from +1XXXXXXXXXX
    ✅ SMS poslan via Twilio: SM..., Status: queued
    ```
 

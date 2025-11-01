@@ -123,7 +123,7 @@ Dodati environment variables iz Secrets Manager u ECS Task Definition.
 **Uspješno slanje:**
 ```
 [SMS Service] Twilio config check: { hasAccountSID: true, ... }
-[SMS Service] Sending SMS via Twilio to +385... from +18027276987
+[SMS Service] Sending SMS via Twilio to +385... from +1XXXXXXXXXX
 ✅ SMS poslan via Twilio: SM...
 ```
 
