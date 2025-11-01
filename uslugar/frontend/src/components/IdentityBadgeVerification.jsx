@@ -17,7 +17,13 @@ export default function IdentityBadgeVerification({ profile, onUpdated }) {
       e.stopPropagation();
     }
     
-    console.log('🔵 handleVerify pozvan:', { verificationType, value });
+    console.log('🔵 handleVerify pozvan:', { verificationType, value, verifying });
+    
+    // Double check - ako je disabled, ne nastavljaj
+    if (!value || verifying) {
+      console.log('⚠️ Gumb je disabled, prekidam');
+      return;
+    }
     
     // Za telefon, ne pozivamo direktno - koristimo PhoneVerification komponentu
     if (verificationType === 'phone') {
@@ -189,11 +195,21 @@ export default function IdentityBadgeVerification({ profile, onUpdated }) {
                   e.stopPropagation();
                   handleVerify(e);
                 }}
+                onMouseDown={(e) => {
+                  console.log('🟡 Email gumb onMouseDown');
+                }}
+                onTouchStart={(e) => {
+                  console.log('🟡 Email gumb onTouchStart');
+                }}
                 disabled={!value || verifying}
-                className="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                style={{ pointerEvents: (!value || verifying) ? 'none' : 'auto' }}
+                className="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed active:bg-purple-800"
               >
-                {verifying ? 'Verificiram...' : '✓ Verificiraj'}
+                {verifying ? 'Verificiram...' : `✓ Verificiraj${!value ? ' (unesite email)' : ''}`}
               </button>
+              <div className="text-xs text-gray-500 mt-1">
+                Debug: value={value ? 'OK' : 'PRAZNO'}, verifying={verifying ? 'true' : 'false'}, disabled={(!value || verifying) ? 'true' : 'false'}
+              </div>
             </div>
           )}
 
@@ -216,11 +232,21 @@ export default function IdentityBadgeVerification({ profile, onUpdated }) {
                   e.stopPropagation();
                   handleVerify(e);
                 }}
+                onMouseDown={(e) => {
+                  console.log('🟡 DNS gumb onMouseDown');
+                }}
+                onTouchStart={(e) => {
+                  console.log('🟡 DNS gumb onTouchStart');
+                }}
                 disabled={!value || verifying}
-                className="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                style={{ pointerEvents: (!value || verifying) ? 'none' : 'auto' }}
+                className="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed active:bg-purple-800"
               >
-                {verifying ? 'Verificiram...' : '✓ Verificiraj'}
+                {verifying ? 'Verificiram...' : `✓ Verificiraj${!value ? ' (unesite domenu)' : ''}`}
               </button>
+              <div className="text-xs text-gray-500 mt-1">
+                Debug: value={value ? 'OK' : 'PRAZNO'}, verifying={verifying ? 'true' : 'false'}, disabled={(!value || verifying) ? 'true' : 'false'}
+              </div>
             </div>
           )}
 
