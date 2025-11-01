@@ -683,7 +683,7 @@ export default function ProviderRegister({ onSuccess }) {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Naziv obrta/firme {legalStatuses.find(s => s.id === formData.legalStatusId)?.code !== 'FREELANCER' && <span className="text-red-500">*</span>}
+                Naziv obrta/tvrtke {legalStatuses.find(s => s.id === formData.legalStatusId)?.code !== 'FREELANCER' && <span className="text-red-500">*</span>}
               </label>
               <input
                 type="text"
