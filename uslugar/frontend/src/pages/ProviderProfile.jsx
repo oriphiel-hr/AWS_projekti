@@ -297,4 +297,4 @@ const getCategoryIcon = (categoryName) => {
     
     
     return iconMap[categoryName] || '🛠️';
-  };
+  };// Force rebuild
