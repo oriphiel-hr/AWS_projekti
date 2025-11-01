@@ -682,7 +682,7 @@ Object.keys(MODELS).forEach(modelName => {
     try {
       const { id } = req.params;
 
-      // Protect ADMIN user from deletion
+      // Special handling for User deletion (cascade delete with relations)
       if (modelName === 'User') {
         const user = await prisma.user.findUnique({ where: { id }, select: { role: true, email: true } });
         if (!user) {
@@ -691,8 +691,13 @@ Object.keys(MODELS).forEach(modelName => {
         if (user.role === 'ADMIN') {
           return res.status(400).json({ error: 'ADMIN korisnika nije moguće obrisati' });
         }
+        
+        // Use cascade delete helper to properly delete all related data
+        await deleteUserWithRelations(id);
+        return res.json({ success: true, message: 'User and all related data deleted successfully' });
       }
 
+      // For other models, use standard delete
       await model.delete({ where: { id } });
       res.json({ success: true });
     } catch (e) {
