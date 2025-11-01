@@ -557,7 +557,7 @@ export default function App(){
             {isDarkMode ? '☀️' : '🌙'}
           </button>
         </div>
-      </div>
+      </nav>
 
       {/* Mobile Menu */}
       <MobileMenu 
@@ -814,8 +814,10 @@ export default function App(){
         </div>
       </MobileMenu>
 
+      <main id="main-content" role="main" aria-label="Glavni sadržaj">
       {tab === 'user' && (
-        <section id="user" className="tab-section dark:text-gray-100">
+        <section id="user" className="tab-section dark:text-gray-100" aria-labelledby="user-heading">
+          <h2 id="user-heading" className="sr-only">Početna stranica</h2>
           {/* Hero CTA Section - na vrhu */}
           {!token && (
             <div className="mb-6 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-6 text-white">
