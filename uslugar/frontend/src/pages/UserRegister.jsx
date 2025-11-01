@@ -1042,8 +1042,7 @@ export default function UserRegister({ onSuccess }) {
             </div>
           </div>
           );
-        })()
-        }
+        })()}
 
         {/* KYC-lite Verifikacija za Freelancere - Volonterski - za PROVIDER-e i USER-e koji su pravne osobe */}
         {(userType === 'PROVIDER' || (userType === 'USER' && isCompany)) && (() => {
@@ -1067,8 +1066,7 @@ export default function UserRegister({ onSuccess }) {
               </div>
             </div>
           );
-        })()
-        }
+        })()}
 
         <button
           type="submit"
