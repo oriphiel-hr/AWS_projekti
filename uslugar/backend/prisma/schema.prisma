@@ -469,6 +469,8 @@ model LeadPurchase {
   convertedAt      DateTime? // Kada je lead konvertiran u posao
   refundedAt       DateTime? // Kada je izvršena refundacija
   refundReason     String? // Razlog refundacije
+  stripePaymentIntentId String? // Stripe Payment Intent ID (za refund kroz Stripe)
+  stripeRefundId   String? // Stripe Refund ID (nakon refund-a)
   notes            String? // Dodatne bilješke
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt

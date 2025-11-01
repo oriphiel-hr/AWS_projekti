@@ -3,6 +3,23 @@ import { prisma } from '../lib/prisma.js';
 import { deductCredits, refundCredits } from './credit-service.js';
 import { notifyProvider, notifyClient } from '../lib/notifications.js';
 import { isWithinRadius, findClosestTeamLocation, sortJobsByDistance } from '../lib/geo-utils.js';
+import Stripe from 'stripe';
+
+// Stripe initialization for refund processing
+let stripe;
+try {
+  const stripeKey = process.env.STRIPE_SECRET_KEY || '';
+  if (stripeKey && stripeKey !== '') {
+    stripe = new Stripe(stripeKey);
+    console.log('[LEAD-SERVICE] Stripe initialized for refund processing');
+  } else {
+    console.warn('[LEAD-SERVICE] STRIPE_SECRET_KEY not set - Stripe refunds will be skipped');
+    stripe = null;
+  }
+} catch (error) {
+  console.error('[LEAD-SERVICE] Stripe initialization failed:', error.message);
+  stripe = null;
+}
 
 /**
  * Kupi ekskluzivan lead
@@ -275,19 +292,50 @@ export async function refundLead(purchaseId, providerId, reason = 'Client unresp
     throw new Error('Ne može se zatražiti povrat za uspješno konvertirani lead');
   }
 
-  // Napomena: Ako se u budućnosti lead kupnja radi kroz Stripe Payment Intent,
-  // ovdje bi se dodao Stripe Refund API poziv:
-  // if (purchase.stripePaymentIntentId) {
-  //   await stripe.refunds.create({
-  //     payment_intent: purchase.stripePaymentIntentId,
-  //     amount: purchase.creditsSpent * 100, // u centima
-  //     reason: 'requested_by_customer',
-  //     metadata: { leadId: purchase.jobId, reason }
-  //   });
-  // }
+  /**
+   * STRIPE REFUND API - Pravno: Platforma ne provodi povrate sredstava samostalno.
+   * Povrati se provode isključivo putem ovlaštene platne institucije
+   * (Stripe Payments Europe Ltd.) u skladu s PSD2 pravilima.
+   * 
+   * Ova funkcija poziva Stripe Refund API koji provodi refund kroz Stripe infrastrukturu.
+   * Platforma samo inicira refund zahtjev, a Stripe provodi stvarni povrat sredstava korisniku.
+   */
+  let stripeRefund = null;
+  if (purchase.stripePaymentIntentId && stripe) {
+    try {
+      // Pretpostavka: 1 kredit = 10 EUR = 1000 cents
+      const creditPriceInEUR = 10;
+      const refundAmountInCents = purchase.creditsSpent * creditPriceInEUR * 100;
+      
+      // Stripe refund API - platforma ne provodi refund, Stripe ga provodi
+      stripeRefund = await stripe.refunds.create({
+        payment_intent: purchase.stripePaymentIntentId,
+        amount: refundAmountInCents,
+        reason: 'requested_by_customer',
+        metadata: {
+          leadId: purchase.jobId,
+          purchaseId: purchase.id,
+          reason: reason,
+          refundedBy: providerId,
+          creditsRefunded: purchase.creditsSpent.toString()
+        }
+      });
+      
+      console.log(`[STRIPE-REFUND] Refund created: ${stripeRefund.id} for payment intent ${purchase.stripePaymentIntentId}`);
+      console.log(`[STRIPE-REFUND] Amount refunded: ${refundAmountInCents} cents (${purchase.creditsSpent} credits)`);
+    } catch (stripeError) {
+      console.error('[STRIPE-REFUND] Stripe refund failed:', stripeError.message);
+      console.warn('[STRIPE-REFUND] Falling back to internal credits refund');
+      // Ako Stripe refund ne uspije, nastavi s internim kreditima kao fallback
+    }
+  } else if (!purchase.stripePaymentIntentId) {
+    console.log('[STRIPE-REFUND] No Stripe Payment Intent ID - using internal credits refund only');
+  } else if (!stripe) {
+    console.warn('[STRIPE-REFUND] Stripe not initialized - using internal credits refund only');
+  }
 
-  // Vrati interne kredite (za slučajeve gdje se koriste internal credits, ne Stripe direktno)
-  // Ovaj korak se zadržava za kompatibilnost dok se ne implementira puni Stripe escrow model
+  // Vrati interne kredite (za UX i slučajeve gdje Stripe refund ne uspije ili nije potreban)
+  // Ovaj korak se zadržava za kompatibilnost s postojećim sistemom i fallback
   await refundCredits(
     providerId,
     purchase.creditsSpent,
@@ -301,7 +349,8 @@ export async function refundLead(purchaseId, providerId, reason = 'Client unresp
     data: {
       status: 'REFUNDED',
       refundedAt: new Date(),
-      refundReason: reason
+      refundReason: reason,
+      stripeRefundId: stripeRefund?.id || null // ✅ Sačuvaj Stripe refund ID (ako je refund kroz Stripe)
     }
   });
 
@@ -314,7 +363,12 @@ export async function refundLead(purchaseId, providerId, reason = 'Client unresp
     }
   });
 
-  console.log(`[LEAD] Zahtjev za povrat obrađen: ${purchase.creditsSpent} kredita vraćeno provideru ${providerId} za lead ${purchase.jobId}`);
+  if (stripeRefund) {
+    console.log(`[LEAD] Zahtjev za povrat obrađen: ${purchase.creditsSpent} kredita vraćeno provideru ${providerId} za lead ${purchase.jobId}`);
+    console.log(`[STRIPE-REFUND] Stripe refund ID: ${stripeRefund.id}, Status: ${stripeRefund.status}`);
+  } else {
+    console.log(`[LEAD] Zahtjev za povrat obrađen (interni krediti): ${purchase.creditsSpent} kredita vraćeno provideru ${providerId} za lead ${purchase.jobId}`);
+  }
 
   return updated;
 }
