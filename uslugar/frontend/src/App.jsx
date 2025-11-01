@@ -166,7 +166,7 @@ export default function App(){
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash?.slice(1).split('?')[0];
-      const validTabs = ['admin', 'login', 'register-user', 'register-provider', 'provider-profile', 'user-profile', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'leads', 'my-leads', 'roi', 'subscription', 'subscription-success', 'pricing', 'providers', 'documentation', 'faq', 'about', 'contact', 'time-landing', 'team-locations', 'user'];
+      const validTabs = ['admin', 'login', 'register-user', 'register-provider', 'provider-profile', 'user-profile', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'leads', 'my-leads', 'my-jobs', 'roi', 'subscription', 'subscription-success', 'pricing', 'providers', 'documentation', 'faq', 'about', 'contact', 'time-landing', 'team-locations', 'user'];
       
       // Check for provider direct link: #provider/{providerId}
       const providerMatch = hash.match(/^provider\/(.+)$/);
@@ -624,6 +624,33 @@ export default function App(){
                   onClick={() => { setTab('subscription'); setIsMobileMenuOpen(false); }}
                 >
                   💳 Pretplata
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Korisnik usluge sekcija - samo za USER-e bez legalStatusId */}
+          {token && !isProviderOrBusinessUser() && (
+            <div>
+              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Moji Poslovi</h3>
+              <div className="space-y-1">
+                <button
+                  className="w-full text-left px-3 py-2 rounded hover:bg-gray-100"
+                  onClick={() => { setTab('user'); setIsMobileMenuOpen(false); }}
+                >
+                  🏠 Traži usluge
+                </button>
+                <button
+                  className="w-full text-left px-3 py-2 rounded hover:bg-gray-100"
+                  onClick={() => { setTab('my-jobs'); setIsMobileMenuOpen(false); }}
+                >
+                  📋 Moji poslovi
+                </button>
+                <button
+                  className="w-full text-left px-3 py-2 rounded hover:bg-gray-100"
+                  onClick={() => { setTab('providers'); setIsMobileMenuOpen(false); }}
+                >
+                  👥 Pružatelji usluga
                 </button>
               </div>
             </div>

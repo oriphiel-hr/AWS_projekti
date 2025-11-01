@@ -9,10 +9,13 @@ const r = Router();
 // list jobs with filters
 r.get('/', async (req, res, next) => {
   try {
-    const { q, categoryId, city, latitude, longitude, distance = 50, urgency, jobSize, minBudget, maxBudget } = req.query;
+    const { q, categoryId, city, latitude, longitude, distance = 50, urgency, jobSize, minBudget, maxBudget, myJobs } = req.query;
+    
+    // Ako je myJobs=true i korisnik je prijavljen, filtriraj po userId
+    const userId = req.user?.id;
     
     const whereClause = {
-      status: 'OPEN',
+      ...(myJobs && userId ? { userId } : { status: 'OPEN' }), // Ako je myJobs, prikaži sve poslove korisnika (svih statusa), inače samo otvorene
       ...(categoryId ? { categoryId } : {}),
       ...(city ? { city: { contains: city, mode: 'insensitive' } } : {}),
       ...(urgency ? { urgency } : {}),
