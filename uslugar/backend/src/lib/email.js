@@ -617,6 +617,80 @@ export const sendPaymentConfirmationEmail = async (toEmail, fullName, planName, 
   }
 };
 
+/**
+ * Pošalji email notifikaciju za refund subscription payment-a
+ */
+export const sendSubscriptionRefundEmail = async (toEmail, fullName, planName, refundAmount, stripeRefundId, reason) => {
+  if (!transporter) {
+    console.log('SMTP not configured, skipping refund email:', toEmail);
+    return;
+  }
+
+  try {
+    await transporter.sendMail({
+      from: `"Uslugar" <${process.env.SMTP_USER}>`,
+      to: toEmail,
+      subject: `Povrat novca za pretplatu ${planName} - Uslugar`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+        </head>
+        <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
+          <div style="background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <h2 style="color: #FF6B6B; margin-top: 0;">Povrat novca za pretplatu</h2>
+            <p>Poštovani/na ${fullName},</p>
+            <p>Vaš zahtjev za povrat novca za pretplatu <strong>${planName}</strong> je uspješno obrađen.</p>
+            
+            <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
+              <p style="margin: 5px 0;"><strong>Plan:</strong> ${planName}</p>
+              <p style="margin: 5px 0;"><strong>Iznos refunda:</strong> <strong style="color: #4CAF50; font-size: 18px;">${refundAmount.toFixed(2)} €</strong></p>
+              ${stripeRefundId ? `<p style="margin: 5px 0;"><strong>Stripe Refund ID:</strong> ${stripeRefundId}</p>` : ''}
+              ${reason ? `<p style="margin: 5px 0;"><strong>Razlog:</strong> ${reason}</p>` : ''}
+              <p style="margin: 5px 0;"><strong>Datum:</strong> ${new Date().toLocaleDateString('hr-HR')}</p>
+            </div>
+
+            <div style="background-color: #E3F2FD; border-left: 4px solid #2196F3; padding: 15px; margin: 20px 0; border-radius: 5px;">
+              <p style="margin: 0; color: #1565C0;">
+                <strong>ℹ️ Informacije o povratu:</strong><br>
+                Povrat sredstava provodi se putem Stripe Payments Europe Ltd., u skladu s PSD2 pravilima.
+                Sredstva će biti vraćena na originalnu karticu u roku od 5-10 radnih dana.
+              </p>
+            </div>
+
+            <p>Vaša pretplata je otkazana, a svi krediti su oduzeti.</p>
+
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${process.env.FRONTEND_URL || 'https://uslugar.oriph.io'}#subscription" 
+                 style="background-color: #4CAF50; 
+                        color: white; 
+                        padding: 12px 24px; 
+                        text-decoration: none; 
+                        border-radius: 5px; 
+                        font-size: 16px;
+                        display: inline-block;">
+                Pregledaj pretplate
+              </a>
+            </div>
+
+            <p style="color: #666; font-size: 12px; margin-top: 30px;">
+              Ako imate pitanja o povratu, slobodno nas kontaktirajte.<br>
+              Hvala vam na razumijevanju!<br>
+              Uslugar tim
+            </p>
+          </div>
+        </body>
+        </html>
+      `
+    });
+    console.log(`Subscription refund email sent to: ${toEmail}`);
+  } catch (error) {
+    console.error('Error sending subscription refund email:', error);
+    throw error;
+  }
+};
+
 export { transporter, createTransporter };
 export default { transporter, createTransporter };
 

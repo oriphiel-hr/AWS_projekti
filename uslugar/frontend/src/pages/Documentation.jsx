@@ -171,6 +171,7 @@ const Documentation = () => {
         { name: "Oslobađanje leada nakon refund-a (lead se vraća na tržište)", implemented: true },
         { name: "Stripe refund ID tracking (stripeRefundId)", implemented: true },
         { name: "Fallback na interne kredite ako Stripe refund ne uspije", implemented: true },
+        { name: "Povrat novca za pretplate (refund subscription payment)", implemented: true },
         { name: "Admin odobravanje refund-a", implemented: false },
         { name: "Automatski refund nakon 48h neaktivnosti", implemented: false }
       ]
@@ -265,7 +266,7 @@ const Documentation = () => {
         { name: "Povrat na platformu nakon plaćanja", implemented: true },
         { name: "Sigurnosno skladištenje Stripe secret key u AWS Secrets Manager", implemented: true },
         { name: "Fakturiranje (PDF fakture za pretplate i kupovine)", implemented: true },
-        { name: "Povrat novca za pretplate (refund subscription payment)", implemented: false }
+        { name: "Povrat novca za pretplate (refund subscription payment)", implemented: true }
       ]
     },
     {
@@ -364,8 +365,8 @@ const Documentation = () => {
         { name: "Automatsko isteka pretplate", implemented: true },
         { name: "Notifikacije o isteku pretplate", implemented: true },
         { name: "Online plaćanje (Stripe Checkout)", implemented: true },
-        { name: "Fakturiranje", implemented: false },
-        { name: "Povrat novca za pretplate (refund subscription payment)", implemented: false }
+        { name: "Fakturiranje (PDF fakture za pretplate i kupovine)", implemented: true },
+        { name: "Povrat novca za pretplate (refund subscription payment)", implemented: true }
       ]
     },
     {

@@ -190,6 +190,43 @@ r.post('/webhook', async (req, res, next) => {
 });
 
 /**
+ * Refund subscription payment
+ * POST /api/payments/refund-subscription
+ */
+r.post('/refund-subscription', auth(true, ['PROVIDER', 'ADMIN']), async (req, res, next) => {
+  try {
+    const { reason, refundCredits } = req.body;
+    const userId = req.user.role === 'ADMIN' ? req.body.userId || req.user.id : req.user.id;
+
+    // Admin može refundirati bilo kojem korisniku
+    if (req.user.role === 'ADMIN' && req.body.userId && req.body.userId !== req.user.id) {
+      // Provjeri da je admin
+      if (req.user.role !== 'ADMIN') {
+        return res.status(403).json({ error: 'Only admins can refund other users' });
+      }
+    }
+
+    const { refundSubscription } = await import('../services/subscription-refund-service.js');
+    
+    const result = await refundSubscription(
+      userId,
+      reason || 'Requested by customer',
+      refundCredits !== false // Default: true
+    );
+
+    res.json({
+      success: true,
+      ...result,
+      message: 'Povrat novca za pretplatu je uspješno obrađen.'
+    });
+
+  } catch (error) {
+    console.error('Refund subscription error:', error);
+    next(error);
+  }
+});
+
+/**
  * Cancel Stripe subscription
  * POST /api/payments/cancel-subscription
  */
