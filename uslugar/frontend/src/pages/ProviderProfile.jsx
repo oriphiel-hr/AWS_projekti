@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
 import IdentityBadgeVerification from '../components/IdentityBadgeVerification';
+import PortfolioManager from '../components/PortfolioManager';
+import PortfolioDisplay from '../components/PortfolioDisplay';
 
 const getCategoryIcon = (categoryName) => {
     const iconMap = {
@@ -634,10 +636,29 @@ export default function ProviderProfile({ onSuccess, onNavigate }) {
             </div>
           </div>
 
+          {/* Portfolio radova */}
+          <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg p-6">
+            <h3 className="text-lg font-semibold text-indigo-900 dark:text-indigo-100 mb-4 border-b pb-2">
+              📸 Portfolio radova
+            </h3>
+            {editMode ? (
+              <PortfolioManager 
+                portfolio={profile.portfolio} 
+                onUpdate={(updatedPortfolio) => {
+                  setProfile(prev => ({ ...prev, portfolio: updatedPortfolio }));
+                  handleProfileUpdated();
+                }}
+                userId={profile.userId}
+              />
+            ) : (
+              <PortfolioDisplay portfolio={profile.portfolio} />
+            )}
+          </div>
+
           {/* Identity Badge Verifikacija */}
           {!editMode && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-yellow-900 mb-4 border-b pb-2">
+            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-6">
+              <h3 className="text-lg font-semibold text-yellow-900 dark:text-yellow-100 mb-4 border-b pb-2">
                 🆔 Identity Značka Verifikacija
               </h3>
               <IdentityBadgeVerification profile={profile} onUpdated={handleProfileUpdated} />
