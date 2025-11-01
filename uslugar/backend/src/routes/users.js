@@ -35,6 +35,26 @@ r.get('/me', auth(true), async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+// update current user info (requires auth) - MORA biti prije /:id rute!
+r.put('/me', auth(true), async (req, res, next) => {
+  try {
+    const { fullName, phone, city } = req.body;
+    
+    const updateData = {};
+    if (fullName !== undefined) updateData.fullName = fullName;
+    if (phone !== undefined) updateData.phone = phone;
+    if (city !== undefined) updateData.city = city;
+    
+    const user = await prisma.user.update({
+      where: { id: req.user.id },
+      data: updateData,
+      include: { providerProfile: true }
+    });
+    
+    res.json(user);
+  } catch (e) { next(e); }
+});
+
 // get single user (basic info)
 r.get('/:id', async (req, res, next) => {
   try {
