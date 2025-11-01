@@ -11,8 +11,43 @@ r.post('/', auth(true, ['PROVIDER']), async (req, res, next) => {
   try {
     const { jobId, amount, message, isNegotiable = true, estimatedDays } = req.body;
     if (!jobId || !amount) return res.status(400).json({ error: 'Missing fields' });
-    const job = await prisma.job.findUnique({ where: { id: jobId } });
+    const job = await prisma.job.findUnique({ 
+      where: { id: jobId },
+      include: { user: true }
+    });
     if (!job || job.status !== 'OPEN') return res.status(400).json({ error: 'Job is not open' });
+    
+    // PREVENT SELF-ASSIGNMENT: Provider cannot create offer on their own job
+    if (job.userId === req.user.id) {
+      return res.status(403).json({ 
+        error: 'Ne možete poslati ponudu na vlastiti posao',
+        message: 'Ista tvrtka/obrt ne može sebi dodjeljivati posao.'
+      });
+    }
+    
+    // Additional check: same company by taxId or email
+    const providerUser = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: { taxId: true, email: true }
+    });
+    
+    if (providerUser && job.user) {
+      // Same taxId - same company
+      if (job.user.taxId && providerUser.taxId && job.user.taxId === providerUser.taxId) {
+        return res.status(403).json({ 
+          error: 'Ne možete poslati ponudu na posao iste tvrtke',
+          message: 'Isti OIB ne može sebi dodjeljivati posao.'
+        });
+      }
+      
+      // Same email - same user account (even with different role)
+      if (job.user.email && providerUser.email && job.user.email === providerUser.email) {
+        return res.status(403).json({ 
+          error: 'Ne možete poslati ponudu na vlastiti posao',
+          message: 'Ista tvrtka/obrt ne može sebi dodjeljivati posao.'
+        });
+      }
+    }
     
     // Check subscription and credits
     const subscription = await prisma.subscription.findUnique({

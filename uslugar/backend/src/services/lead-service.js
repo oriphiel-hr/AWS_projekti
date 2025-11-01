@@ -83,10 +83,6 @@ export async function purchaseLead(jobId, providerId, options = {}) {
     throw new Error('Lead already assigned to another provider');
   }
 
-  // Note: Self-assignment check already done above
-    throw new Error('Cannot purchase your own job');
-  }
-
   // 3. Provjeri je li provider već kupio ovaj lead
   const existingPurchase = await prisma.leadPurchase.findFirst({
     where: {
