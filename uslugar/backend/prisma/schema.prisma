@@ -78,7 +78,7 @@ model WhiteLabel {
 
 model User {
   id                   String       @id @default(cuid())
-  email                String       @unique
+  email                String // Unique per role, not globally
   passwordHash         String
   fullName             String
   role                 Role         @default(USER)
@@ -123,6 +123,11 @@ model User {
 
   // Testing runs authored by this user (admin)
   testRuns          TestRun[]               @relation("TestRunAuthor")
+
+  // Composite unique constraint: email + role must be unique
+  // This allows same email for different roles (e.g., USER and PROVIDER)
+  // but prevents duplicate email within same role
+  @@unique([email, role])
 }
 
 model ProviderProfile {

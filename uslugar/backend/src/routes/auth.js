@@ -56,8 +56,23 @@ r.post('/register', async (req, res, next) => {
       }
     }
     
-    const exists = await prisma.user.findUnique({ where: { email } });
-    if (exists) return res.status(409).json({ error: 'Email already in use' });
+    // Check if email+role combination already exists
+    // Allow same email for different roles (USER can also be PROVIDER)
+    // But prevent duplicate email within same role
+    const exists = await prisma.user.findUnique({ 
+      where: { 
+        email_role: {
+          email: email,
+          role: role
+        }
+      } 
+    });
+    if (exists) {
+      return res.status(409).json({ 
+        error: 'Email already in use',
+        message: `Email ${email} je već registriran kao ${role === 'USER' ? 'korisnik' : role === 'PROVIDER' ? 'pružatelj' : 'administrator'}. Možete registrirati isti email s drugom ulogom.`
+      });
+    }
     
     const passwordHash = await hashPassword(password);
     

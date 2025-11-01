@@ -44,6 +44,33 @@ export async function purchaseLead(jobId, providerId, options = {}) {
     throw new Error('Job not found');
   }
 
+  // PREVENT SELF-ASSIGNMENT: Provider cannot purchase lead from same user/company
+  if (job.userId === providerId) {
+    throw new Error('Ne možete kupiti lead od samog sebe. Ista tvrtka/obrt ne može sebi dodjeljivati posao.');
+  }
+
+  // Additional check: if job creator and provider are same company (by taxId or companyName)
+  const jobUser = await prisma.user.findUnique({
+    where: { id: job.userId },
+    select: { taxId: true, companyName: true, email: true }
+  });
+
+  const providerUser = await prisma.user.findUnique({
+    where: { id: providerId },
+    select: { taxId: true, companyName: true, email: true }
+  });
+
+  if (jobUser && providerUser) {
+    // Same taxId (same company)
+    if (jobUser.taxId && providerUser.taxId && jobUser.taxId === providerUser.taxId) {
+      throw new Error('Ne možete kupiti lead od iste tvrtke/obrta. Isti OIB ne može sebi dodjeljivati posao.');
+    }
+    // Same email (same user account with different role is allowed, but not self-assignment)
+    if (jobUser.email === providerUser.email) {
+      throw new Error('Ne možete kupiti lead od samog sebe. Ista tvrtka/obrt ne može sebi dodjeljivati posao.');
+    }
+  }
+
   if (!job.isExclusive) {
     throw new Error('This job is not exclusive');
   }
@@ -56,8 +83,7 @@ export async function purchaseLead(jobId, providerId, options = {}) {
     throw new Error('Lead already assigned to another provider');
   }
 
-  // 2. Provjeri da provider nije vlasnik posta
-  if (job.userId === providerId) {
+  // Note: Self-assignment check already done above
     throw new Error('Cannot purchase your own job');
   }
 

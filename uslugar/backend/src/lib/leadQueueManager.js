@@ -22,6 +22,12 @@ export async function findTopProviders(job, limit = 5) {
     where: { id: job.categoryId }
   })
   
+  // Get job creator info for self-assignment prevention
+  const jobUser = job.userId ? await prisma.user.findUnique({
+    where: { id: job.userId },
+    select: { id: true, taxId: true, companyName: true, email: true }
+  }) : null;
+  
   // Pronađi sve providere s tom kategorijom
   let providers = await prisma.providerProfile.findMany({
     where: {
@@ -34,7 +40,16 @@ export async function findTopProviders(job, limit = 5) {
       }
     },
     include: {
-      user: true,
+      user: {
+        select: {
+          id: true,
+          fullName: true,
+          email: true,
+          taxId: true,
+          companyName: true,
+          city: true
+        }
+      },
       licenses: {
         where: {
           isVerified: true,
@@ -48,6 +63,36 @@ export async function findTopProviders(job, limit = 5) {
   })
   
   console.log(`   Pronađeno ${providers.length} potencijalnih providera`)
+  
+  // PREVENT SELF-ASSIGNMENT: Filter out providers who cannot receive lead from same company
+  if (jobUser) {
+    const initialCount = providers.length;
+    providers = providers.filter(provider => {
+      // Same userId - cannot self-assign
+      if (provider.userId === jobUser.id) {
+        console.log(`   ❌ Izbacujem ${provider.user.fullName} - isti korisnik (userId)`);
+        return false;
+      }
+      
+      // Same taxId - same company cannot assign to itself
+      if (jobUser.taxId && provider.user.taxId && jobUser.taxId === provider.user.taxId) {
+        console.log(`   ❌ Izbacujem ${provider.user.fullName} - isti OIB (${jobUser.taxId})`);
+        return false;
+      }
+      
+      // Same email - same user account (even with different role) cannot self-assign
+      if (jobUser.email && provider.user.email && jobUser.email === provider.user.email) {
+        console.log(`   ❌ Izbacujem ${provider.user.fullName} - isti email (${jobUser.email})`);
+        return false;
+      }
+      
+      return true;
+    });
+    
+    if (providers.length < initialCount) {
+      console.log(`   🚫 Izbaceno ${initialCount - providers.length} providera zbog sprječavanja samododjeljivanja`);
+    }
+  }
   
   // Ako kategorija zahtijeva licencu, filtriraj samo one s validnom licencom
   if (category.requiresLicense) {
