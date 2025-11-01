@@ -247,10 +247,10 @@ export default function ProviderRegister({ onSuccess }) {
         return;
       }
       
-      // Provjeri da li je naziv firme obavezan (osim za freelancere)
+      // Provjeri da li je naziv tvrtke obavezan (osim za freelancere)
       const selectedStatus = legalStatuses.find(s => s.id === formData.legalStatusId);
       if (selectedStatus?.code !== 'FREELANCER' && !formData.companyName) {
-        setError('Naziv firme/obrta je obavezan. Samo samostalni djelatnici mogu raditi pod svojim imenom.');
+        setError('Naziv tvrtke/obrta je obavezan. Samo samostalni djelatnici mogu raditi pod svojim imenom.');
         setLoading(false);
         return;
       }

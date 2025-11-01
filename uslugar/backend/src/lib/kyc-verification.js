@@ -290,7 +290,7 @@ function extractNameFromText(text) {
 /**
  * Provjeri Sudski registar (d.o.o., j.d.o.o.)
  * @param {string} oib - OIB za provjeru
- * @param {string} companyName - Naziv firme
+ * @param {string} companyName - Naziv tvrtke
  * @returns {Promise<{verified: boolean, active: boolean, data: object}>}
  */
 export async function checkSudskiRegistar(oib, companyName) {

@@ -47,11 +47,11 @@ r.post('/register', async (req, res, next) => {
         });
       }
       
-      // Provjeri naziv firme (obavezno osim za freelancere)
+      // Provjeri naziv tvrtke (obavezno osim za freelancere)
       if (legalStatus.code !== 'FREELANCER' && !companyName) {
         return res.status(400).json({ 
-          error: 'Naziv firme/obrta je obavezan',
-          message: 'Unesite naziv vaše firme ili obrta. Samostalni djelatnici mogu raditi pod svojim imenom.'
+          error: 'Naziv tvrtke/obrta je obavezan',
+          message: 'Unesite naziv vaše tvrtke ili obrta. Samostalni djelatnici mogu raditi pod svojim imenom.'
         });
       }
     }
