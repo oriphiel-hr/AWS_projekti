@@ -3,6 +3,8 @@ import api from '../api';
 import IdentityBadgeVerification from '../components/IdentityBadgeVerification';
 import PortfolioManager from '../components/PortfolioManager';
 import PortfolioDisplay from '../components/PortfolioDisplay';
+import LicenseManager from '../components/LicenseManager';
+import LicenseDisplay from '../components/LicenseDisplay';
 
 const getCategoryIcon = (categoryName) => {
     const iconMap = {

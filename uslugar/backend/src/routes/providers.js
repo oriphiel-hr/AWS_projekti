@@ -356,6 +356,183 @@ r.get('/portfolio/:userId', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+// License management endpoints
+// Get all licenses for current provider
+r.get('/licenses', auth(true, ['PROVIDER', 'ADMIN']), async (req, res, next) => {
+  try {
+    const userId = req.user.role === 'ADMIN' ? req.query.userId || req.user.id : req.user.id;
+    
+    const profile = await prisma.providerProfile.findUnique({
+      where: { userId },
+      select: { licenses: true }
+    });
+
+    if (!profile) {
+      return res.status(404).json({ error: 'Provider profil nije pronađen' });
+    }
+
+    res.json({ licenses: profile.licenses || [] });
+  } catch (e) { next(e); }
+});
+
+// Add license
+r.post('/licenses', auth(true, ['PROVIDER', 'ADMIN']), async (req, res, next) => {
+  try {
+    const userId = req.user.role === 'ADMIN' ? req.body.userId || req.user.id : req.user.id;
+    
+    const { licenseType, licenseNumber, issuingAuthority, issuedAt, expiresAt, documentUrl, notes } = req.body;
+    
+    if (!licenseType || !licenseNumber || !issuingAuthority || !issuedAt) {
+      return res.status(400).json({ 
+        error: 'Tip licence, broj licence, tijelo koje izdaje i datum izdavanja su obavezni' 
+      });
+    }
+
+    const profile = await prisma.providerProfile.findUnique({
+      where: { userId }
+    });
+
+    if (!profile) {
+      return res.status(404).json({ error: 'Provider profil nije pronađen' });
+    }
+
+    const license = await prisma.providerLicense.create({
+      data: {
+        providerId: profile.id,
+        licenseType,
+        licenseNumber,
+        issuingAuthority,
+        issuedAt: new Date(issuedAt),
+        expiresAt: expiresAt ? new Date(expiresAt) : null,
+        documentUrl: documentUrl || null,
+        notes: notes || null,
+        isVerified: false // Nove licence čekaju verifikaciju
+      }
+    });
+
+    res.json({ 
+      success: true, 
+      license
+    });
+  } catch (e) { next(e); }
+});
+
+// Update license
+r.put('/licenses/:licenseId', auth(true, ['PROVIDER', 'ADMIN']), async (req, res, next) => {
+  try {
+    const userId = req.user.role === 'ADMIN' ? req.body.userId || req.user.id : req.user.id;
+    const { licenseId } = req.params;
+    
+    const { licenseType, licenseNumber, issuingAuthority, issuedAt, expiresAt, documentUrl, notes } = req.body;
+
+    const profile = await prisma.providerProfile.findUnique({
+      where: { userId },
+      include: { licenses: true }
+    });
+
+    if (!profile) {
+      return res.status(404).json({ error: 'Provider profil nije pronađen' });
+    }
+
+    const license = profile.licenses.find(l => l.id === licenseId);
+    if (!license) {
+      return res.status(404).json({ error: 'Licenca nije pronađena' });
+    }
+
+    // Ako je licenca verificirana, samo admin može je mijenjati
+    if (license.isVerified && req.user.role !== 'ADMIN') {
+      return res.status(403).json({ 
+        error: 'Verificirane licence mogu mijenjati samo administratori' 
+      });
+    }
+
+    const updated = await prisma.providerLicense.update({
+      where: { id: licenseId },
+      data: {
+        ...(licenseType && { licenseType }),
+        ...(licenseNumber && { licenseNumber }),
+        ...(issuingAuthority && { issuingAuthority }),
+        ...(issuedAt && { issuedAt: new Date(issuedAt) }),
+        ...(expiresAt !== undefined && { expiresAt: expiresAt ? new Date(expiresAt) : null }),
+        ...(documentUrl !== undefined && { documentUrl }),
+        ...(notes !== undefined && { notes }),
+        // Reset verification status ako se mijenjaju osnovni podaci
+        ...((licenseType || licenseNumber || issuingAuthority || issuedAt) && {
+          isVerified: false,
+          verifiedAt: null,
+          verifiedBy: null
+        })
+      }
+    });
+
+    res.json({ 
+      success: true, 
+      license: updated
+    });
+  } catch (e) { next(e); }
+});
+
+// Delete license
+r.delete('/licenses/:licenseId', auth(true, ['PROVIDER', 'ADMIN']), async (req, res, next) => {
+  try {
+    const userId = req.user.role === 'ADMIN' ? req.body.userId || req.user.id : req.user.id;
+    const { licenseId } = req.params;
+
+    const profile = await prisma.providerProfile.findUnique({
+      where: { userId },
+      include: { licenses: true }
+    });
+
+    if (!profile) {
+      return res.status(404).json({ error: 'Provider profil nije pronađen' });
+    }
+
+    const license = profile.licenses.find(l => l.id === licenseId);
+    if (!license) {
+      return res.status(404).json({ error: 'Licenca nije pronađena' });
+    }
+
+    // Ako je licenca verificirana, samo admin može je obrisati
+    if (license.isVerified && req.user.role !== 'ADMIN') {
+      return res.status(403).json({ 
+        error: 'Verificirane licence mogu brisati samo administratori' 
+      });
+    }
+
+    await prisma.providerLicense.delete({
+      where: { id: licenseId }
+    });
+
+    res.json({ 
+      success: true,
+      message: 'Licenca uspješno obrisana'
+    });
+  } catch (e) { next(e); }
+});
+
+// Get public licenses for a provider
+r.get('/licenses/:userId', async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    
+    const profile = await prisma.providerProfile.findUnique({
+      where: { userId },
+      select: { 
+        licenses: {
+          where: { isVerified: true }, // Samo verificirane licence javno
+          orderBy: { createdAt: 'desc' }
+        }
+      }
+    });
+
+    if (!profile) {
+      return res.status(404).json({ error: 'Provider profil nije pronađen' });
+    }
+
+    res.json({ licenses: profile.licenses || [] });
+  } catch (e) { next(e); }
+});
+
 // Fix missing ProviderProfile for current user
 // Dozvoljeno za PROVIDER, ADMIN i USER-e koji su tvrtke/obrti (imaju legalStatusId)
 r.post('/fix-profile', auth(true, ['PROVIDER', 'ADMIN', 'USER']), async (req, res, next) => {
