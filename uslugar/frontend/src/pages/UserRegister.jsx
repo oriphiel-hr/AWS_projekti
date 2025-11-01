@@ -355,27 +355,27 @@ export default function UserRegister({ onSuccess }) {
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Email verificacija sekcija */}
         <div className="bg-white rounded-xl shadow-lg p-8">
-          <div className="text-center">
+        <div className="text-center">
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100 mb-6">
             <svg className="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 19v-8.93a2 2 0 01.89-1.664l7-4.666a2 2 0 012.22 0l7 4.666A2 2 0 0121 10.07V19M3 19a2 2 0 002 2h14a2 2 0 002-2M3 19l6.75-4.5M21 19l-6.75-4.5M3 10l6.75 4.5M21 10l-6.75 4.5m0 0l-1.14.76a2 2 0 01-2.22 0l-1.14-.76" />
             </svg>
           </div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Registracija uspješna!</h2>
-            <p className="text-lg text-gray-600 mb-6">
-              Poslali smo vam email na adresu:
-            </p>
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">Registracija uspješna!</h2>
+          <p className="text-lg text-gray-600 mb-6">
+            Poslali smo vam email na adresu:
+          </p>
             <p className="text-xl font-semibold text-green-600 mb-6">
-              {formData.email}
-            </p>
+            {formData.email}
+          </p>
             <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-6">
               <p className="text-sm text-green-900 mb-2">
-                📧 <strong>Provjerite svoj email inbox</strong>
-              </p>
+              📧 <strong>Provjerite svoj email inbox</strong>
+            </p>
               <p className="text-sm text-gray-700 mb-4">
-                Kliknite na link u email-u da aktivirate svoj račun. 
-                Link vrijedi 24 sata.
-              </p>
+              Kliknite na link u email-u da aktivirate svoj račun. 
+              Link vrijedi 24 sata.
+            </p>
               <div className="bg-white border border-green-300 rounded-lg p-4 mt-4">
                 <p className="text-xs text-gray-600 mb-2">
                   <strong>Aktivacijski link:</strong>
@@ -623,7 +623,8 @@ export default function UserRegister({ onSuccess }) {
           </div>
         </div>
 
-        {/* Profesionalni podaci - za sve korisnike */}
+        {/* Profesionalni podaci - samo za PROVIDER-e i USER-e koji su pravne osobe */}
+        {(userType === 'PROVIDER' || (userType === 'USER' && isCompany)) && (
         <div className="space-y-4">
           <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Profesionalni podaci</h3>
           
@@ -689,6 +690,7 @@ export default function UserRegister({ onSuccess }) {
             </div>
           </div>
         </div>
+        )}
 
         {/* Odabir fizička/pravna osoba - samo za USER-e */}
         {userType === 'USER' && (
