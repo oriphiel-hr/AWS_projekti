@@ -1,1 +1,15 @@
+# Secrets and credentials - NIKADA ne commitaj!
 /backend/.stripe-keys.txt
+*credentials*.txt
+*secrets*.txt
+*secret*.json
+*.key
+*.pem
+*.p12
+*.pfx
+
+# Twilio credentials (ako postoje)
+**/twilio*.key
+**/twilio*.secret
+**/TWILIO*.key
+**/TWILIO*.secret
