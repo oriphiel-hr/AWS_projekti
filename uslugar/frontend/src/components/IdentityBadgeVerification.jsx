@@ -17,11 +17,8 @@ export default function IdentityBadgeVerification({ profile, onUpdated }) {
       e.stopPropagation();
     }
     
-    console.log('🔵 handleVerify pozvan:', { verificationType, value, verifying });
-    
     // Double check - ako je disabled, ne nastavljaj
     if (!value || verifying) {
-      console.log('⚠️ Gumb je disabled, prekidam');
       return;
     }
     
@@ -37,7 +34,6 @@ export default function IdentityBadgeVerification({ profile, onUpdated }) {
     }
 
     try {
-      console.log('🟢 Pozivanje API-ja za verifikaciju:', { type: verificationType, value });
       setVerifying(true);
       setError('');
       setSuccess('');
@@ -46,8 +42,6 @@ export default function IdentityBadgeVerification({ profile, onUpdated }) {
         type: verificationType,
         value: value
       });
-      
-      console.log('✅ API odgovor:', response.data);
 
       const successMessage = verificationType === 'email' 
         ? '✓ Email je verificiran!' 
@@ -90,22 +84,16 @@ export default function IdentityBadgeVerification({ profile, onUpdated }) {
       }
     } finally {
       setVerifying(false);
-      console.log('🟡 Verifying status set to false');
     }
   };
 
   // Callback kada se SMS kod uspješno verificira
   const handlePhoneVerified = async () => {
-    console.log('🟢 handlePhoneVerified pozvan!', { value, phoneVerified });
-    
     try {
       // Ažuriraj backend da je telefon verificiran (provjeri da li je već SMS verificiran)
-      console.log('🔵 Provjeravam SMS status...');
       const phoneStatus = await api.get('/sms-verification/status');
-      console.log('✅ SMS status:', phoneStatus.data);
       
       if (phoneStatus.data.phoneVerified) {
-        console.log('🔵 Telefon je SMS verificiran, postavljam identityPhoneVerified...');
         // Telefon je već SMS verificiran, sada postavi identityPhoneVerified
         // Koristi value iz inputa ili phone prop
         const phoneToVerify = value || phoneStatus.data.phone;
@@ -114,16 +102,13 @@ export default function IdentityBadgeVerification({ profile, onUpdated }) {
           type: 'phone',
           value: phoneToVerify
         });
-        console.log('✅ Identity verification response:', verifyResponse.data);
         
         setPhoneVerified(true);
         setSuccess('✓ Telefon je verificiran i Identity badge dodijeljen!');
         
         // Refresh profile da se prikaže novi status
         if (onUpdated) {
-          console.log('🔵 Refreshing profile...');
           await onUpdated();
-          console.log('✅ Profile refreshed');
         }
         
         // Reset nakon 3 sekunde
@@ -133,7 +118,6 @@ export default function IdentityBadgeVerification({ profile, onUpdated }) {
           setPhoneVerified(false);
         }, 3000);
       } else {
-        console.log('⚠️ Telefon nije SMS verificiran');
         setError('Telefon mora biti prvo SMS verificiran prije dodjeljivanja Identity badge-a');
       }
       
@@ -144,15 +128,6 @@ export default function IdentityBadgeVerification({ profile, onUpdated }) {
     }
   };
 
-  // Debug - provjeri render
-  console.log('🟢 IdentityBadgeVerification render:', { 
-    verificationType, 
-    value, 
-    verifying, 
-    hasEmail: !!profile?.identityEmailVerified,
-    hasPhone: !!profile?.identityPhoneVerified,
-    hasDns: !!profile?.identityDnsVerified
-  });
 
   return (
     <div className="space-y-4">
@@ -213,16 +188,9 @@ export default function IdentityBadgeVerification({ profile, onUpdated }) {
               <button
                 type="button"
                 onClick={(e) => {
-                  console.log('🔵 Email Verificiraj gumb kliknut');
                   e.preventDefault();
                   e.stopPropagation();
                   handleVerify(e);
-                }}
-                onMouseDown={(e) => {
-                  console.log('🟡 Email gumb onMouseDown');
-                }}
-                onTouchStart={(e) => {
-                  console.log('🟡 Email gumb onTouchStart');
                 }}
                 disabled={!value || verifying}
                 className="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed active:bg-purple-800 cursor-pointer"
@@ -247,16 +215,9 @@ export default function IdentityBadgeVerification({ profile, onUpdated }) {
               <button
                 type="button"
                 onClick={(e) => {
-                  console.log('🔵 DNS Verificiraj gumb kliknut');
                   e.preventDefault();
                   e.stopPropagation();
                   handleVerify(e);
-                }}
-                onMouseDown={(e) => {
-                  console.log('🟡 DNS gumb onMouseDown');
-                }}
-                onTouchStart={(e) => {
-                  console.log('🟡 DNS gumb onTouchStart');
                 }}
                 disabled={!value || verifying}
                 className="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed active:bg-purple-800 cursor-pointer"
@@ -310,7 +271,6 @@ export default function IdentityBadgeVerification({ profile, onUpdated }) {
                   <PhoneVerification
                     phone={value}
                     onVerified={() => {
-                      console.log('🟢 PhoneVerification onVerified callback pozvan s value:', value);
                       handlePhoneVerified();
                     }}
                     currentPhone={value}

@@ -112,10 +112,6 @@ const PhoneVerification = ({ phone, onVerified, currentPhone }) => {
         setCodeExpiresAt(expires.toISOString());
       }
       
-      // Log kod samo u development mode (ne prikazuj korisniku)
-      if (response.data.code && process.env.NODE_ENV === 'development') {
-        console.log('🔑 SMS Code (dev only):', response.data.code);
-      }
       
       setCountdown(60); // 60 sekundi countdown
       setCanResend(false);
@@ -147,20 +143,16 @@ const PhoneVerification = ({ phone, onVerified, currentPhone }) => {
   };
 
   const handleVerifyCode = async (e) => {
-    console.log('🔵 handleVerifyCode pozvan!', { code, codeLength: code?.length, event: e?.type });
-    
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
     
     if (!code || code.length !== 6) {
-      console.log('⚠️ Kod nije valjan:', { code, length: code?.length });
       setError('Kod mora imati 6 znamenki');
       return;
     }
 
-    console.log('🟢 Kod je valjan, počinjem verifikaciju...');
     setLoading(true);
     setError('');
     setSuccess('');
@@ -174,19 +166,11 @@ const PhoneVerification = ({ phone, onVerified, currentPhone }) => {
       await checkStatus();
       
       // Provjeri da li je verificiran i sakrij formu
-      console.log('🔵 PhoneVerification verifyCode response:', response.data);
       if (response.data.phoneVerified) {
-        console.log('✅ Telefon je verificiran, pozivam onVerified callback');
         // Callback da parent komponenta zna da je verificiran
         if (onVerified) {
-          console.log('🔵 Pozivam onVerified callback...');
           onVerified();
-          console.log('✅ onVerified callback pozvan');
-        } else {
-          console.warn('⚠️ onVerified callback nije definiran!');
         }
-      } else {
-        console.log('⚠️ phoneVerified nije true u response-u:', response.data);
       }
     } catch (err) {
       setError(err.response?.data?.error || 'Neispravan kod. Molimo pokušajte ponovno.');
@@ -268,7 +252,6 @@ const PhoneVerification = ({ phone, onVerified, currentPhone }) => {
         <form onSubmit={(e) => {
           e.preventDefault();
           e.stopPropagation();
-          console.log('🔵 Form onSubmit pozvan');
           handleVerifyCode(e);
         }} className="space-y-3">
           <div>
@@ -306,8 +289,6 @@ const PhoneVerification = ({ phone, onVerified, currentPhone }) => {
           <button
             type="button"
             onClick={(e) => {
-              console.log('🔵 SMS Verificiraj gumb kliknut');
-              console.log('🔵 Code length:', code.length, 'Loading:', loading);
               e.preventDefault();
               e.stopPropagation();
               handleVerifyCode(e);
@@ -339,7 +320,6 @@ const PhoneVerification = ({ phone, onVerified, currentPhone }) => {
           <form onSubmit={(e) => {
             e.preventDefault();
             e.stopPropagation();
-            console.log('🔵 Fallback form onSubmit pozvan');
             handleVerifyCode(e);
           }} className="space-y-3">
             <input
@@ -358,7 +338,6 @@ const PhoneVerification = ({ phone, onVerified, currentPhone }) => {
             <button
               type="button"
               onClick={(e) => {
-                console.log('🔵 Fallback SMS Verificiraj gumb kliknut');
                 e.preventDefault();
                 e.stopPropagation();
                 handleVerifyCode(e);
