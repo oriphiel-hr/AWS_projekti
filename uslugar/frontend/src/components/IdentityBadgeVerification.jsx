@@ -131,6 +131,16 @@ export default function IdentityBadgeVerification({ profile, onUpdated }) {
     }
   };
 
+  // Debug - provjeri render
+  console.log('🟢 IdentityBadgeVerification render:', { 
+    verificationType, 
+    value, 
+    verifying, 
+    hasEmail: !!profile?.identityEmailVerified,
+    hasPhone: !!profile?.identityPhoneVerified,
+    hasDns: !!profile?.identityDnsVerified
+  });
+
   return (
     <div className="space-y-4">
       {/* Verification Type Selector */}
@@ -202,8 +212,8 @@ export default function IdentityBadgeVerification({ profile, onUpdated }) {
                   console.log('🟡 Email gumb onTouchStart');
                 }}
                 disabled={!value || verifying}
-                style={{ pointerEvents: (!value || verifying) ? 'none' : 'auto' }}
-                className="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed active:bg-purple-800"
+                className="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed active:bg-purple-800 cursor-pointer"
+                title={!value ? 'Molimo unesite email adresu' : verifying ? 'Verificiram...' : 'Kliknite za verifikaciju'}
               >
                 {verifying ? 'Verificiram...' : `✓ Verificiraj${!value ? ' (unesite email)' : ''}`}
               </button>
@@ -239,8 +249,8 @@ export default function IdentityBadgeVerification({ profile, onUpdated }) {
                   console.log('🟡 DNS gumb onTouchStart');
                 }}
                 disabled={!value || verifying}
-                style={{ pointerEvents: (!value || verifying) ? 'none' : 'auto' }}
-                className="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed active:bg-purple-800"
+                className="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed active:bg-purple-800 cursor-pointer"
+                title={!value ? 'Molimo unesite email adresu' : verifying ? 'Verificiram...' : 'Kliknite za verifikaciju'}
               >
                 {verifying ? 'Verificiram...' : `✓ Verificiraj${!value ? ' (unesite domenu)' : ''}`}
               </button>
