@@ -228,11 +228,8 @@ export default function IdentityBadgeVerification({ profile, onUpdated }) {
                 className="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed active:bg-purple-800 cursor-pointer"
                 title={!value ? 'Molimo unesite email adresu' : verifying ? 'Verificiram...' : 'Kliknite za verifikaciju'}
               >
-                {verifying ? 'Verificiram...' : `✓ Verificiraj${!value ? ' (unesite email)' : ''}`}
-              </button>
-              <div className="text-xs text-gray-500 mt-1">
-                Debug: value={value ? 'OK' : 'PRAZNO'}, verifying={verifying ? 'true' : 'false'}, disabled={(!value || verifying) ? 'true' : 'false'}
-              </div>
+              {verifying ? 'Verificiram...' : `✓ Verificiraj${!value ? ' (unesite email)' : ''}`}
+            </button>
             </div>
           )}
 
@@ -265,11 +262,8 @@ export default function IdentityBadgeVerification({ profile, onUpdated }) {
                 className="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed active:bg-purple-800 cursor-pointer"
                 title={!value ? 'Molimo unesite email adresu' : verifying ? 'Verificiram...' : 'Kliknite za verifikaciju'}
               >
-                {verifying ? 'Verificiram...' : `✓ Verificiraj${!value ? ' (unesite domenu)' : ''}`}
-              </button>
-              <div className="text-xs text-gray-500 mt-1">
-                Debug: value={value ? 'OK' : 'PRAZNO'}, verifying={verifying ? 'true' : 'false'}, disabled={(!value || verifying) ? 'true' : 'false'}
-              </div>
+              {verifying ? 'Verificiram...' : `✓ Verificiraj${!value ? ' (unesite domenu)' : ''}`}
+            </button>
             </div>
           )}
 
