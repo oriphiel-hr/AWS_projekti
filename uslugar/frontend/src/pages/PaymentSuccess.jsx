@@ -31,7 +31,6 @@ export default function PaymentSuccess({ setTab }) {
     // Verify payment with backend
     api.get(`/payments/success?session_id=${sessionIdParam}`)
       .then(response => {
-        console.log('Payment success response:', response.data);
         setStatus('success');
         
         // Set a flag in localStorage to trigger subscription data refresh

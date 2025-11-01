@@ -52,7 +52,6 @@ export default function Pricing({ setTab }) {
       localStorage.getItem('token') ? getMySubscription().catch(() => null) : Promise.resolve(null)
     ])
       .then(([plansRes, subscriptionRes]) => {
-        console.log('✅ Subscription plans učitani iz baze:', plansRes.data);
         
         // Add TRIAL plan
         const trialPlan = {

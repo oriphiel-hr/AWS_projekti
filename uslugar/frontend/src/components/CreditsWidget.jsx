@@ -43,7 +43,6 @@ export default function CreditsWidget() {
       console.error('Error loading credits:', err);
       // Ako je 401, možda korisnik nije prijavljen ili token je istekao
       if (err.response?.status === 401) {
-        console.log('🔒 Credits endpoint zahtijeva autentifikaciju');
         // Ne prikazuj widget ako korisnik nije autentificiran
         setBalance(null);
         setSubscription(null);
@@ -51,7 +50,6 @@ export default function CreditsWidget() {
         
         // Stop retrying after 3 consecutive 401 errors
         if (retryCount >= 2) {
-          console.log('🛑 Stopping credits retry after 3 consecutive 401 errors');
           setShouldRetry(false);
         }
       }

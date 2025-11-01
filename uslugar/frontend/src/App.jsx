@@ -81,14 +81,11 @@ export default function App(){
 
   useEffect(() => {
     // Dohvati kategorije s API-ja
-    console.log('🔄 Učitavam kategorije s API-ja...');
     api.get('/categories')
       .then(r => {
-        console.log('✅ Kategorije uspješno učitane iz baze:', r.data);
         setCategories(r.data);
       })
       .catch(err => {
-        console.log('❌ Greška pri učitavanju kategorija:', err);
         setCategories([]);
       });
   }, []);
@@ -97,14 +94,11 @@ export default function App(){
     if (tab !== 'providers') return;
     
     // Dohvati providere s API-ja
-    console.log('🔄 Učitavam providere s API-ja...');
     api.get('/providers')
       .then(r => {
-        console.log('✅ Provideri uspješno učitani iz baze:', r.data);
         setProviders(r.data);
       })
       .catch(err => {
-        console.log('❌ Greška pri učitavanju providera:', err);
         setProviders([]);
       });
   }, [tab]);
@@ -139,20 +133,17 @@ export default function App(){
       return;
     }
     // TODO: Implementirati modal za slanje ponude
-    console.log('Make offer for job:', job);
   };
 
 
   const handleContactProvider = (provider) => {
     // TODO: Implementirati chat ili kontakt
-    console.log('Contact provider:', provider);
   };
 
   // sync hash radi "deeplinka"
   useEffect(() => {
     const currentHash = window.location.hash?.slice(1).split('?')[0];
     if (tab && currentHash !== tab) {
-      console.log('🟡 Sync hash: tab=', tab, 'currentHash=', currentHash);
       window.location.hash = '#' + tab;
     }
   }, [tab]);
@@ -763,9 +754,7 @@ export default function App(){
               // Refresh data if needed
             }}
             onNavigate={(tabName) => {
-              console.log('🟢 App.jsx: onNavigate pozvan s tabName:', tabName);
               setTab(tabName);
-              console.log('🟢 App.jsx: setTab pozvan, trenutni tab će biti:', tabName);
             }}
           />
         </section>
@@ -810,7 +799,6 @@ export default function App(){
 
       {tab === 'team-locations' && (
         <section id="team-locations" className="tab-section">
-          {console.log('🟣 Rendering TeamLocations component, tab=', tab)}
           <TeamLocations />
         </section>
       )}

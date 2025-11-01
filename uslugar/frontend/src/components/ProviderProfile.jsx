@@ -19,7 +19,7 @@ const ProviderProfile = ({ providerId, onClose }) => {
         const payload = JSON.parse(atob(token.split('.')[1]));
         setCurrentUserId(payload.userId);
       } catch (e) {
-        console.log('Token parsing error:', e);
+        // Token parsing error - ignore
       }
     }
   }, [providerId]);

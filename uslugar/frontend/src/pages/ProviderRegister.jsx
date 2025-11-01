@@ -55,24 +55,15 @@ export default function ProviderRegister({ onSuccess }) {
   // Auto-verify kada se unese OIB i odabere legal status
   useEffect(() => {
     const autoVerify = async () => {
-      console.log('[Auto-Verify] Checking conditions:', {
-        taxId: formData.taxId,
-        taxIdLength: formData.taxId?.length,
-        legalStatusId: formData.legalStatusId
-      });
-      
       if (!formData.taxId || formData.taxId.length !== 11 || !formData.legalStatusId) {
-        console.log('[Auto-Verify] Missing conditions, skipping');
         return;
       }
       
       // Validiraj OIB format
       if (!/^\d{11}$/.test(formData.taxId)) {
-        console.log('[Auto-Verify] Invalid OIB format');
         return;
       }
       
-      console.log('[Auto-Verify] Starting verification...');
       setAutoVerifying(true);
       setError('');
       
@@ -84,7 +75,6 @@ export default function ProviderRegister({ onSuccess }) {
         });
         
         setVerificationResult(response.data);
-        console.log('[Auto-Verify] ✅ Success:', response.data);
         
       } catch (err) {
         console.error('[Auto-Verify] ❌ Error:', err.response?.data || err.message);

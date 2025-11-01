@@ -514,10 +514,8 @@ export default function ProviderProfile({ onSuccess, onNavigate }) {
       let response;
       try {
         response = await api.get('/providers/me');
-        console.log('✅ /providers/me endpoint radi ispravno');
       } catch (meError) {
         // Fallback na /fix-profile ako /me ne radi
-        console.log('⚠️ /providers/me ne radi, pokušavam /fix-profile:', meError);
         try {
           response = await api.post('/providers/fix-profile', {
             bio: '',
@@ -529,7 +527,6 @@ export default function ProviderProfile({ onSuccess, onNavigate }) {
             categoryIds: []
           });
         } catch (fixError) {
-          console.log('❌ Oba endpoint-a ne rade:', fixError);
           setError('Greška pri učitavanju profila. Pokušajte ponovno.');
           setLoading(false);
           return;
@@ -540,8 +537,6 @@ export default function ProviderProfile({ onSuccess, onNavigate }) {
       
       // Ako je odgovor iz /fix-profile endpoint-a, ekstraktiraj profil
       const actualProfile = profileData.profile || profileData;
-      
-      console.log('📊 Actual profile data:', JSON.stringify(actualProfile, null, 2));
       
       setProfile(actualProfile);
       
@@ -555,14 +550,7 @@ export default function ProviderProfile({ onSuccess, onNavigate }) {
         categoryIds: actualProfile.categories ? actualProfile.categories.map(c => c.id) : []
       };
       
-      console.log('📝 Form data set:', JSON.stringify(formDataToSet, null, 2));
-      
       setFormData(formDataToSet);
-      
-      // Debug: Provjeri da li se state ažurira
-      setTimeout(() => {
-        console.log('🔍 Form data after setState:', formData);
-      }, 100);
       
       // Poruka dobrodošlice
       const userName = actualProfile.user?.fullName || actualProfile.user?.name || 'Provider';
@@ -731,30 +719,10 @@ export default function ProviderProfile({ onSuccess, onNavigate }) {
                   setError('');
                   setSuccess('');
                   
-                  console.log('🔄 Pokušavam kreirati ProviderProfile...');
-                  
                   const token = localStorage.getItem('token');
                   const user = localStorage.getItem('user');
                   
-                  console.log('Token postoji:', !!token);
-                  console.log('Token duljina:', token?.length);
-                  console.log('User podaci:', user);
-                  
-                  // Dekodiraj JWT token
-                  if (token) {
-                    try {
-                      const payload = JSON.parse(atob(token.split('.')[1]));
-                      console.log('Token payload:', payload);
-                      console.log('Token expires:', new Date(payload.exp * 1000));
-                      console.log('Current time:', new Date());
-                      console.log('Token expired:', new Date() > new Date(payload.exp * 1000));
-                    } catch (e) {
-                      console.error('Invalid token format:', e);
-                    }
-                  }
-                  
                   const response = await api.post('/providers/fix-profile');
-                  console.log('✅ ProviderProfile kreiran:', response.data);
                   setSuccess('Provider profil je uspješno kreiran! Osvježite stranicu.');
                   
                   // Automatski osvježi nakon 2 sekunde
@@ -772,46 +740,6 @@ export default function ProviderProfile({ onSuccess, onNavigate }) {
                   
                   if (err.response?.status === 401) {
                     setError('Vaš login je istekao ili JWT token nije valjan. Molimo prijavite se ponovno.');
-                    
-                  // Testiraj backend endpoint direktno
-                  console.log('🔄 Testiram backend endpoint direktno...');
-                  try {
-                    // Test 1: Bez autentifikacije
-                    const test1 = await fetch('https://uslugar.api.oriph.io/api/providers/fix-profile', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' }
-                    });
-                    console.log('Test 1 (bez auth) status:', test1.status);
-                    const test1Data = await test1.text();
-                    console.log('Test 1 response:', test1Data);
-                    
-                    // Test 2: S valjanim tokenom
-                    const test2 = await fetch('https://uslugar.api.oriph.io/api/providers/fix-profile', {
-                      method: 'POST',
-                      headers: { 
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + localStorage.getItem('token')
-                      }
-                    });
-                    console.log('Test 2 (s auth) status:', test2.status);
-                    const test2Data = await test2.text();
-                    console.log('Test 2 response:', test2Data);
-                    
-                    // Test 3: Provjeri da li endpoint postoji
-                    const test3 = await fetch('https://uslugar.api.oriph.io/api/providers/me', {
-                      method: 'GET',
-                      headers: { 
-                        'Authorization': 'Bearer ' + localStorage.getItem('token')
-                      }
-                    });
-                    console.log('Test 3 (/me) status:', test3.status);
-                    const test3Data = await test3.text();
-                    console.log('Test 3 response:', test3Data);
-                    
-                  } catch (testErr) {
-                    console.error('Test error:', testErr);
-                  }
-                    
                   } else if (err.response?.status === 404) {
                     setError('Backend endpoint nije pronađen. Backend možda nije ažuriran.');
                   } else {
@@ -850,9 +778,6 @@ export default function ProviderProfile({ onSuccess, onNavigate }) {
     );
   }
 
-  // Debug: Log formData prije render-a
-  console.log('🎨 Rendering with formData:', formData);
-  
   return (
     <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-8">
       <div className="mb-6">
@@ -1133,12 +1058,9 @@ export default function ProviderProfile({ onSuccess, onNavigate }) {
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  console.log('🔵 Gumb kliknut! onNavigate:', onNavigate);
                   if (onNavigate) {
-                    console.log('✅ Pozivam onNavigate("team-locations")');
                     onNavigate('team-locations');
                   } else {
-                    console.log('⚠️ onNavigate nije dostupan, koristim hash navigation');
                     window.location.hash = '#team-locations';
                   }
                 }}

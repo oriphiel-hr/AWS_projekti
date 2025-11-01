@@ -18,7 +18,6 @@ export default function SubscriptionPlans() {
     const paymentSuccessful = localStorage.getItem('payment_successful');
     if (paymentSuccessful === 'true') {
       localStorage.removeItem('payment_successful');
-      console.log('[PAYMENT-SUCCESS] Loading fresh subscription data...');
       // Force reload to get fresh subscription data
       setTimeout(() => {
         loadData();
@@ -73,13 +72,8 @@ export default function SubscriptionPlans() {
     try {
       setSubscribing(planKey);
       
-      console.log('Subscribing to plan:', planKey);
-      console.log('Sending data:', { plan: planKey });
-      
       // Create Stripe checkout session
       const response = await api.post('/payments/create-checkout', { plan: planKey });
-      
-      console.log('Checkout response:', response.data);
       
       if (response.data.url) {
         // Redirect to Stripe checkout
