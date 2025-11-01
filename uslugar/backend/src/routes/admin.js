@@ -139,7 +139,6 @@ r.post('/cleanup/non-master', auth(true, ['ADMIN']), async (req, res, next) => {
 // Dodaj nedostajuće kategorije - potpuno javni endpoint (MUST be before generic routes)
 r.post('/add-categories', async (req, res, next) => {
   try {
-    console.log('🌱 Pokretanje seed-a kategorija...');
     
     const categories = [
       // 🏗️ GRAĐEVINSKE USLUGE
@@ -237,7 +236,6 @@ r.post('/add-categories', async (req, res, next) => {
             }
           });
           updatedCount++;
-          console.log(`✅ Ažurirana: ${categoryData.name}`);
         } else {
           // Kreiraj novu kategoriju
           await prisma.category.create({
@@ -253,7 +251,6 @@ r.post('/add-categories', async (req, res, next) => {
             }
           });
           addedCount++;
-          console.log(`➕ Dodana: ${categoryData.name}`);
         }
       } catch (error) {
         console.error(`❌ Greška za ${categoryData.name}:`, error.message);
@@ -262,10 +259,6 @@ r.post('/add-categories', async (req, res, next) => {
     
     const totalCount = addedCount + updatedCount;
     
-    console.log(`\n📊 REZULTAT:`);
-    console.log(`➕ Dodano: ${addedCount} kategorija`);
-    console.log(`✅ Ažurirano: ${updatedCount} kategorija`);
-    console.log(`📋 Ukupno: ${totalCount} kategorija`);
     
     res.json({
       success: true,

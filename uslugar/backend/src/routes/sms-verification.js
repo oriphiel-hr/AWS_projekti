@@ -100,16 +100,6 @@ r.post('/send', auth(true), async (req, res, next) => {
     let smsResult = null;
     try {
       smsResult = await sendVerificationCode(phone, code);
-      console.log(`[SMS Verification] SMS result:`, {
-        success: smsResult.success,
-        mode: smsResult.mode,
-        sid: smsResult.sid,
-        error: smsResult.error
-      });
-      
-      if (smsResult.mode === 'simulation' || smsResult.needsVerification) {
-        console.log(`[SMS Verification] SIMULATION MODE - Returning code in response for testing`);
-      }
       
       if (smsResult.mode === 'twilio_error') {
         console.error(`[SMS Verification] Twilio API error:`, smsResult.error);
@@ -245,7 +235,6 @@ r.post('/verify', auth(true), async (req, res, next) => {
       });
     }
 
-    console.log(`[SMS Verification] Phone verified for user ${userId}`);
 
     res.json({ 
       message: 'Telefon uspješno verificiran!',

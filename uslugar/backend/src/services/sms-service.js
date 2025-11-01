@@ -29,12 +29,6 @@ export async function sendSMS(phone, message) {
                            process.env.TWILIO_AUTH_TOKEN && 
                            process.env.TWILIO_PHONE_NUMBER;
     
-    console.log('[SMS Service] Twilio config check:', {
-      hasAccountSID: !!process.env.TWILIO_ACCOUNT_SID,
-      hasAuthToken: !!process.env.TWILIO_AUTH_TOKEN,
-      hasPhoneNumber: !!process.env.TWILIO_PHONE_NUMBER,
-      phoneNumber: process.env.TWILIO_PHONE_NUMBER || 'NOT SET'
-    });
     
     // Twilio integration
     if (hasTwilioConfig) {
@@ -45,7 +39,6 @@ export async function sendSMS(phone, message) {
           process.env.TWILIO_AUTH_TOKEN
         );
         
-        console.log(`[SMS Service] Sending SMS via Twilio to ${phone} from ${process.env.TWILIO_PHONE_NUMBER}`);
         
         const result = await client.messages.create({
           body: message,
@@ -53,7 +46,6 @@ export async function sendSMS(phone, message) {
           to: phone
         });
         
-        console.log(`✅ SMS poslan via Twilio: ${result.sid}, Status: ${result.status}`);
         return { success: true, sid: result.sid, mode: 'twilio', status: result.status };
       } catch (twilioError) {
         console.error('❌ Twilio SMS error:', twilioError);
@@ -66,8 +58,6 @@ export async function sendSMS(phone, message) {
           console.warn('⚠️ Twilio trial: Broj mora biti verificiran u Twilio konzoli');
           console.warn('   Dodajte broj na: https://console.twilio.com/us1/develop/phone-numbers/manage/verified');
           // Fallback na simulation mode
-          console.log(`📱 [SMS SIMULATION - Twilio error: unverified number] To: ${phone}`);
-          console.log(`   Message: ${message}`);
           return { 
             success: false, 
             error: twilioError.message,
@@ -94,8 +84,6 @@ export async function sendSMS(phone, message) {
     }
     
     // Simulation mode (for development when Twilio not configured)
-    console.log(`📱 [SMS SIMULATION - No Twilio config] To: ${phone}`);
-    console.log(`   Message: ${message}`);
     
     return { 
       success: true, 

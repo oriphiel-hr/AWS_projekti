@@ -27,7 +27,6 @@ r.get('/me', auth(true, ['PROVIDER']), async (req, res, next) => {
 
     // Ako profil ne postoji, kreiraj ga automatski
     if (!provider) {
-      console.log(`🔍 ProviderProfile ne postoji za korisnika: ${req.user.email} (${req.user.id})`);
       
       // Dohvati korisničke podatke za kreiranje profila
       const user = await prisma.user.findUnique({
@@ -41,7 +40,6 @@ r.get('/me', auth(true, ['PROVIDER']), async (req, res, next) => {
       });
 
       if (!user) {
-        console.log(`❌ Korisnik nije pronađen: ${req.user.id}`);
         return res.status(404).json({ error: 'User not found' });
       }
 
@@ -70,7 +68,6 @@ r.get('/me', auth(true, ['PROVIDER']), async (req, res, next) => {
           }
         });
 
-        console.log(`✅ Automatski kreiran ProviderProfile za korisnika: ${req.user.email}`);
       } catch (createError) {
         console.error(`❌ Greška pri kreiranju ProviderProfile:`, createError);
         return res.status(500).json({ error: 'Failed to create provider profile' });
@@ -258,7 +255,6 @@ r.post('/fix-profile', auth(true, ['PROVIDER', 'ADMIN']), async (req, res, next)
 // Fix all missing provider profiles (admin endpoint)
 r.post('/fix-all-profiles', auth(true, ['ADMIN']), async (req, res, next) => {
   try {
-    console.log('🔍 Tražim PROVIDER korisnike bez ProviderProfile...');
     
     // Pronađi sve PROVIDER korisnike koji nemaju ProviderProfile
     const providersWithoutProfile = await prisma.user.findMany({
@@ -277,7 +273,6 @@ r.post('/fix-all-profiles', auth(true, ['ADMIN']), async (req, res, next) => {
       }
     });
 
-    console.log(`📊 Pronađeno ${providersWithoutProfile.length} PROVIDER korisnika bez profila`);
 
     if (providersWithoutProfile.length === 0) {
       return res.json({ 
@@ -293,7 +288,6 @@ r.post('/fix-all-profiles', auth(true, ['ADMIN']), async (req, res, next) => {
     // Kreiraj ProviderProfile za svakog korisnika
     for (const user of providersWithoutProfile) {
       try {
-        console.log(`🔄 Kreiram ProviderProfile za: ${user.email} (${user.fullName})`);
         
         const providerProfile = await prisma.providerProfile.create({
           data: {
@@ -317,7 +311,6 @@ r.post('/fix-all-profiles', auth(true, ['ADMIN']), async (req, res, next) => {
           fullName: user.fullName
         });
 
-        console.log(`✅ ProviderProfile kreiran za: ${user.email}`);
       } catch (error) {
         console.error(`❌ Greška pri kreiranju profila za ${user.email}:`, error.message);
         errors.push({
@@ -328,7 +321,6 @@ r.post('/fix-all-profiles', auth(true, ['ADMIN']), async (req, res, next) => {
       }
     }
 
-    console.log('🎉 Završeno kreiranje ProviderProfile-a za postojeće korisnike!');
 
     res.json({
       message: `Kreirano ${createdProfiles.length} ProviderProfile-a`,
