@@ -64,15 +64,15 @@ const PhoneVerification = ({ phone, onVerified, currentPhone }) => {
     try {
       const response = await sendVerificationCode(phoneToVerify);
       
-      // Ako je SMS mode simulation ili ako je kod vraćen, prikaži ga
-      if (response.data.code) {
-        const codeMessage = response.data.smsSuccess 
-          ? `SMS kod je poslan! Kod za testiranje: ${response.data.code}`
-          : `SMS nije poslan (Twilio issue). Kod za testiranje: ${response.data.code}`;
-        setSuccess(codeMessage);
+      // Ako backend vraća poruku, koristi je
+      if (response.data.message) {
+        setSuccess(response.data.message);
+      } else if (response.data.code) {
+        // Fallback: ako je kod vraćen ali nema poruke, prikaži ga
+        setSuccess(`Kod za testiranje: ${response.data.code}`);
         console.log('🔑 SMS Code (test):', response.data.code);
       } else {
-        setSuccess(response.data.message || 'SMS kod je poslan! Provjerite telefon.');
+        setSuccess('SMS kod je poslan! Provjerite telefon.');
       }
       
       setCountdown(60); // 60 sekundi countdown

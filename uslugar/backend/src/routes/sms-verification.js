@@ -131,17 +131,25 @@ r.post('/send', auth(true), async (req, res, next) => {
       !smsResult.success;
 
     // Detaljnija poruka o grešci
-    let errorMessage = 'SMS nije poslan (Twilio issue). Kod za testiranje:';
+    let errorMessage = 'SMS nije poslan';
     if (smsResult?.needsVerification) {
-      errorMessage = 'SMS nije poslan - broj mora biti verificiran u Twilio konzoli. Kod za testiranje:';
+      errorMessage = 'SMS nije poslan - broj mora biti verificiran u Twilio konzoli.';
     } else if (smsResult?.error) {
-      errorMessage = `SMS nije poslan (${smsResult.error}). Kod za testiranje:`;
+      errorMessage = `SMS nije poslan (${smsResult.error})`;
+    }
+    
+    // Sastavi poruku - ako nije uspješno, dodaj kod ako je dostupan
+    let finalMessage = smsResult?.success 
+      ? 'SMS verifikacijski kod je poslan. Kod važi 10 minuta.'
+      : errorMessage;
+    
+    // Ako je kod dostupan za testiranje, dodaj ga u poruku
+    if (shouldReturnCode && code) {
+      finalMessage += ` Kod za testiranje: ${code}`;
     }
     
     res.json({ 
-      message: smsResult?.success 
-        ? 'SMS verifikacijski kod je poslan. Kod važi 10 minuta.'
-        : errorMessage,
+      message: finalMessage,
       code: shouldReturnCode ? code : undefined, // Vraćamo kod za testiranje
       smsMode: smsResult?.mode || 'simulation',
       smsSuccess: smsResult?.success || false,
