@@ -106,13 +106,20 @@ const PhoneVerification = ({ phone, onVerified, currentPhone }) => {
   };
 
   const handleVerifyCode = async (e) => {
-    e.preventDefault();
+    console.log('🔵 handleVerifyCode pozvan!', { code, codeLength: code?.length, event: e?.type });
+    
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     
     if (!code || code.length !== 6) {
+      console.log('⚠️ Kod nije valjan:', { code, length: code?.length });
       setError('Kod mora imati 6 znamenki');
       return;
     }
 
+    console.log('🟢 Kod je valjan, počinjem verifikaciju...');
     setLoading(true);
     setError('');
     setSuccess('');
@@ -126,9 +133,19 @@ const PhoneVerification = ({ phone, onVerified, currentPhone }) => {
       await checkStatus();
       
       // Provjeri da li je verificiran i sakrij formu
+      console.log('🔵 PhoneVerification verifyCode response:', response.data);
       if (response.data.phoneVerified) {
+        console.log('✅ Telefon je verificiran, pozivam onVerified callback');
         // Callback da parent komponenta zna da je verificiran
-        onVerified?.();
+        if (onVerified) {
+          console.log('🔵 Pozivam onVerified callback...');
+          onVerified();
+          console.log('✅ onVerified callback pozvan');
+        } else {
+          console.warn('⚠️ onVerified callback nije definiran!');
+        }
+      } else {
+        console.log('⚠️ phoneVerified nije true u response-u:', response.data);
       }
     } catch (err) {
       setError(err.response?.data?.error || 'Neispravan kod. Molimo pokušajte ponovno.');
@@ -234,11 +251,19 @@ const PhoneVerification = ({ phone, onVerified, currentPhone }) => {
 
           <button
             type="submit"
+            onClick={(e) => {
+              console.log('🔵 SMS Verificiraj gumb kliknut (submit)');
+              console.log('🔵 Code length:', code.length, 'Loading:', loading);
+            }}
             disabled={loading || code.length !== 6}
-            className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+            className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-sm font-medium cursor-pointer"
+            title={code.length !== 6 ? 'Unesite 6 znamenki' : loading ? 'Verificiranje...' : 'Kliknite za verifikaciju'}
           >
-            {loading ? 'Verificiranje...' : '✓ Verificiraj'}
+            {loading ? 'Verificiranje...' : `✓ Verificiraj${code.length !== 6 ? ` (${code.length}/6)` : ''}`}
           </button>
+          <div className="text-xs text-gray-500 mt-1 text-center" style={{ fontFamily: 'monospace' }}>
+            Debug: code={code || 'PRAZNO'}, length={code.length}, loading={loading ? 'true' : 'false'}, disabled={(!code || code.length !== 6 || loading) ? 'true' : 'false'}
+          </div>
 
           <button
             type="button"

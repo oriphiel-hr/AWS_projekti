@@ -96,23 +96,34 @@ export default function IdentityBadgeVerification({ profile, onUpdated }) {
 
   // Callback kada se SMS kod uspješno verificira
   const handlePhoneVerified = async () => {
+    console.log('🟢 handlePhoneVerified pozvan!', { value, phoneVerified });
+    
     try {
       // Ažuriraj backend da je telefon verificiran (provjeri da li je već SMS verificiran)
+      console.log('🔵 Provjeravam SMS status...');
       const phoneStatus = await api.get('/sms-verification/status');
+      console.log('✅ SMS status:', phoneStatus.data);
       
       if (phoneStatus.data.phoneVerified) {
+        console.log('🔵 Telefon je SMS verificiran, postavljam identityPhoneVerified...');
         // Telefon je već SMS verificiran, sada postavi identityPhoneVerified
-        await api.post('/kyc/verify-identity', {
+        // Koristi value iz inputa ili phone prop
+        const phoneToVerify = value || phoneStatus.data.phone;
+        
+        const verifyResponse = await api.post('/kyc/verify-identity', {
           type: 'phone',
-          value: value
+          value: phoneToVerify
         });
+        console.log('✅ Identity verification response:', verifyResponse.data);
         
         setPhoneVerified(true);
         setSuccess('✓ Telefon je verificiran i Identity badge dodijeljen!');
         
         // Refresh profile da se prikaže novi status
         if (onUpdated) {
+          console.log('🔵 Refreshing profile...');
           await onUpdated();
+          console.log('✅ Profile refreshed');
         }
         
         // Reset nakon 3 sekunde
@@ -122,11 +133,13 @@ export default function IdentityBadgeVerification({ profile, onUpdated }) {
           setPhoneVerified(false);
         }, 3000);
       } else {
+        console.log('⚠️ Telefon nije SMS verificiran');
         setError('Telefon mora biti prvo SMS verificiran prije dodjeljivanja Identity badge-a');
       }
       
     } catch (err) {
-      console.error('Phone verification update error:', err);
+      console.error('❌ Phone verification update error:', err);
+      console.error('❌ Error response:', err.response?.data);
       setError(err.response?.data?.error || 'Greška pri ažuriranju statusa verifikacije');
     }
   };
@@ -299,11 +312,16 @@ export default function IdentityBadgeVerification({ profile, onUpdated }) {
               </div>
               
               {value && value.startsWith('+385') && value.length >= 12 && (
-                <PhoneVerification
-                  phone={value}
-                  onVerified={handlePhoneVerified}
-                  currentPhone={value}
-                />
+                <div>
+                  <PhoneVerification
+                    phone={value}
+                    onVerified={() => {
+                      console.log('🟢 PhoneVerification onVerified callback pozvan s value:', value);
+                      handlePhoneVerified();
+                    }}
+                    currentPhone={value}
+                  />
+                </div>
               )}
               
               {(!value || !value.startsWith('+385') || value.length < 12) && (
