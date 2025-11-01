@@ -90,7 +90,7 @@ const Documentation = () => {
         { name: "Kategorije u kojima radi", implemented: true },
         { name: "Odabir kategorija za primanje leadova", implemented: true },
         { name: "Filtriranje leadova po kategorijama", implemented: true },
-        { name: "Portfolio radova", implemented: false },
+        { name: "Portfolio radova", implemented: true },
         { name: "Certifikati i licence", implemented: false },
         { name: "Pregled svih pružatelja", implemented: true },
         { name: "Filtriranje pružatelja", implemented: false },

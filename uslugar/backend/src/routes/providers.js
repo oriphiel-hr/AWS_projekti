@@ -212,6 +212,150 @@ r.put('/me', auth(true, ['PROVIDER', 'ADMIN', 'USER']), async (req, res, next) =
   } catch (e) { next(e); }
 });
 
+// Portfolio management endpoints
+// Add portfolio item
+r.post('/portfolio', auth(true, ['PROVIDER', 'ADMIN']), async (req, res, next) => {
+  try {
+    const userId = req.user.role === 'ADMIN' ? req.body.userId || req.user.id : req.user.id;
+    
+    const { title, description, images = [], category, date, location, client } = req.body;
+    
+    if (!title || !images || images.length === 0) {
+      return res.status(400).json({ 
+        error: 'Naslov i barem jedna slika su obavezni' 
+      });
+    }
+
+    const profile = await prisma.providerProfile.findUnique({
+      where: { userId }
+    });
+
+    if (!profile) {
+      return res.status(404).json({ error: 'Provider profil nije pronađen' });
+    }
+
+    const currentPortfolio = profile.portfolio || { items: [] };
+    const newItem = {
+      id: require('crypto').randomUUID(),
+      title,
+      description: description || null,
+      images: Array.isArray(images) ? images : [images],
+      category: category || null,
+      date: date || new Date().toISOString().split('T')[0],
+      location: location || null,
+      client: client || null,
+      createdAt: new Date().toISOString()
+    };
+
+    currentPortfolio.items = [...currentPortfolio.items, newItem];
+
+    const updated = await prisma.providerProfile.update({
+      where: { userId },
+      data: { portfolio: currentPortfolio }
+    });
+
+    res.json({ 
+      success: true, 
+      portfolio: updated.portfolio,
+      item: newItem
+    });
+  } catch (e) { next(e); }
+});
+
+// Update portfolio item
+r.put('/portfolio/:itemId', auth(true, ['PROVIDER', 'ADMIN']), async (req, res, next) => {
+  try {
+    const userId = req.user.role === 'ADMIN' ? req.body.userId || req.user.id : req.user.id;
+    const { itemId } = req.params;
+    
+    const { title, description, images, category, date, location, client } = req.body;
+
+    const profile = await prisma.providerProfile.findUnique({
+      where: { userId }
+    });
+
+    if (!profile || !profile.portfolio || !profile.portfolio.items) {
+      return res.status(404).json({ error: 'Portfolio nije pronađen' });
+    }
+
+    const items = profile.portfolio.items;
+    const itemIndex = items.findIndex(item => item.id === itemId);
+
+    if (itemIndex === -1) {
+      return res.status(404).json({ error: 'Portfolio item nije pronađen' });
+    }
+
+    items[itemIndex] = {
+      ...items[itemIndex],
+      ...(title && { title }),
+      ...(description !== undefined && { description }),
+      ...(images && { images: Array.isArray(images) ? images : [images] }),
+      ...(category !== undefined && { category }),
+      ...(date && { date }),
+      ...(location !== undefined && { location }),
+      ...(client !== undefined && { client }),
+      updatedAt: new Date().toISOString()
+    };
+
+    const updated = await prisma.providerProfile.update({
+      where: { userId },
+      data: { portfolio: { items } }
+    });
+
+    res.json({ 
+      success: true, 
+      portfolio: updated.portfolio,
+      item: items[itemIndex]
+    });
+  } catch (e) { next(e); }
+});
+
+// Delete portfolio item
+r.delete('/portfolio/:itemId', auth(true, ['PROVIDER', 'ADMIN']), async (req, res, next) => {
+  try {
+    const userId = req.user.role === 'ADMIN' ? req.body.userId || req.user.id : req.user.id;
+    const { itemId } = req.params;
+
+    const profile = await prisma.providerProfile.findUnique({
+      where: { userId }
+    });
+
+    if (!profile || !profile.portfolio || !profile.portfolio.items) {
+      return res.status(404).json({ error: 'Portfolio nije pronađen' });
+    }
+
+    const items = profile.portfolio.items.filter(item => item.id !== itemId);
+
+    const updated = await prisma.providerProfile.update({
+      where: { userId },
+      data: { portfolio: { items } }
+    });
+
+    res.json({ 
+      success: true, 
+      portfolio: updated.portfolio
+    });
+  } catch (e) { next(e); }
+});
+
+// Get portfolio (public)
+r.get('/portfolio/:userId', async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    
+    const profile = await prisma.providerProfile.findUnique({
+      where: { userId },
+      select: { portfolio: true }
+    });
+
+    if (!profile) {
+      return res.status(404).json({ error: 'Provider profil nije pronađen' });
+    }
+
+    res.json({ portfolio: profile.portfolio || { items: [] } });
+  } catch (e) { next(e); }
+});
+
 // Fix missing ProviderProfile for current user
 // Dozvoljeno za PROVIDER, ADMIN i USER-e koji su tvrtke/obrti (imaju legalStatusId)
 r.post('/fix-profile', auth(true, ['PROVIDER', 'ADMIN', 'USER']), async (req, res, next) => {
