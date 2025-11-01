@@ -32,8 +32,24 @@ async function getPlansFromDB() {
 }
 
 // Get current subscription
-r.get('/me', auth(true, ['PROVIDER']), async (req, res, next) => {
+// Dozvoljeno za PROVIDER, ADMIN i USER-e koji su tvrtke/obrti (imaju legalStatusId)
+r.get('/me', auth(true, ['PROVIDER', 'ADMIN', 'USER']), async (req, res, next) => {
   try {
+    // Provjeri da li USER ima legalStatusId (tvrtka/obrt)
+    if (req.user.role === 'USER') {
+      const userCheck = await prisma.user.findUnique({
+        where: { id: req.user.id },
+        select: { legalStatusId: true }
+      });
+      
+      if (!userCheck || !userCheck.legalStatusId) {
+        return res.status(403).json({ 
+          error: 'Nemate pristup',
+          message: 'Ovaj endpoint je dostupan samo za tvrtke/obrte ili pružatelje usluga.'
+        });
+      }
+    }
+    
     let subscription = await prisma.subscription.findUnique({
       where: { userId: req.user.id }
     });
