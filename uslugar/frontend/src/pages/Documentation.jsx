@@ -160,16 +160,16 @@ const Documentation = () => {
     {
       category: "Refund i Povrat Kredita",
       items: [
-        { name: "Automatski refund kredita ⚠️ (NE KORISTI SE)", implemented: true, deprecated: true },
-        { name: "Refund ako klijent ne odgovori u roku ⚠️ (NE KORISTI SE)", implemented: true, deprecated: true },
-        { name: "Razlozi za refund (klijent ne odgovori, itd.) ⚠️ (NE KORISTI SE)", implemented: true, deprecated: true },
-        { name: "Ručno zatraživanje refund-a ⚠️ (NE KORISTI SE)", implemented: true, deprecated: true },
-        { name: "Povijest refund transakcija ⚠️ (NE KORISTI SE)", implemented: true, deprecated: true },
-        { name: "Status refund-a (PENDING, PROCESSED, DENIED) ⚠️ (NE KORISTI SE)", implemented: true, deprecated: true },
-        { name: "Notifikacije o refund-u ⚠️ (NE KORISTI SE)", implemented: true, deprecated: true },
+        { name: "Refund kredita (vraćanje internih kredita)", implemented: true },
+        { name: "Refund ako klijent ne odgovori u roku", implemented: true },
+        { name: "Razlozi za refund (klijent ne odgovori, itd.)", implemented: true },
+        { name: "Ručno zatraživanje refund-a", implemented: true },
+        { name: "Povijest refund transakcija (CreditTransaction tip REFUND)", implemented: true },
+        { name: "Status refund-a (REFUNDED)", implemented: true },
+        { name: "Oslobađanje leada nakon refund-a (lead se vraća na tržište)", implemented: true },
         { name: "Admin odobravanje refund-a", implemented: false },
         { name: "Automatski refund nakon 48h neaktivnosti", implemented: false },
-        { name: "Refund policy i uvjeti", implemented: false }
+        { name: "Stripe Payment Intent refund (PSD2)", implemented: false }
       ]
     },
     {
@@ -348,9 +348,9 @@ const Documentation = () => {
         { name: "Različiti paketi pretplate (BASIC, PREMIUM, PRO)", implemented: true },
         { name: "Kreditni sustav", implemented: true },
         { name: "Povijest transakcija", implemented: true },
-        { name: "Automatski refund kredita ⚠️ (NE KORISTI SE)", implemented: true, deprecated: true },
-        { name: "Refund ako klijent ne odgovori u roku ⚠️ (NE KORISTI SE)", implemented: true, deprecated: true },
-        { name: "Razlozi za refund (klijent ne odgovori, itd.) ⚠️ (NE KORISTI SE)", implemented: true, deprecated: true },
+        { name: "Refund kredita (vraćanje internih kredita)", implemented: true },
+        { name: "Refund ako klijent ne odgovori u roku", implemented: true },
+        { name: "Razlozi za refund (klijent ne odgovori, itd.)", implemented: true },
         { name: "Otkazivanje pretplate", implemented: true },
         { name: "Status pretplate (ACTIVE, CANCELLED, EXPIRED)", implemented: true },
         { name: "Automatsko isteka pretplate", implemented: true },
