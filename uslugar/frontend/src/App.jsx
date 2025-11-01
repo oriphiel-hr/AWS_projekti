@@ -382,6 +382,30 @@ export default function App(){
                 </DropdownMenu>
               )}
 
+              {/* Korisnik usluge linkovi - samo za USER-e bez legalStatusId */}
+              {token && !isProviderOrBusinessUser() && (
+                <>
+                  <button
+                    className={'px-3 py-2 border rounded ' + (tab==='user' ? 'bg-green-600 text-white' : 'border-green-600 text-green-600 hover:bg-green-50')}
+                    onClick={() => setTab('user')}
+                  >
+                    🏠 Traži usluge
+                  </button>
+                  <button
+                    className={'px-3 py-2 border rounded ' + (tab==='my-jobs' ? 'bg-blue-600 text-white' : 'border-blue-600 text-blue-600 hover:bg-blue-50')}
+                    onClick={() => setTab('my-jobs')}
+                  >
+                    📋 Moji poslovi
+                  </button>
+                  <button
+                    className={'px-3 py-2 border rounded ' + (tab==='providers' ? 'bg-purple-600 text-white' : 'border-purple-600 text-purple-600 hover:bg-purple-50')}
+                    onClick={() => setTab('providers')}
+                  >
+                    👥 Pružatelji
+                  </button>
+                </>
+              )}
+
               <button
                 className={'px-3 py-2 border rounded ' + ((tab==='provider-profile' || tab==='user-profile') ? 'bg-blue-600 text-white' : 'border-blue-600 text-blue-600 hover:bg-blue-50')}
                 onClick={() => {
