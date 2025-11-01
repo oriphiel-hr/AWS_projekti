@@ -827,8 +827,14 @@ export default function App(){
             }}
             onNavigate={(tabName) => {
               setTab(tabName);
-            }}
+            }} 
           />
+        </section>
+      )}
+
+      {tab === 'user-profile' && (
+        <section id="user-profile" className="tab-section">
+          <UserProfile onNavigate={(tabName) => setTab(tabName)} />
         </section>
       )}
 
