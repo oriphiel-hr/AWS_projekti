@@ -318,9 +318,6 @@ const PhoneVerification = ({ phone, onVerified, currentPhone }) => {
           >
             {loading ? 'Verificiranje...' : `✓ Verificiraj${code.length !== 6 ? ` (${code.length}/6)` : ''}`}
           </button>
-          <div className="text-xs text-gray-500 mt-1 text-center" style={{ fontFamily: 'monospace' }}>
-            Debug: code={code || 'PRAZNO'}, length={code.length}, loading={loading ? 'true' : 'false'}, disabled={(!code || code.length !== 6 || loading) ? 'true' : 'false'}
-          </div>
 
           <button
             type="button"
