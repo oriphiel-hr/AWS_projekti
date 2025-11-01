@@ -4,6 +4,7 @@ import { AdminRouter } from './admin';
 import JobCard from './components/JobCard';
 import JobForm from './components/JobForm';
 import ProviderCard from './components/ProviderCard';
+import ProviderFilter from './components/ProviderFilter';
 import ReviewList from './components/ReviewList';
 import Login from './pages/Login';
 import UserRegister from './pages/UserRegister';
@@ -81,6 +82,16 @@ export default function App(){
     budgetMin: '',
     budgetMax: ''
   });
+  const [providerFilters, setProviderFilters] = useState({
+    search: null,
+    categoryId: null,
+    city: null,
+    minRating: null,
+    verified: null,
+    hasLicenses: null,
+    isAvailable: null,
+    sortBy: 'rating'
+  });
   
   // Mobile menu state
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -111,15 +122,21 @@ export default function App(){
   useEffect(() => {
     if (tab !== 'providers') return;
     
-    // Dohvati providere s API-ja
-    api.get('/providers')
+    // Dohvati providere s API-ja s filterima
+    const params = { ...providerFilters };
+    Object.keys(params).forEach(key => {
+      if (!params[key]) delete params[key];
+    });
+    
+    api.get('/providers', { params })
       .then(r => {
         setProviders(r.data);
       })
       .catch(err => {
+        console.error('Error fetching providers:', err);
         setProviders([]);
       });
-  }, [tab]);
+  }, [tab, providerFilters]);
 
   const handleJobSubmit = async (jobData) => {
     try {
@@ -1214,65 +1231,55 @@ export default function App(){
         <section id="providers" className="tab-section">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="text-center mb-8">
-              <h1 className="text-3xl font-bold text-gray-900 mb-4">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
                 👥 Pružatelji Usluga
               </h1>
-              <p className="text-lg text-gray-600 mb-2">
-                Dinamički učitano iz baze: <span className="font-semibold text-blue-600">{providers.length}</span> pružatelja
+              <p className="text-lg text-gray-600 dark:text-gray-400 mb-2">
+                Pronađeno: <span className="font-semibold text-blue-600 dark:text-blue-400">{providers.length}</span> pružatelja
               </p>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-gray-500 dark:text-gray-500">
                 Kliknite na pružatelja da vidite profil i recenzije
               </p>
             </div>
             
-            {/* Sortiraj providere po broju bedževa */}
-            {(() => {
-              const sortedProviders = [...providers].sort((a, b) => {
-                // Izračunaj broj badge-ova
-                const getBadgeCount = (provider) => {
-                  let count = 0;
-                  
-                  // Business badge (iz badgeData ili kycVerified)
-                  if (provider.kycVerified || (provider.badgeData && provider.badgeData.BUSINESS?.verified)) count++;
-                  
-                  // Identity badge
-                  if (provider.identityEmailVerified || provider.identityPhoneVerified || provider.identityDnsVerified) count++;
-                  
-                  // Safety badge
-                  if (provider.safetyInsuranceUrl) count++;
-                  
-                  return count;
-                };
-                
-                const countA = getBadgeCount(a);
-                const countB = getBadgeCount(b);
-                
-                // Sortiraj po broju badge-ova (desc), zatim po rating (desc)
-                if (countB !== countA) {
-                  return countB - countA;
-                }
-                return (b.ratingAvg || 0) - (a.ratingAvg || 0);
-              });
-              
-              return (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {sortedProviders.map(provider => (
-                    <ProviderCard
-                      key={provider.id}
-                      provider={provider}
-                      onViewProfile={handleViewProviderProfile}
-                      onContact={handleContactProvider}
-                    />
-                  ))}
-                </div>
-              );
-            })()}
+            {/* Provider Filter */}
+            <ProviderFilter
+              filters={providerFilters}
+              setFilters={setProviderFilters}
+              categories={categories}
+              onReset={() => setProviderFilters({
+                search: null,
+                categoryId: null,
+                city: null,
+                minRating: null,
+                verified: null,
+                hasLicenses: null,
+                isAvailable: null,
+                sortBy: 'rating'
+              })}
+            />
+            
+            {/* Providers grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {providers.map(provider => (
+                <ProviderCard
+                  key={provider.id}
+                  provider={provider}
+                  onViewProfile={handleViewProviderProfile}
+                  onContact={handleContactProvider}
+                />
+              ))}
+            </div>
             
             {providers.length === 0 && (
               <div className="text-center py-12">
                 <div className="text-gray-400 text-6xl mb-4">👥</div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Nema pružatelja usluga</h3>
-                <p className="text-gray-500">Trenutno nema registriranih pružatelja usluga.</p>
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Nema pružatelja usluga</h3>
+                <p className="text-gray-500 dark:text-gray-400">
+                  {Object.values(providerFilters).some(v => v !== null && v !== 'rating')
+                    ? 'Pokušajte promijeniti filtere ili ukloniti neke od kriterija pretrage'
+                    : 'Trenutno nema registriranih pružatelja usluga'}
+                </p>
               </div>
             )}
           </div>
