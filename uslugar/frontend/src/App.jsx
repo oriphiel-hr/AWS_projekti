@@ -961,6 +961,12 @@ export default function App(){
         </section>
       )}
 
+      {tab === 'my-jobs' && (
+        <section id="my-jobs" className="tab-section">
+          <MyJobs onNavigate={(tabName) => setTab(tabName)} />
+        </section>
+      )}
+
       {tab === 'team-locations' && (
         <section id="team-locations" className="tab-section">
           <TeamLocations />

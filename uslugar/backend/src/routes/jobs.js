@@ -7,7 +7,7 @@ import { sendAnonymousJobConfirmationEmail } from '../lib/email.js';
 const r = Router();
 
 // list jobs with filters
-r.get('/', async (req, res, next) => {
+r.get('/', auth(false), async (req, res, next) => {
   try {
     const { q, categoryId, city, latitude, longitude, distance = 50, urgency, jobSize, minBudget, maxBudget, myJobs } = req.query;
     
