@@ -114,6 +114,43 @@ r.patch('/:offerId/accept', auth(true), async (req, res, next) => {
       return res.status(403).json({ error: 'Not authorized' });
     }
     
+    // PREVENT SELF-ASSIGNMENT: Check if job creator and offer provider are same company (by OIB/email)
+    const jobUser = await prisma.user.findUnique({
+      where: { id: offer.job.userId },
+      select: { id: true, taxId: true, email: true }
+    });
+    
+    const offerProvider = await prisma.user.findUnique({
+      where: { id: offer.userId },
+      select: { id: true, taxId: true, email: true }
+    });
+    
+    if (jobUser && offerProvider) {
+      // Same userId - cannot self-assign
+      if (jobUser.id === offerProvider.id) {
+        return res.status(403).json({ 
+          error: 'Ne možete prihvatiti ponudu od samog sebe',
+          message: 'Ista tvrtka/obrt ne može sebi dodjeljivati posao.'
+        });
+      }
+      
+      // Same taxId - same company cannot assign to itself
+      if (jobUser.taxId && offerProvider.taxId && jobUser.taxId === offerProvider.taxId) {
+        return res.status(403).json({ 
+          error: 'Ne možete prihvatiti ponudu od iste tvrtke',
+          message: `Isti OIB (${jobUser.taxId}) ne može sebi dodjeljivati posao.`
+        });
+      }
+      
+      // Same email - same user account (even with different role) cannot self-assign
+      if (jobUser.email && offerProvider.email && jobUser.email === offerProvider.email) {
+        return res.status(403).json({ 
+          error: 'Ne možete prihvatiti ponudu od samog sebe',
+          message: 'Ista tvrtka/obrt ne može sebi dodjeljivati posao.'
+        });
+      }
+    }
+    
     // Check if job is still open
     if (offer.job.status !== 'OPEN') {
       return res.status(400).json({ error: 'Job is not open' });
