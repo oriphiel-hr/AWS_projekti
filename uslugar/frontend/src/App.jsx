@@ -178,6 +178,31 @@ export default function App(){
         return;
       }
       
+      // Auto-route profile pages based on user role
+      if (hash === 'provider-profile' || hash === 'user-profile') {
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          try {
+            const userData = JSON.parse(storedUser);
+            // Ako je PROVIDER ili USER sa legalStatusId, prikaži provider profile
+            if (userData.role === 'PROVIDER' || (userData.role === 'USER' && userData.legalStatusId)) {
+              setTab('provider-profile');
+              window.location.hash = '#provider-profile';
+            } else {
+              setTab('user-profile');
+              window.location.hash = '#user-profile';
+            }
+          } catch {
+            setTab('user-profile');
+            window.location.hash = '#user-profile';
+          }
+        } else {
+          setTab('user-profile');
+          window.location.hash = '#user-profile';
+        }
+        return;
+      }
+      
       if (validTabs.includes(hash)) {
         setTab(hash);
       } else if (!hash) {
