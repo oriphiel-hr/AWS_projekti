@@ -117,7 +117,7 @@ const Documentation = () => {
         { name: "Notifikacije za nove ponude", implemented: true },
         { name: "Notifikacije za prihvaćene ponude", implemented: true },
         { name: "Notifikacije za nove poruke", implemented: true },
-        { name: "Notifikacije za nove poslove", implemented: false },
+        { name: "Notifikacije za nove poslove (providere)", implemented: true },
         { name: "Email notifikacije", implemented: true },
         { name: "In-app notifikacije", implemented: true },
         { name: "Brojač nepročitanih notifikacija", implemented: true }
