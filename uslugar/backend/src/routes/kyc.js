@@ -865,8 +865,6 @@ r.post('/verify-identity', auth(true), async (req, res, next) => {
           const dns = await import('dns').then(m => m.promises);
           const domain = value.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0];
           
-          console.log(`[KYC] Checking DNS TXT records for domain: ${domain}`);
-          
           // Provjeri TXT zapise
           const txtRecords = await dns.resolveTxt(domain).catch((err) => {
             console.error('[KYC] DNS resolution error:', err);
@@ -877,9 +875,6 @@ r.post('/verify-identity', auth(true), async (req, res, next) => {
           // Format: "uslugar-verification=USER_ID" ili samo USER_ID
           const allTxtRecords = txtRecords.flat().join(' ');
           const verificationPattern = new RegExp(`uslugar-verification=(${user.id}|${user.id.substring(0, 8)})`, 'i');
-          
-          console.log(`[KYC] TXT records found:`, txtRecords);
-          console.log(`[KYC] Looking for pattern: uslugar-verification=${user.id}`);
           
           if (!verificationPattern.test(allTxtRecords)) {
             return res.status(400).json({ 
