@@ -110,6 +110,11 @@ r.post('/send', auth(true), async (req, res, next) => {
       if (smsResult.mode === 'simulation' || smsResult.needsVerification) {
         console.log(`[SMS Verification] SIMULATION MODE - Returning code in response for testing`);
       }
+      
+      if (smsResult.mode === 'twilio_error') {
+        console.error(`[SMS Verification] Twilio API error:`, smsResult.error);
+        console.error(`[SMS Verification] Error code:`, smsResult.code);
+      }
     } catch (smsError) {
       console.error('[SMS Verification] Failed to send SMS:', smsError);
       // Ako je simulation mode ili error, vraćamo kod u response za testiranje
@@ -125,13 +130,23 @@ r.post('/send', auth(true), async (req, res, next) => {
       smsResult.needsVerification ||
       !smsResult.success;
 
+    // Detaljnija poruka o grešci
+    let errorMessage = 'SMS nije poslan (Twilio issue). Kod za testiranje:';
+    if (smsResult?.needsVerification) {
+      errorMessage = 'SMS nije poslan - broj mora biti verificiran u Twilio konzoli. Kod za testiranje:';
+    } else if (smsResult?.error) {
+      errorMessage = `SMS nije poslan (${smsResult.error}). Kod za testiranje:`;
+    }
+    
     res.json({ 
       message: smsResult?.success 
         ? 'SMS verifikacijski kod je poslan. Kod važi 10 minuta.'
-        : 'SMS nije poslan (Twilio nije konfiguriran ili broj nije verificiran). Kod za testiranje:',
+        : errorMessage,
       code: shouldReturnCode ? code : undefined, // Vraćamo kod za testiranje
       smsMode: smsResult?.mode || 'simulation',
-      smsSuccess: smsResult?.success || false
+      smsSuccess: smsResult?.success || false,
+      smsError: smsResult?.error || undefined,
+      smsErrorCode: smsResult?.code || undefined
     });
 
   } catch (error) {

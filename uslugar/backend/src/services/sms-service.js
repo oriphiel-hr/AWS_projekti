@@ -59,23 +59,37 @@ export async function sendSMS(phone, message) {
         console.error('❌ Twilio SMS error:', twilioError);
         console.error('   Error code:', twilioError.code);
         console.error('   Error message:', twilioError.message);
+        console.error('   Full error:', JSON.stringify(twilioError, null, 2));
         
         // Ako je Twilio trial i broj nije verificiran
         if (twilioError.code === 21608 || twilioError.message?.includes('verified')) {
           console.warn('⚠️ Twilio trial: Broj mora biti verificiran u Twilio konzoli');
+          console.warn('   Dodajte broj na: https://console.twilio.com/us1/develop/phone-numbers/manage/verified');
           // Fallback na simulation mode
-          console.log(`📱 [SMS SIMULATION - Twilio error] To: ${phone}`);
+          console.log(`📱 [SMS SIMULATION - Twilio error: unverified number] To: ${phone}`);
           console.log(`   Message: ${message}`);
           return { 
             success: false, 
             error: twilioError.message,
+            code: twilioError.code,
             sid: 'sm_error_' + Date.now(),
             mode: 'simulation',
             needsVerification: true
           };
         }
         
-        throw twilioError;
+        // Za sve ostale Twilio greške, također logiraj detaljno
+        console.error(`📱 [SMS FAILED - Twilio error] To: ${phone}`);
+        console.error(`   Error: ${twilioError.message} (Code: ${twilioError.code})`);
+        
+        // Ne baci grešku, nego vrati error response
+        return {
+          success: false,
+          error: twilioError.message,
+          code: twilioError.code,
+          sid: 'sm_error_' + Date.now(),
+          mode: 'twilio_error'
+        };
       }
     }
     
