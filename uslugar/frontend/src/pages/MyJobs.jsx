@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { api } from '../lib/api.js';
+import api from '../api';
 import { useAuth } from '../App.jsx';
 
 export default function MyJobs({ onNavigate }) {
