@@ -254,7 +254,7 @@ export default function KYCVerification({ providerProfile, onUpdate }) {
           <li>Automatski OCR traži ključne fraze u dokumentu</li>
           <li>Validira OIB (algoritamska kontrolna znamenka)</li>
           <li>Provjerava podudarnost imena iz dokumenta i profila</li>
-          <li>Badge "Verificiran" na profilu + datum zadnje provjere</li>
+          <li>Značka "Verificiran" na profilu + datum zadnje provjere</li>
           <li>Javni efekt provjerljivosti u skladu sa zakonom</li>
         </ul>
       </div>
