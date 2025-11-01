@@ -364,10 +364,21 @@ export default function UserRegister({ onSuccess }) {
               <p className="text-sm text-green-900 mb-2">
               📧 <strong>Provjerite svoj email inbox</strong>
             </p>
-            <p className="text-sm text-gray-700">
+            <p className="text-sm text-gray-700 mb-4">
               Kliknite na link u email-u da aktivirate svoj račun. 
               Link vrijedi 24 sata.
             </p>
+            <div className="bg-white border border-green-300 rounded-lg p-4 mt-4">
+              <p className="text-xs text-gray-600 mb-2">
+                <strong>Aktivacijski link:</strong>
+              </p>
+              <p className="text-sm text-blue-600 break-all font-mono bg-gray-50 p-3 rounded border border-blue-200">
+                {typeof window !== 'undefined' ? window.location.origin : 'https://uslugar.oriph.io'}/#verify?token=...
+              </p>
+              <p className="text-xs text-gray-500 mt-2">
+                💡 Link će doći na vašu email adresu. Kopirajte cijeli link iz emaila ako button ne radi.
+              </p>
+            </div>
           </div>
           </div>
         </div>
