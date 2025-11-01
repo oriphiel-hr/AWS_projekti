@@ -286,11 +286,15 @@ export default function UserRegister({ onSuccess }) {
         fullName: formData.fullName,
         role: userType || 'USER', // Koristi odabrani userType
         phone: formData.phone,
-        city: formData.city,
-        legalStatusId: formData.legalStatusId,
-        taxId: formData.taxId,
-        companyName: formData.companyName || undefined
+        city: formData.city
       };
+      
+      // Dodaj legalStatusId, taxId, companyName samo ako je PROVIDER ili USER koji je pravna osoba
+      if (userType === 'PROVIDER' || (userType === 'USER' && isCompany)) {
+        userData.legalStatusId = formData.legalStatusId || undefined;
+        userData.taxId = formData.taxId || undefined;
+        userData.companyName = formData.companyName || undefined;
+      }
 
       const response = await api.post('/auth/register', userData);
       const { token, user } = response.data;

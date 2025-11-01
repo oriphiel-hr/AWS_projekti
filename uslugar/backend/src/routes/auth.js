@@ -73,11 +73,20 @@ r.post('/register', async (req, res, next) => {
       phone,
       city,
       verificationToken,
-      tokenExpiresAt,
-      legalStatusId,
-      taxId,
-      companyName
+      tokenExpiresAt
     };
+    
+    // Dodaj legalStatusId, taxId, companyName samo ako nisu prazni
+    // Za USER-e koji nisu pravne osobe, ove vrijednosti ne smiju biti postavljene
+    if (legalStatusId && legalStatusId !== '' && legalStatusId !== null) {
+      userData.legalStatusId = legalStatusId;
+    }
+    if (taxId && taxId !== '' && taxId !== null) {
+      userData.taxId = taxId;
+    }
+    if (companyName && companyName !== '' && companyName !== null) {
+      userData.companyName = companyName;
+    }
     
     const user = await prisma.user.create({ data: userData });
     
