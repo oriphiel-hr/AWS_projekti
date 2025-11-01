@@ -590,8 +590,8 @@ export default function App(){
             </div>
           )}
 
-          {/* Provider Section */}
-          {token && (
+          {/* Provider Section - samo za PROVIDER-e i USER-e koji su tvrtke/obrti */}
+          {token && isProviderOrBusinessUser() && (
             <div>
               <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Leadovi</h3>
               <div className="space-y-1">
@@ -625,6 +625,15 @@ export default function App(){
                 >
                   💳 Pretplata
                 </button>
+              </div>
+            </div>
+          )}
+
+          {/* Profil sekcija - za sve prijavljene korisnike */}
+          {token && (
+            <div>
+              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Profil</h3>
+              <div className="space-y-1">
                 <button
                   className="w-full text-left px-3 py-2 rounded hover:bg-gray-100"
                   onClick={() => {
@@ -647,15 +656,19 @@ export default function App(){
                     }
                     setIsMobileMenuOpen(false);
                   }}
-                  >
+                >
                   👤 Moj profil
                 </button>
-                <button
-                  className="w-full text-left px-3 py-2 rounded hover:bg-gray-100"
-                  onClick={() => { setTab('upgrade-to-provider'); setIsMobileMenuOpen(false); }}
-                >
-                  🏢 Postani pružatelj
-                </button>
+                
+                {/* Postani pružatelj - samo za USER-e bez legalStatusId */}
+                {!isProviderOrBusinessUser() && (
+                  <button
+                    className="w-full text-left px-3 py-2 rounded hover:bg-gray-100"
+                    onClick={() => { setTab('upgrade-to-provider'); setIsMobileMenuOpen(false); }}
+                  >
+                    🏢 Postani pružatelj
+                  </button>
+                )}
               </div>
             </div>
           )}
