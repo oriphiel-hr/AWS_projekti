@@ -89,6 +89,60 @@ export default function ProviderRegister({ onSuccess }) {
     const timer = setTimeout(autoVerify, 500);
     return () => clearTimeout(timer);
   }, [formData.taxId, formData.legalStatusId, formData.companyName]);
+  
+  // Provjeri naziv tvrtke u registrima
+  const verifyCompanyName = async (companyName, taxId, legalStatusId) => {
+    if (!companyName || !taxId || taxId.length !== 11) {
+      setCompanyNameValidation(null);
+      return;
+    }
+    
+    setCompanyNameValidating(true);
+    setCompanyNameValidation(null);
+    
+    try {
+      const response = await api.post('/kyc/verify-company-name', {
+        taxId,
+        companyName,
+        legalStatusId
+      });
+      
+      if (response.data.success && response.data.shouldUpdate && response.data.officialName) {
+        // Automatski ažuriraj naziv ako je pronađen službeni naziv
+        setFormData(prev => ({
+          ...prev,
+          companyName: response.data.officialName
+        }));
+        
+        setCompanyNameValidation({
+          type: 'success',
+          message: response.data.message || 'Naziv tvrtke je ažuriran prema službenom registru',
+          officialName: response.data.officialName,
+          similarity: response.data.similarity
+        });
+      } else if (response.data.officialName && !response.data.shouldUpdate) {
+        // Pronađen ali nije dovoljno sličan - upozori korisnika
+        setCompanyNameValidation({
+          type: 'warning',
+          message: response.data.warning || 'Provjerite točnost naziva',
+          officialName: response.data.officialName,
+          similarity: response.data.similarity
+        });
+      } else {
+        // Nije pronađen u registrima
+        setCompanyNameValidation({
+          type: 'info',
+          message: response.data.message || 'Naziv nije provjeren u službenim registrima'
+        });
+      }
+    } catch (err) {
+      console.error('Company name verification error:', err);
+      // Nemoj blokirati korisnika ako verifikacija ne uspije
+      setCompanyNameValidation(null);
+    } finally {
+      setCompanyNameValidating(false);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -104,6 +158,22 @@ export default function ProviderRegister({ onSuccess }) {
         setEmailError('Email adresa nije valjana');
       } else {
         setEmailError('');
+      }
+    }
+    
+    // Validacija naziva tvrtke u realnom vremenu
+    if (name === 'companyName' && value && formData.taxId && formData.taxId.length === 11) {
+      verifyCompanyName(value, formData.taxId, formData.legalStatusId);
+    } else if (name === 'companyName' && !value) {
+      setCompanyNameValidation(null);
+    }
+    
+    // Ako se mijenja OIB ili legalStatus, provjeri ponovno companyName
+    if ((name === 'taxId' || name === 'legalStatusId') && formData.companyName && formData.companyName.length >= 3) {
+      if (name === 'taxId' && value && value.length === 11) {
+        verifyCompanyName(formData.companyName, value, formData.legalStatusId);
+      } else if (name === 'legalStatusId' && formData.taxId && formData.taxId.length === 11) {
+        verifyCompanyName(formData.companyName, formData.taxId, value);
       }
     }
 
@@ -620,10 +690,39 @@ export default function ProviderRegister({ onSuccess }) {
                 onChange={handleChange}
                 required={formData.legalStatusId && legalStatuses.find(s => s.id === formData.legalStatusId)?.code !== 'FREELANCER'}
                 disabled={!formData.legalStatusId}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed ${
+                  companyNameValidation?.type === 'success' ? 'border-green-500 bg-green-50' :
+                  companyNameValidation?.type === 'warning' ? 'border-yellow-500 bg-yellow-50' :
+                  'border-gray-300'
+                }`}
                 placeholder={!formData.legalStatusId ? 'Prvo odaberite pravni status' : (legalStatuses.find(s => s.id === formData.legalStatusId)?.code === 'FREELANCER' ? 'Opcionalno - možete raditi pod svojim imenom' : 'Vodoinstalater Horvat obrt')}
               />
-              {formData.legalStatusId && legalStatuses.find(s => s.id === formData.legalStatusId)?.code === 'FREELANCER' && (
+              {companyNameValidating && (
+                <p className="text-xs text-blue-600 mt-1">⏳ Provjeravam naziv u službenim registrima...</p>
+              )}
+              {companyNameValidation && !companyNameValidating && (
+                <div className={`mt-1 p-2 rounded text-xs ${
+                  companyNameValidation.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' :
+                  companyNameValidation.type === 'warning' ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' :
+                  'bg-blue-50 text-blue-700 border border-blue-200'
+                }`}>
+                  {companyNameValidation.type === 'success' && (
+                    <p>✓ {companyNameValidation.message}</p>
+                  )}
+                  {companyNameValidation.type === 'warning' && (
+                    <div>
+                      <p className="font-medium">⚠️ {companyNameValidation.message}</p>
+                      {companyNameValidation.officialName && (
+                        <p className="mt-1">U registru: "{companyNameValidation.officialName}"</p>
+                      )}
+                    </div>
+                  )}
+                  {companyNameValidation.type === 'info' && (
+                    <p>ℹ️ {companyNameValidation.message}</p>
+                  )}
+                </div>
+              )}
+              {formData.legalStatusId && legalStatuses.find(s => s.id === formData.legalStatusId)?.code === 'FREELANCER' && !companyNameValidation && (
                 <p className="text-xs text-gray-500 mt-1">Samostalni djelatnici mogu raditi pod svojim imenom i prezimenom</p>
               )}
             </div>

@@ -7,6 +7,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
+import { calculateSimilarity, isSimilarEnough, isValidCompanyName } from '../lib/string-similarity.js';
 
 const r = Router();
 
@@ -735,6 +736,197 @@ r.post('/auto-verify', async (req, res, next) => {
     
   } catch (err) {
     console.error('[Auto-Verify] Error:', err);
+    next(err);
+  }
+});
+
+/**
+ * POST /api/kyc/verify-company-name
+ * Provjeri i dohvati točan naziv tvrtke iz službenih registara
+ * 
+ * Body:
+ * - taxId: string (OIB)
+ * - companyName: string (user-entered name)
+ * - legalStatusId: string (optional, helps determine which registry to check)
+ */
+r.post('/verify-company-name', async (req, res, next) => {
+  try {
+    const { taxId, companyName, legalStatusId } = req.body;
+    
+    if (!taxId || !companyName) {
+      return res.status(400).json({
+        error: 'OIB i naziv tvrtke su obavezni'
+      });
+    }
+    
+    // Validiraj OIB
+    if (!validateOIB(taxId)) {
+      return res.status(400).json({
+        error: 'OIB nije valjan'
+      });
+    }
+    
+    // Provjeri da li je naziv dovoljno valjan
+    if (!isValidCompanyName(companyName)) {
+      return res.status(400).json({
+        error: 'Naziv tvrtke nije dovoljno točan',
+        message: 'Molimo unesite puni naziv tvrtke ili obrta (ne samo "tvrtka", "firma", itd.)'
+      });
+    }
+    
+    let officialName = null;
+    let source = null;
+    let similarity = 0;
+    
+    // Provjeri Sudski registar (za d.o.o., j.d.o.o., itd.)
+    const legalStatus = legalStatusId ? await prisma.legalStatus.findUnique({ 
+      where: { id: legalStatusId } 
+    }) : null;
+    
+    const isCompanyType = legalStatus?.code && ['DOO', 'JDOO', 'DNO'].includes(legalStatus.code);
+    
+    if (isCompanyType || !legalStatusId) {
+      // Pokušaj Sudski registar
+      try {
+        const clientId = process.env.SUDREG_CLIENT_ID;
+        const clientSecret = process.env.SUDREG_CLIENT_SECRET;
+        
+        if (clientId && clientSecret) {
+          // Get OAuth token
+          const tokenResponse = await axios.post(
+            'https://sudreg-data.gov.hr/api/oauth/token',
+            'grant_type=client_credentials',
+            {
+              auth: {
+                username: clientId,
+                password: clientSecret
+              },
+              headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+              }
+            }
+          ).catch(() => null);
+          
+          if (tokenResponse?.data?.access_token) {
+            // Get company data
+            const sudResponse = await axios.get(
+              'https://sudreg-data.gov.hr/api/javni/detalji_subjekta',
+              {
+                params: {
+                  tip_identifikatora: 'oib',
+                  identifikator: taxId
+                },
+                headers: {
+                  'Authorization': `Bearer ${tokenResponse.data.access_token}`
+                }
+              }
+            ).catch(() => null);
+            
+            if (sudResponse?.status === 200 && sudResponse.data) {
+              const sudData = sudResponse.data;
+              const status = sudData.status;
+              
+              if (status === 1) {
+                // Company is active
+                officialName = sudData.skracena_tvrtka?.ime || sudData.tvrtka?.ime;
+                source = 'SUDSKI_REGISTAR';
+                
+                if (officialName) {
+                  similarity = calculateSimilarity(companyName, officialName);
+                }
+              }
+            }
+          }
+        }
+      } catch (sudError) {
+        // Continue to try Obrtni registar
+      }
+    }
+    
+    // Provjeri Obrtni registar (ako nije pronađeno u Sudskom)
+    if (!officialName) {
+      try {
+        // Scrape Obrtni registar
+        const obrtUrl = `https://pretrazivac-obrta.gov.hr/search?query=${encodeURIComponent(taxId)}`;
+        const obrtResponse = await axios.get(obrtUrl, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          }
+        }).catch(() => null);
+        
+        if (obrtResponse?.status === 200) {
+          const $ = cheerio.load(obrtResponse.data);
+          
+          // Find OIB in results
+          const resultsText = $('body').text();
+          const hasOIB = resultsText.includes(taxId);
+          const noResults = resultsText.includes('Nema rezultata') || resultsText.includes('nema rezultata');
+          
+          if (hasOIB && !noResults && resultsText.length > 5000) {
+            // Try to extract company name from HTML
+            // Look for name in table rows or specific divs
+            const nameElements = $('td, .result-name, .company-name').filter((i, el) => {
+              const text = $(el).text().trim();
+              return text.length > 5 && text.length < 200 && !text.includes(taxId);
+            });
+            
+            if (nameElements.length > 0) {
+              // Try to find name that doesn't look like address or other data
+              for (let i = 0; i < nameElements.length; i++) {
+                const candidate = $(nameElements[i]).text().trim();
+                const candidateSimilarity = calculateSimilarity(companyName, candidate);
+                
+                if (candidateSimilarity > similarity && candidateSimilarity >= 0.5) {
+                  officialName = candidate;
+                  source = 'OBRTNI_REGISTAR';
+                  similarity = candidateSimilarity;
+                }
+              }
+            }
+          }
+        }
+      } catch (obrtError) {
+        // Continue without official name
+      }
+    }
+    
+    // Ako je pronađen službeni naziv i dovoljno je sličan, vrati ga
+    if (officialName && isSimilarEnough(companyName, officialName, 0.6)) {
+      return res.json({
+        success: true,
+        officialName,
+        source,
+        similarity: Math.round(similarity * 100) / 100,
+        shouldUpdate: true,
+        message: `Pronađen službeni naziv u ${source === 'SUDSKI_REGISTAR' ? 'Sudskom' : 'Obrtnom'} registru`
+      });
+    }
+    
+    // Ako je pronađen ali nije dovoljno sličan
+    if (officialName && !isSimilarEnough(companyName, officialName, 0.6)) {
+      return res.json({
+        success: false,
+        officialName,
+        source,
+        similarity: Math.round(similarity * 100) / 100,
+        shouldUpdate: false,
+        warning: 'Uneseni naziv se značajno razlikuje od službenog naziva u registru. Provjerite točnost.',
+        message: `U registru je zaveden naziv: "${officialName}"`
+      });
+    }
+    
+    // Ako nije pronađen u registrima, provjeri samo da li je naziv valjan
+    return res.json({
+      success: true,
+      officialName: null,
+      source: null,
+      similarity: 0,
+      shouldUpdate: false,
+      message: 'Naziv tvrtke nije provjeren u službenim registrima. Provjerite točnost prije registracije.'
+    });
+    
+  } catch (err) {
+    console.error('[KYC] Company name verification error:', err);
     next(err);
   }
 });
