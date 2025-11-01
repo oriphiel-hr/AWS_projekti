@@ -10,7 +10,15 @@ export default function IdentityBadgeVerification({ profile, onUpdated }) {
   const [success, setSuccess] = useState('');
   const [phoneVerified, setPhoneVerified] = useState(false); // Za SMS workflow
 
-  const handleVerify = async () => {
+  const handleVerify = async (e) => {
+    // Spriječi default form submission ako je pozvano iz forme
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
+    console.log('🔵 handleVerify pozvan:', { verificationType, value });
+    
     // Za telefon, ne pozivamo direktno - koristimo PhoneVerification komponentu
     if (verificationType === 'phone') {
       setError('Molimo unesite telefonski broj i verificirajte ga SMS kodom');
@@ -23,13 +31,17 @@ export default function IdentityBadgeVerification({ profile, onUpdated }) {
     }
 
     try {
+      console.log('🟢 Pozivanje API-ja za verifikaciju:', { type: verificationType, value });
       setVerifying(true);
       setError('');
+      setSuccess('');
       
-      await api.post('/kyc/verify-identity', {
+      const response = await api.post('/kyc/verify-identity', {
         type: verificationType,
         value: value
       });
+      
+      console.log('✅ API odgovor:', response.data);
 
       const successMessage = verificationType === 'email' 
         ? '✓ Email je verificiran!' 
@@ -51,8 +63,11 @@ export default function IdentityBadgeVerification({ profile, onUpdated }) {
       }, 5000);
       
     } catch (err) {
-      console.error('Verification error:', err);
-      const errorMsg = err.response?.data?.error || 'Neuspjela verifikacija';
+      console.error('❌ Verification error:', err);
+      console.error('❌ Error response:', err.response?.data);
+      console.error('❌ Error status:', err.response?.status);
+      
+      const errorMsg = err.response?.data?.error || err.message || 'Neuspjela verifikacija';
       const hint = err.response?.data?.hint || '';
       const userId = err.response?.data?.userId || '';
       
@@ -62,8 +77,14 @@ export default function IdentityBadgeVerification({ profile, onUpdated }) {
       } else {
         setError(errorMsg + (hint ? `\n\n${hint}` : ''));
       }
+      
+      // Ako nema error poruke, pokušaj generirati bolju poruku
+      if (!err.response?.data?.error && !err.message) {
+        setError(`Greška pri verifikaciji (${err.response?.status || 'unknown'}). Molimo pokušajte ponovno.`);
+      }
     } finally {
       setVerifying(false);
+      console.log('🟡 Verifying status set to false');
     }
   };
 
@@ -161,7 +182,13 @@ export default function IdentityBadgeVerification({ profile, onUpdated }) {
               />
               
               <button
-                onClick={handleVerify}
+                type="button"
+                onClick={(e) => {
+                  console.log('🔵 Email Verificiraj gumb kliknut');
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleVerify(e);
+                }}
                 disabled={!value || verifying}
                 className="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
@@ -182,7 +209,13 @@ export default function IdentityBadgeVerification({ profile, onUpdated }) {
               />
               
               <button
-                onClick={handleVerify}
+                type="button"
+                onClick={(e) => {
+                  console.log('🔵 DNS Verificiraj gumb kliknut');
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleVerify(e);
+                }}
                 disabled={!value || verifying}
                 className="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
