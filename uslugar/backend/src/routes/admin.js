@@ -659,6 +659,52 @@ Object.keys(MODELS).forEach(modelName => {
       next(e);
     }
   });
+
+// SMS Verifikacija - Reset pokušaja
+r.post('/users/:userId/reset-sms-attempts', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        phone: true,
+        phoneVerificationAttempts: true,
+        phoneVerified: true
+      }
+    });
+    
+    if (!user) {
+      return res.status(404).json({ error: 'Korisnik nije pronađen' });
+    }
+    
+    // Reset pokušaja
+    const updated = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        phoneVerificationAttempts: 0
+      },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        phone: true,
+        phoneVerificationAttempts: true,
+        phoneVerified: true
+      }
+    });
+    
+    res.json({
+      success: true,
+      message: `SMS pokušaji resetirani za korisnika ${user.email}`,
+      user: updated
+    });
+  } catch (e) {
+    next(e);
+  }
 });
 
 export default r;

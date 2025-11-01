@@ -130,7 +130,7 @@ const WHERE_EXAMPLES = {
 
 // INCLUDE primjeri za relacije
 const INCLUDE_EXAMPLES = {
-  User: { providerProfile: true, jobs: true, legalStatus: true },
+  User: { providerProfile: true, jobs: true, legalStatus: true }, // phoneVerificationAttempts je automatski uključen
   ProviderProfile: { user: true, categories: true, legalStatus: true },
   Category: { parent: true, children: true, providers: true },
   Job: { user: true, category: true, offers: true },
@@ -364,6 +364,19 @@ export default function ModelPage({ model }){
       await load()
     }catch(e){
       setError(e?.response?.data?.error || e?.message || String(e))
+    }finally{ setLoading(false) }
+  }
+
+  async function resetSmsAttempts(userId, userEmail){
+    if(!confirm(`Resetirati SMS pokušaje za korisnika ${userEmail || userId}?`)) return
+    setLoading(true); setError('')
+    try{
+      const response = await api.post(`/admin/users/${encodeURIComponent(userId)}/reset-sms-attempts`)
+      alert(`✅ ${response.data.message}`)
+      await load() // Reload da vidimo ažurirane podatke
+    }catch(e){
+      setError(e?.response?.data?.error || e?.message || String(e))
+      alert(`❌ Greška: ${e?.response?.data?.error || e?.message || String(e)}`)
     }finally{ setLoading(false) }
   }
 
@@ -645,17 +658,28 @@ export default function ModelPage({ model }){
                     )
                   })}
                   <td className="p-3 border-b whitespace-nowrap sticky right-0 bg-white">
-                    <button onClick={()=>openEdit(it)} className="px-3 py-1 bg-blue-600 text-white text-sm rounded mr-2 hover:bg-blue-700">
-                      Edit
-                    </button>
-                    <button 
-                      onClick={()=>remove(it.id)} 
-                      disabled={model === 'User' && it.role === 'ADMIN'}
-                      title={model === 'User' && it.role === 'ADMIN' ? 'ADMIN korisnika nije moguće obrisati' : ''}
-                      className={`px-3 py-1 text-white text-sm rounded ${model === 'User' && it.role === 'ADMIN' ? 'bg-rose-300 cursor-not-allowed' : 'bg-rose-600 hover:bg-rose-700'}`}
-                    >
-                      Delete
-                    </button>
+                    <div className="flex flex-wrap gap-1">
+                      <button onClick={()=>openEdit(it)} className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
+                        Edit
+                      </button>
+                      {model === 'User' && (it.phone || it.phoneVerificationAttempts > 0) && (
+                        <button 
+                          onClick={()=>resetSmsAttempts(it.id, it.email)} 
+                          title={`Resetiraj SMS pokušaje (trenutno: ${it.phoneVerificationAttempts || 0}/5)`}
+                          className="px-3 py-1 bg-orange-600 text-white text-sm rounded hover:bg-orange-700"
+                        >
+                          🔄 SMS
+                        </button>
+                      )}
+                      <button 
+                        onClick={()=>remove(it.id)} 
+                        disabled={model === 'User' && it.role === 'ADMIN'}
+                        title={model === 'User' && it.role === 'ADMIN' ? 'ADMIN korisnika nije moguće obrisati' : ''}
+                        className={`px-3 py-1 text-white text-sm rounded ${model === 'User' && it.role === 'ADMIN' ? 'bg-rose-300 cursor-not-allowed' : 'bg-rose-600 hover:bg-rose-700'}`}
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))
