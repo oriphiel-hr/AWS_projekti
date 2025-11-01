@@ -265,7 +265,7 @@ const Documentation = () => {
         { name: "Povrat na platformu nakon plaćanja", implemented: true },
         { name: "Sigurnosno skladištenje Stripe secret key u AWS Secrets Manager", implemented: true },
         { name: "Fakturiranje", implemented: false },
-        { name: "Povrat novca (osim refund-a leadova)", implemented: false }
+        { name: "Povrat novca za pretplate (refund subscription payment)", implemented: false }
       ]
     },
     {
@@ -365,7 +365,7 @@ const Documentation = () => {
         { name: "Notifikacije o isteku pretplate", implemented: true },
         { name: "Online plaćanje (Stripe Checkout)", implemented: true },
         { name: "Fakturiranje", implemented: false },
-        { name: "Povrat novca", implemented: false }
+        { name: "Povrat novca za pretplate (refund subscription payment)", implemented: false }
       ]
     },
     {
