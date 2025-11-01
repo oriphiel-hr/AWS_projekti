@@ -71,24 +71,8 @@ export default function UserRegister({ onSuccess }) {
       }
     }
 
-    // Validacija naziva tvrtke u realnom vremenu
-    if (name === 'companyName' && value && formData.taxId && formData.taxId.length === 11) {
-      verifyCompanyName(value, formData.taxId, formData.legalStatusId);
-    } else if (name === 'companyName' && !value) {
-      setCompanyNameValidation(null);
-    }
-    
-    // Ako se mijenja OIB ili legalStatus, provjeri ponovno companyName
-    if ((name === 'taxId' || name === 'legalStatusId') && formData.companyName && formData.companyName.length >= 3) {
-      if (name === 'taxId' && value && value.length === 11) {
-        verifyCompanyName(formData.companyName, value, formData.legalStatusId);
-      } else if (name === 'legalStatusId' && formData.taxId && formData.taxId.length === 11) {
-        verifyCompanyName(formData.companyName, formData.taxId, value);
-      }
-    }
-
-    // Validacija OIB-a u realnom vremenu
-    if (name === 'taxId') {
+    // Validacija OIB-a u realnom vremenu - samo ako je PROVIDER ili USER koji je pravna osoba
+    if ((userType === 'PROVIDER' || (userType === 'USER' && isCompany)) && name === 'taxId') {
       if (value && !validateOIB(value)) {
         setOibError('OIB nije validan. Provjerite kontrolnu znamenku.');
       } else {
@@ -96,19 +80,21 @@ export default function UserRegister({ onSuccess }) {
       }
     }
     
-    // Validacija naziva tvrtke u realnom vremenu
-    if (name === 'companyName' && value && formData.taxId && formData.taxId.length === 11) {
-      verifyCompanyName(value, formData.taxId, formData.legalStatusId);
-    } else if (name === 'companyName' && !value) {
-      setCompanyNameValidation(null);
-    }
-    
-    // Ako se mijenja OIB ili legalStatus, provjeri ponovno companyName
-    if ((name === 'taxId' || name === 'legalStatusId') && formData.companyName && formData.companyName.length >= 3) {
-      if (name === 'taxId' && value && value.length === 11) {
-        verifyCompanyName(formData.companyName, value, formData.legalStatusId);
-      } else if (name === 'legalStatusId' && formData.taxId && formData.taxId.length === 11) {
-        verifyCompanyName(formData.companyName, formData.taxId, value);
+    // Validacija naziva tvrtke u realnom vremenu - samo ako je PROVIDER ili USER koji je pravna osoba
+    if (userType === 'PROVIDER' || (userType === 'USER' && isCompany)) {
+      if (name === 'companyName' && value && formData.taxId && formData.taxId.length === 11) {
+        verifyCompanyName(value, formData.taxId, formData.legalStatusId);
+      } else if (name === 'companyName' && !value) {
+        setCompanyNameValidation(null);
+      }
+      
+      // Ako se mijenja OIB ili legalStatus, provjeri ponovno companyName
+      if ((name === 'taxId' || name === 'legalStatusId') && formData.companyName && formData.companyName.length >= 3) {
+        if (name === 'taxId' && value && value.length === 11) {
+          verifyCompanyName(formData.companyName, value, formData.legalStatusId);
+        } else if (name === 'legalStatusId' && formData.taxId && formData.taxId.length === 11) {
+          verifyCompanyName(formData.companyName, formData.taxId, value);
+        }
       }
     }
   };
