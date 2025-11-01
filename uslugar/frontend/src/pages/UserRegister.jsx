@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import api from '../api';
 import { useLegalStatuses } from '../hooks/useLegalStatuses';
 import { validateOIB, validateEmail } from '../utils/validators';
+import IdentityBadgeVerification from '../components/IdentityBadgeVerification';
 
 export default function UserRegister({ onSuccess }) {
   const { legalStatuses, loading: loadingStatuses } = useLegalStatuses();
@@ -22,6 +23,10 @@ export default function UserRegister({ onSuccess }) {
   const [success, setSuccess] = useState(false);
   const [oibError, setOibError] = useState('');
   const [emailError, setEmailError] = useState('');
+  const [companyNameValidating, setCompanyNameValidating] = useState(false);
+  const [companyNameValidation, setCompanyNameValidation] = useState(null);
+  const [registeredUser, setRegisteredUser] = useState(null);
+  const [userProfile, setUserProfile] = useState(null);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -48,6 +53,116 @@ export default function UserRegister({ onSuccess }) {
         setOibError('');
       }
     }
+    
+    // Validacija naziva tvrtke u realnom vremenu (samo za tvrtke/obrte)
+    if (isCompany && name === 'companyName' && value && formData.taxId && formData.taxId.length === 11) {
+      verifyCompanyName(value, formData.taxId, formData.legalStatusId);
+    } else if (name === 'companyName' && !value) {
+      setCompanyNameValidation(null);
+    }
+    
+    // Ako se mijenja OIB ili legalStatus, provjeri ponovno companyName
+    if (isCompany && (name === 'taxId' || name === 'legalStatusId') && formData.companyName && formData.companyName.length >= 3) {
+      if (name === 'taxId' && value && value.length === 11) {
+        verifyCompanyName(formData.companyName, value, formData.legalStatusId);
+      } else if (name === 'legalStatusId' && formData.taxId && formData.taxId.length === 11) {
+        verifyCompanyName(formData.companyName, formData.taxId, value);
+      }
+    }
+  };
+  
+  // Provjeri naziv tvrtke u registrima
+  const verifyCompanyName = async (companyName, taxId, legalStatusId) => {
+    if (!companyName || !taxId || taxId.length !== 11 || !isCompany) {
+      setCompanyNameValidation(null);
+      return;
+    }
+    
+    setCompanyNameValidating(true);
+    setCompanyNameValidation(null);
+    
+    try {
+      const response = await api.post('/kyc/verify-company-name', {
+        taxId,
+        companyName,
+        legalStatusId
+      });
+      
+      if (response.data.success && response.data.shouldUpdate && response.data.officialName) {
+        // Automatski ažuriraj naziv ako je pronađen službeni naziv
+        setFormData(prev => ({
+          ...prev,
+          companyName: response.data.officialName
+        }));
+        
+        setCompanyNameValidation({
+          type: 'success',
+          message: response.data.message || 'Naziv tvrtke je ažuriran prema službenom registru',
+          officialName: response.data.officialName,
+          similarity: response.data.similarity
+        });
+      } else if (response.data.officialName && !response.data.shouldUpdate) {
+        // Pronađen ali nije dovoljno sličan - upozori korisnika
+        setCompanyNameValidation({
+          type: 'warning',
+          message: response.data.warning || 'Provjerite točnost naziva',
+          officialName: response.data.officialName,
+          similarity: response.data.similarity
+        });
+      } else {
+        // Nije pronađen u registrima
+        setCompanyNameValidation({
+          type: 'info',
+          message: response.data.message || 'Naziv nije provjeren u službenim registrima'
+        });
+      }
+    } catch (err) {
+      console.error('Company name verification error:', err);
+      // Nemoj blokirati korisnika ako verifikacija ne uspije
+      setCompanyNameValidation(null);
+    } finally {
+      setCompanyNameValidating(false);
+    }
+  };
+  
+  // Učitaj korisnički profil nakon registracije (za tvrtke/obrte)
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      if (!registeredUser || !isCompany) return;
+      
+      try {
+        // Pokušaj učitati ili kreirati ProviderProfile za USER-e koji su tvrtke/obrti
+        // Koristimo fix-profile endpoint koji automatski kreira profil ako ga nema
+        try {
+          const profileResponse = await api.post('/providers/fix-profile');
+          if (profileResponse.data?.profile) {
+            setUserProfile(profileResponse.data.profile);
+          }
+        } catch (fixErr) {
+          // Ako fix-profile ne radi (možda jer USER nije PROVIDER), pokušaj direktno kreirati
+          console.error('Error with fix-profile, trying alternative:', fixErr);
+        }
+      } catch (err) {
+        console.error('Error loading user profile:', err);
+      }
+    };
+    
+    if (success && registeredUser && isCompany && localStorage.getItem('token')) {
+      loadUserProfile();
+    }
+  }, [success, registeredUser, isCompany]);
+  
+  // Handler za refresh profila nakon verifikacije
+  const handleProfileUpdated = async () => {
+    if (!isCompany) return;
+    try {
+      const profileResponse = await api.post('/providers/fix-profile');
+      if (profileResponse.data?.profile) {
+        setUserProfile(profileResponse.data.profile);
+      }
+    } catch (err) {
+      console.error('Error refreshing profile:', err);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -73,7 +188,7 @@ export default function UserRegister({ onSuccess }) {
         }
         
         if (!formData.taxId) {
-          setError('OIB je obavezan za firme/obrte.');
+          setError('OIB je obavezan za tvrtke/obrte.');
           setLoading(false);
           return;
         }
@@ -86,10 +201,10 @@ export default function UserRegister({ onSuccess }) {
           return;
         }
         
-        // Provjeri da li je naziv firme obavezan (osim za freelancere)
+        // Provjeri da li je naziv tvrtke obavezan (osim za freelancere)
         const selectedStatus = legalStatuses.find(s => s.id === formData.legalStatusId);
         if (selectedStatus?.code !== 'FREELANCER' && !formData.companyName) {
-          setError('Naziv firme/obrta je obavezan. Samo samostalni djelatnici mogu raditi pod svojim imenom.');
+          setError('Naziv tvrtke/obrta je obavezan. Samo samostalni djelatnici mogu raditi pod svojim imenom.');
           setLoading(false);
           return;
         }
@@ -106,6 +221,16 @@ export default function UserRegister({ onSuccess }) {
 
       const response = await api.post('/auth/register', dataToSend);
       const { token, user, message } = response.data;
+      
+      // Spremi registriranog korisnika
+      setRegisteredUser(user);
+      
+      // Ako je tvrtka/obrt, možda treba kreirati ProviderProfile
+      // (backend možda automatski kreira, ili možda treba ručno)
+      if (isCompany && token) {
+        // Spremi token privremeno za API pozive
+        localStorage.setItem('token', token);
+      }
       
       // Prikaži success message umjesto auto-login
       setSuccess(true);
@@ -127,29 +252,116 @@ export default function UserRegister({ onSuccess }) {
   // Success screen
   if (success) {
     return (
-      <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-lg p-8">
-        <div className="text-center">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100 mb-6">
-            <svg className="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 19v-8.93a2 2 0 01.89-1.664l7-4.666a2 2 0 012.22 0l7 4.666A2 2 0 0121 10.07V19M3 19a2 2 0 002 2h14a2 2 0 002-2M3 19l6.75-4.5M21 19l-6.75-4.5M3 10l6.75 4.5M21 10l-6.75 4.5m0 0l-1.14.76a2 2 0 01-2.22 0l-1.14-.76" />
-            </svg>
-          </div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">Registracija uspješna!</h2>
-          <p className="text-lg text-gray-600 mb-6">
-            Poslali smo vam email na adresu:
-          </p>
-          <p className="text-xl font-semibold text-blue-600 mb-6">
-            {formData.email}
-          </p>
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
-            <p className="text-sm text-blue-900 mb-2">
-              📧 <strong>Provjerite svoj email inbox</strong>
+      <div className="max-w-4xl mx-auto space-y-6">
+        {/* Email verificacija sekcija */}
+        <div className="bg-white rounded-xl shadow-lg p-8">
+          <div className="text-center">
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100 mb-6">
+              <svg className="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 19v-8.93a2 2 0 01.89-1.664l7-4.666a2 2 0 012.22 0l7 4.666A2 2 0 0121 10.07V19M3 19a2 2 0 002 2h14a2 2 0 002-2M3 19l6.75-4.5M21 19l-6.75-4.5M3 10l6.75 4.5M21 10l-6.75 4.5m0 0l-1.14.76a2 2 0 01-2.22 0l-1.14-.76" />
+              </svg>
+            </div>
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Registracija uspješna!</h2>
+            <p className="text-lg text-gray-600 mb-6">
+              Poslali smo vam email na adresu:
             </p>
-            <p className="text-sm text-gray-700">
-              Kliknite na link u email-u da aktivirate svoj račun. 
-              Link vrijedi 24 sata.
+            <p className="text-xl font-semibold text-blue-600 mb-6">
+              {formData.email}
             </p>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+              <p className="text-sm text-blue-900 mb-2">
+                📧 <strong>Provjerite svoj email inbox</strong>
+              </p>
+              <p className="text-sm text-gray-700">
+                Kliknite na link u email-u da aktivirate svoj račun. 
+                Link vrijedi 24 sata.
+              </p>
+            </div>
           </div>
+        </div>
+
+        {/* Verifikacije za tvrtke/obrte */}
+        {isCompany && userProfile && (
+          <div className="bg-white rounded-xl shadow-lg p-8">
+            <h3 className="text-2xl font-bold text-gray-900 mb-4">Verifikacije tvrtke/obrta</h3>
+            <p className="text-gray-600 mb-6">
+              Verificirajte svoju tvrtku/obrt da biste dobili značke i povećali povjerenje korisnika.
+            </p>
+            
+            <IdentityBadgeVerification 
+              profile={userProfile} 
+              onUpdated={handleProfileUpdated}
+            />
+            
+            {/* Prikaz badge-ova */}
+            <div className="mt-8 border-t pt-6">
+              <h4 className="text-lg font-semibold text-gray-900 mb-4">🏅 Značke</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Email Značka */}
+                {userProfile.identityEmailVerified && (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-semibold text-green-800">📧 Email Značka</span>
+                      <span className="text-xs text-green-600">✓</span>
+                    </div>
+                    {userProfile.identityEmailVerifiedAt && (
+                      <p className="text-xs text-gray-600">
+                        {new Date(userProfile.identityEmailVerifiedAt).toLocaleDateString('hr-HR')}
+                      </p>
+                    )}
+                  </div>
+                )}
+                
+                {/* Telefon Značka */}
+                {userProfile.identityPhoneVerified && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-semibold text-blue-800">📱 Telefon Značka</span>
+                      <span className="text-xs text-blue-600">✓</span>
+                    </div>
+                    {userProfile.identityPhoneVerifiedAt && (
+                      <p className="text-xs text-gray-600">
+                        {new Date(userProfile.identityPhoneVerifiedAt).toLocaleDateString('hr-HR')}
+                      </p>
+                    )}
+                  </div>
+                )}
+                
+                {/* DNS Značka */}
+                {userProfile.identityDnsVerified && (
+                  <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-semibold text-purple-800">🌐 DNS Značka</span>
+                      <span className="text-xs text-purple-600">✓</span>
+                    </div>
+                    {userProfile.identityDnsVerifiedAt && (
+                      <p className="text-xs text-gray-600">
+                        {new Date(userProfile.identityDnsVerifiedAt).toLocaleDateString('hr-HR')}
+                      </p>
+                    )}
+                  </div>
+                )}
+                
+                {/* Tvrtka/Obrt Značka */}
+                {userProfile.kycVerified && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-semibold text-yellow-800">🏢 Tvrtka/Obrt Značka</span>
+                      <span className="text-xs text-yellow-600">✓</span>
+                    </div>
+                    {userProfile.kycVerifiedAt && (
+                      <p className="text-xs text-gray-600">
+                        {new Date(userProfile.kycVerifiedAt).toLocaleDateString('hr-HR')}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="bg-white rounded-xl shadow-lg p-8">
           <button
             onClick={() => {
               window.location.hash = '#user';
@@ -289,10 +501,10 @@ export default function UserRegister({ onSuccess }) {
               <svg className="w-5 h-5 text-yellow-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
               </svg>
-              Podaci o firmi (obavezno)
+              Podaci o tvrtki (obavezno)
             </h3>
             <p className="text-sm text-gray-700">
-              <strong>Prema zakonu</strong>, firme i obrti moraju unijeti pravni status, OIB i naziv.
+              <strong>Prema zakonu</strong>, tvrtke i obrti moraju unijeti pravni status, OIB i naziv.
             </p>
             
             <div>
@@ -349,7 +561,7 @@ export default function UserRegister({ onSuccess }) {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Naziv firme / obrta {legalStatuses.find(s => s.id === formData.legalStatusId)?.code !== 'FREELANCER' && <span className="text-red-500">*</span>}
+                  Naziv tvrtke / obrta {legalStatuses.find(s => s.id === formData.legalStatusId)?.code !== 'FREELANCER' && <span className="text-red-500">*</span>}
                 </label>
                 <input
                   type="text"
@@ -358,10 +570,39 @@ export default function UserRegister({ onSuccess }) {
                   onChange={handleChange}
                   required={formData.legalStatusId && legalStatuses.find(s => s.id === formData.legalStatusId)?.code !== 'FREELANCER'}
                   disabled={!formData.legalStatusId}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed ${
+                    companyNameValidation?.type === 'success' ? 'border-green-500 bg-green-50' :
+                    companyNameValidation?.type === 'warning' ? 'border-yellow-500 bg-yellow-50' :
+                    'border-gray-300'
+                  }`}
                   placeholder={!formData.legalStatusId ? 'Prvo odaberite pravni status' : (legalStatuses.find(s => s.id === formData.legalStatusId)?.code === 'FREELANCER' ? 'Opcionalno - možete raditi pod svojim imenom' : 'Građevina d.o.o.')}
                 />
-                {formData.legalStatusId && legalStatuses.find(s => s.id === formData.legalStatusId)?.code === 'FREELANCER' && (
+                {companyNameValidating && (
+                  <p className="text-xs text-blue-600 mt-1">⏳ Provjeravam naziv u službenim registrima...</p>
+                )}
+                {companyNameValidation && !companyNameValidating && (
+                  <div className={`mt-1 p-2 rounded text-xs ${
+                    companyNameValidation.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' :
+                    companyNameValidation.type === 'warning' ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' :
+                    'bg-blue-50 text-blue-700 border border-blue-200'
+                  }`}>
+                    {companyNameValidation.type === 'success' && (
+                      <p>✓ {companyNameValidation.message}</p>
+                    )}
+                    {companyNameValidation.type === 'warning' && (
+                      <div>
+                        <p className="font-medium">⚠️ {companyNameValidation.message}</p>
+                        {companyNameValidation.officialName && (
+                          <p className="mt-1">U registru: "{companyNameValidation.officialName}"</p>
+                        )}
+                      </div>
+                    )}
+                    {companyNameValidation.type === 'info' && (
+                      <p>ℹ️ {companyNameValidation.message}</p>
+                    )}
+                  </div>
+                )}
+                {formData.legalStatusId && legalStatuses.find(s => s.id === formData.legalStatusId)?.code === 'FREELANCER' && !companyNameValidation && (
                   <p className="text-xs text-blue-600 mt-1">💡 Samostalni djelatnici mogu raditi pod svojim imenom</p>
                 )}
               </div>

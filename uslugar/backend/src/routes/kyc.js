@@ -982,9 +982,37 @@ r.post('/verify-identity', auth(true), async (req, res, next) => {
   try {
     const user = req.user;
     
-    if (user.role !== 'PROVIDER') {
+    // Dozvoljeno za PROVIDER-e i USER-e koji su tvrtke/obrti (imaju ProviderProfile)
+    // Za USER-e, provjeravamo da li imaju ProviderProfile (koji se kreira ako imaju legalStatusId)
+    const providerProfile = await prisma.providerProfile.findUnique({
+      where: { userId: user.id }
+    });
+    
+    if (!providerProfile) {
+      // Provjeri da li je USER koji ima legalStatusId (možda treba kreirati profil)
+      if (user.role === 'USER') {
+        const userWithLegalStatus = await prisma.user.findUnique({
+          where: { id: user.id },
+          select: { legalStatusId: true }
+        });
+        
+        if (!userWithLegalStatus || !userWithLegalStatus.legalStatusId) {
+          return res.status(403).json({ 
+            error: 'Nemate pristup',
+            message: 'Verifikacija identiteta je dostupna samo za tvrtke/obrte ili pružatelje usluga.'
+          });
+        }
+        
+        // Korisnik ima legalStatusId, ali nema ProviderProfile - vrati error koji kaže da treba kreirati profil
+        return res.status(404).json({ 
+          error: 'Provider profile not found',
+          hint: 'Kreirajte ProviderProfile pozivanjem POST /providers/fix-profile'
+        });
+      }
+      
       return res.status(403).json({ 
-        error: 'Samo pružatelji usluga mogu verificirati identitet' 
+        error: 'Samo pružatelji usluga ili tvrtke/obrti mogu verificirati identitet',
+        hint: user.role === 'USER' ? 'Kreirajte ProviderProfile pozivanjem POST /providers/fix-profile' : ''
       });
     }
     
@@ -993,17 +1021,6 @@ r.post('/verify-identity', auth(true), async (req, res, next) => {
     if (!type || !value) {
       return res.status(400).json({ 
         error: 'Type i value su obavezni' 
-      });
-    }
-    
-    // Get provider profile
-    const providerProfile = await prisma.providerProfile.findUnique({
-      where: { userId: user.id }
-    });
-    
-    if (!providerProfile) {
-      return res.status(404).json({ 
-        error: 'Provider profile not found' 
       });
     }
     

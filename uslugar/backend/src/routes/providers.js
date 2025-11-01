@@ -180,10 +180,26 @@ r.put('/me', auth(true, ['PROVIDER']), async (req, res, next) => {
 });
 
 // Fix missing ProviderProfile for current user
-r.post('/fix-profile', auth(true, ['PROVIDER', 'ADMIN']), async (req, res, next) => {
+// Dozvoljeno za PROVIDER, ADMIN i USER-e koji su tvrtke/obrti (imaju legalStatusId)
+r.post('/fix-profile', auth(true, ['PROVIDER', 'ADMIN', 'USER']), async (req, res, next) => {
   try {
     // Admin može kreirati profil za bilo kojeg korisnika
     const userId = req.user.role === 'ADMIN' && req.body.userId ? req.body.userId : req.user.id;
+    
+    // Za USER-e, provjeri da li imaju legalStatusId (tvrtka/obrt)
+    if (req.user.role === 'USER') {
+      const userCheck = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { legalStatusId: true }
+      });
+      
+      if (!userCheck || !userCheck.legalStatusId) {
+        return res.status(403).json({ 
+          error: 'Nemate pristup',
+          message: 'Ovaj endpoint je dostupan samo za tvrtke/obrte ili pružatelje usluga.'
+        });
+      }
+    }
     
     // Provjeri da li već postoji profil
     const existingProfile = await prisma.providerProfile.findUnique({
