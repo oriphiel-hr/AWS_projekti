@@ -281,6 +281,7 @@ app.use('/api/support', supportRouter)
 app.use('/api/whitelabel', whitelabelRouter)
 app.use('/api/payments', paymentsRouter)
 app.use('/api/invoices', invoicesRouter)
+app.use('/api/license-upload', licenseUploadRouter)
 app.use('/api/kyc', kycRouter)
 app.use('/api/sms-verification', smsVerificationRouter)
 

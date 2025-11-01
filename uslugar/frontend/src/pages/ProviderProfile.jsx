@@ -657,6 +657,25 @@ export default function ProviderProfile({ onSuccess, onNavigate }) {
             )}
           </div>
 
+          {/* Certifikati i licence */}
+          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-6">
+            <h3 className="text-lg font-semibold text-green-900 dark:text-green-100 mb-4 border-b pb-2">
+              📜 Certifikati i licence
+            </h3>
+            {editMode ? (
+              <LicenseManager 
+                licenses={profile.licenses || []} 
+                onUpdate={async (updatedLicenses) => {
+                  // Reload profile to get updated licenses
+                  handleProfileUpdated();
+                }}
+                userId={profile.userId}
+              />
+            ) : (
+              <LicenseDisplay licenses={(profile.licenses || []).filter(l => l.isVerified)} />
+            )}
+          </div>
+
           {/* Identity Badge Verifikacija */}
           {!editMode && (
             <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-6">
