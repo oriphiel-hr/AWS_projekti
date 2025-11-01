@@ -259,13 +259,13 @@ export default function App(){
                   className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"
                   onClick={() => { setTab('register-user'); }}
                 >
-                  👤 Registracija korisnika
+                  👤 Registracija korisnika usluge
                 </button>
                 <button
                   className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"
                   onClick={() => { setTab('register-provider'); }}
                 >
-                  🏢 Registracija providera
+                  🏢 Registracija pružatelja usluge
                 </button>
               </DropdownMenu>
 
@@ -459,13 +459,13 @@ export default function App(){
                   className="w-full text-left px-3 py-2 rounded hover:bg-gray-100"
                   onClick={() => { setTab('register-user'); setIsMobileMenuOpen(false); }}
                 >
-                  👤 Registracija korisnika
+                  👤 Registracija korisnika usluge
                 </button>
                 <button
                   className="w-full text-left px-3 py-2 rounded hover:bg-gray-100"
                   onClick={() => { setTab('register-provider'); setIsMobileMenuOpen(false); }}
                 >
-                  🏢 Registracija providera
+                  🏢 Registracija pružatelja usluge
                 </button>
               </div>
             </div>

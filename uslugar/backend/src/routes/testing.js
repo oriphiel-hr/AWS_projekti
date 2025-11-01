@@ -202,7 +202,7 @@ r.post('/plans/seed-default', auth(true, ['ADMIN']), async (req, res, next) => {
         category: 'Korisnik',
         items: {
           create: [
-            { order: 1, title: 'Registracija korisnika', description: 'Ispravni podaci', expectedResult: 'Uspješna registracija', dataVariations: { examples: ['ispravan email', 'jaka lozinka'] } },
+            { order: 1, title: 'Registracija korisnika usluge', description: 'Ispravni podaci', expectedResult: 'Uspješna registracija', dataVariations: { examples: ['ispravan email', 'jaka lozinka'] } },
             { order: 2, title: 'Prijava', description: 'Login s registriranim računom', expectedResult: 'Uspješna prijava' },
             { order: 3, title: 'Validacija OIB-a', description: 'Unos OIB-a u profil', expectedResult: 'Ispravan OIB prolazi, neispravan javlja grešku', dataVariations: { examples: ['ispravan OIB', 'neispravan OIB'] } },
             { order: 4, title: 'Objava posla', description: 'Kreiranje job-a sa slikama', expectedResult: 'Posao vidljiv u listi', dataVariations: { examples: ['bez slike', 's više slika'] } }

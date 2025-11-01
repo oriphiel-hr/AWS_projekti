@@ -5,7 +5,7 @@ const Documentation = () => {
     {
       category: "Registracija i Autentifikacija",
       items: [
-        { name: "Registracija korisnika", implemented: true },
+        { name: "Registracija korisnika usluge", implemented: true },
         { name: "Registracija pružatelja usluga", implemented: true },
         { name: "Prijava korisnika", implemented: true },
         { name: "Email verifikacija", implemented: true },

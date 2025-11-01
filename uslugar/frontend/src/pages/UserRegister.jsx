@@ -166,7 +166,7 @@ export default function UserRegister({ onSuccess }) {
   return (
     <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-lg p-8">
       <div className="mb-6">
-        <h2 className="text-3xl font-bold text-gray-900">Registracija korisnika</h2>
+        <h2 className="text-3xl font-bold text-gray-900">Registracija korisnika usluge</h2>
         <p className="text-gray-600 mt-2">Kreirajte račun i počnite tražiti usluge</p>
       </div>
 
