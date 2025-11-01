@@ -37,6 +37,7 @@ import paymentsRouter from './routes/payments.js'
 import kycRouter from './routes/kyc.js'
 import smsVerificationRouter from './routes/sms-verification.js'
 import invoicesRouter from './routes/invoices.js'
+import licenseUploadRouter from './routes/license-upload.js'
 import { startQueueScheduler } from './lib/queueScheduler.js'
 import { checkExpiringSubscriptions } from './lib/subscription-reminder.js'
 
