@@ -5,6 +5,158 @@ import { uploadDocument, getImageUrl } from '../lib/upload.js';
 
 const r = Router();
 
+// Get all providers (public) with filtering
+r.get('/', async (req, res, next) => {
+  try {
+    const {
+      categoryId,
+      city,
+      minRating,
+      verified,
+      hasLicenses,
+      isAvailable,
+      search,
+      sortBy = 'rating' // 'rating', 'badges', 'recent'
+    } = req.query;
+
+    // Build where clause
+    const where = {
+      isAvailable: isAvailable === 'true' ? true : undefined,
+      // Category filter
+      ...(categoryId && {
+        categories: {
+          some: { id: categoryId }
+        }
+      }),
+      // City filter (from user or serviceArea)
+      ...(city && {
+        OR: [
+          { user: { city: { contains: city, mode: 'insensitive' } } },
+          { serviceArea: { contains: city, mode: 'insensitive' } }
+        ]
+      }),
+      // Search filter (name, bio, specialties)
+      ...(search && {
+        OR: [
+          { user: { fullName: { contains: search, mode: 'insensitive' } } },
+          { bio: { contains: search, mode: 'insensitive' } },
+          { companyName: { contains: search, mode: 'insensitive' } },
+          { specialties: { has: search } }
+        ]
+      })
+    };
+
+    // Remove undefined values
+    Object.keys(where).forEach(key => {
+      if (where[key] === undefined) {
+        delete where[key];
+      }
+    });
+
+    const providers = await prisma.providerProfile.findMany({
+      where,
+      include: {
+        user: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            phone: true,
+            city: true
+          }
+        },
+        categories: true,
+        licenses: {
+          where: { isVerified: true }
+        }
+      },
+      orderBy: getOrderBy(sortBy)
+    });
+
+    // Calculate ratings and filter by minRating
+    const providersWithRatings = await Promise.all(
+      providers.map(async (provider) => {
+        const reviews = await prisma.review.findMany({
+          where: { toUserId: provider.userId }
+        });
+
+        const ratingAvg = reviews.length > 0
+          ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
+          : 0;
+        const ratingCount = reviews.length;
+
+        return {
+          ...provider,
+          ratingAvg,
+          ratingCount
+        };
+      })
+    );
+
+    // Apply post-query filters
+    let filtered = providersWithRatings;
+
+    // Min rating filter
+    if (minRating) {
+      const min = parseFloat(minRating);
+      filtered = filtered.filter(p => p.ratingAvg >= min);
+    }
+
+    // Verified filter
+    if (verified === 'true') {
+      filtered = filtered.filter(p => 
+        p.kycVerified || 
+        p.identityEmailVerified || 
+        p.identityPhoneVerified || 
+        p.identityDnsVerified
+      );
+    }
+
+    // Has licenses filter
+    if (hasLicenses === 'true') {
+      filtered = filtered.filter(p => p.licenses && p.licenses.length > 0);
+    }
+
+    // Re-sort after filtering
+    if (sortBy === 'badges') {
+      filtered.sort((a, b) => {
+        const badgesA = getBadgeCount(a);
+        const badgesB = getBadgeCount(b);
+        if (badgesB !== badgesA) return badgesB - badgesA;
+        return (b.ratingAvg || 0) - (a.ratingAvg || 0);
+      });
+    } else if (sortBy === 'recent') {
+      filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    } else {
+      filtered.sort((a, b) => (b.ratingAvg || 0) - (a.ratingAvg || 0));
+    }
+
+    res.json(filtered);
+  } catch (e) {
+    next(e);
+  }
+});
+
+// Helper function to get badge count
+function getBadgeCount(provider) {
+  let count = 0;
+  if (provider.kycVerified || (provider.badgeData && provider.badgeData.BUSINESS?.verified)) count++;
+  if (provider.identityEmailVerified || provider.identityPhoneVerified || provider.identityDnsVerified) count++;
+  if (provider.safetyInsuranceUrl) count++;
+  return count;
+}
+
+// Helper function for orderBy
+function getOrderBy(sortBy) {
+  switch (sortBy) {
+    case 'recent':
+      return { createdAt: 'desc' };
+    case 'rating':
+    default:
+      return { ratingAvg: 'desc' };
+  }
+}
+
 // get current provider profile - MUST be before /:userId route
 // Get current user's provider profile
 // Dozvoljeno za PROVIDER, ADMIN i USER-e koji su tvrtke/obrti (imaju legalStatusId)
