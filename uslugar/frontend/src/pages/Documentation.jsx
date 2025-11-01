@@ -161,15 +161,18 @@ const Documentation = () => {
       category: "Refund i Povrat Kredita",
       items: [
         { name: "Refund kredita (vraćanje internih kredita)", implemented: true },
+        { name: "Stripe Payment Intent refund API (PSD2 compliant)", implemented: true },
+        { name: "Automatski odabir refund metode (Stripe API ili interni krediti)", implemented: true },
         { name: "Refund ako klijent ne odgovori u roku", implemented: true },
         { name: "Razlozi za refund (klijent ne odgovori, itd.)", implemented: true },
         { name: "Ručno zatraživanje refund-a", implemented: true },
         { name: "Povijest refund transakcija (CreditTransaction tip REFUND)", implemented: true },
         { name: "Status refund-a (REFUNDED)", implemented: true },
         { name: "Oslobađanje leada nakon refund-a (lead se vraća na tržište)", implemented: true },
+        { name: "Stripe refund ID tracking (stripeRefundId)", implemented: true },
+        { name: "Fallback na interne kredite ako Stripe refund ne uspije", implemented: true },
         { name: "Admin odobravanje refund-a", implemented: false },
-        { name: "Automatski refund nakon 48h neaktivnosti", implemented: false },
-        { name: "Stripe Payment Intent refund (PSD2)", implemented: false }
+        { name: "Automatski refund nakon 48h neaktivnosti", implemented: false }
       ]
     },
     {
@@ -253,13 +256,16 @@ const Documentation = () => {
       items: [
         { name: "Stripe Checkout integracija", implemented: true },
         { name: "Plaćanje pretplata preko Stripe", implemented: true },
+        { name: "Stripe Payment Intent za kupovinu leadova", implemented: true },
+        { name: "Kreiranje Payment Intent-a za pojedinačnu kupovinu leada", implemented: true },
+        { name: "Plaćanje leadova kroz Stripe (opcionalno, umjesto internih kredita)", implemented: true },
         { name: "Stripe webhook handling", implemented: true },
         { name: "Automatsko ažuriranje pretplate nakon plaćanja", implemented: true },
         { name: "Payment success/failure handling", implemented: true },
         { name: "Povrat na platformu nakon plaćanja", implemented: true },
         { name: "Sigurnosno skladištenje Stripe secret key u AWS Secrets Manager", implemented: true },
         { name: "Fakturiranje", implemented: false },
-        { name: "Povrat novca", implemented: false }
+        { name: "Povrat novca (osim refund-a leadova)", implemented: false }
       ]
     },
     {
@@ -349,6 +355,8 @@ const Documentation = () => {
         { name: "Kreditni sustav", implemented: true },
         { name: "Povijest transakcija", implemented: true },
         { name: "Refund kredita (vraćanje internih kredita)", implemented: true },
+        { name: "Stripe Payment Intent refund API (PSD2)", implemented: true },
+        { name: "Automatski odabir refund metode ovisno o načinu plaćanja", implemented: true },
         { name: "Refund ako klijent ne odgovori u roku", implemented: true },
         { name: "Razlozi za refund (klijent ne odgovori, itd.)", implemented: true },
         { name: "Otkazivanje pretplate", implemented: true },
