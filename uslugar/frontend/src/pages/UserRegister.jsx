@@ -5,6 +5,10 @@ import { validateOIB, validateEmail } from '../utils/validators';
 
 export default function UserRegister({ onSuccess }) {
   const { legalStatuses, loading: loadingStatuses } = useLegalStatuses();
+  
+  // State za odabir tipa korisnika
+  const [userType, setUserType] = useState(null); // null | 'USER' | 'PROVIDER'
+  
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -229,22 +233,23 @@ export default function UserRegister({ onSuccess }) {
         return;
       }
 
-      // VALIDACIJA: Kategorije su OBAVEZNE (kao u ProviderRegister)
-      if (formData.categoryIds.length === 0) {
+      // VALIDACIJA: Za PROVIDER-e su kategorije OBAVEZNE
+      if (userType === 'PROVIDER' && formData.categoryIds.length === 0) {
         setError('Morate odabrati minimalno 1 kategoriju usluga kojima se bavite.');
         setLoading(false);
         return;
       }
 
-      // VALIDACIJA: Pravni status je OBAVEZAN
+      // VALIDACIJA: Pravni status je OBAVEZAN za PROVIDER-e
+      if (userType === 'PROVIDER') {
         if (!formData.legalStatusId) {
-        setError('Pravni status je obavezan. Odaberite pravni oblik vašeg poslovanja.');
+          setError('Pravni status je obavezan. Odaberite pravni oblik vašeg poslovanja.');
           setLoading(false);
           return;
         }
         
         if (!formData.taxId) {
-        setError('OIB je obavezan.');
+          setError('OIB je obavezan.');
           setLoading(false);
           return;
         }
@@ -257,27 +262,28 @@ export default function UserRegister({ onSuccess }) {
           return;
         }
         
-      // Obavezna izjava (mekana provjera)
-      if (!publicConsent) {
-        setError('Morate potvrditi izjavu o odgovornosti za točnost OIB-a i status poslovnog subjekta.');
+        // Obavezna izjava (mekana provjera) za PROVIDER-e
+        if (!publicConsent) {
+          setError('Morate potvrditi izjavu o odgovornosti za točnost OIB-a i status poslovnog subjekta.');
           setLoading(false);
           return;
         }
-      
-      // Provjeri da li je naziv tvrtke obavezan (osim za freelancere)
-      const selectedStatus = legalStatuses.find(s => s.id === formData.legalStatusId);
-      if (selectedStatus?.code !== 'FREELANCER' && !formData.companyName) {
-        setError('Naziv tvrtke/obrta je obavezan. Samo samostalni djelatnici mogu raditi pod svojim imenom.');
-        setLoading(false);
-        return;
+        
+        // Provjeri da li je naziv tvrtke obavezan (osim za freelancere)
+        const selectedStatus = legalStatuses.find(s => s.id === formData.legalStatusId);
+        if (selectedStatus?.code !== 'FREELANCER' && !formData.companyName) {
+          setError('Naziv tvrtke/obrta je obavezan. Samo samostalni djelatnici mogu raditi pod svojim imenom.');
+          setLoading(false);
+          return;
+        }
       }
       
-      // Registriraj user-a kao USER (za razliku od PROVIDER)
+      // Registriraj user-a s odabranim role-om (USER ili PROVIDER)
       const userData = {
         email: formData.email,
         password: formData.password,
         fullName: formData.fullName,
-        role: 'USER',
+        role: userType || 'USER', // Koristi odabrani userType
         phone: formData.phone,
         city: formData.city,
         legalStatusId: formData.legalStatusId,
@@ -288,42 +294,43 @@ export default function UserRegister({ onSuccess }) {
       const response = await api.post('/auth/register', userData);
       const { token, user } = response.data;
       
-      // Ako USER ima legalStatusId, kreće ProviderProfile ako ga nema
-      // Ažuriraj provider profil (ako postoji ili treba kreirati)
-      const profileData = {};
-      if (formData.bio) profileData.bio = formData.bio;
-      if (formData.specialties) profileData.specialties = formData.specialties.split(',').map(s => s.trim());
-      if (formData.experience) profileData.experience = parseInt(formData.experience);
-      if (formData.website) profileData.website = formData.website;
-      if (formData.legalStatusId) profileData.legalStatusId = formData.legalStatusId;
-      if (formData.taxId) profileData.taxId = formData.taxId;
-      if (formData.companyName) profileData.companyName = formData.companyName;
-      
-      // Dodaj kategorije
-      profileData.categoryIds = formData.categoryIds;
-      
-      // Update profila (koristimo fix-profile da kreira ako ne postoji)
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      
-      // Prvo pokušaj kreirati profil ako ne postoji
-      try {
-        await api.post('/providers/fix-profile');
-      } catch (fixErr) {
-        // Ignoriraj grešku ako profil već postoji ili ako nije USER s legalStatusId
-      }
-      
-      // Ažuriraj profil ako postoji
-      try {
-        await api.put('/providers/me', profileData);
-      } catch (updateErr) {
-        // Ignoriraj grešku ako profil ne postoji
-      }
+      // Za PROVIDER-e, ažuriraj ProviderProfile
+      if (userType === 'PROVIDER') {
+        const profileData = {};
+        if (formData.bio) profileData.bio = formData.bio;
+        if (formData.specialties) profileData.specialties = formData.specialties.split(',').map(s => s.trim());
+        if (formData.experience) profileData.experience = parseInt(formData.experience);
+        if (formData.website) profileData.website = formData.website;
+        if (formData.legalStatusId) profileData.legalStatusId = formData.legalStatusId;
+        if (formData.taxId) profileData.taxId = formData.taxId;
+        if (formData.companyName) profileData.companyName = formData.companyName;
+        
+        // Dodaj kategorije
+        profileData.categoryIds = formData.categoryIds;
+        
+        // Update profila (koristimo fix-profile da kreira ako ne postoji)
+        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        
+        // Prvo pokušaj kreirati profil ako ne postoji
+        try {
+          await api.post('/providers/fix-profile');
+        } catch (fixErr) {
+          // Ignoriraj grešku ako profil već postoji
+        }
+        
+        // Ažuriraj profil ako postoji
+        try {
+          await api.put('/providers/me', profileData);
+        } catch (updateErr) {
+          // Ignoriraj grešku ako profil ne postoji
+        }
 
-      // Ažuriraj consent (GDPR/izjava) nakon registracije
-      try {
-        await api.post('/kyc/update-consent', { publicConsent: true });
-      } catch (consentErr) {
-        console.error('Consent update error:', consentErr);
+        // Ažuriraj consent (GDPR/izjava) nakon registracije
+        try {
+          await api.post('/kyc/update-consent', { publicConsent: true });
+        } catch (consentErr) {
+          console.error('Consent update error:', consentErr);
+        }
       }
       
       // Prikaži success message
@@ -398,11 +405,118 @@ export default function UserRegister({ onSuccess }) {
     );
   }
 
+  // Početni ekran s odabiron tipa korisnika
+  if (!userType) {
+    return (
+      <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-lg p-8">
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">Registracija</h2>
+          <p className="text-lg text-gray-600 mb-8">Odaberite kako želite koristiti platformu</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Korisnik usluge */}
+          <button
+            onClick={() => setUserType('USER')}
+            className="group relative bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-300 rounded-xl p-8 hover:border-green-500 hover:shadow-lg transition-all duration-200 text-left"
+          >
+            <div className="flex items-start space-x-4">
+              <div className="flex-shrink-0">
+                <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center text-3xl">
+                  👤
+                </div>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Korisnik usluge</h3>
+                <p className="text-gray-700 mb-4">
+                  Tražite usluge i kontaktirate pružatelje. Idealan za klijente koji traže majstore, servise i druge usluge.
+                </p>
+                <ul className="text-sm text-gray-600 space-y-1">
+                  <li>✓ Traženje i pregledavanje pružatelja usluga</li>
+                  <li>✓ Kreiranje upita za usluge</li>
+                  <li>✓ Komuniciranje s pružateljima</li>
+                  <li>✓ Pregledavanje recenzija i ocjena</li>
+                </ul>
+              </div>
+            </div>
+            <div className="mt-6">
+              <span className="inline-flex items-center text-green-600 font-semibold">
+                Odaberi
+                <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </span>
+            </div>
+          </button>
+
+          {/* Pružatelj usluge */}
+          <button
+            onClick={() => setUserType('PROVIDER')}
+            className="group relative bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-300 rounded-xl p-8 hover:border-blue-500 hover:shadow-lg transition-all duration-200 text-left"
+          >
+            <div className="flex items-start space-x-4">
+              <div className="flex-shrink-0">
+                <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center text-3xl">
+                  🏢
+                </div>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Pružatelj usluge</h3>
+                <p className="text-gray-700 mb-4">
+                  Nudite svoje usluge i povezujete se s klijentima. Idealan za majstore, servise, obrte i tvrtke.
+                </p>
+                <ul className="text-sm text-gray-600 space-y-1">
+                  <li>✓ Profil pružatelja usluga</li>
+                  <li>✓ Pristup ekskluzivnim leadovima</li>
+                  <li>✓ Upravljanje kategorijama i uslugama</li>
+                  <li>✓ Reputacijski sustav i recenzije</li>
+                </ul>
+              </div>
+            </div>
+            <div className="mt-6">
+              <span className="inline-flex items-center text-blue-600 font-semibold">
+                Odaberi
+                <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </span>
+            </div>
+          </button>
+        </div>
+
+        <div className="mt-8 text-center">
+          <button
+            onClick={() => window.location.hash = '#user'}
+            className="text-gray-600 hover:text-gray-900 text-sm"
+          >
+            ← Povratak na početnu
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-lg p-8">
       <div className="mb-6">
-        <h2 className="text-3xl font-bold text-gray-900">Registracija korisnika</h2>
-        <p className="text-gray-600 mt-2">Kreirajte račun i počnite koristiti platformu</p>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-3xl font-bold text-gray-900">
+              Registracija {userType === 'PROVIDER' ? 'pružatelja usluge' : 'korisnika usluge'}
+            </h2>
+            <p className="text-gray-600 mt-2">
+              {userType === 'PROVIDER' 
+                ? 'Ponudite svoje usluge i započnite zarađivati'
+                : 'Kreirajte račun i počnite koristiti platformu'}
+            </p>
+          </div>
+          <button
+            onClick={() => setUserType(null)}
+            className="text-gray-500 hover:text-gray-700 text-sm px-3 py-1 border border-gray-300 rounded hover:bg-gray-50"
+            title="Promijeni tip korisnika"
+          >
+            ← Promijeni
+          </button>
       </div>
 
       {error && (
@@ -503,7 +617,8 @@ export default function UserRegister({ onSuccess }) {
           </div>
         </div>
 
-        {/* Profesionalni podaci */}
+        {/* Profesionalni podaci - samo za PROVIDER-e */}
+        {userType === 'PROVIDER' && (
         <div className="space-y-4">
           <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Profesionalni podaci</h3>
           
@@ -569,8 +684,10 @@ export default function UserRegister({ onSuccess }) {
             </div>
           </div>
         </div>
+        )}
 
-        {/* Kategorije usluga */}
+        {/* Kategorije usluga - samo za PROVIDER-e */}
+        {userType === 'PROVIDER' && (
         <div className="space-y-4 bg-blue-50 border border-blue-200 p-4 rounded-lg">
           <h3 className="text-lg font-semibold text-gray-900 flex items-center">
             <svg className="w-5 h-5 text-blue-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
@@ -657,8 +774,10 @@ export default function UserRegister({ onSuccess }) {
             </div>
           )}
         </div>
+        )}
 
-        {/* Pravni status */}
+        {/* Pravni status - samo za PROVIDER-e */}
+        {userType === 'PROVIDER' && (
           <div className="space-y-4 bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
             <h3 className="text-lg font-semibold text-gray-900 flex items-center">
               <svg className="w-5 h-5 text-yellow-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
@@ -777,8 +896,10 @@ export default function UserRegister({ onSuccess }) {
             </div>
           </div>
         </div>
+        )}
 
-        {/* Izjava (meka provjera) */}
+        {/* Izjava (meka provjera) - samo za PROVIDER-e */}
+        {userType === 'PROVIDER' && (
         <div className="space-y-3 bg-purple-50 border border-purple-200 p-4 rounded-lg">
           <h3 className="text-lg font-semibold text-gray-900 flex items-center">
             <span className="mr-2">🧾</span> Izjava o odgovornosti
@@ -793,12 +914,13 @@ export default function UserRegister({ onSuccess }) {
               onChange={e => setPublicConsent(e.target.checked)}
               className="mt-1 h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
             />
-            <span className="text-sm text-gray-800">Potvrđujem ovu izjavu (obavezno)</span>
+            <span className="text-sm text-gray-800">Potvrđujem ovu izjavu (obavezno)            </span>
           </label>
         </div>
+        )}
 
-        {/* Auto-Verification Status */}
-        {autoVerifying && (
+        {/* Auto-Verification Status - samo za PROVIDER-e */}
+        {userType === 'PROVIDER' && autoVerifying && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <div className="flex items-center space-x-3">
               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
@@ -809,8 +931,8 @@ export default function UserRegister({ onSuccess }) {
           </div>
         )}
 
-        {/* Verification Success */}
-        {verificationResult?.verified && !autoVerifying && (
+        {/* Verification Success - samo za PROVIDER-e */}
+        {userType === 'PROVIDER' && verificationResult?.verified && !autoVerifying && (
           <div className="bg-green-50 border border-green-200 rounded-lg p-4">
             <div className="flex items-start space-x-3">
               <span className="text-green-600 text-xl">✓</span>
@@ -833,8 +955,8 @@ export default function UserRegister({ onSuccess }) {
           </div>
         )}
 
-        {/* Document Needed - za obrt/paušal uvijek traži upload zbog WAF */}
-        {(() => {
+        {/* Document Needed - za obrt/paušal uvijek traži upload zbog WAF - samo za PROVIDER-e */}
+        {userType === 'PROVIDER' && (() => {
           const selectedStatus = legalStatuses.find(s => s.id === formData.legalStatusId);
           const isObrt = selectedStatus?.code === 'SOLE_TRADER' || selectedStatus?.code === 'PAUSAL';
           const needsDoc = verificationResult?.needsDocument || isObrt;
@@ -884,10 +1006,11 @@ export default function UserRegister({ onSuccess }) {
             </div>
           </div>
           );
-        })()}
+        })()
+        }
 
-        {/* KYC-lite Verifikacija za Freelancere - Volonterski */}
-        {(() => {
+        {/* KYC-lite Verifikacija za Freelancere - Volonterski - samo za PROVIDER-e */}
+        {userType === 'PROVIDER' && (() => {
           const selectedStatus = legalStatuses.find(s => s.id === formData.legalStatusId);
           const isFreelancer = selectedStatus?.code === 'FREELANCER';
           
@@ -908,14 +1031,15 @@ export default function UserRegister({ onSuccess }) {
               </div>
             </div>
           );
-        })()}
+        })()
+        }
 
         <button
           type="submit"
           disabled={loading}
           className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {loading ? 'Registracija u tijeku...' : 'Registriraj se kao korisnik'}
+          {loading ? 'Registracija u tijeku...' : userType === 'PROVIDER' ? 'Registriraj se kao pružatelj' : 'Registriraj se kao korisnik'}
         </button>
       </form>
 
