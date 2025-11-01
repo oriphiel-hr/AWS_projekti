@@ -824,7 +824,7 @@ export default function ProviderProfile({ onSuccess, onNavigate }) {
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
             🆔 Status Verifikacije
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
             {profile.identityEmailVerified && (
               <div className="bg-green-100 border border-green-300 rounded-lg p-3 flex items-center gap-2">
                 <span className="text-green-600 text-xl">✓</span>
@@ -864,7 +864,20 @@ export default function ProviderProfile({ onSuccess, onNavigate }) {
                 </div>
               </div>
             )}
-            {!profile.identityEmailVerified && !profile.identityPhoneVerified && !profile.identityDnsVerified && (
+            {((profile.badgeData?.BUSINESS?.verified === true) || profile.kycVerified) && (
+              <div className="bg-green-100 border border-green-300 rounded-lg p-3 flex items-center gap-2">
+                <span className="text-green-600 text-xl">✓</span>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-green-900">🏢 Tvrtka/Obrt</p>
+                  <p className="text-xs text-green-700">
+                    {(profile.badgeData?.BUSINESS?.date || profile.kycVerifiedAt)
+                      ? `Verificiran: ${new Date(profile.badgeData?.BUSINESS?.date || profile.kycVerifiedAt).toLocaleDateString('hr-HR')}`
+                      : 'Verificiran'}
+                  </p>
+                </div>
+              </div>
+            )}
+            {!profile.identityEmailVerified && !profile.identityPhoneVerified && !profile.identityDnsVerified && !((profile.badgeData?.BUSINESS?.verified === true) || profile.kycVerified) && (
               <div className="col-span-full bg-yellow-100 border border-yellow-300 rounded-lg p-3">
                 <p className="text-sm text-yellow-800">
                   ⚠️ Nijedan način verifikacije nije verificiran. Verificirajte svoj identitet za veće povjerenje korisnika.
@@ -874,7 +887,7 @@ export default function ProviderProfile({ onSuccess, onNavigate }) {
           </div>
           
           {/* Badge-ovi ispod statusa verifikacije */}
-          {(profile.identityEmailVerified || profile.identityPhoneVerified || profile.identityDnsVerified) && (
+          {(profile.identityEmailVerified || profile.identityPhoneVerified || profile.identityDnsVerified || (profile.badgeData?.BUSINESS?.verified === true) || profile.kycVerified) && (
             <div className="mt-4 pt-4 border-t border-purple-200">
               <h4 className="text-sm font-semibold text-gray-900 mb-3">🏅 Badge-ovi</h4>
               <div className="flex flex-wrap gap-2">
@@ -891,6 +904,11 @@ export default function ProviderProfile({ onSuccess, onNavigate }) {
                 {profile.identityDnsVerified && (
                   <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-800 border border-green-300 rounded-full text-xs font-medium">
                     <span className="text-green-600">🌐</span> DNS Badge
+                  </span>
+                )}
+                {((profile.badgeData?.BUSINESS?.verified === true) || profile.kycVerified) && (
+                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-800 border border-green-300 rounded-full text-xs font-medium">
+                    <span className="text-green-600">🏢</span> Tvrtka/Obrt Badge
                   </span>
                 )}
               </div>
