@@ -344,31 +344,41 @@ const JobForm = ({ onSubmit, categories = [], initialData = null }) => {
       )}
       
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Naslov posla *
+        <label htmlFor="job-title" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          Naslov posla <span className="text-red-600" aria-label="obavezno polje">*</span>
         </label>
         <input
+          id="job-title"
           {...register('title', { required: 'Naslov je obavezan' })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           placeholder="Npr. Trebam soboslikara za adaptaciju"
+          aria-describedby={errors.title ? 'title-error' : undefined}
+          aria-invalid={!!errors.title}
         />
         {errors.title && (
-          <p className="mt-1 text-sm text-red-600">{errors.title.message}</p>
+          <p id="title-error" className="mt-1 text-sm text-red-600 dark:text-red-400" role="alert">
+            {errors.title.message}
+          </p>
         )}
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Opis posla *
+        <label htmlFor="job-description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          Opis posla <span className="text-red-600" aria-label="obavezno polje">*</span>
         </label>
         <textarea
+          id="job-description"
           {...register('description', { required: 'Opis je obavezan' })}
           rows={4}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           placeholder="Detaljno opišite što trebate..."
+          aria-describedby={errors.description ? 'description-error' : undefined}
+          aria-invalid={!!errors.description}
         />
         {errors.description && (
-          <p className="mt-1 text-sm text-red-600">{errors.description.message}</p>
+          <p id="description-error" className="mt-1 text-sm text-red-600 dark:text-red-400" role="alert">
+            {errors.description.message}
+          </p>
         )}
       </div>
 

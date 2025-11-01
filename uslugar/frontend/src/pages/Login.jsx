@@ -60,63 +60,77 @@ export default function Login({ onSuccess }) {
 
   return (
     <div className="max-w-md mx-auto mt-8">
-      <div className="bg-white rounded-lg shadow-lg p-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Prijava</h2>
-        <p className="text-gray-600 mb-6">Prijavite se na svoj račun</p>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Prijava</h1>
+        <p className="text-gray-600 dark:text-gray-400 mb-6">Prijavite se na svoj račun</p>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+          <div 
+            className="mb-4 p-3 bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-300 rounded"
+            role="alert"
+            aria-live="assertive"
+          >
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" aria-label="Prijava forma">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email
+            <label htmlFor="login-email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Email <span className="text-red-600" aria-label="obavezno polje">*</span>
             </label>
             <input
+              id="login-email"
               type="email"
               required
               value={email}
               onChange={handleEmailChange}
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                emailError ? 'border-red-500' : 'border-gray-300'
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
+                emailError ? 'border-red-500 dark:border-red-400' : 'border-gray-300'
               }`}
               placeholder="vas@email.com"
               disabled={loading}
+              aria-describedby={emailError ? 'email-error' : undefined}
+              aria-invalid={!!emailError}
+              autoComplete="email"
             />
             {emailError && (
-              <p className="text-xs text-red-600 mt-1">✗ {emailError}</p>
+              <p id="email-error" className="text-xs text-red-600 dark:text-red-400 mt-1" role="alert">
+                ✗ {emailError}
+              </p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Lozinka
+            <label htmlFor="login-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Lozinka <span className="text-red-600" aria-label="obavezno polje">*</span>
             </label>
             <input
+              id="login-password"
               type="password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="••••••••"
               disabled={loading}
+              autoComplete="current-password"
             />
           </div>
 
           <div className="flex items-center justify-between">
-            <label className="flex items-center">
+            <label htmlFor="login-remember" className="flex items-center cursor-pointer">
               <input
+                id="login-remember"
                 type="checkbox"
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600"
               />
-              <span className="ml-2 text-sm text-gray-600">Zapamti me</span>
+              <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">Zapamti me</span>
             </label>
             <a
               href="#forgot-password"
-              className="text-sm text-blue-600 hover:text-blue-500"
+              className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 underline focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+              aria-label="Zaboravili ste lozinku? Otvori stranicu za reset lozinke"
             >
               Zaboravili ste lozinku?
             </a>
@@ -125,7 +139,9 @@ export default function Login({ onSuccess }) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            aria-busy={loading}
+            aria-label={loading ? 'Prijavljivanje u tijeku' : 'Prijavite se'}
           >
             {loading ? (
               <span className="flex items-center justify-center">
@@ -142,13 +158,21 @@ export default function Login({ onSuccess }) {
         </form>
 
         <div className="mt-6 text-center">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
             Nemate račun?{' '}
-            <a href="#register-user" className="text-blue-600 hover:text-blue-500 font-medium">
+            <a 
+              href="#register-user" 
+              className="text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 font-medium underline focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+              aria-label="Registrirajte se kao korisnik"
+            >
               Registrirajte se kao korisnik
             </a>
             {' '}ili{' '}
-            <a href="#register-provider" className="text-green-600 hover:text-green-500 font-medium">
+            <a 
+              href="#register-provider" 
+              className="text-green-600 dark:text-green-400 hover:text-green-500 dark:hover:text-green-300 font-medium underline focus:outline-none focus:ring-2 focus:ring-green-500 rounded"
+              aria-label="Registrirajte se kao pružatelj usluga"
+            >
               kao pružatelj usluga
             </a>
           </p>

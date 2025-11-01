@@ -4,11 +4,12 @@ const MobileMenu = ({ isOpen, onClose, children }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 lg:hidden">
+    <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Navigacijski izbornik">
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black bg-opacity-50" 
         onClick={onClose}
+        aria-hidden="true"
       />
       
       {/* Menu */}
@@ -17,7 +18,8 @@ const MobileMenu = ({ isOpen, onClose, children }) => {
           <h2 className="text-lg font-semibold dark:text-white">Menu</h2>
           <button
             onClick={onClose}
-            className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-2xl transition-colors"
+            className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-2xl transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+            aria-label="Zatvori izbornik"
           >
             ×
           </button>

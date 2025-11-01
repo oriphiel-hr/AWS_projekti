@@ -379,7 +379,7 @@ const Documentation = () => {
         { name: "Filtriranje i sortiranje", implemented: true },
         { name: "Dark mode", implemented: true },
         { name: "Lokalizacija (hrvatski jezik)", implemented: true },
-        { name: "Pristupačnost (accessibility)", implemented: false }
+        { name: "Pristupačnost (accessibility)", implemented: true }
       ]
     }
   ];

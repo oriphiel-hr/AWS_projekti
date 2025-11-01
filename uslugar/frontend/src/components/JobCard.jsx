@@ -29,9 +29,9 @@ const JobCard = ({ job, onViewDetails, onMakeOffer }) => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6 hover:shadow-lg transition-shadow">
+    <article className="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg transition-shadow">
       <div className="flex justify-between items-start mb-4">
-        <h3 className="text-xl font-semibold text-gray-900">{job.title}</h3>
+        <h3 className="text-xl font-semibold text-gray-900 dark:text-white">{job.title}</h3>
         <div className="flex gap-2">
           {job.urgency && (
             <span className={`px-2 py-1 rounded-full text-xs font-medium ${getUrgencyColor(job.urgency)}`}>
@@ -46,7 +46,7 @@ const JobCard = ({ job, onViewDetails, onMakeOffer }) => {
         </div>
       </div>
 
-      <p className="text-gray-600 mb-4 line-clamp-3">{job.description}</p>
+      <p className="text-gray-600 dark:text-gray-400 mb-4 line-clamp-3">{job.description}</p>
 
       <div className="flex flex-wrap gap-2 mb-4">
         <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
@@ -68,6 +68,7 @@ const JobCard = ({ job, onViewDetails, onMakeOffer }) => {
                 src={image}
                 alt={`${job.title} - slika ${index + 1}`}
                 className="w-20 h-20 object-cover rounded-lg flex-shrink-0"
+                loading="lazy"
               />
             ))}
             {job.images.length > 3 && (
@@ -105,18 +106,20 @@ const JobCard = ({ job, onViewDetails, onMakeOffer }) => {
       <div className="flex gap-2">
         <button
           onClick={() => onViewDetails(job)}
-          className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          className="flex-1 bg-blue-600 dark:bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+          aria-label={`Pregledaj detalje za posao: ${job.title}`}
         >
           Pregledaj detalje
         </button>
         <button
           onClick={() => onMakeOffer(job)}
-          className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+          className="flex-1 bg-green-600 dark:bg-green-700 text-white px-4 py-2 rounded-lg hover:bg-green-700 dark:hover:bg-green-600 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+          aria-label={`Pošalji ponudu za posao: ${job.title}`}
         >
           Pošalji ponudu
         </button>
       </div>
-    </div>
+    </article>
   );
 };
 

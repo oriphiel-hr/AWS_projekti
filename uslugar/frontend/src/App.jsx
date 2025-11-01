@@ -236,54 +236,83 @@ export default function App(){
 
   return (
     <div className="p-6 max-w-5xl mx-auto min-h-screen bg-white dark:bg-gray-900 transition-colors">
-      <header className="flex items-center justify-between">
+      {/* Skip to main content link for screen readers */}
+      <a 
+        href="#main-content" 
+        className="skip-link"
+        aria-label="Preskoči na glavni sadržaj"
+      >
+        Preskoči na glavni sadržaj
+      </a>
+
+      <header className="flex items-center justify-between" role="banner">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
           Uslugar <span className="text-green-600 dark:text-green-400">EXCLUSIVE</span>
         </h1>
         <div className="flex items-center gap-3">
           {token && isProviderOrBusinessUser() && <CreditsWidget />}
-          {token ? <button className="px-4 py-2 border rounded hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800 transition-colors" onClick={logout}>Logout</button> : null}
+          {token ? (
+            <button 
+              className="px-4 py-2 border rounded hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800 transition-colors" 
+              onClick={logout}
+              aria-label="Odjavi se"
+            >
+              Logout
+            </button>
+          ) : null}
         </div>
       </header>
 
       {/* NAVIGATION */}
-      <div className="mt-6 mb-4">
+      <nav className="mt-6 mb-4" role="navigation" aria-label="Glavna navigacija">
         {/* Desktop Navigation */}
         <div className="hidden lg:flex items-center gap-4">
           {/* Main Navigation */}
           <button
             className={'px-3 py-2 border rounded transition-colors ' + (tab==='user' ? 'bg-gray-900 dark:bg-gray-700 text-white' : 'hover:bg-gray-100 dark:hover:bg-gray-800 dark:border-gray-600 dark:text-gray-300')}
             onClick={() => setTab('user')}
+            aria-label="Početna stranica"
+            aria-current={tab === 'user' ? 'page' : undefined}
           >
             🏠 Početna
           </button>
           <button
             className={'px-3 py-2 border rounded transition-colors ' + (tab==='pricing' ? 'bg-orange-600 text-white' : 'border-orange-600 text-orange-600 hover:bg-orange-50 dark:border-orange-500 dark:text-orange-400 dark:hover:bg-orange-900/20')}
             onClick={() => setTab('pricing')}
+            aria-label="Cjenik"
+            aria-current={tab === 'pricing' ? 'page' : undefined}
           >
             💰 Cjenik
           </button>
           <button
             className={'px-3 py-2 border rounded transition-colors ' + (tab==='faq' ? 'bg-purple-600 text-white' : 'border-purple-600 text-purple-600 hover:bg-purple-50 dark:border-purple-500 dark:text-purple-400 dark:hover:bg-purple-900/20')}
             onClick={() => setTab('faq')}
+            aria-label="Često postavljana pitanja"
+            aria-current={tab === 'faq' ? 'page' : undefined}
           >
             ❓ FAQ
           </button>
           <button
             className={'px-3 py-2 border rounded transition-colors ' + (tab==='documentation' ? 'bg-indigo-600 text-white' : 'border-indigo-600 text-indigo-600 hover:bg-indigo-50 dark:border-indigo-500 dark:text-indigo-400 dark:hover:bg-indigo-900/20')}
             onClick={() => setTab('documentation')}
+            aria-label="Dokumentacija"
+            aria-current={tab === 'documentation' ? 'page' : undefined}
           >
             📚 Dokumentacija
           </button>
           <button
             className={'px-3 py-2 border rounded transition-colors ' + (tab==='about' ? 'bg-green-600 text-white' : 'border-green-600 text-green-600 hover:bg-green-50 dark:border-green-500 dark:text-green-400 dark:hover:bg-green-900/20')}
             onClick={() => setTab('about')}
+            aria-label="O nama"
+            aria-current={tab === 'about' ? 'page' : undefined}
           >
             🏢 O nama
           </button>
           <button
             className={'px-3 py-2 border rounded transition-colors ' + (tab==='contact' ? 'bg-blue-600 text-white' : 'border-blue-600 text-blue-600 hover:bg-blue-50 dark:border-blue-500 dark:text-blue-400 dark:hover:bg-blue-900/20')}
             onClick={() => setTab('contact')}
+            aria-label="Kontakt"
+            aria-current={tab === 'contact' ? 'page' : undefined}
           >
             📞 Kontakt
           </button>
@@ -1273,10 +1302,11 @@ export default function App(){
       )}
 
       {tab === 'contact' && (
-        <section id="contact" className="tab-section">
+        <section id="contact" className="tab-section" aria-labelledby="contact-heading">
           <Contact />
         </section>
       )}
+      </main>
 
       {/* Provider Profile Modal */}
       {selectedProvider && (
