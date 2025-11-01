@@ -363,7 +363,7 @@ const Documentation = () => {
         { name: "Status pretplate (ACTIVE, CANCELLED, EXPIRED)", implemented: true },
         { name: "Automatsko isteka pretplate", implemented: true },
         { name: "Notifikacije o isteku pretplate", implemented: true },
-        { name: "Online plaćanje", implemented: false },
+        { name: "Online plaćanje (Stripe Checkout)", implemented: true },
         { name: "Fakturiranje", implemented: false },
         { name: "Povrat novca", implemented: false }
       ]
