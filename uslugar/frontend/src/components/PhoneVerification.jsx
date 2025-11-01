@@ -32,9 +32,9 @@ const PhoneVerification = ({ phone, onVerified, currentPhone }) => {
       if (response.data.phoneVerified) {
         setSuccess('Telefon je verificiran!');
         onVerified?.();
-      } else if (response.data.hasActiveCode && response.data.code && !success && !error) {
-        // Ako postoji aktivan kod, prikaži ga
-        setSuccess(`Postojeći kod za verifikaciju: ${response.data.code}`);
+      } else if (response.data.hasActiveCode && !success && !error) {
+        // Ako postoji aktivan kod, samo reci da postoji (bez prikazivanja koda)
+        setSuccess('Aktivni verifikacijski kod je dostupan. Provjerite telefon ili unesite kod.');
         setError(''); // Očisti error ako postoji
       }
     } catch (err) {
@@ -64,15 +64,16 @@ const PhoneVerification = ({ phone, onVerified, currentPhone }) => {
     try {
       const response = await sendVerificationCode(phoneToVerify);
       
-      // Ako backend vraća poruku, koristi je
+      // Koristi poruku iz backend-a, bez prikazivanja koda direktno
       if (response.data.message) {
         setSuccess(response.data.message);
-      } else if (response.data.code) {
-        // Fallback: ako je kod vraćen ali nema poruke, prikaži ga
-        setSuccess(`Kod za testiranje: ${response.data.code}`);
-        console.log('🔑 SMS Code (test):', response.data.code);
       } else {
         setSuccess('SMS kod je poslan! Provjerite telefon.');
+      }
+      
+      // Log kod samo u development mode (ne prikazuj korisniku)
+      if (response.data.code && process.env.NODE_ENV === 'development') {
+        console.log('🔑 SMS Code (dev only):', response.data.code);
       }
       
       setCountdown(60); // 60 sekundi countdown
@@ -91,8 +92,8 @@ const PhoneVerification = ({ phone, onVerified, currentPhone }) => {
         // Provjeri da li već postoji aktivan kod
         setTimeout(async () => {
           await checkStatus();
-          if (status?.hasActiveCode && status?.code) {
-            setSuccess(`Koristite postojeći kod: ${status.code}`);
+          if (status?.hasActiveCode) {
+            setSuccess('Aktivni verifikacijski kod je dostupan. Provjerite telefon ili unesite kod.');
             setError('');
           }
         }, 500);

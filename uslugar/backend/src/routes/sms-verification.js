@@ -138,15 +138,13 @@ r.post('/send', auth(true), async (req, res, next) => {
       errorMessage = `SMS nije poslan (${smsResult.error})`;
     }
     
-    // Sastavi poruku - ako nije uspješno, dodaj kod ako je dostupan
+    // Sastavi poruku
     let finalMessage = smsResult?.success 
       ? 'SMS verifikacijski kod je poslan. Kod važi 10 minuta.'
       : errorMessage;
     
-    // Ako je kod dostupan za testiranje, dodaj ga u poruku
-    if (shouldReturnCode && code) {
-      finalMessage += ` Kod za testiranje: ${code}`;
-    }
+    // Kod se vraća u response ali se ne prikazuje direktno u poruci
+    // (samo za development mode ili ako je potrebno za debug)
     
     res.json({ 
       message: finalMessage,
