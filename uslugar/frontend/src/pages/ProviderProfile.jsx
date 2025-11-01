@@ -828,27 +828,39 @@ export default function ProviderProfile({ onSuccess, onNavigate }) {
             {profile.identityEmailVerified && (
               <div className="bg-green-100 border border-green-300 rounded-lg p-3 flex items-center gap-2">
                 <span className="text-green-600 text-xl">✓</span>
-                <div>
-                  <p className="text-sm font-medium text-green-900">Email</p>
-                  <p className="text-xs text-green-700">Verificiran</p>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-green-900">📧 Email</p>
+                  <p className="text-xs text-green-700">
+                    {profile.identityEmailVerifiedAt 
+                      ? `Verificiran: ${new Date(profile.identityEmailVerifiedAt).toLocaleDateString('hr-HR')}`
+                      : 'Verificiran'}
+                  </p>
                 </div>
               </div>
             )}
             {profile.identityPhoneVerified && (
               <div className="bg-green-100 border border-green-300 rounded-lg p-3 flex items-center gap-2">
                 <span className="text-green-600 text-xl">✓</span>
-                <div>
-                  <p className="text-sm font-medium text-green-900">Telefon</p>
-                  <p className="text-xs text-green-700">Verificiran</p>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-green-900">📱 Telefon</p>
+                  <p className="text-xs text-green-700">
+                    {profile.identityPhoneVerifiedAt || profile.user?.phoneVerifiedAt
+                      ? `Verificiran: ${new Date(profile.identityPhoneVerifiedAt || profile.user?.phoneVerifiedAt).toLocaleDateString('hr-HR')}`
+                      : 'Verificiran'}
+                  </p>
                 </div>
               </div>
             )}
             {profile.identityDnsVerified && (
               <div className="bg-green-100 border border-green-300 rounded-lg p-3 flex items-center gap-2">
                 <span className="text-green-600 text-xl">✓</span>
-                <div>
-                  <p className="text-sm font-medium text-green-900">DNS</p>
-                  <p className="text-xs text-green-700">Verificiran</p>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-green-900">🌐 DNS</p>
+                  <p className="text-xs text-green-700">
+                    {profile.identityDnsVerifiedAt 
+                      ? `Verificiran: ${new Date(profile.identityDnsVerifiedAt).toLocaleDateString('hr-HR')}`
+                      : 'Verificiran'}
+                  </p>
                 </div>
               </div>
             )}
@@ -860,6 +872,30 @@ export default function ProviderProfile({ onSuccess, onNavigate }) {
               </div>
             )}
           </div>
+          
+          {/* Badge-ovi ispod statusa verifikacije */}
+          {(profile.identityEmailVerified || profile.identityPhoneVerified || profile.identityDnsVerified) && (
+            <div className="mt-4 pt-4 border-t border-purple-200">
+              <h4 className="text-sm font-semibold text-gray-900 mb-3">🏅 Badge-ovi</h4>
+              <div className="flex flex-wrap gap-2">
+                {profile.identityEmailVerified && (
+                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-800 border border-green-300 rounded-full text-xs font-medium">
+                    <span className="text-green-600">📧</span> Email Badge
+                  </span>
+                )}
+                {profile.identityPhoneVerified && (
+                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-800 border border-green-300 rounded-full text-xs font-medium">
+                    <span className="text-green-600">📱</span> Telefon Badge
+                  </span>
+                )}
+                {profile.identityDnsVerified && (
+                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-800 border border-green-300 rounded-full text-xs font-medium">
+                    <span className="text-green-600">🌐</span> DNS Badge
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
           
           {/* Reputacijski podaci */}
           {(profile.avgResponseTimeMinutes > 0 || profile.conversionRate > 0) && (

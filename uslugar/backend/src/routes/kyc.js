@@ -830,7 +830,8 @@ r.post('/verify-identity', auth(true), async (req, res, next) => {
         }
         
         updateData = {
-          identityEmailVerified: true
+          identityEmailVerified: true,
+          identityEmailVerifiedAt: new Date()
         };
         break;
         
@@ -855,7 +856,8 @@ r.post('/verify-identity', auth(true), async (req, res, next) => {
         }
         
         updateData = {
-          identityPhoneVerified: true
+          identityPhoneVerified: true,
+          identityPhoneVerifiedAt: new Date()
         };
         break;
         
@@ -885,10 +887,9 @@ r.post('/verify-identity', auth(true), async (req, res, next) => {
             });
           }
           
-          console.log(`[KYC] ✅ DNS verification successful for domain: ${domain}`);
-          
           updateData = {
-            identityDnsVerified: true
+            identityDnsVerified: true,
+            identityDnsVerifiedAt: new Date()
           };
         } catch (dnsError) {
           console.error('[KYC] DNS verification error:', dnsError);

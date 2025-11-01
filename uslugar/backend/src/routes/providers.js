@@ -58,14 +58,23 @@ r.get('/me', auth(true, ['PROVIDER']), async (req, res, next) => {
             isAvailable: true,
             portfolio: null
           },
+      include: {
+        user: {
           include: {
-            user: {
-              include: {
-                legalStatus: true
-              }
-            },
-            categories: true
+            legalStatus: true
+          },
+          select: {
+            id: true,
+            email: true,
+            fullName: true,
+            phone: true,
+            phoneVerified: true,
+            phoneVerifiedAt: true,
+            legalStatus: true
           }
+        },
+        categories: true
+      }
         });
 
       } catch (createError) {
@@ -89,8 +98,11 @@ r.get('/me', auth(true, ['PROVIDER']), async (req, res, next) => {
       ratingCount: reviews.length,
       // Include identity verification status
       identityEmailVerified: provider.identityEmailVerified || false,
+      identityEmailVerifiedAt: provider.identityEmailVerifiedAt || null,
       identityPhoneVerified: provider.identityPhoneVerified || false,
+      identityPhoneVerifiedAt: provider.identityPhoneVerifiedAt || null,
       identityDnsVerified: provider.identityDnsVerified || false,
+      identityDnsVerifiedAt: provider.identityDnsVerifiedAt || null,
       // Include reputation metrics
       avgResponseTimeMinutes: provider.avgResponseTimeMinutes || 0,
       conversionRate: provider.conversionRate || 0
@@ -196,8 +208,11 @@ r.post('/fix-profile', auth(true, ['PROVIDER', 'ADMIN']), async (req, res, next)
       const profileWithExtras = {
         ...existingProfile,
         identityEmailVerified: existingProfile.identityEmailVerified || false,
+        identityEmailVerifiedAt: existingProfile.identityEmailVerifiedAt || null,
         identityPhoneVerified: existingProfile.identityPhoneVerified || false,
+        identityPhoneVerifiedAt: existingProfile.identityPhoneVerifiedAt || null,
         identityDnsVerified: existingProfile.identityDnsVerified || false,
+        identityDnsVerifiedAt: existingProfile.identityDnsVerifiedAt || null,
         avgResponseTimeMinutes: existingProfile.avgResponseTimeMinutes || 0,
         conversionRate: existingProfile.conversionRate || 0
       };

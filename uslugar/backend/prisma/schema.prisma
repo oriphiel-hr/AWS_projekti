@@ -178,8 +178,11 @@ model ProviderProfile {
   // Badge System
   badgeData                 Json? // { BUSINESS: {verified, source, date}, IDENTITY: {...}, SAFETY: {...} }
   identityEmailVerified     Boolean   @default(false) // Email verificiran na domeni tvrtke
+  identityEmailVerifiedAt   DateTime? // Datum email verifikacije
   identityPhoneVerified     Boolean   @default(false) // Telefonski broj verificiran
+  identityPhoneVerifiedAt   DateTime? // Datum telefonske verifikacije
   identityDnsVerified       Boolean   @default(false) // DNS TXT verifikacija
+  identityDnsVerifiedAt     DateTime? // Datum DNS verifikacije
   safetyInsuranceUrl        String? // URL police osiguranja
   safetyInsuranceUploadedAt DateTime? // Datum upload-a police osiguranja
 
