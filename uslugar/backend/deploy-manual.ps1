@@ -31,7 +31,12 @@ try {
 Write-Host "`n📦 Step 2: Building Docker image..." -ForegroundColor Yellow
 Write-Host "   This may take a few minutes..." -ForegroundColor Gray
 try {
-    docker build -f Dockerfile.prod -t "uslugar-backend:${imageTag}" .
+    # Try Dockerfile.prod first, fallback to Dockerfile
+    if (Test-Path "Dockerfile.prod") {
+        docker build -f Dockerfile.prod -t "uslugar-backend:${imageTag}" .
+    } else {
+        docker build -f Dockerfile -t "uslugar-backend:${imageTag}" .
+    }
     Write-Host "  ✅ Build successful" -ForegroundColor Green
 } catch {
     Write-Host "  ❌ Build failed: $_" -ForegroundColor Red
