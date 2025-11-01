@@ -534,7 +534,7 @@ export default function UserRegister({ onSuccess }) {
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Ime i prezime odgovorne osobe <span className="text-red-500">*</span>
+              Ime i prezime {userType === 'USER' && !isCompany ? '' : 'odgovorne osobe'} <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -545,7 +545,11 @@ export default function UserRegister({ onSuccess }) {
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
               placeholder="Ana Horvat"
             />
-            <p className="text-xs text-gray-500 mt-1">Ime i prezime vlasnika/direktora (ne naziv tvrtke)</p>
+            <p className="text-xs text-gray-500 mt-1">
+              {userType === 'USER' && !isCompany 
+                ? 'Ime i prezime korisnika usluge'
+                : 'Ime i prezime vlasnika/direktora (ne naziv tvrtke)'}
+            </p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
