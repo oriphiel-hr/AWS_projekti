@@ -93,7 +93,11 @@ const Documentation = () => {
         { name: "Portfolio radova", implemented: false },
         { name: "Certifikati i licence", implemented: false },
         { name: "Pregled svih pružatelja", implemented: true },
-        { name: "Filtriranje pružatelja", implemented: false }
+        { name: "Filtriranje pružatelja", implemented: false },
+        { name: "Team Locations - geo-dinamičke lokacije", implemented: true },
+        { name: "Upravljanje tim lokacijama", implemented: true },
+        { name: "Radius checking za lokacije", implemented: true },
+        { name: "Haversine formula za udaljenost", implemented: true }
       ]
     },
     {
