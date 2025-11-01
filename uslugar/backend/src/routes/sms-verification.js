@@ -231,7 +231,10 @@ r.post('/verify', auth(true), async (req, res, next) => {
     if (fullUser?.role === 'PROVIDER' && fullUser.providerProfile) {
       await prisma.providerProfile.update({
         where: { userId },
-        data: { identityPhoneVerified: true }
+        data: { 
+          identityPhoneVerified: true,
+          identityPhoneVerifiedAt: new Date()
+        }
       });
     }
 
