@@ -659,8 +659,9 @@ Object.keys(MODELS).forEach(modelName => {
       next(e);
     }
   });
+}); // Zatvaranje forEach petlje
 
-// SMS Verifikacija - Reset pokušaja
+// SMS Verifikacija - Reset pokušaja (izvan forEach petlje)
 r.post('/users/:userId/reset-sms-attempts', auth(true, ['ADMIN']), async (req, res, next) => {
   try {
     const { userId } = req.params;
