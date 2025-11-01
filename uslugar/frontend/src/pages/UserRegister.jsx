@@ -67,7 +67,7 @@ export default function UserRegister({ onSuccess }) {
       // VALIDACIJA: Ako se registrira kao tvrtka, svi podaci su OBAVEZNI
       if (isCompany) {
         if (!formData.legalStatusId) {
-          setError('Pravni status je obavezan za firme/obrte. Odaberite pravni oblik vašeg poslovanja.');
+          setError('Pravni status je obavezan za tvrtke/obrte. Odaberite pravni oblik vašeg poslovanja.');
           setLoading(false);
           return;
         }

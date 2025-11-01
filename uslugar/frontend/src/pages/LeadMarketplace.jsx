@@ -264,7 +264,7 @@ export default function LeadMarketplace() {
                           <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">✓ Email</span>
                         )}
                         {lead.user.clientVerification.companyVerified && (
-                          <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">✓ Firma</span>
+                          <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">✓ Tvrtka</span>
                         )}
                       </div>
                     )}
