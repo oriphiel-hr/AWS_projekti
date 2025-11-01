@@ -1,3 +1,7 @@
+import React, { useState, useEffect } from 'react';
+import api from '../api';
+import IdentityBadgeVerification from '../components/IdentityBadgeVerification';
+
 const getCategoryIcon = (categoryName) => {
     const iconMap = {
       // Gradnja i renoviranje
@@ -298,3 +302,378 @@ const getCategoryIcon = (categoryName) => {
     
     return iconMap[categoryName] || '🛠️';
   };
+
+export default function ProviderProfile({ onSuccess, onNavigate }) {
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [editMode, setEditMode] = useState(false);
+  const [formData, setFormData] = useState({
+    bio: '',
+    specialties: '',
+    experience: '',
+    website: '',
+    categories: []
+  });
+
+  useEffect(() => {
+    loadProfile();
+  }, []);
+
+  const loadProfile = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      let response;
+      try {
+        response = await api.get('/providers/me');
+      } catch (err) {
+        if (err.response?.status === 404 || err.response?.status === 403) {
+          response = await api.post('/providers/fix-profile');
+        } else {
+          throw err;
+        }
+      }
+      
+      const profileData = response.data;
+      setProfile(profileData);
+      setFormData({
+        bio: profileData.bio || '',
+        specialties: profileData.specialties || '',
+        experience: profileData.experience || '',
+        website: profileData.website || '',
+        categories: profileData.categories || []
+      });
+    } catch (err) {
+      console.error('Error loading profile:', err);
+      setError(err.response?.data?.error || 'Greška pri učitavanju profila.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    
+    try {
+      await api.put('/providers/me', formData);
+      setSuccess('Profil je uspješno ažuriran!');
+      setEditMode(false);
+      await loadProfile();
+      if (onSuccess) onSuccess();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      console.error('Error updating profile:', err);
+      setError(err.response?.data?.error || 'Greška pri ažuriranju profila.');
+    }
+  };
+
+  const handleProfileUpdated = () => {
+    loadProfile();
+  };
+
+  if (loading) {
+    return (
+      <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-8">
+        <div className="text-center py-12">
+          <div className="text-gray-400 text-6xl mb-4">⏳</div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Učitavanje profila...</h3>
+        </div>
+      </div>
+    );
+  }
+
+  if (error && !profile) {
+    return (
+      <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-8">
+        <div className="text-center py-12">
+          <div className="text-red-400 text-6xl mb-4">❌</div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Greška</h3>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button
+            onClick={() => onNavigate && onNavigate('user')}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Povratak
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return null;
+  }
+
+  return (
+    <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-8">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-3xl font-bold text-gray-900">Moj profil pružatelja</h2>
+        {!editMode && (
+          <button
+            onClick={() => setEditMode(true)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            ✏️ Uredi profil
+          </button>
+        )}
+      </div>
+
+      {success && (
+        <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+          <p className="text-green-800">{success}</p>
+        </div>
+      )}
+
+      {error && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-red-800">{error}</p>
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit}>
+        <div className="space-y-6">
+          {/* Profesionalni podaci */}
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">
+              💼 Profesionalni podaci
+            </h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  O meni / Biografija
+                </label>
+                {editMode ? (
+                  <textarea
+                    name="bio"
+                    value={formData.bio}
+                    onChange={handleChange}
+                    rows={4}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Opišite svoje iskustvo i usluge..."
+                  />
+                ) : (
+                  <p className="px-4 py-3 bg-white border border-gray-200 rounded-lg">
+                    {profile.bio || 'Nije uneseno'}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Specijalizacije
+                </label>
+                {editMode ? (
+                  <input
+                    type="text"
+                    name="specialties"
+                    value={formData.specialties}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Popravak cijevi, Instalacija bojlera..."
+                  />
+                ) : (
+                  <p className="px-4 py-3 bg-white border border-gray-200 rounded-lg">
+                    {profile.specialties || 'Nije uneseno'}
+                  </p>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Godine iskustva
+                  </label>
+                  {editMode ? (
+                    <input
+                      type="number"
+                      name="experience"
+                      value={formData.experience}
+                      onChange={handleChange}
+                      min={0}
+                      max={50}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  ) : (
+                    <p className="px-4 py-3 bg-white border border-gray-200 rounded-lg">
+                      {profile.experience || 'Nije uneseno'}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Website
+                  </label>
+                  {editMode ? (
+                    <input
+                      type="url"
+                      name="website"
+                      value={formData.website}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="https://..."
+                    />
+                  ) : (
+                    <p className="px-4 py-3 bg-white border border-gray-200 rounded-lg">
+                      {profile.website ? (
+                        <a href={profile.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                          {profile.website}
+                        </a>
+                      ) : 'Nije uneseno'}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Status Verifikacije */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+            <h3 className="text-lg font-semibold text-blue-900 mb-4 border-b pb-2">
+              🆔 Status Verifikacije
+            </h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-white rounded-lg p-4 border border-blue-200">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-700">Email</span>
+                  <span className="text-xl">{profile.identityEmailVerified ? '✅' : '❌'}</span>
+                </div>
+                {profile.identityEmailVerifiedAt && (
+                  <p className="text-xs text-gray-500">
+                    {new Date(profile.identityEmailVerifiedAt).toLocaleDateString('hr-HR')}
+                  </p>
+                )}
+              </div>
+
+              <div className="bg-white rounded-lg p-4 border border-blue-200">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-700">Telefon</span>
+                  <span className="text-xl">{profile.identityPhoneVerified || profile.user?.phoneVerifiedAt ? '✅' : '❌'}</span>
+                </div>
+                {(profile.identityPhoneVerifiedAt || profile.user?.phoneVerifiedAt) && (
+                  <p className="text-xs text-gray-500">
+                    {new Date(profile.identityPhoneVerifiedAt || profile.user.phoneVerifiedAt).toLocaleDateString('hr-HR')}
+                  </p>
+                )}
+              </div>
+
+              <div className="bg-white rounded-lg p-4 border border-blue-200">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-700">DNS</span>
+                  <span className="text-xl">{profile.identityDnsVerified ? '✅' : '❌'}</span>
+                </div>
+                {profile.identityDnsVerifiedAt && (
+                  <p className="text-xs text-gray-500">
+                    {new Date(profile.identityDnsVerifiedAt).toLocaleDateString('hr-HR')}
+                  </p>
+                )}
+              </div>
+
+              <div className="bg-white rounded-lg p-4 border border-blue-200">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-700">Tvrtka/Obrt</span>
+                  <span className="text-xl">{(profile.badgeData?.BUSINESS?.status === 'VERIFIED' || profile.kycVerified) ? '✅' : '❌'}</span>
+                </div>
+                {(profile.badgeData?.BUSINESS?.date || profile.kycVerifiedAt) && (
+                  <p className="text-xs text-gray-500">
+                    {new Date(profile.badgeData?.BUSINESS?.date || profile.kycVerifiedAt).toLocaleDateString('hr-HR')}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Značke */}
+          <div className="bg-purple-50 border border-purple-200 rounded-lg p-6">
+            <h3 className="text-lg font-semibold text-purple-900 mb-4 border-b pb-2">
+              🏅 Značke
+            </h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {profile.identityEmailVerified && (
+                <div className="bg-white rounded-lg p-4 border border-purple-200 text-center">
+                  <div className="text-3xl mb-2">📧</div>
+                  <p className="text-sm font-medium">Email Značka</p>
+                </div>
+              )}
+              
+              {(profile.identityPhoneVerified || profile.user?.phoneVerifiedAt) && (
+                <div className="bg-white rounded-lg p-4 border border-purple-200 text-center">
+                  <div className="text-3xl mb-2">📱</div>
+                  <p className="text-sm font-medium">Telefon Značka</p>
+                </div>
+              )}
+              
+              {profile.identityDnsVerified && (
+                <div className="bg-white rounded-lg p-4 border border-purple-200 text-center">
+                  <div className="text-3xl mb-2">🌐</div>
+                  <p className="text-sm font-medium">DNS Značka</p>
+                </div>
+              )}
+              
+              {(profile.badgeData?.BUSINESS?.status === 'VERIFIED' || profile.kycVerified) && (
+                <div className="bg-white rounded-lg p-4 border border-purple-200 text-center">
+                  <div className="text-3xl mb-2">🏢</div>
+                  <p className="text-sm font-medium">Tvrtka/Obrt Značka</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Identity Badge Verifikacija */}
+          {!editMode && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+              <h3 className="text-lg font-semibold text-yellow-900 mb-4 border-b pb-2">
+                🆔 Identity Značka Verifikacija
+              </h3>
+              <IdentityBadgeVerification profile={profile} onUpdated={handleProfileUpdated} />
+            </div>
+          )}
+        </div>
+
+        {editMode && (
+          <div className="mt-6 flex gap-4">
+            <button
+              type="submit"
+              className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+            >
+              💾 Spremi promjene
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setEditMode(false);
+                setFormData({
+                  bio: profile.bio || '',
+                  specialties: profile.specialties || '',
+                  experience: profile.experience || '',
+                  website: profile.website || '',
+                  categories: profile.categories || []
+                });
+                setError('');
+                setSuccess('');
+              }}
+              className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+            >
+              Otkaži
+            </button>
+          </div>
+        )}
+      </form>
+    </div>
+  );
+}
