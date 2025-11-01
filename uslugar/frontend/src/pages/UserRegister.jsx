@@ -518,6 +518,7 @@ export default function UserRegister({ onSuccess }) {
           >
             ← Promijeni
           </button>
+        </div>
       </div>
 
       {error && (
