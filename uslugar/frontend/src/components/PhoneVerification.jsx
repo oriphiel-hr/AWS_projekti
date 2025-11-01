@@ -224,7 +224,12 @@ const PhoneVerification = ({ phone, onVerified, currentPhone }) => {
 
       {/* Verify code form - prikaži samo ako NIJE verificiran i ako je SMS poslan ili ima aktivni kod */}
       {!status?.phoneVerified && (status?.hasActiveCode || success.includes('poslan')) && (
-        <form onSubmit={handleVerifyCode} className="space-y-3">
+        <form onSubmit={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log('🔵 Form onSubmit pozvan');
+          handleVerifyCode(e);
+        }} className="space-y-3">
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
               Unesite 6-znamenkasti kod:
@@ -250,10 +255,13 @@ const PhoneVerification = ({ phone, onVerified, currentPhone }) => {
           </div>
 
           <button
-            type="submit"
+            type="button"
             onClick={(e) => {
-              console.log('🔵 SMS Verificiraj gumb kliknut (submit)');
+              console.log('🔵 SMS Verificiraj gumb kliknut');
               console.log('🔵 Code length:', code.length, 'Loading:', loading);
+              e.preventDefault();
+              e.stopPropagation();
+              handleVerifyCode(e);
             }}
             disabled={loading || code.length !== 6}
             className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-sm font-medium cursor-pointer"
@@ -282,7 +290,12 @@ const PhoneVerification = ({ phone, onVerified, currentPhone }) => {
           <p className="text-xs text-gray-600 text-center">
             Provjerite telefon za SMS kod, ili unesite kod koji ste primili:
           </p>
-          <form onSubmit={handleVerifyCode} className="space-y-3">
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('🔵 Fallback form onSubmit pozvan');
+            handleVerifyCode(e);
+          }} className="space-y-3">
             <input
               type="text"
               value={code}
@@ -297,11 +310,17 @@ const PhoneVerification = ({ phone, onVerified, currentPhone }) => {
               autoFocus
             />
             <button
-              type="submit"
+              type="button"
+              onClick={(e) => {
+                console.log('🔵 Fallback SMS Verificiraj gumb kliknut');
+                e.preventDefault();
+                e.stopPropagation();
+                handleVerifyCode(e);
+              }}
               disabled={loading || code.length !== 6}
-              className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+              className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-sm font-medium cursor-pointer"
             >
-              {loading ? 'Verificiranje...' : '✓ Verificiraj'}
+              {loading ? 'Verificiranje...' : `✓ Verificiraj${code.length !== 6 ? ` (${code.length}/6)` : ''}`}
             </button>
           </form>
         </div>
