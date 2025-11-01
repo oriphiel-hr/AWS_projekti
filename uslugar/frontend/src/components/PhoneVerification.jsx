@@ -10,6 +10,8 @@ const PhoneVerification = ({ phone, onVerified, currentPhone }) => {
   const [success, setSuccess] = useState('');
   const [countdown, setCountdown] = useState(0);
   const [canResend, setCanResend] = useState(true);
+  const [codeExpiresAt, setCodeExpiresAt] = useState(null);
+  const [timeRemaining, setTimeRemaining] = useState(null);
 
   useEffect(() => {
     checkStatus();
@@ -24,10 +26,39 @@ const PhoneVerification = ({ phone, onVerified, currentPhone }) => {
     }
   }, [countdown]);
 
+  // Timer za expiration koda (10 minuta)
+  useEffect(() => {
+    if (!codeExpiresAt) return;
+    
+    const updateTimer = () => {
+      const now = new Date();
+      const expires = new Date(codeExpiresAt);
+      const remaining = Math.max(0, Math.floor((expires - now) / 1000)); // sekunde
+      
+      if (remaining <= 0) {
+        setTimeRemaining(null);
+        setCodeExpiresAt(null);
+        setError('Verifikacijski kod je istekao. Zatražite novi kod.');
+      } else {
+        setTimeRemaining(remaining);
+      }
+    };
+    
+    updateTimer(); // Odmah provjeri
+    const interval = setInterval(updateTimer, 1000);
+    
+    return () => clearInterval(interval);
+  }, [codeExpiresAt]);
+
   const checkStatus = async () => {
     try {
       const response = await getVerificationStatus();
       setStatus(response.data);
+      
+      // Postavi expiration time ako postoji aktivan kod
+      if (response.data.expiresAt) {
+        setCodeExpiresAt(response.data.expiresAt);
+      }
       
       if (response.data.phoneVerified) {
         setSuccess('Telefon je verificiran!');
@@ -69,6 +100,16 @@ const PhoneVerification = ({ phone, onVerified, currentPhone }) => {
         setSuccess(response.data.message);
       } else {
         setSuccess('SMS kod je poslan! Provjerite telefon.');
+      }
+      
+      // Postavi expiration time (10 minuta od sada)
+      if (response.data.expiresAt) {
+        setCodeExpiresAt(response.data.expiresAt);
+      } else {
+        // Fallback: postavi na 10 minuta od sada ako backend ne vraća expiresAt
+        const expires = new Date();
+        expires.setMinutes(expires.getMinutes() + 10);
+        setCodeExpiresAt(expires.toISOString());
       }
       
       // Log kod samo u development mode (ne prikazuj korisniku)
@@ -247,11 +288,19 @@ const PhoneVerification = ({ phone, onVerified, currentPhone }) => {
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-lg tracking-widest"
               autoFocus
             />
-            {status?.attemptsRemaining !== undefined && (
-              <p className="text-xs text-gray-500 mt-1 text-center">
-                Preostalo pokušaja: {status.attemptsRemaining}
-              </p>
-            )}
+            <div className="text-xs text-gray-500 mt-1 text-center space-y-1">
+              {status?.attemptsRemaining !== undefined && (
+                <p>Preostalo pokušaja: {status.attemptsRemaining}</p>
+              )}
+              {timeRemaining !== null && timeRemaining > 0 && (
+                <p className={timeRemaining < 60 ? 'text-red-600 font-semibold' : 'text-gray-600'}>
+                  ⏱️ Kod istječe za: {Math.floor(timeRemaining / 60)}:{String(timeRemaining % 60).padStart(2, '0')}
+                </p>
+              )}
+              {timeRemaining === 0 && (
+                <p className="text-red-600 font-semibold">⚠️ Kod je istekao! Zatražite novi kod.</p>
+              )}
+            </div>
           </div>
 
           <button

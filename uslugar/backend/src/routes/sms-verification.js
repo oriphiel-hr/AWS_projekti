@@ -149,6 +149,7 @@ r.post('/send', auth(true), async (req, res, next) => {
     res.json({ 
       message: finalMessage,
       code: shouldReturnCode ? code : undefined, // Vraćamo kod za testiranje
+      expiresAt: expiresAt.toISOString(), // Vrati expiration time
       smsMode: smsResult?.mode || 'simulation',
       smsSuccess: smsResult?.success || false,
       smsError: smsResult?.error || undefined,
@@ -292,6 +293,7 @@ r.get('/status', auth(true), async (req, res, next) => {
       phoneVerified: user.phoneVerified || false,
       phoneVerifiedAt: user.phoneVerifiedAt,
       hasActiveCode: hasActiveCode,
+      expiresAt: user.phoneVerificationExpires ? new Date(user.phoneVerificationExpires).toISOString() : undefined,
       attemptsRemaining: Math.max(0, 5 - (user.phoneVerificationAttempts || 0)),
       code: (hasActiveCode && shouldReturnCode && fullUser?.phoneVerificationCode) ? fullUser.phoneVerificationCode : undefined // Vrati kod ako postoji
     });
