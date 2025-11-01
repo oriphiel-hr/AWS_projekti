@@ -46,7 +46,6 @@ r.post('/upload-document', auth(true), uploadDocument.single('document'), async 
       });
     }
     
-    console.log(`[KYC] User ${user.id} uploading document: ${req.file.filename}`);
     
     // Izvrši verifikaciju
     const verificationResult = await verifyKYCDocument(user, fileBuffer, documentUrl);
@@ -193,10 +192,7 @@ r.post('/auto-verify', async (req, res, next) => {
     
     // Validate OIB first
     const isOIBValid = validateOIB(taxId);
-    console.log(`[Auto-Verify] OIB validation: ${isOIBValid ? 'VALID' : 'INVALID'}`);
-    
     if (!isOIBValid) {
-      console.log(`[Auto-Verify] ❌ OIB kontrolna znamenka NIJE validna!`);
       return res.status(400).json({
         verified: false,
         needsDocument: true,
