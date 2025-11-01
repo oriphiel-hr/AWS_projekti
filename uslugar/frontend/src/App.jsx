@@ -43,6 +43,19 @@ function useAuth() {
 export default function App(){
   const { token, saveToken, logout } = useAuth();
 
+  // Helper funkcija za provjeru je li korisnik PROVIDER ili USER sa legalStatusId
+  const isProviderOrBusinessUser = () => {
+    if (!token) return false;
+    const storedUser = localStorage.getItem('user');
+    if (!storedUser) return false;
+    try {
+      const userData = JSON.parse(storedUser);
+      return userData.role === 'PROVIDER' || userData.role === 'ADMIN' || (userData.role === 'USER' && userData.legalStatusId);
+    } catch {
+      return false;
+    }
+  };
+
   // TAB: 'user' | 'admin' | 'login' | 'register-user' | 'register-provider' | 'upgrade-to-provider' | 'verify' | 'forgot-password' | 'reset-password' | 'leads' | 'my-leads' | 'roi' | 'subscription' | 'pricing' | 'providers' | 'documentation' | 'faq'
   const [tab, setTab] = useState(() => {
     const hash = window.location.hash?.slice(1).split('?')[0];
@@ -224,7 +237,7 @@ export default function App(){
           Uslugar <span className="text-green-600">EXCLUSIVE</span>
         </h1>
         <div className="flex items-center gap-3">
-          {token && <CreditsWidget />}
+          {token && isProviderOrBusinessUser() && <CreditsWidget />}
           {token ? <button className="px-4 py-2 border rounded hover:bg-gray-100" onClick={logout}>Logout</button> : null}
         </div>
       </header>
@@ -332,38 +345,41 @@ export default function App(){
 
           {token && (
             <>
-              <DropdownMenu title="🛒 Leadovi" icon="🛒">
-                <button
-                  className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"
-                  onClick={() => { setTab('leads'); }}
-                >
-                  🛒 Leadovi
-                </button>
-                <button
-                  className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"
-                  onClick={() => { setTab('my-leads'); }}
-                >
-                  📋 Moji Leadovi
-                </button>
-                <button
-                  className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"
-                  onClick={() => { setTab('team-locations'); }}
-                >
-                  📍 Tim Lokacije
-                </button>
-                <button
-                  className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"
-                  onClick={() => { setTab('roi'); }}
-                >
-                  📊 ROI
-                </button>
-                <button
-                  className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"
-                  onClick={() => { setTab('subscription'); }}
-                >
-                  💳 Pretplata
-                </button>
-              </DropdownMenu>
+              {/* Leadovi dropdown - samo za PROVIDER-e i USER-e koji su tvrtke/obrti */}
+              {isProviderOrBusinessUser() && (
+                <DropdownMenu title="🛒 Leadovi" icon="🛒">
+                  <button
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"
+                    onClick={() => { setTab('leads'); }}
+                  >
+                    🛒 Leadovi
+                  </button>
+                  <button
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"
+                    onClick={() => { setTab('my-leads'); }}
+                  >
+                    📋 Moji Leadovi
+                  </button>
+                  <button
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"
+                    onClick={() => { setTab('team-locations'); }}
+                  >
+                    📍 Tim Lokacije
+                  </button>
+                  <button
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"
+                    onClick={() => { setTab('roi'); }}
+                  >
+                    📊 ROI
+                  </button>
+                  <button
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"
+                    onClick={() => { setTab('subscription'); }}
+                  >
+                    💳 Pretplata
+                  </button>
+                </DropdownMenu>
+              )}
 
               <button
                 className={'px-3 py-2 border rounded ' + ((tab==='provider-profile' || tab==='user-profile') ? 'bg-blue-600 text-white' : 'border-blue-600 text-blue-600 hover:bg-blue-50')}
@@ -389,12 +405,16 @@ export default function App(){
               >
                 👤 Moj profil
               </button>
-              <button
-                className={'px-3 py-2 border rounded ' + (tab==='upgrade-to-provider' ? 'bg-purple-600 text-white' : 'border-purple-600 text-purple-600 hover:bg-purple-50')}
-                onClick={() => setTab('upgrade-to-provider')}
-              >
-                🏢 Postani pružatelj
-              </button>
+              
+              {/* Postani pružatelj - samo za USER-e bez legalStatusId */}
+              {token && !isProviderOrBusinessUser() && (
+                <button
+                  className={'px-3 py-2 border rounded ' + (tab==='upgrade-to-provider' ? 'bg-purple-600 text-white' : 'border-purple-600 text-purple-600 hover:bg-purple-50')}
+                  onClick={() => setTab('upgrade-to-provider')}
+                >
+                  🏢 Postani pružatelj
+                </button>
+              )}
             </>
           )}
 
