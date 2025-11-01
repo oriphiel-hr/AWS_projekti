@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import { buildCategoryTree } from '../utils/category-tree.js';
 
 // Konfiguracija vrsta projekata po kategorijama
 const PROJECT_TYPES_BY_CATEGORY = {
@@ -225,6 +226,7 @@ const JobForm = ({ onSubmit, categories = [], initialData = null }) => {
 
   // Watch selected category and project type
   const selectedCategoryId = watch('categoryId');
+  const categoryTree = buildCategoryTree(categories);
   const selectedProjectType = watch('projectType');
   
   // Get project types for selected category
@@ -383,55 +385,40 @@ const JobForm = ({ onSubmit, categories = [], initialData = null }) => {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Kategorija *
+        <label htmlFor="job-category" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          Kategorija <span className="text-red-600" aria-label="obavezno polje">*</span>
         </label>
         <select
+          id="job-category"
           {...register('categoryId', { required: 'Kategorija je obavezna' })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          aria-describedby={errors.categoryId ? 'category-error' : undefined}
+          aria-invalid={!!errors.categoryId}
         >
           <option value="">Odaberite kategoriju</option>
-          {categories.filter(cat => !cat.parentId).map(category => (
-            <option key={category.id} value={category.id}>
-              {category.name}
-            </option>
-          ))}
+          {(() => {
+            function renderOptions(node, depth = 0) {
+              const indent = '  '.repeat(depth);
+              const prefix = depth > 0 ? '└─ ' : '';
+              const icon = node.icon ? `${node.icon} ` : '';
+              
+              return [
+                <option key={node.id} value={node.id}>
+                  {indent}{prefix}{icon}{node.name}
+                </option>,
+                ...(node.children || []).flatMap(child => renderOptions(child, depth + 1))
+              ];
+            }
+            
+            return categoryTree.flatMap(root => renderOptions(root)) || [];
+          })()}
         </select>
         {errors.categoryId && (
-          <p className="mt-1 text-sm text-red-600">{errors.categoryId.message}</p>
+          <p id="category-error" className="mt-1 text-sm text-red-600 dark:text-red-400" role="alert">
+            {errors.categoryId.message}
+          </p>
         )}
       </div>
-
-      {/* Subcategory selection - only for categories with children */}
-      {selectedCategoryId && (() => {
-        const selectedCategory = categories.find(cat => cat.id === selectedCategoryId);
-        const subcategories = selectedCategory ? categories.filter(cat => cat.parentId === selectedCategoryId) : [];
-        
-        if (subcategories.length > 0) {
-          return (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Podkategorija *
-              </label>
-              <select
-                {...register('subcategoryId', { required: 'Podkategorija je obavezna' })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="">Odaberite podkategoriju</option>
-                {subcategories.map(subcategory => (
-                  <option key={subcategory.id} value={subcategory.id}>
-                    {subcategory.name}
-                  </option>
-                ))}
-              </select>
-              {errors.subcategoryId && (
-                <p className="mt-1 text-sm text-red-600">{errors.subcategoryId.message}</p>
-              )}
-            </div>
-          );
-        }
-        return null;
-      })()}
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">

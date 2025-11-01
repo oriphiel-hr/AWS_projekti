@@ -26,7 +26,7 @@ const Documentation = () => {
         { name: "Oznake za licencirane djelatnosti", implemented: true },
         { name: "Tipovi licenci (Elektrotehnička, Građevinska, itd.)", implemented: true },
         { name: "Tijela koja izdaju licence", implemented: true },
-        { name: "Hijerarhijska struktura kategorija", implemented: false },
+        { name: "Hijerarhijska struktura kategorija", implemented: true },
         { name: "Filtriranje poslova po kategorijama", implemented: true }
       ]
     },

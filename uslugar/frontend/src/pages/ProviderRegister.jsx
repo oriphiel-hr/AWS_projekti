@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../api';
 import { useLegalStatuses } from '../hooks/useLegalStatuses';
 import { validateOIB, validateEmail } from '../utils/validators';
+import { buildCategoryTree } from '../utils/category-tree.js';
 
 export default function ProviderRegister({ onSuccess }) {
   const { legalStatuses, loading: loadingStatuses } = useLegalStatuses();
@@ -543,53 +544,46 @@ export default function ProviderRegister({ onSuccess }) {
           ) : (
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {categories
-                  .filter(category => !category.parentId) // Samo glavne kategorije
-                  .map(category => {
-                    const subcategories = categories.filter(cat => cat.parentId === category.id);
-                    return (
-                      <div key={category.id} className="border border-gray-200 rounded-lg p-3 bg-white">
-                        <label className="flex items-start space-x-3 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={formData.categoryIds.includes(category.id)}
-                            onChange={() => handleCategoryChange(category.id)}
-                            className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                          />
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-2">
-                              <span className="text-lg">{category.icon || '🛠️'}</span>
-                              <span className="font-medium text-gray-900">{category.name}</span>
-                            </div>
-                            {category.description && (
-                              <p className="text-xs text-gray-600 mt-1">{category.description}</p>
-                            )}
-                            {subcategories.length > 0 && (
-                              <div className="mt-2">
-                                <p className="text-xs text-gray-500 mb-1">Podkategorije:</p>
-                                <div className="space-y-1">
-                                  {subcategories.slice(0, 3).map(subcategory => (
-                                    <label key={subcategory.id} className="flex items-center space-x-2 cursor-pointer">
-                                      <input
-                                        type="checkbox"
-                                        checked={formData.categoryIds.includes(subcategory.id)}
-                                        onChange={() => handleCategoryChange(subcategory.id)}
-                                        className="h-3 w-3 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                                      />
-                                      <span className="text-xs text-gray-700">{subcategory.name}</span>
-                                    </label>
-                                  ))}
-                                  {subcategories.length > 3 && (
-                                    <p className="text-xs text-gray-500">+{subcategories.length - 3} više</p>
-                                  )}
-                                </div>
+                {(() => {
+                    const categoryTree = buildCategoryTree(categories);
+                    
+                    function renderCategoryCard(node, depth = 0) {
+                      const hasChildren = node.children && node.children.length > 0;
+                      const isSelected = formData.categoryIds.includes(node.id);
+                      
+                      return (
+                        <div key={node.id} className={`border ${isSelected ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white'} rounded-lg p-3 ${depth > 0 ? 'ml-4' : ''}`}>
+                          <label className="flex items-start space-x-3 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => handleCategoryChange(node.id)}
+                              className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                            />
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-2">
+                                <span className="text-lg">{node.icon || '🛠️'}</span>
+                                <span className={`font-medium ${depth > 0 ? 'text-sm' : ''} ${isSelected ? 'text-blue-900' : 'text-gray-900'}`}>
+                                  {node.name}
+                                </span>
+                                {depth > 0 && <span className="text-xs text-gray-500">(podkategorija)</span>}
                               </div>
-                            )}
-                          </div>
-                        </label>
-                      </div>
-                    );
-                  })}
+                              {node.description && (
+                                <p className="text-xs text-gray-600 mt-1">{node.description}</p>
+                              )}
+                              {hasChildren && (
+                                <div className="mt-2 space-y-1">
+                                  {node.children.map(child => renderCategoryCard(child, depth + 1))}
+                                </div>
+                              )}
+                            </div>
+                          </label>
+                        </div>
+                      );
+                    }
+                    
+                    return categoryTree.map(root => renderCategoryCard(root));
+                  })()}
               </div>
               
               {formData.categoryIds.length === 0 && (

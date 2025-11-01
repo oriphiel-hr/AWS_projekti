@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { prisma } from '../lib/prisma.js';
 import subcategories from '../../prisma/seeds/subcategories.cjs';
+import { buildCategoryTree } from '../utils/category-tree.js';
 
 const r = Router();
 
@@ -8,10 +9,26 @@ const r = Router();
 r.get('/', async (req, res, next) => {
   try {
     const limit = Math.min(parseInt(req.query.limit || '1000', 10), 1000);
+    const { tree, flat } = req.query;
+    
     const categories = await prisma.category.findMany({
       take: limit,
+      include: {
+        parent: true,
+        children: {
+          orderBy: { name: 'asc' }
+        }
+      },
       orderBy: { name: 'asc' }
     });
+
+    // If tree=true, return hierarchical structure
+    if (tree === 'true') {
+      const categoryTree = buildCategoryTree(categories);
+      return res.json(categoryTree);
+    }
+
+    // Default: return flat array (backward compatible)
     res.json(categories);
   } catch (e) { next(e); }
 });
