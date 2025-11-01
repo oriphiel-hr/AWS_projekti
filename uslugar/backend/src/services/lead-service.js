@@ -161,6 +161,40 @@ export async function purchaseLead(jobId, providerId, options = {}) {
       creditsSpent: usedCredits ? leadPrice : 0 // Ako se koristi Stripe, ne trošimo interne kredite
     });
 
+    // 10. Kreiraj fakturu ako je plaćanje preko Stripe
+    if (stripePaymentIntent) {
+      try {
+        const { createInvoice, generateAndSendInvoice } = await import('./invoice-service.js');
+        
+        // Izračunaj cijenu u centima (1 kredit = 10 EUR = 1000 cents)
+        const creditPriceInEUR = 10;
+        const amountInCents = leadPrice * creditPriceInEUR * 100;
+        
+        const invoice = await createInvoice({
+          userId: providerId,
+          type: 'LEAD_PURCHASE',
+          amount: amountInCents,
+          currency: 'EUR',
+          leadPurchaseId: purchase.id,
+          stripePaymentIntentId: stripePaymentIntent.id
+        });
+
+        console.log(`[INVOICE] Created invoice ${invoice.invoiceNumber} for lead purchase`);
+
+        // Automatski generiraj i pošalji fakturu
+        try {
+          await generateAndSendInvoice(invoice.id);
+          console.log(`[INVOICE] Invoice ${invoice.invoiceNumber} generated and sent via email`);
+        } catch (invoiceError) {
+          console.error('[INVOICE] Error generating/sending invoice:', invoiceError);
+          // Ne baci grešku - faktura je kreirana, može se poslati kasnije
+        }
+      } catch (invoiceError) {
+        console.error('[INVOICE] Error creating invoice for lead purchase:', invoiceError);
+        // Ne baci grešku - lead je kupljen
+      }
+    }
+
     const paymentMethod = stripePaymentIntent ? 'Stripe Payment' : 'Internal Credits';
     console.log(`[LEAD] Provider ${providerId} purchased lead ${jobId} for ${leadPrice} credits (${paymentMethod})`);
 

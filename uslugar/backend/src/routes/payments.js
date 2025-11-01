@@ -145,11 +145,12 @@ r.post('/webhook', async (req, res, next) => {
       const userId = session.metadata.userId;
       const plan = session.metadata.plan;
       const credits = parseInt(session.metadata.credits);
+      const paymentIntentId = session.payment_intent; // Stripe Payment Intent ID
 
       console.log(`[PAYMENT] Subscription activated for user ${userId}, plan: ${plan}`);
 
-      // Activate subscription
-      await activateSubscription(userId, plan, credits);
+      // Activate subscription (sada će automatski kreirati fakturu unutar activateSubscription)
+      await activateSubscription(userId, plan, credits, paymentIntentId);
 
       return res.json({ received: true });
     }
@@ -538,7 +539,7 @@ r.get('/success', async (req, res, next) => {
 /**
  * Helper: Activate subscription after payment
  */
-async function activateSubscription(userId, plan, credits) {
+async function activateSubscription(userId, plan, credits, stripePaymentIntentId = null) {
   try {
     // Ensure userId is a string (database expects string, not number)
     const userIdStr = typeof userId === 'string' ? userId : userId.toString();
@@ -627,16 +628,49 @@ async function activateSubscription(userId, plan, credits) {
 
     console.log(`[SUBSCRIPTION] Activated: User ${userIdStr}, Plan ${plan}, Credits ${credits}`);
 
+    // Get actual plan price from database
+    const planDetails = await prisma.subscriptionPlan.findUnique({
+      where: { name: plan }
+    });
+    const planPrice = planDetails?.price || 0;
+
+    // Kreiraj fakturu ako je plaćanje preko Stripe (ima cijenu)
+    if (planPrice > 0) {
+      try {
+        const { createInvoice, generateAndSendInvoice } = await import('../services/invoice-service.js');
+        
+        // Pronađi Stripe session ID iz metadata (ako postoji)
+        // TODO: Proslijediti stripePaymentIntentId ili stripeInvoiceId iz webhook-a
+        
+        const invoice = await createInvoice({
+          userId: userIdStr,
+          type: 'SUBSCRIPTION',
+          amount: Math.round(planPrice * 100), // U centima
+          currency: 'EUR',
+          subscriptionId: subscription.id,
+          stripePaymentIntentId: stripePaymentIntent || null
+        });
+
+        console.log(`[INVOICE] Created invoice ${invoice.invoiceNumber} for subscription`);
+
+        // Automatski generiraj i pošalji fakturu
+        try {
+          await generateAndSendInvoice(invoice.id);
+          console.log(`[INVOICE] Invoice ${invoice.invoiceNumber} generated and sent via email`);
+        } catch (invoiceError) {
+          console.error('[INVOICE] Error generating/sending invoice:', invoiceError);
+          // Ne baci grešku - faktura je kreirana, može se poslati kasnije
+        }
+      } catch (invoiceError) {
+        console.error('[INVOICE] Error creating invoice:', invoiceError);
+        // Ne baci grešku - subscription je aktiviran
+      }
+    }
+
     // Send confirmation email
     try {
       const user = await prisma.user.findUnique({ where: { id: userIdStr } });
       if (user && user.email) {
-        // Get actual plan price from database
-        const planDetails = await prisma.subscriptionPlan.findUnique({
-          where: { name: plan }
-        });
-        const planPrice = planDetails?.price || 0;
-        
         await sendPaymentConfirmationEmail(
           user.email,
           user.fullName || user.email,

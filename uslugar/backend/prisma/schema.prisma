@@ -117,6 +117,7 @@ model User {
   creditTransactions CreditTransaction[]
   clientVerification ClientVerification?
   subscriptions      Subscription[]
+  invoices           Invoice[]
   supportTickets     SupportTicket[]     @relation("UserSupportTickets")
   whiteLabel         WhiteLabel?         @relation("UserWhiteLabel")
 
@@ -427,6 +428,8 @@ model Subscription {
   createdAt              DateTime           @default(now())
   updatedAt              DateTime           @updatedAt
 
+  invoices               Invoice[]
+
   @@index([userId])
   @@index([status])
 }
@@ -453,6 +456,54 @@ model SubscriptionPlan {
   @@index([displayOrder])
 }
 
+// Fakture za plaćanja
+model Invoice {
+  id                String        @id @default(cuid())
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId            String
+  invoiceNumber     String        @unique // Format: INV-YYYY-MM-XXXX (npr. INV-2025-01-0001)
+  type              InvoiceType
+  status            InvoiceStatus @default(DRAFT) // DRAFT, SENT, PAID, CANCELLED
+  amount            Int // Iznos u centima (EUR)
+  currency          String        @default("EUR")
+  taxAmount         Int           @default(0) // PDV u centima
+  totalAmount       Int // Ukupno (amount + taxAmount)
+  
+  // Povezano sa transakcijama
+  subscription      Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  subscriptionId    String?
+  leadPurchase      LeadPurchase? @relation(fields: [leadPurchaseId], references: [id], onDelete: SetNull)
+  leadPurchaseId    String?
+  
+  // Stripe povezanost
+  stripePaymentIntentId String? // Za subscription payment
+  stripeInvoiceId       String? // Stripe invoice ID (ako postoji)
+  
+  // Podaci fakture
+  issueDate         DateTime @default(now())
+  dueDate           DateTime?
+  paidAt            DateTime?
+  
+  // PDF faktura
+  pdfUrl            String? // URL za preuzimanje PDF-a (S3 ili storage)
+  pdfGeneratedAt    DateTime?
+  
+  // Email
+  emailSentAt       DateTime?
+  emailSentTo       String? // Email adresa na koju je poslano
+  
+  // Metapodaci
+  notes             String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  @@index([userId])
+  @@index([invoiceNumber])
+  @@index([type])
+  @@index([status])
+  @@index([issueDate])
+}
+
 // Kupljeni ekskluzivni leadovi (1 lead = 1 provider)
 model LeadPurchase {
   id               String             @id @default(cuid())
@@ -476,6 +527,7 @@ model LeadPurchase {
   updatedAt        DateTime           @updatedAt
 
   creditTransactions CreditTransaction[]
+  invoices           Invoice[]
 
   @@index([jobId])
   @@index([providerId])
@@ -638,6 +690,18 @@ enum SubscriptionStatus {
   ACTIVE // Aktivna pretplata
   CANCELLED // Otkazana
   EXPIRED // Istekla
+}
+
+enum InvoiceType {
+  SUBSCRIPTION // Faktura za pretplatu
+  LEAD_PURCHASE // Faktura za kupovinu leada
+}
+
+enum InvoiceStatus {
+  DRAFT // Nacrt (još nije poslana)
+  SENT // Poslana korisniku
+  PAID // Plaćena
+  CANCELLED // Otkazana
 }
 
 enum ProviderApprovalStatus {

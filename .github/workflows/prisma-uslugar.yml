@@ -8,6 +8,8 @@ on:
       - "uslugar/backend/prisma/**"
       - "uslugar/backend/Dockerfile.prisma"
       - ".github/workflows/prisma-uslugar.yml"
+      - "uslugar/backend/src/services/invoice-service.js"
+      - "uslugar/backend/src/routes/invoices.js"
 
 env:
   AWS_REGION: eu-north-1
@@ -122,7 +124,7 @@ jobs:
               },
               "command": [
                 "sh","-lc",
-                "npx prisma migrate resolve --rolled-back 20251021140000_add_support_tickets --schema=./prisma/schema.prisma || true && npx prisma migrate deploy --schema=./prisma/schema.prisma && npx prisma migrate status --schema=./prisma/schema.prisma"
+                "npx prisma migrate resolve --rolled-back 20251021140000_add_support_tickets --schema=./prisma/schema.prisma || true && npx prisma migrate deploy --schema=./prisma/schema.prisma && npx prisma migrate status --schema=./prisma/schema.prisma && echo '✅ Migrations completed successfully'"
               ]
             }
           ]
