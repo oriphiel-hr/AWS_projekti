@@ -9,6 +9,9 @@ export default function UserRegister({ onSuccess }) {
   // State za odabir tipa korisnika
   const [userType, setUserType] = useState(null); // null | 'USER' | 'PROVIDER'
   
+  // State za odabir da li je USER fizička ili pravna osoba
+  const [isCompany, setIsCompany] = useState(false); // true = pravna osoba, false = fizička osoba
+  
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -126,9 +129,14 @@ export default function UserRegister({ onSuccess }) {
     loadCategories();
   }, []);
 
-  // Auto-verify kada se unese OIB i odabere legal status
+      // Auto-verify kada se unese OIB i odabere legal status - samo ako je PROVIDER ili USER koji je pravna osoba
   useEffect(() => {
     const autoVerify = async () => {
+      // Auto-verify samo za PROVIDER-e i USER-e koji su pravne osobe
+      if (userType !== 'PROVIDER' && !(userType === 'USER' && isCompany)) {
+        return;
+      }
+      
       if (!formData.taxId || formData.taxId.length !== 11 || !formData.legalStatusId) {
         return;
       }
@@ -162,7 +170,7 @@ export default function UserRegister({ onSuccess }) {
     // Debounce - čekaj 500ms nakon zadnjeg unosa
     const timer = setTimeout(autoVerify, 500);
     return () => clearTimeout(timer);
-  }, [formData.taxId, formData.legalStatusId, formData.companyName]);
+  }, [formData.taxId, formData.legalStatusId, formData.companyName, userType, isCompany]);
   
   // Provjeri naziv tvrtke u registrima
   const verifyCompanyName = async (companyName, taxId, legalStatusId) => {
@@ -240,8 +248,8 @@ export default function UserRegister({ onSuccess }) {
         return;
       }
 
-      // VALIDACIJA: Pravni status je OBAVEZAN za PROVIDER-e
-      if (userType === 'PROVIDER') {
+      // VALIDACIJA: Pravni status je OBAVEZAN za PROVIDER-e i USER-e koji su pravne osobe
+      if (userType === 'PROVIDER' || (userType === 'USER' && isCompany)) {
         if (!formData.legalStatusId) {
           setError('Pravni status je obavezan. Odaberite pravni oblik vašeg poslovanja.');
           setLoading(false);
@@ -278,6 +286,13 @@ export default function UserRegister({ onSuccess }) {
         }
       }
       
+      // VALIDACIJA: Za USER-e koji su pravne osobe - obavezna izjava
+      if (userType === 'USER' && isCompany && !publicConsent) {
+        setError('Morate potvrditi izjavu o odgovornosti za točnost OIB-a i status poslovnog subjekta.');
+        setLoading(false);
+        return;
+      }
+      
       // Registriraj user-a s odabranim role-om (USER ili PROVIDER)
       const userData = {
         email: formData.email,
@@ -294,8 +309,8 @@ export default function UserRegister({ onSuccess }) {
       const response = await api.post('/auth/register', userData);
       const { token, user } = response.data;
       
-      // Za PROVIDER-e, ažuriraj ProviderProfile
-      if (userType === 'PROVIDER') {
+      // Za PROVIDER-e i USER-e koji su pravne osobe, ažuriraj ProviderProfile
+      if (userType === 'PROVIDER' || (userType === 'USER' && isCompany)) {
         const profileData = {};
         if (formData.bio) profileData.bio = formData.bio;
         if (formData.specialties) profileData.specialties = formData.specialties.split(',').map(s => s.trim());
@@ -617,8 +632,7 @@ export default function UserRegister({ onSuccess }) {
           </div>
         </div>
 
-        {/* Profesionalni podaci - samo za PROVIDER-e */}
-        {userType === 'PROVIDER' && (
+        {/* Profesionalni podaci - za sve korisnike */}
         <div className="space-y-4">
           <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Profesionalni podaci</h3>
           
@@ -682,6 +696,42 @@ export default function UserRegister({ onSuccess }) {
                 placeholder="https://vasa-web.hr"
               />
             </div>
+          </div>
+        </div>
+
+        {/* Odabir fizička/pravna osoba - samo za USER-e */}
+        {userType === 'USER' && (
+        <div className="space-y-4 bg-gray-50 border border-gray-200 p-4 rounded-lg">
+          <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Tip korisnika</h3>
+          
+          <div className="space-y-3">
+            <label className="flex items-center space-x-3 cursor-pointer">
+              <input
+                type="radio"
+                name="userPersonType"
+                checked={!isCompany}
+                onChange={() => setIsCompany(false)}
+                className="w-4 h-4 text-green-600 border-gray-300 focus:ring-green-500"
+              />
+              <div className="flex-1">
+                <span className="font-medium text-gray-900">Fizička osoba</span>
+                <p className="text-sm text-gray-600">Registrirate se kao pojedinac bez poslovnog subjekta</p>
+              </div>
+            </label>
+            
+            <label className="flex items-center space-x-3 cursor-pointer">
+              <input
+                type="radio"
+                name="userPersonType"
+                checked={isCompany}
+                onChange={() => setIsCompany(true)}
+                className="w-4 h-4 text-green-600 border-gray-300 focus:ring-green-500"
+              />
+              <div className="flex-1">
+                <span className="font-medium text-gray-900">Pravna osoba (tvrtka/obrt)</span>
+                <p className="text-sm text-gray-600">Registrirate se s poslovnim subjektom - trebat će OIB i pravni status</p>
+              </div>
+            </label>
           </div>
         </div>
         )}
@@ -776,8 +826,8 @@ export default function UserRegister({ onSuccess }) {
         </div>
         )}
 
-        {/* Pravni status - samo za PROVIDER-e */}
-        {userType === 'PROVIDER' && (
+        {/* Pravni status - za PROVIDER-e i USER-e koji su pravne osobe */}
+        {(userType === 'PROVIDER' || (userType === 'USER' && isCompany)) && (
           <div className="space-y-4 bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
             <h3 className="text-lg font-semibold text-gray-900 flex items-center">
               <svg className="w-5 h-5 text-yellow-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
@@ -898,8 +948,8 @@ export default function UserRegister({ onSuccess }) {
         </div>
         )}
 
-        {/* Izjava (meka provjera) - samo za PROVIDER-e */}
-        {userType === 'PROVIDER' && (
+        {/* Izjava (meka provjera) - za PROVIDER-e i USER-e koji su pravne osobe */}
+        {(userType === 'PROVIDER' || (userType === 'USER' && isCompany)) && (
         <div className="space-y-3 bg-purple-50 border border-purple-200 p-4 rounded-lg">
           <h3 className="text-lg font-semibold text-gray-900 flex items-center">
             <span className="mr-2">🧾</span> Izjava o odgovornosti
@@ -919,8 +969,8 @@ export default function UserRegister({ onSuccess }) {
         </div>
         )}
 
-        {/* Auto-Verification Status - samo za PROVIDER-e */}
-        {userType === 'PROVIDER' && autoVerifying && (
+        {/* Auto-Verification Status - za PROVIDER-e i USER-e koji su pravne osobe */}
+        {(userType === 'PROVIDER' || (userType === 'USER' && isCompany)) && autoVerifying && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <div className="flex items-center space-x-3">
               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
@@ -931,8 +981,8 @@ export default function UserRegister({ onSuccess }) {
           </div>
         )}
 
-        {/* Verification Success - samo za PROVIDER-e */}
-        {userType === 'PROVIDER' && verificationResult?.verified && !autoVerifying && (
+        {/* Verification Success - za PROVIDER-e i USER-e koji su pravne osobe */}
+        {(userType === 'PROVIDER' || (userType === 'USER' && isCompany)) && verificationResult?.verified && !autoVerifying && (
           <div className="bg-green-50 border border-green-200 rounded-lg p-4">
             <div className="flex items-start space-x-3">
               <span className="text-green-600 text-xl">✓</span>
@@ -955,8 +1005,8 @@ export default function UserRegister({ onSuccess }) {
           </div>
         )}
 
-        {/* Document Needed - za obrt/paušal uvijek traži upload zbog WAF - samo za PROVIDER-e */}
-        {userType === 'PROVIDER' && (() => {
+        {/* Document Needed - za obrt/paušal uvijek traži upload zbog WAF - za PROVIDER-e i USER-e koji su pravne osobe */}
+        {(userType === 'PROVIDER' || (userType === 'USER' && isCompany)) && (() => {
           const selectedStatus = legalStatuses.find(s => s.id === formData.legalStatusId);
           const isObrt = selectedStatus?.code === 'SOLE_TRADER' || selectedStatus?.code === 'PAUSAL';
           const needsDoc = verificationResult?.needsDocument || isObrt;
@@ -1009,8 +1059,8 @@ export default function UserRegister({ onSuccess }) {
         })()
         }
 
-        {/* KYC-lite Verifikacija za Freelancere - Volonterski - samo za PROVIDER-e */}
-        {userType === 'PROVIDER' && (() => {
+        {/* KYC-lite Verifikacija za Freelancere - Volonterski - za PROVIDER-e i USER-e koji su pravne osobe */}
+        {(userType === 'PROVIDER' || (userType === 'USER' && isCompany)) && (() => {
           const selectedStatus = legalStatuses.find(s => s.id === formData.legalStatusId);
           const isFreelancer = selectedStatus?.code === 'FREELANCER';
           
