@@ -89,7 +89,14 @@ r.get('/me', auth(true, ['PROVIDER']), async (req, res, next) => {
     res.json({
       ...provider,
       ratingAvg,
-      ratingCount: reviews.length
+      ratingCount: reviews.length,
+      // Include identity verification status
+      identityEmailVerified: provider.identityEmailVerified || false,
+      identityPhoneVerified: provider.identityPhoneVerified || false,
+      identityDnsVerified: provider.identityDnsVerified || false,
+      // Include reputation metrics
+      avgResponseTimeMinutes: provider.avgResponseTimeMinutes || 0,
+      conversionRate: provider.conversionRate || 0
     });
   } catch (e) {
     next(e);
@@ -188,9 +195,19 @@ r.post('/fix-profile', auth(true, ['PROVIDER', 'ADMIN']), async (req, res, next)
     });
 
     if (existingProfile) {
+      // Include identity verification status and reputation metrics
+      const profileWithExtras = {
+        ...existingProfile,
+        identityEmailVerified: existingProfile.identityEmailVerified || false,
+        identityPhoneVerified: existingProfile.identityPhoneVerified || false,
+        identityDnsVerified: existingProfile.identityDnsVerified || false,
+        avgResponseTimeMinutes: existingProfile.avgResponseTimeMinutes || 0,
+        conversionRate: existingProfile.conversionRate || 0
+      };
+      
       return res.json({ 
         message: 'Provider profil već postoji',
-        profile: existingProfile
+        profile: profileWithExtras
       });
     }
 

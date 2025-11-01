@@ -510,24 +510,30 @@ export default function ProviderProfile({ onSuccess, onNavigate }) {
         return;
       }
       
-      // Učitaj profil preko /fix-profile endpoint-a (radi sigurno)
+      // Učitaj profil preko /me endpoint-a koji vraća sve potrebne podatke
       let response;
       try {
-        response = await api.post('/providers/fix-profile', {
-          bio: '',
-          specialties: [],
-          experience: 0,
-          website: '',
-          serviceArea: 'Zagreb',
-          isAvailable: true,
-          categoryIds: []
-        });
-        console.log('✅ /fix-profile endpoint radi ispravno');
-      } catch (fixError) {
-        console.log('❌ /fix-profile endpoint ne radi:', fixError);
-        setError('Greška pri učitavanju profila. Pokušajte ponovno.');
-        setLoading(false);
-        return;
+        response = await api.get('/providers/me');
+        console.log('✅ /providers/me endpoint radi ispravno');
+      } catch (meError) {
+        // Fallback na /fix-profile ako /me ne radi
+        console.log('⚠️ /providers/me ne radi, pokušavam /fix-profile:', meError);
+        try {
+          response = await api.post('/providers/fix-profile', {
+            bio: '',
+            specialties: [],
+            experience: 0,
+            website: '',
+            serviceArea: 'Zagreb',
+            isAvailable: true,
+            categoryIds: []
+          });
+        } catch (fixError) {
+          console.log('❌ Oba endpoint-a ne rade:', fixError);
+          setError('Greška pri učitavanju profila. Pokušajte ponovno.');
+          setLoading(false);
+          return;
+        }
       }
       
       const profileData = response.data;
@@ -884,6 +890,78 @@ export default function ProviderProfile({ onSuccess, onNavigate }) {
         <div className="mb-6 p-4 bg-blue-50 border-l-4 border-blue-500 rounded">
           <p className="text-sm text-blue-700 font-medium">{welcomeMessage}</p>
           <p className="text-xs text-blue-600 mt-1">Ovdje možete upravljati svojim profilom i kategorijama usluga.</p>
+        </div>
+      )}
+
+      {/* Status Verifikacije i Badgeovi */}
+      {profile && (
+        <div className="mb-6 bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-lg p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            🆔 Status Verifikacije
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+            {profile.identityEmailVerified && (
+              <div className="bg-green-100 border border-green-300 rounded-lg p-3 flex items-center gap-2">
+                <span className="text-green-600 text-xl">✓</span>
+                <div>
+                  <p className="text-sm font-medium text-green-900">Email</p>
+                  <p className="text-xs text-green-700">Verificiran</p>
+                </div>
+              </div>
+            )}
+            {profile.identityPhoneVerified && (
+              <div className="bg-green-100 border border-green-300 rounded-lg p-3 flex items-center gap-2">
+                <span className="text-green-600 text-xl">✓</span>
+                <div>
+                  <p className="text-sm font-medium text-green-900">Telefon</p>
+                  <p className="text-xs text-green-700">Verificiran</p>
+                </div>
+              </div>
+            )}
+            {profile.identityDnsVerified && (
+              <div className="bg-green-100 border border-green-300 rounded-lg p-3 flex items-center gap-2">
+                <span className="text-green-600 text-xl">✓</span>
+                <div>
+                  <p className="text-sm font-medium text-green-900">DNS</p>
+                  <p className="text-xs text-green-700">Verificiran</p>
+                </div>
+              </div>
+            )}
+            {!profile.identityEmailVerified && !profile.identityPhoneVerified && !profile.identityDnsVerified && (
+              <div className="col-span-full bg-yellow-100 border border-yellow-300 rounded-lg p-3">
+                <p className="text-sm text-yellow-800">
+                  ⚠️ Nijedan način verifikacije nije verificiran. Verificirajte svoj identitet za veće povjerenje korisnika.
+                </p>
+              </div>
+            )}
+          </div>
+          
+          {/* Reputacijski podaci */}
+          {(profile.avgResponseTimeMinutes > 0 || profile.conversionRate > 0) && (
+            <div className="mt-4 pt-4 border-t border-purple-200">
+              <h4 className="text-sm font-semibold text-gray-900 mb-3">⚡ Reputacija</h4>
+              <div className="grid grid-cols-2 gap-3">
+                {profile.avgResponseTimeMinutes > 0 && (
+                  <div className="bg-white border border-indigo-200 rounded-lg p-3">
+                    <div className="text-xs text-gray-600 mb-1">Vrijeme odgovora</div>
+                    <div className="text-lg font-bold text-indigo-600">
+                      {profile.avgResponseTimeMinutes < 60 
+                        ? `${Math.round(profile.avgResponseTimeMinutes)}m`
+                        : profile.avgResponseTimeMinutes < 1440
+                        ? `${Math.round(profile.avgResponseTimeMinutes / 60)}h`
+                        : `${Math.round(profile.avgResponseTimeMinutes / 1440)}d`}
+                    </div>
+                  </div>
+                )}
+                {profile.conversionRate > 0 && (
+                  <div className="bg-white border border-emerald-200 rounded-lg p-3">
+                    <div className="text-xs text-gray-600 mb-1">Konverzija</div>
+                    <div className="text-lg font-bold text-emerald-600">{profile.conversionRate.toFixed(1)}%</div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )}
 

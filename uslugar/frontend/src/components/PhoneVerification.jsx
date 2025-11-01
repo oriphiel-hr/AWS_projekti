@@ -119,14 +119,17 @@ const PhoneVerification = ({ phone, onVerified, currentPhone }) => {
 
     try {
       const response = await verifyCode(code);
-      setSuccess(response.data.message || 'Telefon uspješno verificiran!');
+      setSuccess(response.data.message || '✓ Telefon uspješno verificiran!');
       setCode('');
       
-      // Ažuriraj status
+      // Ažuriraj status - bit će ažuriran u checkStatus
       await checkStatus();
       
-      // Callback
-      onVerified?.();
+      // Provjeri da li je verificiran i sakrij formu
+      if (response.data.phoneVerified) {
+        // Callback da parent komponenta zna da je verificiran
+        onVerified?.();
+      }
     } catch (err) {
       setError(err.response?.data?.error || 'Neispravan kod. Molimo pokušajte ponovno.');
       
@@ -202,8 +205,8 @@ const PhoneVerification = ({ phone, onVerified, currentPhone }) => {
         </button>
       )}
 
-      {/* Verify code form - prikaži ako je SMS poslan (ima success poruku) ili ako ima aktivni kod */}
-      {(status?.hasActiveCode || success.includes('poslan')) && (
+      {/* Verify code form - prikaži samo ako NIJE verificiran i ako je SMS poslan ili ima aktivni kod */}
+      {!status?.phoneVerified && (status?.hasActiveCode || success.includes('poslan')) && (
         <form onSubmit={handleVerifyCode} className="space-y-3">
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
@@ -248,8 +251,8 @@ const PhoneVerification = ({ phone, onVerified, currentPhone }) => {
         </form>
       )}
       
-      {/* Fallback: ako je SMS poslan ali status još nije ažuriran, prikaži formu ručno */}
-      {success.includes('poslan') && !status?.hasActiveCode && (
+      {/* Fallback: ako je SMS poslan ali status još nije ažuriran, prikaži formu ručno (samo ako NIJE verificiran) */}
+      {!status?.phoneVerified && success.includes('poslan') && !status?.hasActiveCode && (
         <div className="space-y-3">
           <p className="text-xs text-gray-600 text-center">
             Provjerite telefon za SMS kod, ili unesite kod koji ste primili:

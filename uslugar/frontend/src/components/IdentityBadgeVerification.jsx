@@ -70,28 +70,37 @@ export default function IdentityBadgeVerification({ profile, onUpdated }) {
   // Callback kada se SMS kod uspješno verificira
   const handlePhoneVerified = async () => {
     try {
-      // Ažuriraj backend da je telefon verificiran
-      await api.post('/kyc/verify-identity', {
-        type: 'phone',
-        value: value
-      });
+      // Ažuriraj backend da je telefon verificiran (provjeri da li je već SMS verificiran)
+      const phoneStatus = await api.get('/sms-verification/status');
       
-      setPhoneVerified(true);
-      setSuccess('✓ Telefon je verificiran!');
-      
-      // Refresh profile
-      if (onUpdated) onUpdated();
-      
-      // Reset
-      setTimeout(() => {
-        setValue('');
-        setSuccess('');
-        setPhoneVerified(false);
-      }, 3000);
+      if (phoneStatus.data.phoneVerified) {
+        // Telefon je već SMS verificiran, sada postavi identityPhoneVerified
+        await api.post('/kyc/verify-identity', {
+          type: 'phone',
+          value: value
+        });
+        
+        setPhoneVerified(true);
+        setSuccess('✓ Telefon je verificiran i Identity badge dodijeljen!');
+        
+        // Refresh profile da se prikaže novi status
+        if (onUpdated) {
+          await onUpdated();
+        }
+        
+        // Reset nakon 3 sekunde
+        setTimeout(() => {
+          setValue('');
+          setSuccess('');
+          setPhoneVerified(false);
+        }, 3000);
+      } else {
+        setError('Telefon mora biti prvo SMS verificiran prije dodjeljivanja Identity badge-a');
+      }
       
     } catch (err) {
       console.error('Phone verification update error:', err);
-      setError('Greška pri ažuriranju statusa verifikacije');
+      setError(err.response?.data?.error || 'Greška pri ažuriranju statusa verifikacije');
     }
   };
 
