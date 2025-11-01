@@ -12,12 +12,12 @@ const MobileMenu = ({ isOpen, onClose, children }) => {
       />
       
       {/* Menu */}
-      <div className="relative bg-white h-full w-80 max-w-sm shadow-xl">
-        <div className="flex items-center justify-between p-4 border-b">
-          <h2 className="text-lg font-semibold">Menu</h2>
+      <div className="relative bg-white dark:bg-gray-800 h-full w-80 max-w-sm shadow-xl">
+        <div className="flex items-center justify-between p-4 border-b dark:border-gray-700">
+          <h2 className="text-lg font-semibold dark:text-white">Menu</h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 text-2xl"
+            className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-2xl transition-colors"
           >
             ×
           </button>

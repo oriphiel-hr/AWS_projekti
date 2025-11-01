@@ -34,6 +34,7 @@ import CreditsWidget from './components/CreditsWidget';
 // Navigation components
 import DropdownMenu from './components/DropdownMenu';
 import MobileMenu from './components/MobileMenu';
+import { useDarkMode } from './contexts/DarkModeContext.jsx';
 
 export function useAuth() {
   const [token, setToken] = useState(localStorage.getItem('token'));
@@ -44,6 +45,7 @@ export function useAuth() {
 
 export default function App(){
   const { token, saveToken, logout } = useAuth();
+  const { isDarkMode, toggleDarkMode } = useDarkMode();
 
   // Helper funkcija za provjeru je li korisnik PROVIDER ili USER sa legalStatusId
   const isProviderOrBusinessUser = () => {
@@ -233,14 +235,14 @@ export default function App(){
   }, []);
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
+    <div className="p-6 max-w-5xl mx-auto min-h-screen bg-white dark:bg-gray-900 transition-colors">
       <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">
-          Uslugar <span className="text-green-600">EXCLUSIVE</span>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          Uslugar <span className="text-green-600 dark:text-green-400">EXCLUSIVE</span>
         </h1>
         <div className="flex items-center gap-3">
           {token && isProviderOrBusinessUser() && <CreditsWidget />}
-          {token ? <button className="px-4 py-2 border rounded hover:bg-gray-100" onClick={logout}>Logout</button> : null}
+          {token ? <button className="px-4 py-2 border rounded hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800 transition-colors" onClick={logout}>Logout</button> : null}
         </div>
       </header>
 
@@ -250,37 +252,37 @@ export default function App(){
         <div className="hidden lg:flex items-center gap-4">
           {/* Main Navigation */}
           <button
-            className={'px-3 py-2 border rounded ' + (tab==='user' ? 'bg-gray-900 text-white' : 'hover:bg-gray-100')}
+            className={'px-3 py-2 border rounded transition-colors ' + (tab==='user' ? 'bg-gray-900 dark:bg-gray-700 text-white' : 'hover:bg-gray-100 dark:hover:bg-gray-800 dark:border-gray-600 dark:text-gray-300')}
             onClick={() => setTab('user')}
           >
             🏠 Početna
           </button>
           <button
-            className={'px-3 py-2 border rounded ' + (tab==='pricing' ? 'bg-orange-600 text-white' : 'border-orange-600 text-orange-600 hover:bg-orange-50')}
+            className={'px-3 py-2 border rounded transition-colors ' + (tab==='pricing' ? 'bg-orange-600 text-white' : 'border-orange-600 text-orange-600 hover:bg-orange-50 dark:border-orange-500 dark:text-orange-400 dark:hover:bg-orange-900/20')}
             onClick={() => setTab('pricing')}
           >
             💰 Cjenik
           </button>
           <button
-            className={'px-3 py-2 border rounded ' + (tab==='faq' ? 'bg-purple-600 text-white' : 'border-purple-600 text-purple-600 hover:bg-purple-50')}
+            className={'px-3 py-2 border rounded transition-colors ' + (tab==='faq' ? 'bg-purple-600 text-white' : 'border-purple-600 text-purple-600 hover:bg-purple-50 dark:border-purple-500 dark:text-purple-400 dark:hover:bg-purple-900/20')}
             onClick={() => setTab('faq')}
           >
             ❓ FAQ
           </button>
           <button
-            className={'px-3 py-2 border rounded ' + (tab==='documentation' ? 'bg-indigo-600 text-white' : 'border-indigo-600 text-indigo-600 hover:bg-indigo-50')}
+            className={'px-3 py-2 border rounded transition-colors ' + (tab==='documentation' ? 'bg-indigo-600 text-white' : 'border-indigo-600 text-indigo-600 hover:bg-indigo-50 dark:border-indigo-500 dark:text-indigo-400 dark:hover:bg-indigo-900/20')}
             onClick={() => setTab('documentation')}
           >
             📚 Dokumentacija
           </button>
           <button
-            className={'px-3 py-2 border rounded ' + (tab==='about' ? 'bg-green-600 text-white' : 'border-green-600 text-green-600 hover:bg-green-50')}
+            className={'px-3 py-2 border rounded transition-colors ' + (tab==='about' ? 'bg-green-600 text-white' : 'border-green-600 text-green-600 hover:bg-green-50 dark:border-green-500 dark:text-green-400 dark:hover:bg-green-900/20')}
             onClick={() => setTab('about')}
           >
             🏢 O nama
           </button>
           <button
-            className={'px-3 py-2 border rounded ' + (tab==='contact' ? 'bg-blue-600 text-white' : 'border-blue-600 text-blue-600 hover:bg-blue-50')}
+            className={'px-3 py-2 border rounded transition-colors ' + (tab==='contact' ? 'bg-blue-600 text-white' : 'border-blue-600 text-blue-600 hover:bg-blue-50 dark:border-blue-500 dark:text-blue-400 dark:hover:bg-blue-900/20')}
             onClick={() => setTab('contact')}
           >
             📞 Kontakt
@@ -290,13 +292,13 @@ export default function App(){
           {!token && (
             <>
               <button
-                className={'px-3 py-2 border rounded ' + (tab==='register-user' ? 'bg-green-600 text-white' : 'border-green-600 text-green-600 hover:bg-green-50')}
+                className={'px-3 py-2 border rounded transition-colors ' + (tab==='register-user' ? 'bg-green-600 text-white' : 'border-green-600 text-green-600 hover:bg-green-50 dark:border-green-500 dark:text-green-400 dark:hover:bg-green-900/20')}
                 onClick={() => setTab('register-user')}
               >
                 👤 Registracija korisnika
               </button>
               <button
-                className={'px-3 py-2 border rounded ' + (tab==='register-provider' ? 'bg-blue-600 text-white' : 'border-blue-600 text-blue-600 hover:bg-blue-50')}
+                className={'px-3 py-2 border rounded transition-colors ' + (tab==='register-provider' ? 'bg-blue-600 text-white' : 'border-blue-600 text-blue-600 hover:bg-blue-50 dark:border-blue-500 dark:text-blue-400 dark:hover:bg-blue-900/20')}
                 onClick={() => setTab('register-provider')}
               >
                 🏢 Registracija pružatelja
@@ -450,9 +452,19 @@ export default function App(){
             </>
           )}
 
+          {/* Dark Mode Toggle */}
+          <button
+            onClick={toggleDarkMode}
+            className="px-3 py-2 border rounded dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 hover:bg-gray-100 transition-colors"
+            title={isDarkMode ? 'Prebaci na svijetli način' : 'Prebaci na tamni način'}
+            aria-label={isDarkMode ? 'Disable dark mode' : 'Enable dark mode'}
+          >
+            {isDarkMode ? '☀️' : '🌙'}
+          </button>
+
           {/* Admin Panel */}
           <button
-            className={'px-3 py-2 border rounded ml-auto ' + (tab==='admin' ? 'bg-gray-900 text-white' : 'hover:bg-gray-100')}
+            className={'px-3 py-2 border rounded ml-auto ' + (tab==='admin' ? 'bg-gray-900 dark:bg-gray-700 text-white' : 'hover:bg-gray-100 dark:hover:bg-gray-800 dark:border-gray-600 dark:text-gray-300')}
             onClick={() => setTab('admin')}
           >
             ⚙️ Admin Panel
@@ -502,9 +514,18 @@ export default function App(){
           
           <button
             onClick={() => setIsMobileMenuOpen(true)}
-            className="px-3 py-2 border rounded hover:bg-gray-100"
+            className="px-3 py-2 border rounded hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800 transition-colors"
           >
             ☰
+          </button>
+          {/* Dark Mode Toggle - Mobile */}
+          <button
+            onClick={toggleDarkMode}
+            className="px-3 py-2 border rounded dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 hover:bg-gray-100 transition-colors"
+            title={isDarkMode ? 'Prebaci na svijetli način' : 'Prebaci na tamni način'}
+            aria-label={isDarkMode ? 'Disable dark mode' : 'Enable dark mode'}
+          >
+            {isDarkMode ? '☀️' : '🌙'}
           </button>
         </div>
       </div>
@@ -517,10 +538,10 @@ export default function App(){
         <div className="space-y-4">
           {/* Main Navigation */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Glavno</h3>
+            <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Glavno</h3>
             <div className="space-y-1">
               <button
-                className={'w-full text-left px-3 py-2 rounded ' + (tab==='user' ? 'bg-gray-900 text-white' : 'hover:bg-gray-100')}
+                className={'w-full text-left px-3 py-2 rounded transition-colors ' + (tab==='user' ? 'bg-gray-900 dark:bg-gray-700 text-white' : 'hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-300')}
                 onClick={() => { setTab('user'); setIsMobileMenuOpen(false); }}
               >
                 🏠 Početna
@@ -577,22 +598,22 @@ export default function App(){
           {/* User Section */}
           {!token && (
             <div>
-              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Korisnici</h3>
+              <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Korisnici</h3>
               <div className="space-y-1">
                 <button
-                  className="w-full text-left px-3 py-2 rounded hover:bg-gray-100"
+                  className="w-full text-left px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-300 transition-colors"
                   onClick={() => { setTab('login'); setIsMobileMenuOpen(false); }}
                 >
                   🔑 Prijava
                 </button>
                 <button
-                  className="w-full text-left px-3 py-2 rounded hover:bg-gray-100"
+                  className="w-full text-left px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-300 transition-colors"
                   onClick={() => { setTab('register-user'); setIsMobileMenuOpen(false); }}
                 >
                   👤 Registracija korisnika usluge
                 </button>
                 <button
-                  className="w-full text-left px-3 py-2 rounded hover:bg-gray-100"
+                  className="w-full text-left px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-300 transition-colors"
                   onClick={() => { setTab('register-provider'); setIsMobileMenuOpen(false); }}
                 >
                   🏢 Registracija pružatelja usluge
@@ -604,16 +625,16 @@ export default function App(){
           {/* Services Section */}
           {!token && (
             <div>
-              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Usluge</h3>
+              <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Usluge</h3>
               <div className="space-y-1">
                 <button
-                  className="w-full text-left px-3 py-2 rounded hover:bg-gray-100"
+                  className="w-full text-left px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-300 transition-colors"
                   onClick={() => { setTab('categories'); setIsMobileMenuOpen(false); }}
                 >
                   🛠️ Kategorije ({categories.length})
                 </button>
                 <button
-                  className="w-full text-left px-3 py-2 rounded hover:bg-gray-100"
+                  className="w-full text-left px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-300 transition-colors"
                   onClick={() => { setTab('providers'); setIsMobileMenuOpen(false); }}
                 >
                   👥 Pružatelji ({providers.length})
@@ -625,40 +646,40 @@ export default function App(){
           {/* Provider Section - samo za PROVIDER-e i USER-e koji su tvrtke/obrti */}
           {token && isProviderOrBusinessUser() && (
             <div>
-              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Leadovi</h3>
+              <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Leadovi</h3>
               <div className="space-y-1">
                 <button
-                  className="w-full text-left px-3 py-2 rounded hover:bg-gray-100"
+                  className="w-full text-left px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-300 transition-colors"
                   onClick={() => { setTab('leads'); setIsMobileMenuOpen(false); }}
                 >
                   🛒 Leadovi
                 </button>
                 <button
-                  className="w-full text-left px-3 py-2 rounded hover:bg-gray-100"
+                  className="w-full text-left px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-300 transition-colors"
                   onClick={() => { setTab('my-leads'); setIsMobileMenuOpen(false); }}
                 >
                   📋 Moji Leadovi
                 </button>
                 <button
-                  className="w-full text-left px-3 py-2 rounded hover:bg-gray-100"
+                  className="w-full text-left px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-300 transition-colors"
                   onClick={() => { setTab('team-locations'); setIsMobileMenuOpen(false); }}
                 >
                   📍 Tim Lokacije
                 </button>
                 <button
-                  className="w-full text-left px-3 py-2 rounded hover:bg-gray-100"
+                  className="w-full text-left px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-300 transition-colors"
                   onClick={() => { setTab('roi'); setIsMobileMenuOpen(false); }}
                 >
                   📊 ROI
                 </button>
                 <button
-                  className="w-full text-left px-3 py-2 rounded hover:bg-gray-100"
+                  className="w-full text-left px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-300 transition-colors"
                   onClick={() => { setTab('subscription'); setIsMobileMenuOpen(false); }}
                 >
                   💳 Pretplata
                 </button>
                 <button
-                  className="w-full text-left px-3 py-2 rounded hover:bg-gray-100"
+                  className="w-full text-left px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-300 transition-colors"
                   onClick={() => { setTab('invoices'); setIsMobileMenuOpen(false); }}
                 >
                   📄 Fakture
@@ -667,25 +688,36 @@ export default function App(){
             </div>
           )}
 
+          {/* Dark Mode Toggle - Mobile Menu */}
+          <div className="pt-4 border-t dark:border-gray-700">
+            <button
+              onClick={() => { toggleDarkMode(); }}
+              className="w-full text-left px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-300 transition-colors flex items-center gap-2"
+            >
+              {isDarkMode ? '☀️' : '🌙'}
+              <span>{isDarkMode ? 'Svijetli način' : 'Tamni način'}</span>
+            </button>
+          </div>
+
           {/* Korisnik usluge sekcija - samo za USER-e bez legalStatusId */}
           {token && !isProviderOrBusinessUser() && (
             <div>
-              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Moji Poslovi</h3>
+              <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Moji Poslovi</h3>
               <div className="space-y-1">
                 <button
-                  className="w-full text-left px-3 py-2 rounded hover:bg-gray-100"
+                  className="w-full text-left px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-300 transition-colors"
                   onClick={() => { setTab('user'); setIsMobileMenuOpen(false); }}
                 >
                   🏠 Traži usluge
                 </button>
                 <button
-                  className="w-full text-left px-3 py-2 rounded hover:bg-gray-100"
+                  className="w-full text-left px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-300 transition-colors"
                   onClick={() => { setTab('my-jobs'); setIsMobileMenuOpen(false); }}
                 >
                   📋 Moji poslovi
                 </button>
                 <button
-                  className="w-full text-left px-3 py-2 rounded hover:bg-gray-100"
+                  className="w-full text-left px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-300 transition-colors"
                   onClick={() => { setTab('providers'); setIsMobileMenuOpen(false); }}
                 >
                   👥 Pružatelji usluga
@@ -697,10 +729,10 @@ export default function App(){
           {/* Profil sekcija - za sve prijavljene korisnike */}
           {token && (
             <div>
-              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Profil</h3>
+              <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Profil</h3>
               <div className="space-y-1">
                 <button
-                  className="w-full text-left px-3 py-2 rounded hover:bg-gray-100"
+                  className="w-full text-left px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-300 transition-colors"
                   onClick={() => {
                     // Provjeri role iz localStorage
                     const storedUser = localStorage.getItem('user');
@@ -728,7 +760,7 @@ export default function App(){
                 {/* Postani pružatelj - samo za USER-e bez legalStatusId */}
                 {!isProviderOrBusinessUser() && (
                   <button
-                    className="w-full text-left px-3 py-2 rounded hover:bg-gray-100"
+                    className="w-full text-left px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-300 transition-colors"
                     onClick={() => { setTab('upgrade-to-provider'); setIsMobileMenuOpen(false); }}
                   >
                     🏢 Postani pružatelj
@@ -740,10 +772,10 @@ export default function App(){
 
           {/* Admin Section */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Admin</h3>
+            <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Admin</h3>
             <div className="space-y-1">
               <button
-                className={'w-full text-left px-3 py-2 rounded ' + (tab==='admin' ? 'bg-gray-900 text-white' : 'hover:bg-gray-100')}
+                className={'w-full text-left px-3 py-2 rounded transition-colors ' + (tab==='admin' ? 'bg-gray-900 dark:bg-gray-700 text-white' : 'hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-300')}
                 onClick={() => { setTab('admin'); setIsMobileMenuOpen(false); }}
               >
                 ⚙️ Admin Panel
@@ -754,7 +786,7 @@ export default function App(){
       </MobileMenu>
 
       {tab === 'user' && (
-        <section id="user" className="tab-section">
+        <section id="user" className="tab-section dark:text-gray-100">
           {/* Hero CTA Section - na vrhu */}
           {!token && (
             <div className="mb-6 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-6 text-white">

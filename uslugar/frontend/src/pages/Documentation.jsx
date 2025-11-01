@@ -377,7 +377,7 @@ const Documentation = () => {
         { name: "Brzo učitavanje stranica", implemented: true },
         { name: "Pretraživanje u realnom vremenu", implemented: true },
         { name: "Filtriranje i sortiranje", implemented: true },
-        { name: "Dark mode", implemented: false },
+        { name: "Dark mode", implemented: true },
         { name: "Lokalizacija (hrvatski jezik)", implemented: true },
         { name: "Pristupačnost (accessibility)", implemented: false }
       ]
@@ -409,32 +409,32 @@ const Documentation = () => {
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">
+        <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
           📚 Uslugar - Dokumentacija Funkcionalnosti
         </h1>
-        <p className="text-xl text-gray-600 mb-6">
+        <p className="text-xl text-gray-600 dark:text-gray-400 mb-6">
           Kompletna lista svih funkcionalnosti platforme za povezivanje korisnika i pružatelja usluga
         </p>
         
         {/* Statistike implementacije */}
-        <div className="bg-gradient-to-r from-blue-50 to-green-50 rounded-lg p-6 mb-8">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-4">Status Implementacije</h2>
+        <div className="bg-gradient-to-r from-blue-50 to-green-50 dark:from-blue-900/20 dark:to-green-900/20 rounded-lg p-6 mb-8">
+          <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">Status Implementacije</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="text-center">
-              <div className="text-3xl font-bold text-blue-600">{stats.implementedItems}</div>
-              <div className="text-sm text-gray-600">Implementirane funkcionalnosti</div>
+              <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">{stats.implementedItems}</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Implementirane funkcionalnosti</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-gray-600">{stats.totalItems - stats.implementedItems}</div>
-              <div className="text-sm text-gray-600">Nije implementirano</div>
+              <div className="text-3xl font-bold text-gray-600 dark:text-gray-400">{stats.totalItems - stats.implementedItems}</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Nije implementirano</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-green-600">{stats.percentage}%</div>
-              <div className="text-sm text-gray-600">Završeno</div>
+              <div className="text-3xl font-bold text-green-600 dark:text-green-400">{stats.percentage}%</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Završeno</div>
             </div>
           </div>
           <div className="mt-4">
-            <div className="w-full bg-gray-200 rounded-full h-3">
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
               <div 
                 className="bg-gradient-to-r from-green-400 to-green-600 h-3 rounded-full transition-all duration-500"
                 style={{ width: `${stats.percentage}%` }}
@@ -447,15 +447,15 @@ const Documentation = () => {
       {/* Kategorije funkcionalnosti */}
       <div className="space-y-8">
         {features.map((category, categoryIndex) => (
-          <div key={categoryIndex} className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
-            <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900">{category.category}</h2>
+          <div key={categoryIndex} className="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div className="bg-gray-50 dark:bg-gray-700/50 px-6 py-4 border-b border-gray-200 dark:border-gray-600">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{category.category}</h2>
             </div>
             <div className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {category.items.map((item, itemIndex) => (
-                  <div key={itemIndex} className="flex items-center justify-between p-3 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors">
-                    <span className={`text-gray-800 font-medium ${item.deprecated ? 'line-through text-gray-500' : ''}`}>{item.name}</span>
+                  <div key={itemIndex} className="flex items-center justify-between p-3 rounded-lg border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                    <span className={`text-gray-800 dark:text-gray-300 font-medium ${item.deprecated ? 'line-through text-gray-500 dark:text-gray-500' : ''}`}>{item.name}</span>
                     <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(item.implemented, item.deprecated)}`}>
                       {getStatusText(item.implemented, item.deprecated)}
                     </span>
@@ -468,13 +468,13 @@ const Documentation = () => {
       </div>
 
       {/* Footer informacije */}
-      <div className="mt-12 bg-gray-50 rounded-lg p-6 text-center">
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">O Uslugar Platformi</h3>
-        <p className="text-gray-600 mb-4">
+      <div className="mt-12 bg-gray-50 dark:bg-gray-800 rounded-lg p-6 text-center">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">O Uslugar Platformi</h3>
+        <p className="text-gray-600 dark:text-gray-400 mb-4">
           Uslugar je sveobuhvatna platforma za povezivanje korisnika koji traže usluge s kvalificiranim pružateljima usluga. 
           Platforma omogućuje jednostavno objavljivanje poslova, slanje ponuda, komunikaciju i ocjenjivanje usluga.
         </p>
-        <div className="text-sm text-gray-500">
+        <div className="text-sm text-gray-500 dark:text-gray-400">
           Posljednje ažuriranje: {new Date().toLocaleDateString('hr-HR')}
         </div>
       </div>

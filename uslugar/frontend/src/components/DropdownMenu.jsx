@@ -21,7 +21,7 @@ const DropdownMenu = ({ title, icon, children, className = "" }) => {
     <div className={`relative ${className}`} ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-2 border rounded hover:bg-gray-100 transition-colors"
+        className="flex items-center gap-2 px-3 py-2 border rounded hover:bg-gray-100 dark:hover:bg-gray-800 dark:border-gray-600 dark:text-gray-300 transition-colors"
       >
         <span>{icon}</span>
         <span>{title}</span>
@@ -31,7 +31,7 @@ const DropdownMenu = ({ title, icon, children, className = "" }) => {
       </button>
       
       {isOpen && (
-        <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+        <div className="absolute top-full left-0 mt-1 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50">
           <div className="py-1">
             {children}
           </div>
