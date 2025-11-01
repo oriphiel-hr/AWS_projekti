@@ -137,20 +137,17 @@ export default function IdentityBadgeVerification({ profile, onUpdated }) {
       </div>
 
       {/* Input Field & Verification */}
-      {!profile.identityEmailVerified && !profile.identityPhoneVerified && !profile.identityDnsVerified && (
+      {/* Prikaži formu ako postoje neki načini koji nisu verificirani */}
+      {(!profile.identityEmailVerified || !profile.identityPhoneVerified || !profile.identityDnsVerified) && (
         <>
-          {/* Za Email i DNS - standardni input */}
-          {verificationType !== 'phone' && (
+          {/* Za Email - prikaži samo ako nije verificiran */}
+          {verificationType === 'email' && !profile.identityEmailVerified && (
             <div className="space-y-2">
               <input
-                type={verificationType === 'email' ? 'email' : 'text'}
+                type="email"
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
-                placeholder={
-                  verificationType === 'email' 
-                    ? 'info@vasafirma.hr'
-                    : 'vasafirma.hr'
-                }
+                placeholder="info@vasafirma.hr"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               />
               
@@ -164,8 +161,29 @@ export default function IdentityBadgeVerification({ profile, onUpdated }) {
             </div>
           )}
 
-          {/* Za Telefon - koristimo PhoneVerification komponentu */}
-          {verificationType === 'phone' && (
+          {/* Za DNS - prikaži samo ako nije verificiran */}
+          {verificationType === 'dns' && !profile.identityDnsVerified && (
+            <div className="space-y-2">
+              <input
+                type="text"
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+                placeholder="vasafirma.hr"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
+              
+              <button
+                onClick={handleVerify}
+                disabled={!value || verifying}
+                className="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              >
+                {verifying ? 'Verificiram...' : '✓ Verificiraj'}
+              </button>
+            </div>
+          )}
+
+          {/* Za Telefon - prikaži samo ako nije verificiran */}
+          {verificationType === 'phone' && !profile.identityPhoneVerified && (
             <div className="space-y-4">
               <div>
                 <input
@@ -218,6 +236,40 @@ export default function IdentityBadgeVerification({ profile, onUpdated }) {
             </div>
           )}
         </>
+      )}
+
+      {/* Poruka ako su svi načini verificirani */}
+      {profile.identityEmailVerified && profile.identityPhoneVerified && profile.identityDnsVerified && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          <p className="text-sm font-medium text-green-800">
+            ✓ Svi načini verifikacije su uspješno verificirani!
+          </p>
+        </div>
+      )}
+
+      {/* Poruka ako je određeni način verificiran */}
+      {verificationType === 'email' && profile.identityEmailVerified && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          <p className="text-sm font-medium text-green-800">
+            ✓ Email je već verificiran
+          </p>
+        </div>
+      )}
+      
+      {verificationType === 'phone' && profile.identityPhoneVerified && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          <p className="text-sm font-medium text-green-800">
+            ✓ Telefon je već verificiran
+          </p>
+        </div>
+      )}
+      
+      {verificationType === 'dns' && profile.identityDnsVerified && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          <p className="text-sm font-medium text-green-800">
+            ✓ DNS je već verificiran
+          </p>
+        </div>
       )}
 
       {/* Messages */}
