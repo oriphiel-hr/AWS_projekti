@@ -156,13 +156,13 @@ const Documentation = () => {
     {
       category: "Refund i Povrat Kredita",
       items: [
-        { name: "Automatski refund kredita", implemented: true },
-        { name: "Refund ako klijent ne odgovori u roku", implemented: true },
-        { name: "Razlozi za refund (klijent ne odgovori, itd.)", implemented: true },
-        { name: "Ručno zatraživanje refund-a", implemented: true },
-        { name: "Povijest refund transakcija", implemented: true },
-        { name: "Status refund-a (PENDING, PROCESSED, DENIED)", implemented: true },
-        { name: "Notifikacije o refund-u", implemented: true },
+        { name: "Automatski refund kredita ⚠️ (NE KORISTI SE)", implemented: true, deprecated: true },
+        { name: "Refund ako klijent ne odgovori u roku ⚠️ (NE KORISTI SE)", implemented: true, deprecated: true },
+        { name: "Razlozi za refund (klijent ne odgovori, itd.) ⚠️ (NE KORISTI SE)", implemented: true, deprecated: true },
+        { name: "Ručno zatraživanje refund-a ⚠️ (NE KORISTI SE)", implemented: true, deprecated: true },
+        { name: "Povijest refund transakcija ⚠️ (NE KORISTI SE)", implemented: true, deprecated: true },
+        { name: "Status refund-a (PENDING, PROCESSED, DENIED) ⚠️ (NE KORISTI SE)", implemented: true, deprecated: true },
+        { name: "Notifikacije o refund-u ⚠️ (NE KORISTI SE)", implemented: true, deprecated: true },
         { name: "Admin odobravanje refund-a", implemented: false },
         { name: "Automatski refund nakon 48h neaktivnosti", implemented: false },
         { name: "Refund policy i uvjeti", implemented: false }
@@ -180,7 +180,7 @@ const Documentation = () => {
         { name: "Notifikacije o isteku pretplate", implemented: true },
         { name: "Povijest pretplata", implemented: true },
         { name: "Trial period (7 dana)", implemented: true },
-        { name: "Besplatni krediti za trial", implemented: true },
+        { name: "Besplatni krediti za trial (5 leadova)", implemented: true },
         { name: "Admin upravljanje pretplatama", implemented: true },
         { name: "Automatsko vraćanje na BASIC plan", implemented: true }
       ]
@@ -188,13 +188,74 @@ const Documentation = () => {
     {
       category: "Pravni Status i Verifikacija",
       items: [
-        { name: "Različiti pravni statusi (Osoba, Obrt, d.o.o., itd.)", implemented: true },
+        { name: "Različiti pravni statusi (Fizička osoba, Obrt, d.o.o., j.d.o.o., itd.)", implemented: true },
         { name: "OIB validacija", implemented: true },
-        { name: "Naziv firme", implemented: true },
+        { name: "Naziv tvrtke/obrta", implemented: true },
+        { name: "Auto-verifikacija naziva tvrtke (Sudski registar, Obrtni registar)", implemented: true },
         { name: "Porezni broj", implemented: true },
         { name: "Email verifikacija", implemented: true },
-        { name: "Verifikacija telefonskog broja", implemented: false },
+        { name: "SMS verifikacija telefonskog broja (Twilio)", implemented: true },
+        { name: "DNS TXT record verifikacija domena", implemented: true },
+        { name: "Email verifikacija na domeni tvrtke", implemented: true },
+        { name: "Identity Badge sustav (Email, Phone, DNS, Business značke)", implemented: true },
+        { name: "Datum verifikacije za svaku značku", implemented: true },
+        { name: "Prikaz znački na profilu pružatelja", implemented: true },
         { name: "Dokumenti za verifikaciju", implemented: false }
+      ]
+    },
+    {
+      category: "Identity Badge Sustav i Verifikacije",
+      items: [
+        { name: "Email Identity Badge (značka)", implemented: true },
+        { name: "Phone Identity Badge (SMS verifikacija)", implemented: true },
+        { name: "DNS Identity Badge (TXT record)", implemented: true },
+        { name: "Business Badge (tvrtka/obrt verifikacija)", implemented: true },
+        { name: "Prikaz datuma verifikacije", implemented: true },
+        { name: "Status verifikacije na profilu", implemented: true },
+        { name: "Identity Badge Verifikacija komponenta", implemented: true },
+        { name: "Rate limiting za SMS verifikaciju", implemented: true },
+        { name: "Admin reset SMS pokušaja", implemented: true },
+        { name: "Verifikacijski kod expiration (10 minuta)", implemented: true }
+      ]
+    },
+    {
+      category: "Reputacijski Sustav",
+      items: [
+        { name: "Prosječno vrijeme odgovora (avgResponseTimeMinutes)", implemented: true },
+        { name: "Stopa konverzije leadova (conversionRate)", implemented: true },
+        { name: "Praćenje vremena odgovora na leadove", implemented: true },
+        { name: "Automatsko izračunavanje reputacije", implemented: true },
+        { name: "Prikaz reputacije na profilu", implemented: true },
+        { name: "Integracija s lead matching algoritmom", implemented: true }
+      ]
+    },
+    {
+      category: "Korisnici Usluge (Service Users)",
+      items: [
+        { name: "Registracija kao korisnik usluge", implemented: true },
+        { name: "Odabir tipa korisnika (Korisnik usluge / Pružatelj usluge)", implemented: true },
+        { name: "Fizička osoba vs Pravna osoba za korisnike", implemented: true },
+        { name: "Profil korisnika usluge (UserProfile)", implemented: true },
+        { name: "Objavljivanje poslova od strane korisnika", implemented: true },
+        { name: "Pregled vlastitih poslova (MyJobs)", implemented: true },
+        { name: "Primanje ponuda za poslove", implemented: true },
+        { name: "Prihvaćanje ponuda", implemented: true },
+        { name: "Navigacija specifična za korisnike usluge", implemented: true },
+        { name: "Sakrivanje provider-specifičnih linkova za korisnike", implemented: true }
+      ]
+    },
+    {
+      category: "Plaćanja i Stripe Integracija",
+      items: [
+        { name: "Stripe Checkout integracija", implemented: true },
+        { name: "Plaćanje pretplata preko Stripe", implemented: true },
+        { name: "Stripe webhook handling", implemented: true },
+        { name: "Automatsko ažuriranje pretplate nakon plaćanja", implemented: true },
+        { name: "Payment success/failure handling", implemented: true },
+        { name: "Povrat na platformu nakon plaćanja", implemented: true },
+        { name: "Sigurnosno skladištenje Stripe secret key u AWS Secrets Manager", implemented: true },
+        { name: "Fakturiranje", implemented: false },
+        { name: "Povrat novca", implemented: false }
       ]
     },
     {
@@ -283,9 +344,9 @@ const Documentation = () => {
         { name: "Različiti paketi pretplate (BASIC, PREMIUM, PRO)", implemented: true },
         { name: "Kreditni sustav", implemented: true },
         { name: "Povijest transakcija", implemented: true },
-        { name: "Automatski refund kredita", implemented: true },
-        { name: "Refund ako klijent ne odgovori u roku", implemented: true },
-        { name: "Razlozi za refund (klijent ne odgovori, itd.)", implemented: true },
+        { name: "Automatski refund kredita ⚠️ (NE KORISTI SE)", implemented: true, deprecated: true },
+        { name: "Refund ako klijent ne odgovori u roku ⚠️ (NE KORISTI SE)", implemented: true, deprecated: true },
+        { name: "Razlozi za refund (klijent ne odgovori, itd.) ⚠️ (NE KORISTI SE)", implemented: true, deprecated: true },
         { name: "Otkazivanje pretplate", implemented: true },
         { name: "Status pretplate (ACTIVE, CANCELLED, EXPIRED)", implemented: true },
         { name: "Automatsko isteka pretplate", implemented: true },
@@ -310,11 +371,13 @@ const Documentation = () => {
     }
   ];
 
-  const getStatusColor = (implemented) => {
+  const getStatusColor = (implemented, deprecated) => {
+    if (deprecated) return 'text-orange-600 bg-orange-100';
     return implemented ? 'text-green-600 bg-green-100' : 'text-red-600 bg-red-100';
   };
 
-  const getStatusText = (implemented) => {
+  const getStatusText = (implemented, deprecated) => {
+    if (deprecated) return '⚠️ NE KORISTI SE';
     return implemented ? '✓ Implementirano' : '✗ Nije implementirano';
   };
 
@@ -379,9 +442,9 @@ const Documentation = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {category.items.map((item, itemIndex) => (
                   <div key={itemIndex} className="flex items-center justify-between p-3 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors">
-                    <span className="text-gray-800 font-medium">{item.name}</span>
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(item.implemented)}`}>
-                      {getStatusText(item.implemented)}
+                    <span className={`text-gray-800 font-medium ${item.deprecated ? 'line-through text-gray-500' : ''}`}>{item.name}</span>
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(item.implemented, item.deprecated)}`}>
+                      {getStatusText(item.implemented, item.deprecated)}
                     </span>
                   </div>
                 ))}
