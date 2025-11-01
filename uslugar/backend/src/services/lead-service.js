@@ -23,8 +23,14 @@ try {
 
 /**
  * Kupi ekskluzivan lead
+ * @param {String} jobId - ID leada koji se kupuje
+ * @param {String} providerId - ID providera koji kupuje
+ * @param {Object} options - Opcije za kupovinu
+ * @param {String} options.paymentIntentId - Stripe Payment Intent ID (opcionalno, ako se koristi Stripe plaćanje umjesto internih kredita)
+ * @returns {Object} Rezultat kupovine
  */
-export async function purchaseLead(jobId, providerId) {
+export async function purchaseLead(jobId, providerId, options = {}) {
+  const { paymentIntentId } = options;
   // 1. Provjeri postoji li job i je li dostupan
   const job = await prisma.job.findUnique({
     where: { id: jobId },
@@ -69,29 +75,70 @@ export async function purchaseLead(jobId, providerId) {
   }
 
   const leadPrice = job.leadPrice || 10;
+  const creditPriceInEUR = 10; // 1 kredit = 10 EUR
+  const leadPriceInCents = leadPrice * creditPriceInEUR * 100; // Cijena u centima za Stripe
 
-  // 4. Potroši kredite
-  try {
-    const { balance, transaction } = await deductCredits(
-      providerId,
-      leadPrice,
-      `Lead purchase: ${job.title}`,
-      jobId
-    );
+  let stripePaymentIntent = null;
+  let usedCredits = false;
+  let creditBalance = null;
 
-    // 5. Kreiraj LeadPurchase zapis (BEZ otključavanja kontakta - pay-per-contact)
-    const purchase = await prisma.leadPurchase.create({
-      data: {
-        jobId,
-        providerId,
-        creditsSpent: leadPrice,
-        leadPrice,
-        status: 'ACTIVE',
-        contactUnlocked: false // Kontakt nije otključan - provider mora plaćati dodatno
+  // 4. Provjeri i validiraj Stripe Payment Intent ako je proslijeđen
+  if (paymentIntentId && stripe) {
+    try {
+      // Dohvati Payment Intent iz Stripe-a
+      stripePaymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+
+      // Provjeri da je plaćanje uspješno
+      if (stripePaymentIntent.status !== 'succeeded') {
+        throw new Error(`Payment not completed. Status: ${stripePaymentIntent.status}`);
       }
-    });
 
-    // 6. Ažuriraj Job - dodijeli provideru
+      // Provjeri da je iznos točan
+      if (stripePaymentIntent.amount !== leadPriceInCents) {
+        throw new Error(`Payment amount mismatch. Expected: ${leadPriceInCents} cents, Got: ${stripePaymentIntent.amount} cents`);
+      }
+
+      // Provjeri da je Payment Intent za ovog providera
+      if (stripePaymentIntent.metadata?.providerId !== providerId) {
+        throw new Error('Payment Intent does not belong to this provider');
+      }
+
+      console.log(`[LEAD] Using Stripe Payment Intent ${paymentIntentId} for lead purchase`);
+    } catch (stripeError) {
+      console.error('[LEAD] Stripe Payment Intent validation failed:', stripeError.message);
+      throw new Error(`Invalid payment: ${stripeError.message}`);
+    }
+  } else {
+    // 5. Ako nema Payment Intent, koristi interne kredite
+    try {
+      const { balance, transaction } = await deductCredits(
+        providerId,
+        leadPrice,
+        `Lead purchase: ${job.title}`,
+        jobId
+      );
+      usedCredits = true;
+      creditBalance = balance;
+      console.log(`[LEAD] Using internal credits for lead purchase. Remaining: ${balance}`);
+    } catch (creditError) {
+      throw creditError; // Insufficient credits ili druga greška
+    }
+  }
+
+  // 6. Kreiraj LeadPurchase zapis (BEZ otključavanja kontakta - pay-per-contact)
+  const purchase = await prisma.leadPurchase.create({
+    data: {
+      jobId,
+      providerId,
+      creditsSpent: leadPrice,
+      leadPrice,
+      status: 'ACTIVE',
+      contactUnlocked: false, // Kontakt nije otključan - provider mora plaćati dodatno
+      stripePaymentIntentId: stripePaymentIntent?.id || null // ✅ Sačuvaj Stripe Payment Intent ID ako postoji
+    }
+  });
+
+    // 7. Ažuriraj Job - dodijeli provideru
     await prisma.job.update({
       where: { id: jobId },
       data: {
@@ -100,7 +147,7 @@ export async function purchaseLead(jobId, providerId) {
       }
     });
 
-    // 7. Notify klijenta da je lead kupljen
+    // 8. Notify klijenta da je lead kupljen
     await notifyClient(job.userId, {
       title: 'Pružatelj zainteresiran!',
       message: `Pružatelj usluga je zainteresiran za vaš posao: ${job.title}`,
@@ -108,13 +155,14 @@ export async function purchaseLead(jobId, providerId) {
       jobId
     });
 
-    // 8. Ažuriraj ROI statistiku
+    // 9. Ažuriraj ROI statistiku
     await updateProviderROI(providerId, {
       leadsPurchased: 1,
-      creditsSpent: leadPrice
+      creditsSpent: usedCredits ? leadPrice : 0 // Ako se koristi Stripe, ne trošimo interne kredite
     });
 
-    console.log(`[LEAD] Provider ${providerId} purchased lead ${jobId} for ${leadPrice} credits`);
+    const paymentMethod = stripePaymentIntent ? 'Stripe Payment' : 'Internal Credits';
+    console.log(`[LEAD] Provider ${providerId} purchased lead ${jobId} for ${leadPrice} credits (${paymentMethod})`);
 
     return {
       success: true,
@@ -128,7 +176,9 @@ export async function purchaseLead(jobId, providerId) {
           phone: undefined
         }
       },
-      creditsRemaining: balance,
+      paymentMethod,
+      stripePaymentIntentId: stripePaymentIntent?.id || null,
+      creditsRemaining: creditBalance, // Samo ako se koriste kredite (null ako se koristi Stripe)
       message: 'Lead successfully purchased! Unlock contact to see client details.'
     };
 

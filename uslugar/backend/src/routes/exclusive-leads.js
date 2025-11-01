@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { auth } from '../lib/auth.js';
 import { requirePlan } from '../lib/subscription-auth.js';
 import { prisma } from '../lib/prisma.js';
+import Stripe from 'stripe';
 import {
   purchaseLead,
   markLeadContacted,
@@ -20,9 +21,94 @@ import {
 
 const r = Router();
 
+// Initialize Stripe for Payment Intent creation
+let stripe;
+try {
+  const stripeKey = process.env.STRIPE_SECRET_KEY || '';
+  if (stripeKey && stripeKey !== '') {
+    stripe = new Stripe(stripeKey);
+    console.log('[EXCLUSIVE-LEADS] Stripe initialized for Payment Intent creation');
+  } else {
+    console.warn('[EXCLUSIVE-LEADS] STRIPE_SECRET_KEY not set - Payment Intent creation disabled');
+    stripe = null;
+  }
+} catch (error) {
+  console.error('[EXCLUSIVE-LEADS] Stripe initialization failed:', error.message);
+  stripe = null;
+}
+
 // ============================================================
 // LEADOVI - Pregled i kupovina
 // ============================================================
+
+// Kreiraj Stripe Payment Intent za kupovinu leada
+// POST /api/exclusive/leads/:jobId/create-payment-intent
+r.post('/:jobId/create-payment-intent', auth(true, ['PROVIDER']), async (req, res, next) => {
+  try {
+    if (!stripe || !process.env.STRIPE_SECRET_KEY) {
+      return res.status(503).json({ 
+        error: 'Payment system not configured',
+        message: 'Stripe API keys are missing. Please contact support.'
+      });
+    }
+
+    const { jobId } = req.params;
+    const providerId = req.user.id;
+
+    // Dohvati job da dobijemo cijenu leada
+    const job = await prisma.job.findUnique({
+      where: { id: jobId },
+      select: {
+        id: true,
+        title: true,
+        leadPrice: true,
+        leadStatus: true,
+        assignedProviderId: true
+      }
+    });
+
+    if (!job) {
+      return res.status(404).json({ error: 'Job not found' });
+    }
+
+    if (job.leadStatus !== 'AVAILABLE' || job.assignedProviderId) {
+      return res.status(410).json({ error: 'Lead is not available' });
+    }
+
+    // Izračunaj cijenu u centima (1 kredit = 10 EUR = 1000 cents)
+    const leadPrice = job.leadPrice || 10;
+    const creditPriceInEUR = 10;
+    const amountInCents = leadPrice * creditPriceInEUR * 100;
+
+    // Kreiraj Stripe Payment Intent
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: amountInCents,
+      currency: 'eur',
+      metadata: {
+        jobId: job.id,
+        providerId: providerId,
+        leadPrice: leadPrice.toString(),
+        type: 'lead_purchase'
+      },
+      description: `Lead purchase: ${job.title}`,
+      automatic_payment_methods: {
+        enabled: true
+      }
+    });
+
+    res.json({
+      clientSecret: paymentIntent.client_secret,
+      paymentIntentId: paymentIntent.id,
+      amount: amountInCents,
+      currency: 'eur',
+      leadPrice: leadPrice,
+      message: 'Payment Intent created. Use clientSecret to complete payment on frontend.'
+    });
+
+  } catch (e) {
+    next(e);
+  }
+});
 
 // Dohvati dostupne ekskluzivne leadove za providera
 r.get('/available', auth(true, ['PROVIDER']), async (req, res, next) => {
@@ -47,18 +133,21 @@ r.get('/available', auth(true, ['PROVIDER']), async (req, res, next) => {
 });
 
 // Kupi ekskluzivan lead (pay-per-contact: NE otključava kontakt)
+// Podržava i interne kredite i Stripe Payment Intent
 r.post('/:jobId/purchase', auth(true, ['PROVIDER']), async (req, res, next) => {
   try {
     const { jobId } = req.params;
     const providerId = req.user.id;
+    const { paymentIntentId } = req.body; // Opcionalno: Stripe Payment Intent ID
     
-    const result = await purchaseLead(jobId, providerId);
+    const result = await purchaseLead(jobId, providerId, { paymentIntentId });
     
     res.status(201).json(result);
   } catch (e) {
     const status = e.message.includes('Insufficient credits') ? 402 :
                    e.message.includes('not available') ? 410 :
-                   e.message.includes('already') ? 409 : 400;
+                   e.message.includes('already') ? 409 :
+                   e.message.includes('Payment') || e.message.includes('payment') ? 402 : 400;
     res.status(status).json({ error: e.message });
   }
 });
