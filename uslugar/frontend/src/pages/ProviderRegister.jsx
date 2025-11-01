@@ -28,6 +28,8 @@ export default function ProviderRegister({ onSuccess }) {
   const [oibError, setOibError] = useState('');
   const [emailError, setEmailError] = useState('');
   const [categories, setCategories] = useState([]);
+  const [companyNameValidating, setCompanyNameValidating] = useState(false);
+  const [companyNameValidation, setCompanyNameValidation] = useState(null);
   const [loadingCategories, setLoadingCategories] = useState(true);
   
   // Auto-verification state
