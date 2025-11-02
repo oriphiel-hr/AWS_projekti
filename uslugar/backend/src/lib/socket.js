@@ -54,6 +54,21 @@ export const initSocket = (httpServer) => {
         socket.join(roomId);
         console.log(`User ${socket.userId} joined room ${roomId}`);
 
+        // Automatski označi sve poruke koje nisu od trenutnog korisnika kao READ
+        // jer korisnik je upravo otvorio chat (znači da ih vidi)
+        const now = new Date();
+        await prisma.chatMessage.updateMany({
+          where: {
+            roomId,
+            senderId: { not: socket.userId },
+            status: { not: 'READ' }
+          },
+          data: {
+            status: 'READ',
+            readAt: now
+          }
+        });
+
         // Load chat history
         const messages = await prisma.chatMessage.findMany({
           where: { roomId },
@@ -67,6 +82,13 @@ export const initSocket = (httpServer) => {
         });
 
         socket.emit('chat-history', messages);
+
+        // Broadcast da su poruke označene kao pročitane (za real-time update)
+        io.to(roomId).emit('messages-read', {
+          roomId,
+          readBy: socket.userId,
+          readAt: now
+        });
       } catch (error) {
         console.error('Error joining room:', error);
         socket.emit('error', 'Failed to join room');
