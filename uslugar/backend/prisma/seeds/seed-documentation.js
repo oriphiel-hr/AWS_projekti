@@ -10351,17 +10351,11 @@ async function seedDocumentation() {
    - Pregled dokumenta za verifikaciju
    
 ### 4. **Statistike korisnika**
-   - Broj kreiranih poslova po korisniku
-   - Broj aktivnih pretplata
-   - Kreditna bilanca i transakcije
-   - Trust score i reputacija
-   - Aktivnost na platformi
-
-### 5. **API endpointi**
-         - \`GET /api/admin/users\` - Lista svih korisnika
-         - \`GET /api/admin/users/:id\` - Detalji korisnika
-         - \`PUT /api/admin/users/:id\` - Ažuriranje korisnika
-         - \`POST /api/admin/users/:id/reset-password\` - Reset lozinke
+         - Broj kreiranih poslova po korisniku
+         - Broj aktivnih pretplata
+         - Kreditna bilanca i transakcije
+         - Trust score i reputacija
+         - Aktivnost na platformi
       `,
         technicalDetails: `## Tehnički detalji:
 
@@ -10425,12 +10419,30 @@ async function seedDocumentation() {
    - Verificiranje OIB-a i podataka
    - OCR provjera dokumenta
    - Provjera u Obrtnom registru i komorskim imenicima
+`,
+        technicalDetails: `## Tehnički detalji:
 
-### 6. **API endpointi**
-   - \`GET /api/admin/providers\` - Lista pružatelja
-   - \`PUT /api/admin/providers/:id/approval\` - Odobravanje
-   - \`GET /api/admin/providers/:id/roi\` - ROI statistike
-`
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/AdminProviders.jsx\`
+- **Route:** \`/admin/providers\`
+- **State management:** useState, useEffect hooks
+- **Filtriranje:** Pretraživanje po imenu, kategoriji, statusu odobrenja
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/admin.js\`
+- **Middleware:** \`auth(true, ['ADMIN'])\`
+- **Prisma:** Query za ProviderProfile model s relacijama
+
+### Baza podataka:
+- **Tablice:** \`ProviderProfile\`, \`User\`, \`ProviderLicense\`, \`ProviderROI\`
+- **Relacije:** ProviderProfile → User, ProviderProfile → ProviderLicense
+- **Indeksi:** \`@@index([userId])\`, \`@@index([approvalStatus])\`
+
+### API pozivi:
+- \`GET /api/admin/providers\` - Query params: \`search\`, \`categoryId\`, \`approvalStatus\`
+- \`PUT /api/admin/providers/:id/approval\` - Body: \`{ approvalStatus: 'APPROVED' | 'REJECTED', notes?: string }\`
+- \`GET /api/admin/providers/:id/roi\` - Vraća ROI statistike za pružatelja
+      `
       },
       "Statistike platforme": {
         summary: "Sveobuhvatne statistike i analitika za cijelu platformu",
@@ -10464,19 +10476,37 @@ async function seedDocumentation() {
    - Notifikacije poslane i otvorene
    - Conversion funnel analiza
    
-### 5. **API i backend**
-   - \`platform-stats-service.js\` - Centralizirani servis za statistike
-   - \`GET /api/admin/platform-stats\` - Glavni endpoint za statistike
-   - Automatsko ažuriranje statistika u real-time
-   - Cache mehanizam za performanse (5 min cache)
-   - Export podataka u CSV/JSON format
-
-### 6. **Dashboard komponente**
+### 5. **Dashboard komponente**
    - Grafički prikazi (Chart.js integracija)
    - Trend linije za vremenske serije
    - Stupčasti grafovi za usporedbe
    - Krugovni grafovi za breakdown
-`
+`,
+        technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/AdminPlatformStats.jsx\`
+- **Route:** \`/admin/stats\`
+- **Biblioteke:** Chart.js, react-chartjs-2
+- **State management:** useState, useEffect hooks
+
+### Backend:
+- **Servis:** \`uslugar/backend/src/services/platform-stats-service.js\`
+- **Route:** \`uslugar/backend/src/routes/admin.js\`
+- **Endpoint:** \`GET /api/admin/platform-stats\`
+- **Middleware:** \`auth(true, ['ADMIN'])\`
+- **Cache:** 5 minuta cache za performanse
+
+### Baza podataka:
+- **Tablice:** \`User\`, \`Job\`, \`Subscription\`, \`CreditTransaction\`, \`LeadPurchase\`
+- **Agregacije:** COUNT, SUM, AVG queries
+- **Query optimizacija:** Indexi na ključnim poljima
+
+### API pozivi:
+- \`GET /api/admin/platform-stats\` - Vraća sve statistike platforme
+- \`GET /api/admin/platform-stats?type=monthly\` - Mesečne statistike
+- \`GET /api/admin/platform-stats?type=category\` - Statistike po kategorijama
+      `
       },
       "Grafički prikaz statistika": {
         summary: "Interaktivni grafički prikaz svih statistika platforme",
@@ -10551,7 +10581,30 @@ async function seedDocumentation() {
    - Usporedbe: bar chartovi za usporedbu kategorija/perioda
    - Vizualna razgradnja: doughnut chart za status breakdown
    - Dinamički prikaz: seletor godine za pregled različitih perioda
-`
+`,
+        technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/ProviderROI.jsx\` (ROI Dashboard)
+- **Biblioteke:** Chart.js, react-chartjs-2
+- **State management:** useState, useEffect hooks
+- **API integracija:** \`getYearlyReport()\` iz \`exclusive.js\`
+
+### Backend:
+- **Servis:** \`uslugar/backend/src/services/provider-roi-service.js\`
+- **Route:** \`uslugar/backend/src/routes/exclusive.js\`
+- **Endpoint:** \`GET /api/exclusive/roi/yearly-report?year=2024\`
+
+### Baza podataka:
+- **Tablice:** \`ProviderROI\`, \`LeadPurchase\`, \`Job\`, \`CreditTransaction\`
+- **Agregacije:** GROUP BY po mjesecima/kategorijama
+- **Query optimizacija:** Indexi na \`purchasedAt\`, \`categoryId\`
+
+### API pozivi:
+- \`GET /api/exclusive/roi/yearly-report?year=2024\` - Godišnji izvještaj
+- Query params: \`year\` (opcionalno, default: trenutna godina)
+- Response: \`{ revenue, roi, leads, conversions, byMonth, byCategory }\`
+      `
       },
       "Upravljanje kategorijama": {
         summary: "CRUD operacije za upravljanje kategorijama usluga",
@@ -10588,12 +10641,31 @@ async function seedDocumentation() {
    - Validacija NKD kodova
    - Provjera referenci (npr. parent kategorije mora postojati)
    
-### 6. **API endpointi**
-   - \`GET /api/admin/categories\` - Lista kategorija
-   - \`POST /api/admin/categories\` - Kreiranje
-   - \`PUT /api/admin/categories/:id\` - Ažuriranje
-   - \`DELETE /api/admin/categories/:id\` - Brisanje
-`
+`,
+        technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/AdminCategories.jsx\`
+- **Route:** \`/admin/categories\`
+- **State management:** useState, useEffect hooks
+- **CRUD operacije:** Kreiranje, ažuriranje, brisanje kategorija
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/admin-categories.js\`
+- **Middleware:** \`auth(true, ['ADMIN'])\`
+- **Prisma:** CRUD operacije na Category model
+
+### Baza podataka:
+- **Tablice:** \`Category\`
+- **Relacije:** Category → Category (parentId za hijerarhiju)
+- **Indeksi:** \`@@index([parentId])\`, \`@@index([name])\`
+
+### API pozivi:
+- \`GET /api/admin/categories\` - Lista svih kategorija
+- \`POST /api/admin/categories\` - Body: \`{ name, description, icon, parentId?, nkdCode?, requiresLicense? }\`
+- \`PUT /api/admin/categories/:id\` - Body: \`{ name?, description?, icon?, ... }\`
+- \`DELETE /api/admin/categories/:id\` - Briše kategoriju (cascade delete)
+      `
       },
       "Upravljanje pravnim statusima": {
         summary: "Upravljanje pravnim oblicima za registraciju korisnika",
@@ -10778,11 +10850,29 @@ async function seedDocumentation() {
    - Statistike pretplata po planovima
    - Churn rate analiza
 
-### 4. **API endpointi**
-   - \`GET /api/admin/subscriptions\` - Lista pretplata
-   - \`PUT /api/admin/subscriptions/:id\` - Ažuriranje
-   - \`POST /api/admin/subscriptions/:id/cancel\` - Otkaz
-`
+`,
+        technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/AdminSubscriptions.jsx\`
+- **Route:** \`/admin/subscriptions\`
+- **State management:** useState, useEffect hooks
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/subscriptions.js\`
+- **Middleware:** \`auth(true, ['ADMIN'])\`
+- **Prisma:** Query za Subscription model s relacijama
+
+### Baza podataka:
+- **Tablice:** \`Subscription\`, \`User\`, \`Invoice\`
+- **Relacije:** Subscription → User
+- **Indeksi:** \`@@index([userId])\`, \`@@index([status])\`
+
+### API pozivi:
+- \`GET /api/admin/subscriptions\` - Query params: \`userId\`, \`status\`, \`plan\`
+- \`PUT /api/admin/subscriptions/:id\` - Body: \`{ status?, plan?, expiresAt? }\`
+- \`POST /api/admin/subscriptions/:id/cancel\` - Otkazuje pretplatu
+      `
       },
       "Upravljanje transakcijama kredita": {
         summary: "Upravljanje kreditnim transakcijama i balansama",
