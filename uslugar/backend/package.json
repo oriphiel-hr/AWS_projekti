@@ -17,6 +17,7 @@
     "seed:legal": "node prisma/seed-legal-statuses-only.js",
     "seed:documentation": "node prisma/seeds/seed-documentation.js",
     "extract:documentation": "node scripts/extract-documentation.js",
+    "generate:documentation-seed": "node scripts/generate-documentation-seed.js",
     "db:fix": "node prisma/seed-db-fix.js"
   },
   "prisma": {

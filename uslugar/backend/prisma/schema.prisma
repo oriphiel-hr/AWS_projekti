@@ -901,6 +901,7 @@ model DocumentationFeature {
 
   category DocumentationCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
+  @@unique([categoryId, name])
   @@index([categoryId])
   @@index([implemented])
   @@index([order])
