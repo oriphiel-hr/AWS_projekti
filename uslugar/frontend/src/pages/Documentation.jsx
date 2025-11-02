@@ -292,7 +292,7 @@ const Documentation = () => {
         { name: "Verificiranje OIB-a", implemented: true },
         { name: "Verificiranje firme (sudski registar)", implemented: true },
         { name: "Kvaliteta leadova na osnovu verifikacije", implemented: true },
-        { name: "Automatska verifikacija", implemented: false },
+        { name: "Automatska verifikacija", implemented: true },
         { name: "Dokument upload za verifikaciju", implemented: false },
         { name: "Notifikacije o verifikaciji", implemented: false }
       ]
