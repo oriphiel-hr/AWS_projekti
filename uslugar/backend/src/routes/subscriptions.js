@@ -185,6 +185,16 @@ r.post('/subscribe', auth(true, ['PROVIDER']), async (req, res, next) => {
         userId: req.user.id
       }
     });
+    
+    // Also send transaction-specific notification
+    await prisma.notification.create({
+      data: {
+        userId: req.user.id,
+        type: 'SYSTEM',
+        title: 'Krediti iz pretplate',
+        message: `Dodano vam je ${planDetails.credits} kredita iz pretplate ${planKey}. Novo stanje: ${subscription.creditsBalance} kredita.`,
+      }
+    });
 
     console.log(`[SUBSCRIPTION] User ${req.user.id} subscribed to ${plan}. Credits: ${subscription.creditsBalance}`);
 
