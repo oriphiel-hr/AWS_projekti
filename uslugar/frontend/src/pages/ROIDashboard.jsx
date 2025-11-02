@@ -18,6 +18,7 @@ import { Line, Bar, Doughnut, Radar } from 'react-chartjs-2';
 import { getROIDashboard, getMonthlyStats, getYearlyReport } from '../api/exclusive';
 import { useDarkMode } from '../contexts/DarkModeContext.jsx';
 import ProviderBenchmark from '../components/ProviderBenchmark.jsx';
+import PerformanceForecast from '../components/PerformanceForecast.jsx';
 
 // Registriraj Chart.js komponente
 ChartJS.register(
@@ -549,6 +550,12 @@ export default function ROIDashboard() {
       <div className="mt-8 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">🏆 Usporedba s drugim providerima</h2>
         <ProviderBenchmark />
+      </div>
+
+      {/* Performance Forecast Section */}
+      <div className="mt-8 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">🔮 Predviđanje budućih performansi</h2>
+        <PerformanceForecast months={3} />
       </div>
 
       {/* Action Buttons */}

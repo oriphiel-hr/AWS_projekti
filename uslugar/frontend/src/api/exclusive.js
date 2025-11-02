@@ -89,6 +89,10 @@ export const getBenchmarkStats = () => {
   return api.get('/exclusive/roi/benchmark/stats');
 };
 
+export const getForecast = (months = 3) => {
+  return api.get(`/exclusive/roi/forecast?months=${months}`);
+};
+
 // ============================================================
 // VERIFICATION
 // ============================================================

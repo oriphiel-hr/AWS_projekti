@@ -9,6 +9,7 @@ import {
   generateCSVReport
 } from '../services/report-generator.js';
 import { getProviderPosition, calculateBenchmarks } from '../services/benchmark-service.js';
+import { forecastProviderPerformance } from '../services/forecast-service.js';
 
 const r = Router();
 
@@ -216,6 +217,24 @@ r.get('/benchmark/stats', auth(true, ['PROVIDER']), async (req, res, next) => {
   try {
     const benchmarks = await calculateBenchmarks();
     res.json(benchmarks);
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * GET /api/roi/forecast
+ * Predviđanje budućih performansi
+ * Query params: months (default: 3)
+ */
+r.get('/forecast', auth(true, ['PROVIDER']), async (req, res, next) => {
+  try {
+    const providerId = req.user.id;
+    const forecastMonths = parseInt(req.query.months) || 3;
+    
+    const forecast = await forecastProviderPerformance(providerId, forecastMonths);
+    
+    res.json(forecast);
   } catch (e) {
     next(e);
   }
