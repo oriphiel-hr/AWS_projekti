@@ -4,6 +4,13 @@ import { auth } from '../lib/auth.js';
 import { prisma } from '../lib/prisma.js';
 import { triggerAutoVerification, autoVerifyClient } from '../services/auto-verification.js';
 import { uploadDocument, getImageUrl } from '../lib/upload.js';
+import {
+  notifyPhoneVerification,
+  notifyIDVerification,
+  notifyCompanyVerification,
+  notifyTrustScoreChange,
+  notifyManualVerification
+} from '../services/verification-notifications.js';
 import fs from 'fs/promises';
 import path from 'path';
 
@@ -84,6 +91,12 @@ r.post('/phone/verify-code', auth(true), async (req, res, next) => {
     }
     
     // Ažuriraj verification status
+    const existingVerification = await prisma.clientVerification.findUnique({
+      where: { userId: req.user.id }
+    });
+    
+    const oldTrustScore = existingVerification?.trustScore || 0;
+    
     const verification = await prisma.clientVerification.upsert({
       where: { userId: req.user.id },
       create: {
@@ -97,6 +110,22 @@ r.post('/phone/verify-code', auth(true), async (req, res, next) => {
         trustScore: { increment: 20 }
       }
     });
+    
+    // Obavijesti korisnika o telefon verifikaciji
+    try {
+      await notifyPhoneVerification(req.user.id, true);
+    } catch (notifError) {
+      console.error('[Client Verification] Failed to send phone verification notification:', notifError);
+    }
+    
+    // Obavijesti o trust score promjeni
+    try {
+      if (verification.trustScore !== oldTrustScore) {
+        await notifyTrustScoreChange(req.user.id, oldTrustScore, verification.trustScore, 'Telefon verificiran');
+      }
+    } catch (notifError) {
+      console.error('[Client Verification] Failed to send trust score notification:', notifError);
+    }
     
     // Pokreni automatsku verifikaciju nakon telefonske verifikacije
     try {
@@ -197,6 +226,9 @@ r.post('/id/upload', auth(true), uploadDocument.fields([
       where: { userId: req.user.id }
     });
     
+    const oldTrustScore = existingVerification?.trustScore || 0;
+    const oldIdVerified = existingVerification?.idVerified || false;
+    
     if (existingVerification) {
       verification = await prisma.clientVerification.update({
         where: { userId: req.user.id },
@@ -224,6 +256,28 @@ r.post('/id/upload', auth(true), uploadDocument.fields([
           notes: verificationNotes
         }
       });
+    }
+    
+    // Obavijesti korisnika o ID verifikaciji
+    try {
+      if (verificationResult.success && verificationResult.verified && !oldIdVerified) {
+        // Automatski verificirano
+        await notifyIDVerification(req.user.id, true, false);
+      } else if (verificationResult.success && !verificationResult.verified) {
+        // Čeka ručnu provjeru
+        await notifyIDVerification(req.user.id, false, true);
+      }
+    } catch (notifError) {
+      console.error('[Client Verification] Failed to send ID verification notification:', notifError);
+    }
+    
+    // Obavijesti o trust score promjeni
+    try {
+      if (verification.trustScore !== oldTrustScore && verificationResult.success && verificationResult.verified) {
+        await notifyTrustScoreChange(req.user.id, oldTrustScore, verification.trustScore, 'Osobna iskaznica verificirana');
+      }
+    } catch (notifError) {
+      console.error('[Client Verification] Failed to send trust score notification:', notifError);
     }
     
     // Ako je automatski verificiran, pokreni auto-verifikaciju
@@ -304,7 +358,7 @@ r.post('/id/upload', auth(true), uploadDocument.fields([
   }
 });
 
-// Verifikacija firme (OIB + sudski registar)
+    // Verifikacija firme (OIB + sudski registar)
 r.post('/company/verify', auth(true), async (req, res, next) => {
   try {
     const user = await prisma.user.findUnique({
@@ -321,6 +375,13 @@ r.post('/company/verify', auth(true), async (req, res, next) => {
     // TODO: API integracija sa FINA/Sudskim registrom za provjeru OIB-a
     // Za sada samo simulacija
     
+    const existingVerification = await prisma.clientVerification.findUnique({
+      where: { userId: req.user.id }
+    });
+    
+    const oldTrustScore = existingVerification?.trustScore || 0;
+    const oldCompanyVerified = existingVerification?.companyVerified || false;
+    
     const verification = await prisma.clientVerification.upsert({
       where: { userId: req.user.id },
       create: {
@@ -335,6 +396,24 @@ r.post('/company/verify', auth(true), async (req, res, next) => {
         notes: `Company verified: ${user.companyName} (OIB: ${user.taxId})`
       }
     });
+    
+    // Obavijesti korisnika o company verifikaciji
+    try {
+      if (!oldCompanyVerified) {
+        await notifyCompanyVerification(req.user.id, true);
+      }
+    } catch (notifError) {
+      console.error('[Client Verification] Failed to send company verification notification:', notifError);
+    }
+    
+    // Obavijesti o trust score promjeni
+    try {
+      if (verification.trustScore !== oldTrustScore) {
+        await notifyTrustScoreChange(req.user.id, oldTrustScore, verification.trustScore, 'Firma verificirana');
+      }
+    } catch (notifError) {
+      console.error('[Client Verification] Failed to send trust score notification:', notifError);
+    }
     
     // Pokreni automatsku verifikaciju nakon company verifikacije
     try {
@@ -359,6 +438,19 @@ r.post('/admin/verify/:userId', auth(true, ['ADMIN']), async (req, res, next) =>
     const { userId } = req.params;
     const { phoneVerified, emailVerified, idVerified, companyVerified, trustScore, notes } = req.body;
     
+    // Dohvati postojeću verifikaciju da provjerimo promjene
+    const existingVerification = await prisma.clientVerification.findUnique({
+      where: { userId }
+    });
+    
+    const oldVerification = existingVerification || {
+      phoneVerified: false,
+      emailVerified: false,
+      idVerified: false,
+      companyVerified: false,
+      trustScore: 0
+    };
+    
     const verification = await prisma.clientVerification.upsert({
       where: { userId },
       create: {
@@ -381,6 +473,36 @@ r.post('/admin/verify/:userId', auth(true, ['ADMIN']), async (req, res, next) =>
         verifiedAt: new Date()
       }
     });
+    
+    // Obavijesti korisnika o promjenama
+    try {
+      // Email verifikacija
+      if (verification.emailVerified !== oldVerification.emailVerified) {
+        await notifyManualVerification(userId, 'email', verification.emailVerified, notes);
+      }
+      
+      // Telefon verifikacija
+      if (verification.phoneVerified !== oldVerification.phoneVerified) {
+        await notifyManualVerification(userId, 'phone', verification.phoneVerified, notes);
+      }
+      
+      // ID verifikacija
+      if (verification.idVerified !== oldVerification.idVerified) {
+        await notifyManualVerification(userId, 'id', verification.idVerified, notes);
+      }
+      
+      // Company verifikacija
+      if (verification.companyVerified !== oldVerification.companyVerified) {
+        await notifyManualVerification(userId, 'company', verification.companyVerified, notes);
+      }
+      
+      // Trust score promjena
+      if (verification.trustScore !== oldVerification.trustScore) {
+        await notifyTrustScoreChange(userId, oldVerification.trustScore, verification.trustScore, 'Admin ažurirao verifikaciju');
+      }
+    } catch (notifError) {
+      console.error('[Client Verification] Failed to send admin verification notifications:', notifError);
+    }
     
     res.json({
       success: true,

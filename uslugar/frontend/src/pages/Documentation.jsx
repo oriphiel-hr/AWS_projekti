@@ -294,7 +294,7 @@ const Documentation = () => {
         { name: "Kvaliteta leadova na osnovu verifikacije", implemented: true },
         { name: "Automatska verifikacija", implemented: true },
         { name: "Dokument upload za verifikaciju", implemented: true },
-        { name: "Notifikacije o verifikaciji", implemented: false }
+        { name: "Notifikacije o verifikaciji", implemented: true }
       ]
     },
     {

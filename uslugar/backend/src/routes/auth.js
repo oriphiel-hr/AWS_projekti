@@ -347,6 +347,14 @@ r.get('/verify', async (req, res, next) => {
       // Ne baci grešku - samo logiraj
     }
     
+    // Obavijesti korisnika o email verifikaciji
+    try {
+      const { notifyEmailVerification } = await import('../services/verification-notifications.js');
+      await notifyEmailVerification(user.id, true);
+    } catch (notifError) {
+      console.error('[Auth] Failed to send email verification notification:', notifError);
+    }
+    
     res.json({ 
       message: 'Email successfully verified!',
       user: { email: user.email, fullName: user.fullName, isVerified: true }

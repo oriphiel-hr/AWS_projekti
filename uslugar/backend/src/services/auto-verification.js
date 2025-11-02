@@ -166,21 +166,8 @@ export async function triggerAutoVerification(userId, triggerData = {}) {
     // Ako je verifikacija uspješna i ima auto-verifikacije, obavijesti korisnika
     if (result.success && result.verifications.autoVerified.length > 0) {
       try {
-        await prisma.notification.create({
-          data: {
-            userId: userId,
-            type: 'SYSTEM',
-            title: '✅ Automatska verifikacija',
-            message: `Vaši podaci su automatski verificirani: ${result.verifications.autoVerified.map(v => {
-              switch(v) {
-                case 'email': return 'Email';
-                case 'phone': return 'Telefon';
-                case 'company': return 'Firma';
-                default: return v;
-              }
-            }).join(', ')}. Vaš trust score: ${result.trustScore}/100.`
-          }
-        });
+        const { notifyAutoVerification } = await import('./verification-notifications.js');
+        await notifyAutoVerification(userId, result.verifications.autoVerified);
       } catch (notifError) {
         console.error('[Auto Verification] Failed to send notification:', notifError);
         // Ne baci grešku ako notifikacija ne uspije
