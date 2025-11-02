@@ -26,7 +26,10 @@ BEGIN
 END $$;
 
 -- 3. Convert LeadPurchase.status from TEXT to enum
--- Using USING clause with CASE for safe conversion
+-- Step 1: Remove default constraint (needed for type conversion)
+ALTER TABLE "LeadPurchase" ALTER COLUMN "status" DROP DEFAULT;
+
+-- Step 2: Convert column type using USING clause with CASE
 ALTER TABLE "LeadPurchase" 
   ALTER COLUMN "status" TYPE "LeadPurchaseStatus" 
   USING CASE 
@@ -38,4 +41,7 @@ ALTER TABLE "LeadPurchase"
     WHEN "status"::text = 'CANCELLED' THEN 'CANCELLED'::"LeadPurchaseStatus"
     ELSE 'ACTIVE'::"LeadPurchaseStatus" -- Default za nepoznate vrijednosti
   END;
+
+-- Step 3: Restore default constraint with enum value
+ALTER TABLE "LeadPurchase" ALTER COLUMN "status" SET DEFAULT 'ACTIVE'::"LeadPurchaseStatus";
 
