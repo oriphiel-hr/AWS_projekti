@@ -95,6 +95,106 @@ const AdminDocumentation = () => {
    - Automatsko ažuriranje statistika
    - Cache mehanizam za performanse
 `
+    },
+    "Grafički prikaz statistika": {
+      implemented: true,
+      summary: "Grafički prikaz statistika je implementiran.",
+      details: `## Implementirano:
+
+### 1. **Instalirane biblioteke**
+   - \`chart.js\` - glavna biblioteka za grafove
+   - \`react-chartjs-2\` - React wrapper za Chart.js
+
+### 2. **Grafičke komponente u ROI dashboardu**
+   
+   **Status Breakdown - Doughnut Chart:**
+   - Vizualni prikaz statusa leadova (Konvertirani, Kontaktirani, Aktivni, Refundirani)
+   - Krugovni graf s bojama za svaki status
+   
+   **Monthly Revenue & ROI - Line Chart:**
+   - Prikaz prihoda i ROI-a kroz mjesece
+   - Dvostruki Y-os (lijevo: EUR, desno: %)
+   - Kombinirani trend prihoda i ROI-a
+   
+   **Monthly Leads - Bar Chart:**
+   - Grupirani stupčasti graf
+   - Kupljeno, Kontaktirano, Konvertirano po mjesecima
+   - Boje za razlikovanje metrika
+   
+   **Conversion Rate - Line Chart:**
+   - Trend stope konverzije kroz godinu
+   - Linijski graf s ispunom
+   
+   **Category Revenue - Bar Chart:**
+   - Prihod po kategorijama
+   - Top 8 kategorija po prihodu
+   - Boje za svaku kategoriju
+
+### 3. **Funkcionalnosti**
+   - Godišnji seletor: pregled trenutne, prošle ili prethodne godine
+   - Dark mode: grafovi prilagođeni dark modu
+   - Responzivni dizajn: prilagođeno različitim veličinama ekrana
+   - Interaktivni tooltips: detalji pri hoveru
+   - Tematske boje: konzistentne boje kroz grafove
+
+### 4. **API integracija**
+   - Dodan \`getYearlyReport()\` u \`exclusive.js\`
+   - Automatsko učitavanje godišnjeg izvještaja
+   - Dinamičko ažuriranje grafova pri promjeni godine
+
+### 5. **Dizajn**
+   - Grafovi prilagođeni dashboard temi
+   - Spacing i layout optimizirani
+   - Dark mode podrška za sve grafove
+   - Profesionalni stil s legendama i osima
+
+### 6. **Chart.js konfiguracija**
+   - Registrirane sve potrebne komponente (Line, Bar, Doughnut)
+   - Custom opcije za tooltips i legende
+   - Multiple Y-axes za kombinirane metrike
+   - Theme-aware boje (light/dark mode)
+
+### 7. **Dokumentacija**
+   - Ažuriran \`Documentation.jsx\` - "Grafički prikaz statistika" označeno kao implementirano
+
+## Korisničko iskustvo:
+
+- Interaktivni grafovi: hover za detalje
+- Pregled trendova: linijski grafovi za trendove
+- Usporedbe: bar chartovi za usporedbu
+- Vizualna razgradnja: doughnut chart za status breakdown
+- Dinamički prikaz: seletor godine za pregled različitih perioda
+
+Sve promjene su commitane i pushane. Pružatelji usluga sada imaju grafički prikaz ROI statistika s interaktivnim grafovima koji olakšavaju analizu i donošenje odluka.
+`
+    },
+    "Upravljanje kategorijama": {
+      implemented: true,
+      summary: "Upravljanje kategorijama je implementirano.",
+      details: `## Implementirano:
+
+### 1. **CRUD operacije**
+   - Kreiranje novih kategorija
+   - Ažuriranje postojećih kategorija
+   - Brisanje kategorija
+   - Pregled svih kategorija
+   
+### 2. **Hijerarhijska struktura**
+   - Parent-child odnos kategorija
+   - Podkategorije i glavne kategorije
+   - Rekurzivno prikazivanje strukture
+   
+### 3. **Dodatna polja**
+   - NKD kodovi djelatnosti
+   - Opisi kategorija
+   - Emoji ikone
+   - Oznake za licencirane djelatnosti
+   
+### 4. **Upravljanje**
+   - Aktivacija/deaktivacija kategorija
+   - Display order (poredak prikaza)
+   - Filtering i search
+`
     }
   };
 
