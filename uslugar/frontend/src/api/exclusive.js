@@ -73,6 +73,10 @@ export const getMonthlyStats = (year, month) => {
   return api.get(`/exclusive/roi/monthly-stats?year=${year}&month=${month}`);
 };
 
+export const getYearlyReport = (year) => {
+  return api.get(`/exclusive/roi/yearly-report?year=${year}`);
+};
+
 export const getTopLeads = (limit = 10) => {
   return api.get(`/exclusive/roi/top-leads?limit=${limit}`);
 };
