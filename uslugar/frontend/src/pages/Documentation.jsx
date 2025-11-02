@@ -1239,8 +1239,6 @@ Sve promjene su commitane i pushane. Pružatelji usluga sada imaju grafički pri
                 {category.items.map((item, itemIndex) => {
                   const itemKey = `${categoryIndex}-${itemIndex}`;
                   const isExpanded = expandedItem === itemKey;
-                  // Debug: provjeri je li item.name u featureDescriptions
-                  const hasCustomDescription = !!featureDescriptions[item.name];
                   const description = featureDescriptions[item.name] || {
                     implemented: item.implemented,
                     summary: item.implemented ? `${item.name} je implementirano.` : `${item.name} nije implementirano.`,
