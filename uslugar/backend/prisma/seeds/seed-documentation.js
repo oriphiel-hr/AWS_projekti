@@ -10827,7 +10827,30 @@ async function seedDocumentation() {
    - Automatsko izračunavanje prosječne ocjene
    - Notifikacije o novim recenzijama
    - Rating breakdown po kategorijama
-`
+`,
+        technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/AdminReviews.jsx\`
+- **Route:** \`/admin/reviews\`
+- **State management:** useState, useEffect hooks
+- **Filtriranje:** Status, korisnik, pružatelj, ocjena
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/admin.js\`
+- **Middleware:** \`auth(true, ['ADMIN'])\`
+- **Prisma:** Query za Review model s relacijama
+
+### Baza podataka:
+- **Tablice:** \`Review\`, \`User\`, \`Job\`
+- **Relacije:** Review → User (reviewsGiven), Review → User (reviewsReceived), Review → Job
+- **Indeksi:** \`@@index([rating])\`, \`@@index([reviewedUserId])\`
+
+### API pozivi:
+- \`GET /api/admin/reviews\` - Query params: \`userId\`, \`providerId\`, \`rating\`
+- \`PUT /api/admin/reviews/:id\` - Body: \`{ comment?, rating? }\`
+- \`DELETE /api/admin/reviews/:id\` - Brisanje recenzije
+      `
       },
       "Upravljanje notifikacijama": {
         summary: "Upravljanje push, email i SMS notifikacijama",
@@ -10850,7 +10873,31 @@ async function seedDocumentation() {
    - Pretplata i plaćanje notifikacije
    - Verifikacija i status promjene
    - Systém notifikacija za sve važne događaje
-`
+`,
+        technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/AdminNotifications.jsx\`
+- **Route:** \`/admin/notifications\`
+- **State management:** useState, useEffect hooks
+- **Tipovi:** Push, Email, SMS notifikacije
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/admin.js\`
+- **Middleware:** \`auth(true, ['ADMIN'])\`
+- **Servis:** \`notification-service.js\`
+- **Prisma:** Query za Notification model
+
+### Baza podataka:
+- **Tablice:** \`Notification\`, \`User\`
+- **Relacije:** Notification → User
+- **Indeksi:** \`@@index([userId])\`, \`@@index([read])\`, \`@@index([type])\`
+
+### API pozivi:
+- \`GET /api/admin/notifications\` - Query params: \`userId\`, \`type\`, \`read\`
+- \`POST /api/admin/notifications/send\` - Body: \`{ userIds, type, title, message }\`
+- \`PUT /api/admin/notifications/:id\` - Markira kao pročitano
+      `
       },
       "Upravljanje chat sobama": {
         summary: "Moderacija chat razgovora između korisnika i pružatelja",
@@ -10872,7 +10919,31 @@ async function seedDocumentation() {
    - Prosječan broj poruka po razgovoru
    - Vrijeme odgovora pružatelja
    - Aktivnost chat-a po kategorijama
-`
+`,
+        technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/AdminChatRooms.jsx\`
+- **Route:** \`/admin/chat\`
+- **State management:** useState, useEffect hooks
+- **Real-time:** WebSocket za live poruke
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/admin.js\`
+- **Middleware:** \`auth(true, ['ADMIN'])\`
+- **Prisma:** Query za ChatRoom i ChatMessage modele
+
+### Baza podataka:
+- **Tablice:** \`ChatRoom\`, \`ChatMessage\`, \`User\`, \`Job\`
+- **Relacije:** ChatRoom → Job, ChatRoom → User[], ChatMessage → ChatRoom, ChatMessage → User
+- **Indeksi:** \`@@index([jobId])\`, \`@@index([createdAt])\`
+
+### API pozivi:
+- \`GET /api/admin/chat-rooms\` - Query params: \`jobId\`, \`userId\`
+- \`GET /api/admin/chat-rooms/:id/messages\` - Poruke u chat sobi
+- \`DELETE /api/admin/chat-rooms/:id\` - Arhiviranje chat sobe
+- \`DELETE /api/admin/messages/:id\` - Brisanje poruke
+      `
       },
       "Moderacija sadržaja": {
         summary: "Sveobuhvatna moderacija sadržaja na platformi",
@@ -10895,7 +10966,31 @@ async function seedDocumentation() {
    - Duplikat detekcija za poslove/ponude
    - Provjera autentičnosti profila
    - Flagging sustav za korisnički reporting
-`
+`,
+        technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/AdminModeration.jsx\`
+- **Route:** \`/admin/moderation\`
+- **State management:** useState, useEffect hooks
+- **Tipovi:** Job, Review, Offer, Message, Profile
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/admin.js\`
+- **Middleware:** \`auth(true, ['ADMIN'])\`
+- **Servis:** \`moderation-service.js\`
+- **Prisma:** Query za Moderation model
+
+### Baza podataka:
+- **Tablice:** \`Moderation\`, \`Job\`, \`Review\`, \`Offer\`, \`ChatMessage\`
+- **Polja:** \`contentType\`, \`contentId\`, \`status\` (PENDING, APPROVED, REJECTED)
+- **Indeksi:** \`@@index([status])\`, \`@@index([contentType])\`
+
+### API pozivi:
+- \`GET /api/admin/moderation/pending\` - Query params: \`type\`, \`limit\`, \`offset\`
+- \`POST /api/admin/moderation/:type/:id\` - Body: \`{ approved: boolean, reason? }\`
+- \`GET /api/admin/moderation/stats\` - Statistike moderacije
+      `
       },
       "Upravljanje pretplatama": {
         summary: "Upravljanje subscription planovima i aktivnim pretplatama",
