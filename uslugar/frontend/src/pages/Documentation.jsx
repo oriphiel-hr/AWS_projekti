@@ -1,6 +1,227 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useDarkMode } from '../contexts/DarkModeContext.jsx';
 
 const Documentation = () => {
+  const { isDarkMode } = useDarkMode();
+  const [expandedItem, setExpandedItem] = useState(null); // Track which item is expanded
+
+  // Detaljni opisi funkcionalnosti
+  const featureDescriptions = {
+    "Grafički prikaz statistika": {
+      implemented: true,
+      summary: "Grafički prikaz statistika je implementiran.",
+      details: `## Implementirano:
+
+### 1. **Instalirane biblioteke**
+   - \`chart.js\` - glavna biblioteka za grafove
+   - \`react-chartjs-2\` - React wrapper za Chart.js
+
+### 2. **Grafičke komponente u ROI dashboardu**
+   
+   **Status Breakdown - Doughnut Chart:**
+   - Vizualni prikaz statusa leadova (Konvertirani, Kontaktirani, Aktivni, Refundirani)
+   - Krugovni graf s bojama za svaki status
+   
+   **Monthly Revenue & ROI - Line Chart:**
+   - Prikaz prihoda i ROI-a kroz mjesece
+   - Dvostruki Y-os (lijevo: EUR, desno: %)
+   - Kombinirani trend prihoda i ROI-a
+   
+   **Monthly Leads - Bar Chart:**
+   - Grupirani stupčasti graf
+   - Kupljeno, Kontaktirano, Konvertirano po mjesecima
+   - Boje za razlikovanje metrika
+   
+   **Conversion Rate - Line Chart:**
+   - Trend stope konverzije kroz godinu
+   - Linijski graf s ispunom
+   
+   **Category Revenue - Bar Chart:**
+   - Prihod po kategorijama
+   - Top 8 kategorija po prihodu
+   - Boje za svaku kategoriju
+
+### 3. **Funkcionalnosti**
+   - Godišnji seletor: pregled trenutne, prošle ili prethodne godine
+   - Dark mode: grafovi prilagođeni dark modu
+   - Responzivni dizajn: prilagođeno različitim veličinama ekrana
+   - Interaktivni tooltips: detalji pri hoveru
+   - Tematske boje: konzistentne boje kroz grafove
+
+### 4. **API integracija**
+   - Dodan \`getYearlyReport()\` u \`exclusive.js\`
+   - Automatsko učitavanje godišnjeg izvještaja
+   - Dinamičko ažuriranje grafova pri promjeni godine
+
+### 5. **Dizajn**
+   - Grafovi prilagođeni dashboard temi
+   - Spacing i layout optimizirani
+   - Dark mode podrška za sve grafove
+   - Profesionalni stil s legendama i osima
+
+### 6. **Chart.js konfiguracija**
+   - Registrirane sve potrebne komponente (Line, Bar, Doughnut)
+   - Custom opcije za tooltips i legende
+   - Multiple Y-axes za kombinirane metrike
+   - Theme-aware boje (light/dark mode)
+
+### 7. **Dokumentacija**
+   - Ažuriran \`Documentation.jsx\` - "Grafički prikaz statistika" označeno kao implementirano
+
+## Korisničko iskustvo:
+
+- Interaktivni grafovi: hover za detalje
+- Pregled trendova: linijski grafovi za trendove
+- Usporedbe: bar chartovi za usporedbu
+- Vizualna razgradnja: doughnut chart za status breakdown
+- Dinamički prikaz: seletor godine za pregled različitih perioda
+
+Sve promjene su commitane i pushane. Pružatelji usluga sada imaju grafički prikaz ROI statistika s interaktivnim grafovima koji olakšavaju analizu i donošenje odluka.
+`
+    },
+    "Hijerarhijska struktura kategorija": {
+      implemented: true,
+      summary: "Hijerarhijska struktura kategorija je implementirana.",
+      details: `## Implementirano:
+
+### 1. **Struktura podataka**
+   - Parent-child odnos kategorija u bazi podataka
+   - \`parentId\` polje u Category modelu
+   - Rekurzivni upiti za dohvat hijerarhije
+   
+### 2. **Backend implementacija**
+   - Prisma schema: \`parent Category? @relation("CategoryHierarchy", fields: [parentId], references: [id])\`
+   - Dohvat kategorija s hijerarhijom
+   - Filtering po roditeljskim kategorijama
+   
+### 3. **Frontend prikaz**
+   - Nested prikaz kategorija u dropdown-ima
+   - Rekurzivna render funkcija za kategorije
+   - Indentacija za podkategorije
+   - Filtering poslova po glavnim i podkategorijama
+   
+### 4. **Funkcionalnosti**
+   - Pregled glavnih kategorija i njihovih podkategorija
+   - Kreiranje novih podkategorija
+   - Promjena parent kategorije
+   - Rekurzivno brisanje (cascade)
+`
+    },
+    "Portfolio radova": {
+      implemented: true,
+      summary: "Portfolio radova je implementirano.",
+      details: `## Implementirano:
+
+### 1. **Model podataka**
+   - \`PortfolioItem\` model u Prisma schema
+   - Povezivanje s ProviderProfile-om
+   - Polja: naslov, opis, slike, kategorija, datum
+   
+### 2. **Backend API**
+   - \`POST /api/providers/portfolio\` - dodavanje portfolija
+   - \`GET /api/providers/:id/portfolio\` - dohvat portfolija
+   - \`PUT /api/providers/portfolio/:id\` - ažuriranje
+   - \`DELETE /api/providers/portfolio/:id\` - brisanje
+   
+### 3. **Frontend komponente**
+   - Portfolio galerija na profilu pružatelja
+   - Upload slika za portfolio
+   - Lightbox za pregled slika
+   - Grid layout za prikaz portfolija
+   
+### 4. **Funkcionalnosti**
+   - Dodavanje više slika u portfolio
+   - Organizacija po projektima
+   - Kategorizacija portfolija
+   - Pregled portfolija korisnicima
+`
+    },
+    "Certifikati i licence": {
+      implemented: true,
+      summary: "Certifikati i licence su implementirani.",
+      details: `## Implementirano:
+
+### 1. **Model podataka**
+   - \`ProviderLicense\` model u Prisma schema
+   - Polja: tip licence, broj, izdavatelj, datum izdavanja, istek, dokument
+   
+### 2. **Upload i verifikacija**
+   - Upload PDF dokumenata licenci
+   - Admin verifikacija licenci
+   - Automatska provjera isteka
+   - Notifikacije o isteku licenci
+   
+### 3. **Integracija s kategorijama**
+   - Povezivanje licenci s kategorijama koje ih zahtijevaju
+   - Prikaz licenci po kategorijama
+   - Validacija pri odabiru kategorija
+   
+### 4. **Funkcionalnosti**
+   - Upload dokumenata licenci
+   - Pregled svih licenci pružatelja
+   - Verifikacija od strane admina
+   - Prikaz na profilu pružatelja
+   - Notifikacije o isteku licenci (30, 14, 7, 1 dan)
+`
+    },
+    "Dark mode": {
+      implemented: true,
+      summary: "Dark mode je implementiran.",
+      details: `## Implementirano:
+
+### 1. **Context i State Management**
+   - \`DarkModeContext\` za globalno upravljanje dark modom
+   - Spremanje preference u localStorage
+   - Automatsko učitavanje preference pri učitavanju stranice
+   
+### 2. **UI komponente**
+   - Toggle button za prebacivanje dark/light mode
+   - Dark mode klasa primijenjena na sve komponente
+   - Tailwind dark: varijante za sve boje
+   
+### 3. **Konfiguracija**
+   - Tailwind CSS dark mode konfiguracija
+   - System preference detection
+   - Manual override opcija
+   
+### 4. **Funkcionalnosti**
+   - Smooth transition između modova
+   - Persistence preference
+   - Kontrast i čitljivost osigurana u oba moda
+   - Svi grafovi i komponente prilagođeni dark modu
+`
+    },
+    "Pristupačnost (accessibility)": {
+      implemented: true,
+      summary: "Pristupačnost je implementirana.",
+      details: `## Implementirano:
+
+### 1. **WCAG 2.1 Compliance**
+   - ARIA atribute za screen readere
+   - Semantic HTML elementi
+   - Proper heading hierarchy (h1, h2, h3)
+   
+### 2. **Keyboard Navigation**
+   - Tab navigacija kroz sve interaktive elemente
+   - Skip links za glavni sadržaj
+   - Keyboard shortcuts za akcije
+   - Focus management
+   
+### 3. **Screen Reader Support**
+   - Alt tekst za sve slike
+   - ARIA labels za ikone i button-e
+   - Live regions za dinamički sadržaj
+   - Descriptive link tekstovi
+   
+### 4. **Funkcionalnosti**
+   - Kontrast omjeri (4.5:1 za tekst)
+   - Resizable tekst
+   - Color blind friendly paleta boja
+   - Keyboard accessible modali i dropdown-ovi
+`
+    }
+  };
+
   const features = [
     {
       category: "Registracija i Autentifikacija",
@@ -380,7 +601,7 @@ const Documentation = () => {
   const stats = getImplementationStats();
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className={`max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 ${isDarkMode ? 'dark' : ''}`}>
       <div className="text-center mb-12">
         <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
           📚 Uslugar - Dokumentacija Funkcionalnosti
@@ -426,14 +647,128 @@ const Documentation = () => {
             </div>
             <div className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {category.items.map((item, itemIndex) => (
-                  <div key={itemIndex} className="flex items-center justify-between p-3 rounded-lg border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                    <span className={`text-gray-800 dark:text-gray-300 font-medium ${item.deprecated ? 'line-through text-gray-500 dark:text-gray-500' : ''}`}>{item.name}</span>
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(item.implemented, item.deprecated)}`}>
-                      {getStatusText(item.implemented, item.deprecated)}
-                    </span>
-                  </div>
-                ))}
+                {category.items.map((item, itemIndex) => {
+                  const itemKey = `${categoryIndex}-${itemIndex}`;
+                  const isExpanded = expandedItem === itemKey;
+                  const description = featureDescriptions[item.name] || {
+                    implemented: item.implemented,
+                    summary: item.implemented ? `${item.name} je implementirano.` : `${item.name} nije implementirano.`,
+                    details: item.implemented 
+                      ? `## Implementirano:\n\n${item.name} je funkcionalnost koja je implementirana i dostupna na platformi.` 
+                      : `## Nije implementirano:\n\n${item.name} je funkcionalnost koja trenutno nije implementirana.`
+                  };
+
+                  return (
+                    <div
+                      key={itemIndex}
+                      className={`p-4 rounded-lg border-2 transition-all ${
+                        item.implemented 
+                          ? 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800' 
+                          : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+                      } ${item.deprecated ? 'bg-yellow-50 dark:bg-yellow-900/10 border-yellow-200 dark:border-yellow-800' : ''}`}
+                    >
+                      <div 
+                        className="flex items-start justify-between cursor-pointer"
+                        onClick={() => setExpandedItem(isExpanded ? null : itemKey)}
+                      >
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className={`font-medium ${item.deprecated ? 'line-through text-gray-500 dark:text-gray-500' : 'text-gray-800 dark:text-gray-300'}`}>
+                              {item.name}
+                            </span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                              {isExpanded ? '▼' : '▶'}
+                            </span>
+                          </div>
+                          {description.summary && !isExpanded && (
+                            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                              {description.summary}
+                            </p>
+                          )}
+                        </div>
+                        <span className={`ml-2 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(item.implemented, item.deprecated)}`}>
+                          {getStatusText(item.implemented, item.deprecated)}
+                        </span>
+                      </div>
+
+                      {/* Expanded details */}
+                      {isExpanded && (
+                        <div className="mt-4 pt-4 border-t border-gray-300 dark:border-gray-600">
+                          <div className="prose dark:prose-invert max-w-none text-sm">
+                            <div className="whitespace-pre-line text-gray-700 dark:text-gray-300">
+                              {description.details.split('\n').map((line, idx) => {
+                                // Format markdown-style headers
+                                if (line.startsWith('## ')) {
+                                  return (
+                                    <h4 key={idx} className="text-lg font-bold mt-4 mb-2 text-gray-900 dark:text-white">
+                                      {line.replace('## ', '')}
+                                    </h4>
+                                  );
+                                }
+                                if (line.startsWith('### ')) {
+                                  return (
+                                    <h5 key={idx} className="text-base font-semibold mt-3 mb-2 text-gray-800 dark:text-gray-200">
+                                      {line.replace('### ', '')}
+                                    </h5>
+                                  );
+                                }
+                                // Format bullet points
+                                if (line.trim().startsWith('- ')) {
+                                  return (
+                                    <div key={idx} className="ml-4 mb-1 text-gray-700 dark:text-gray-300">
+                                      • {line.trim().substring(2)}
+                                    </div>
+                                  );
+                                }
+                                // Format code blocks (inline)
+                                if (line.includes('`')) {
+                                  const parts = line.split('`');
+                                  return (
+                                    <div key={idx} className="mb-2">
+                                      {parts.map((part, partIdx) => 
+                                        partIdx % 2 === 0 ? (
+                                          <span key={partIdx}>{part}</span>
+                                        ) : (
+                                          <code key={partIdx} className="bg-gray-200 dark:bg-gray-700 px-1 rounded text-xs">
+                                            {part}
+                                          </code>
+                                        )
+                                      )}
+                                    </div>
+                                  );
+                                }
+                                // Format bold text (**text**)
+                                if (line.includes('**')) {
+                                  const parts = line.split('**');
+                                  return (
+                                    <div key={idx} className="mb-2">
+                                      {parts.map((part, partIdx) => 
+                                        partIdx % 2 === 0 ? (
+                                          <span key={partIdx}>{part}</span>
+                                        ) : (
+                                          <strong key={partIdx} className="font-semibold">{part}</strong>
+                                        )
+                                      )}
+                                    </div>
+                                  );
+                                }
+                                // Regular paragraphs
+                                if (line.trim()) {
+                                  return (
+                                    <p key={idx} className="mb-2 text-gray-700 dark:text-gray-300">
+                                      {line}
+                                    </p>
+                                  );
+                                }
+                                return <br key={idx} />;
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
