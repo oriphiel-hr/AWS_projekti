@@ -231,9 +231,7 @@ export async function getPendingModeration(contentType = 'all', limit = 50, offs
           job: {
             select: {
               title: true,
-              userId: true
-            },
-            include: {
+              userId: true,
               user: {
                 select: {
                   fullName: true
