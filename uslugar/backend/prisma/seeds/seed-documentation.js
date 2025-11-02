@@ -984,7 +984,32 @@ Registracija kao korisnik usluge omogućava vam da koristite platformu za objavl
 - Mogućnost ocjenjivanja i recenziranja pružatelja
 
 Registracija kao korisnik usluge je besplatna i jednostavna - za nekoliko minuta možete početi tražiti pružatelje za svoje potrebe!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/Register.jsx\`
+- **Route:** \`/register\`
+- **State management:** useState hooks
+- **Form validacija:** Email format, password strength
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/auth.js\`
+- **Endpoint:** \`POST /api/auth/register\`
+- **Prisma:** Kreiranje User zapisa
+- **Validacija:** Joi ili express-validator
+
+### Baza podataka:
+- **Tablice:** \`User\`, \`LegalStatus\`
+- **Relacije:** User → LegalStatus (legalStatusId)
+- **Polja:** \`email\`, \`passwordHash\`, \`fullName\`, \`role\`, \`verificationToken\`
+- **Indeksi:** \`@@unique([email, role])\`
+
+### API pozivi:
+- \`POST /api/auth/register\` - Body: \`{ email, password, fullName, role: 'USER', legalStatusId?, companyName?, taxId? }\`
+- Generira \`verificationToken\` i šalje email verifikaciju
+- Vraća: \`{ user: { id, email, fullName }, message: 'Verifikacijski email poslan' }\`
+      `
     },
     "Registracija pružatelja usluga": {
       implemented: true,
@@ -1121,7 +1146,31 @@ Kao korisnik usluge, možete objaviti posao koji tražite, a pružatelji će vam
 - Vidite sve ponude i možete prihvatiti ili odbiti svaku
 
 Objavljivanje poslova je besplatno i jednostavno - za nekoliko minuta možete započeti traženje pružatelja za svoj posao!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/CreateJob.jsx\`
+- **Route:** \`/jobs/new\`
+- **State management:** useState hooks
+- **Form validacija:** Required fields, file upload za slike
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/jobs.js\`
+- **Endpoint:** \`POST /api/jobs\`
+- **Middleware:** \`auth(true)\` - zahtjeva autentifikaciju
+- **Prisma:** Kreiranje Job zapisa
+
+### Baza podataka:
+- **Tablice:** \`Job\`, \`User\`, \`Category\`
+- **Relacije:** Job → User (author), Job → Category
+- **Polja:** \`title\`, \`description\`, \`budgetMin\`, \`budgetMax\`, \`city\`, \`latitude\`, \`longitude\`, \`status\`, \`categoryId\`
+- **Indeksi:** \`@@index([categoryId])\`, \`@@index([status])\`, \`@@index([city])\`
+
+### API pozivi:
+- \`POST /api/jobs\` - Body: \`{ title, description, budgetMin, budgetMax, city, latitude?, longitude?, categoryId, images?, urgency?, size?, deadline? }\`
+- Vraća: \`{ job: { id, title, status: 'OTVOREN', ... } }\`
+      `
     },
     "Slanje ponuda za poslove": {
       implemented: true,
