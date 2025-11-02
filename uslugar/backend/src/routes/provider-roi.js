@@ -86,45 +86,72 @@ r.get('/dashboard', auth(true, ['PROVIDER']), async (req, res, next) => {
   }
 });
 
-// Mjesečna statistika
+// Mjesečna statistika (prošireno)
 r.get('/monthly-stats', auth(true, ['PROVIDER']), async (req, res, next) => {
   try {
     const providerId = req.user.id;
-    const { year, month } = req.query;
+    const { year, month, format } = req.query; // format: 'json' (default), 'pdf', 'csv'
     
-    const startDate = new Date(year || new Date().getFullYear(), (month || new Date().getMonth()) - 1, 1);
-    const endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0);
+    const reportYear = parseInt(year) || new Date().getFullYear();
+    const reportMonth = parseInt(month) || new Date().getMonth() + 1;
     
-    const purchases = await prisma.leadPurchase.findMany({
-      where: {
-        providerId,
-        createdAt: {
-          gte: startDate,
-          lte: endDate
-        }
-      },
-      include: {
-        job: {
-          select: { budgetMax: true }
-        }
-      }
-    });
+    const reportData = await generateMonthlyReport(providerId, reportYear, reportMonth);
     
-    const stats = {
-      month: startDate.toLocaleDateString('hr-HR', { year: 'numeric', month: 'long' }),
-      totalPurchased: purchases.length,
-      totalContacted: purchases.filter(p => p.status === 'CONTACTED' || p.status === 'CONVERTED').length,
-      totalConverted: purchases.filter(p => p.status === 'CONVERTED').length,
-      totalCreditsSpent: purchases.reduce((sum, p) => sum + p.creditsSpent, 0),
-      estimatedRevenue: purchases
-        .filter(p => p.status === 'CONVERTED')
-        .reduce((sum, p) => sum + (p.job.budgetMax || 0), 0),
-      conversionRate: purchases.length > 0 
-        ? (purchases.filter(p => p.status === 'CONVERTED').length / purchases.length) * 100 
-        : 0
-    };
+    // Ako je zahtijevan PDF
+    if (format === 'pdf') {
+      const pdfBuffer = await generatePDFReport(reportData, 'monthly');
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="izvjestaj-${reportYear}-${String(reportMonth).padStart(2, '0')}.pdf"`);
+      return res.send(pdfBuffer);
+    }
     
-    res.json(stats);
+    // Ako je zahtijevan CSV
+    if (format === 'csv') {
+      const csvContent = generateCSVReport(reportData, 'monthly');
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename="izvjestaj-${reportYear}-${String(reportMonth).padStart(2, '0')}.csv"`);
+      return res.send(csvContent);
+    }
+    
+    // Default: JSON
+    res.json(reportData);
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * GET /api/roi/yearly-report
+ * Godišnji izvještaj
+ * Query params: year, format (json|pdf|csv)
+ */
+r.get('/yearly-report', auth(true, ['PROVIDER']), async (req, res, next) => {
+  try {
+    const providerId = req.user.id;
+    const { year, format } = req.query;
+    
+    const reportYear = parseInt(year) || new Date().getFullYear();
+    
+    const reportData = await generateYearlyReport(providerId, reportYear);
+    
+    // Ako je zahtijevan PDF
+    if (format === 'pdf') {
+      const pdfBuffer = await generatePDFReport(reportData, 'yearly');
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="godisnji-izvjestaj-${reportYear}.pdf"`);
+      return res.send(pdfBuffer);
+    }
+    
+    // Ako je zahtijevan CSV
+    if (format === 'csv') {
+      const csvContent = generateCSVReport(reportData, 'yearly');
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename="godisnji-izvjestaj-${reportYear}.csv"`);
+      return res.send(csvContent);
+    }
+    
+    // Default: JSON
+    res.json(reportData);
   } catch (e) {
     next(e);
   }
