@@ -154,7 +154,8 @@ app.use(cors({
   maxAge: 86400,
   preflightContinue: false, // Stop after OPTIONS
 }))
-app.options('*', cors())
+
+// Explicit OPTIONS handler for all API routes - must come after cors() middleware
 app.options('/api/*', (req, res) => {
   const origin = req.headers.origin
   if (origin && ALLOWED_ORIGINS.includes(origin)) {
