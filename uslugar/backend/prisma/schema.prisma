@@ -31,6 +31,12 @@ enum SupportCategory {
   OTHER
 }
 
+enum ModerationStatus {
+  PENDING // Čeka moderaciju
+  APPROVED // Odobreno
+  REJECTED // Odbijeno
+}
+
 // Support Ticket System (must be before User model)
 model SupportTicket {
   id         String          @id @default(cuid())
@@ -299,13 +305,13 @@ model Job {
   leadQueue             LeadQueue[]         @relation("JobQueue")
   notifications         Notification[]
   reviews               Review[] // Recenzije ostavljene na ovom job-u
-  
+
   // MODERATION
-  moderationStatus     ModerationStatus @default(PENDING) // Status moderacije
-  moderationReviewedBy String? // ID admina koji je pregledao
-  moderationReviewedAt DateTime? // Kada je pregledano
+  moderationStatus          ModerationStatus @default(PENDING) // Status moderacije
+  moderationReviewedBy      String? // ID admina koji je pregledao
+  moderationReviewedAt      DateTime? // Kada je pregledano
   moderationRejectionReason String? // Razlog odbijanja (ako je odbijen)
-  moderationNotes      String? // Bilješke moderatora
+  moderationNotes           String? // Bilješke moderatora
 }
 
 model Offer {
@@ -322,14 +328,14 @@ model Offer {
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   notifications Notification[]
-  
+
   // MODERATION
-  moderationStatus     ModerationStatus @default(PENDING) // Status moderacije
-  moderationReviewedBy String? // ID admina koji je pregledao
-  moderationReviewedAt DateTime? // Kada je pregledano
+  moderationStatus          ModerationStatus @default(PENDING) // Status moderacije
+  moderationReviewedBy      String? // ID admina koji je pregledao
+  moderationReviewedAt      DateTime? // Kada je pregledano
   moderationRejectionReason String? // Razlog odbijanja (ako je odbijen)
-  moderationNotes      String? // Bilješke moderatora
-  
+  moderationNotes           String? // Bilješke moderatora
+
   @@index([moderationStatus])
 }
 
@@ -344,13 +350,13 @@ model Review {
   to         User     @relation("reviewsReceived", fields: [toUserId], references: [id], onDelete: Cascade)
   toUserId   String
   createdAt  DateTime @default(now())
-  
+
   // MODERATION
-  moderationStatus     ModerationStatus @default(PENDING) // Status moderacije
-  moderationReviewedBy String? // ID admina koji je pregledao
-  moderationReviewedAt DateTime? // Kada je pregledano
+  moderationStatus          ModerationStatus @default(PENDING) // Status moderacije
+  moderationReviewedBy      String? // ID admina koji je pregledao
+  moderationReviewedAt      DateTime? // Kada je pregledano
   moderationRejectionReason String? // Razlog odbijanja (ako je odbijen)
-  moderationNotes      String? // Bilješke moderatora
+  moderationNotes           String? // Bilješke moderatora
 
   @@unique([jobId, fromUserId]) // Jedna recenzija po job-u od svake strane
   @@index([jobId])
@@ -432,26 +438,26 @@ model ChatRoom {
 }
 
 model ChatMessage {
-  id         String          @id @default(cuid())
-  content    String          // Tekst poruke (može biti prazan ako su samo slike)
-  attachments String[]        @default([]) // URL-ovi priloženih slika
-  status     MessageStatus   @default(SENT) // SENT, DELIVERED, READ
-  readAt     DateTime?       // Datum i vrijeme kada je poruka pročitana
-  sender     User            @relation("senderMessages", fields: [senderId], references: [id], onDelete: Cascade)
-  senderId   String
-  room       ChatRoom        @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  roomId     String
-  createdAt  DateTime        @default(now())
-  
+  id          String        @id @default(cuid())
+  content     String // Tekst poruke (može biti prazan ako su samo slike)
+  attachments String[]      @default([]) // URL-ovi priloženih slika
+  status      MessageStatus @default(SENT) // SENT, DELIVERED, READ
+  readAt      DateTime? // Datum i vrijeme kada je poruka pročitana
+  sender      User          @relation("senderMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  senderId    String
+  room        ChatRoom      @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  roomId      String
+  createdAt   DateTime      @default(now())
+
   // MODERATION (samo za poruke koje su prijavljene)
-  moderationStatus     ModerationStatus? // Status moderacije (null = nije prijavljeno)
-  moderationReportedBy String? // ID korisnika koji je prijavio
-  moderationReportedAt DateTime? // Kada je prijavljeno
-  moderationReviewedBy String? // ID admina koji je pregledao
-  moderationReviewedAt DateTime? // Kada je pregledano
+  moderationStatus          ModerationStatus? // Status moderacije (null = nije prijavljeno)
+  moderationReportedBy      String? // ID korisnika koji je prijavio
+  moderationReportedAt      DateTime? // Kada je prijavljeno
+  moderationReviewedBy      String? // ID admina koji je pregledao
+  moderationReviewedAt      DateTime? // Kada je pregledano
   moderationRejectionReason String? // Razlog odbijanja (ako je odbijen)
-  moderationNotes      String? // Bilješke moderatora
-  
+  moderationNotes           String? // Bilješke moderatora
+
   @@index([roomId, createdAt])
   @@index([status])
   @@index([moderationStatus])
@@ -559,15 +565,15 @@ model Invoice {
 
 // Kupljeni ekskluzivni leadovi (1 lead = 1 provider)
 model LeadPurchase {
-  id                    String             @id @default(cuid())
-  job                   Job                @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  id                    String               @id @default(cuid())
+  job                   Job                  @relation(fields: [jobId], references: [id], onDelete: Cascade)
   jobId                 String
-  provider              User               @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  provider              User                 @relation(fields: [providerId], references: [id], onDelete: Cascade)
   providerId            String
   creditsSpent          Int // Broj kredita potrošenih za kupovinu
   leadPrice             Int // Cijena leada u trenutku kupnje
-  status                LeadPurchaseStatus @default(ACTIVE)
-  contactUnlocked       Boolean            @default(false) // Pay-per-contact: je li kontakt otključan
+  status                LeadPurchaseStatus   @default(ACTIVE)
+  contactUnlocked       Boolean              @default(false) // Pay-per-contact: je li kontakt otključan
   contactUnlockedAt     DateTime? // Kada je kontakt otključan
   contactedAt           DateTime? // Kada je provider kontaktirao klijenta
   convertedAt           DateTime? // Kada je lead konvertiran u posao
@@ -581,8 +587,8 @@ model LeadPurchase {
   stripePaymentIntentId String? // Stripe Payment Intent ID (za refund kroz Stripe)
   stripeRefundId        String? // Stripe Refund ID (nakon refund-a)
   notes                 String? // Dodatne bilješke
-  createdAt             DateTime           @default(now())
-  updatedAt             DateTime           @updatedAt
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
 
   creditTransactions CreditTransaction[]
   invoices           Invoice[]
