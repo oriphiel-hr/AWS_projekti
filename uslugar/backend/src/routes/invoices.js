@@ -9,7 +9,8 @@ import {
   createInvoice,
   generateInvoicePDF,
   generateAndSendInvoice,
-  markInvoiceAsPaid
+  markInvoiceAsPaid,
+  stornoInvoice
 } from '../services/invoice-service.js';
 import { fiscalizeInvoice } from '../services/fiscalization-service.js';
 
@@ -276,6 +277,36 @@ r.post('/:invoiceId/fiscalize', auth(true, ['ADMIN', 'PROVIDER', 'USER']), async
       message: result.jirCode 
         ? 'Faktura je uspješno fiskalizirana'
         : 'Faktura ne zahtijeva fiskalizaciju'
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * POST /api/invoices/:invoiceId/storno
+ * Stornira fakturu (kreira storno fakturu) - samo admin
+ */
+r.post('/:invoiceId/storno', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const { invoiceId } = req.params;
+    const { reason } = req.body;
+
+    const result = await stornoInvoice(invoiceId, reason || 'Storniranje fakture');
+
+    // Generiraj i pošalji storno fakturu emailom
+    try {
+      await generateAndSendInvoice(result.stornoInvoice.id);
+    } catch (emailError) {
+      console.error('[INVOICE] Error sending storno invoice email:', emailError);
+      // Ne baci grešku - storno faktura je kreirana
+    }
+
+    res.json({
+      success: true,
+      originalInvoice: result.originalInvoice,
+      stornoInvoice: result.stornoInvoice,
+      message: `Faktura ${result.originalInvoice.invoiceNumber} je stornirana. Storno faktura: ${result.stornoInvoice.invoiceNumber}`
     });
   } catch (e) {
     next(e);

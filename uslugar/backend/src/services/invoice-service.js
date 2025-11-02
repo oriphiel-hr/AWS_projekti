@@ -9,19 +9,21 @@ import { fiscalizeInvoice, requiresFiscalization, generateQRCodeURL } from './fi
 
 /**
  * Generira jedinstveni broj fakture
- * Format: INV-YYYY-MM-XXXX (npr. INV-2025-01-0001)
+ * Format: YYYY-XXXX (npr. 2025-0001, 2025-0002, itd.)
+ * Broj se resetira na 1 svake godine
  */
 export async function generateInvoiceNumber() {
   const now = new Date();
   const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
   
-  // Pronađi zadnji broj fakture za ovaj mjesec
+  // Pronađi zadnji broj fakture za ovu godinu (ignorira storno fakture za sekvenciju)
   const lastInvoice = await prisma.invoice.findFirst({
     where: {
       invoiceNumber: {
-        startsWith: `INV-${year}-${month}-`
-      }
+        startsWith: `${year}-`
+      },
+      // Ne uključi storno fakture u sekvenciju (one imaju negativne iznose)
+      amount: { gte: 0 }
     },
     orderBy: {
       invoiceNumber: 'desc'
@@ -30,13 +32,17 @@ export async function generateInvoiceNumber() {
 
   let sequence = 1;
   if (lastInvoice) {
-    // Izvadi sekvenciju iz broja fakture (zadnje 4 znamenke)
-    const lastSequence = parseInt(lastInvoice.invoiceNumber.slice(-4));
-    sequence = lastSequence + 1;
+    // Izvadi sekvenciju iz broja fakture (zadnje 4 znamenke nakon godine)
+    // Format: YYYY-XXXX
+    const parts = lastInvoice.invoiceNumber.split('-');
+    if (parts.length >= 2) {
+      const lastSequence = parseInt(parts[parts.length - 1]);
+      sequence = lastSequence + 1;
+    }
   }
 
   const sequenceStr = String(sequence).padStart(4, '0');
-  return `INV-${year}-${month}-${sequenceStr}`;
+  return `${year}-${sequenceStr}`;
 }
 
 /**
@@ -245,14 +251,28 @@ export async function generateInvoicePDF(invoice) {
       // Table row
       yPos += 25;
       const description = getInvoiceDescription(invoice);
+      const isStorno = invoice.isStorno || invoice.amount < 0;
+      
       doc
         .fillColor('#333333')
         .font('Helvetica')
         .rect(50, yPos, 495, 35)
         .stroke();
       
+      // Ako je storno faktura, prikaži jasno
+      if (isStorno) {
+        doc
+          .font('Helvetica-Bold')
+          .fontSize(12)
+          .fillColor('#DC2626') // Crvena za storno
+          .text('STORNO FAKTURA', 60, yPos + 5, { width: 200 });
+        
+        yPos += 15;
+      }
+      
       // Opis usluge - podebljano i jasno
       doc
+        .fillColor('#333333')
         .font('Helvetica-Bold')
         .fontSize(10)
         .text(description.title, 60, yPos + 8, { width: 200 });
@@ -265,13 +285,26 @@ export async function generateInvoicePDF(invoice) {
           .text(description.details, 60, yPos + 20, { width: 200 });
       }
       
+      // Ako je storno, prikaži vezu na originalnu fakturu
+      if (invoice.originalInvoiceId) {
+        doc
+          .font('Helvetica')
+          .fontSize(7)
+          .fillColor('#666666')
+          .text(`Storno fakture: ${invoice.invoiceNumber.replace(/^[0-9]+-/, '')}`, 60, yPos + 28, { width: 200 });
+      }
+      
+      // Prikaži negativan iznos ako je storno
+      const amount = Math.abs(invoice.amount / 100);
+      const displayAmount = isStorno ? `-${formatCurrency(amount)}` : formatCurrency(amount);
+      
       doc
-        .fillColor('#333333')
+        .fillColor(isStorno ? '#DC2626' : '#333333')
         .font('Helvetica')
         .fontSize(10)
         .text('1', 280, yPos + 10)
-        .text(formatCurrency(invoice.amount / 100), 380, yPos + 10)
-        .text(formatCurrency(invoice.amount / 100), 470, yPos + 10);
+        .text(displayAmount, 380, yPos + 10)
+        .text(displayAmount, 470, yPos + 10);
 
       // ============================================
       // TOTALS
@@ -279,23 +312,29 @@ export async function generateInvoicePDF(invoice) {
       yPos += 50;
       doc.fontSize(10);
       
+      const isStorno = invoice.isStorno || invoice.amount < 0;
       const totalsX = 380;
+      const baseAmount = Math.abs(invoice.amount / 100);
+      const taxAmount = Math.abs(invoice.taxAmount / 100);
+      const totalAmount = Math.abs(invoice.totalAmount / 100);
+      
       doc
+        .fillColor('#333333')
         .text('Osnovica:', totalsX, yPos, { align: 'right', width: 100 })
-        .text(formatCurrency(invoice.amount / 100), totalsX + 110, yPos, { align: 'right', width: 60 });
+        .text(isStorno ? `-${formatCurrency(baseAmount)}` : formatCurrency(baseAmount), totalsX + 110, yPos, { align: 'right', width: 60 });
 
       yPos += 15;
       doc
         .text('PDV (25%):', totalsX, yPos, { align: 'right', width: 100 })
-        .text(formatCurrency(invoice.taxAmount / 100), totalsX + 110, yPos, { align: 'right', width: 60 });
+        .text(isStorno ? `-${formatCurrency(taxAmount)}` : formatCurrency(taxAmount), totalsX + 110, yPos, { align: 'right', width: 60 });
 
       yPos += 20;
       doc
         .font('Helvetica-Bold')
         .fontSize(12)
-        .fillColor('#4CAF50')
+        .fillColor(isStorno ? '#DC2626' : '#4CAF50')
         .text('UKUPNO:', totalsX, yPos, { align: 'right', width: 100 })
-        .text(formatCurrency(invoice.totalAmount / 100), totalsX + 110, yPos, { align: 'right', width: 60 });
+        .text(isStorno ? `-${formatCurrency(totalAmount)}` : formatCurrency(totalAmount), totalsX + 110, yPos, { align: 'right', width: 60 });
 
       // ============================================
       // FISCAL INFO (ZKI/JIR) - HR Fiskalizacija
@@ -534,6 +573,137 @@ export async function markInvoiceAsPaid(invoiceId) {
       paidAt: new Date()
     }
   });
+}
+
+/**
+ * Stornira fakturu (kreira storno fakturu)
+ * Storno faktura ima negativan iznos i poništava originalnu fakturu
+ * 
+ * @param {String} invoiceId - ID fakture koja se stornira
+ * @param {String} reason - Razlog storniranja
+ * @returns {Object} { originalInvoice, stornoInvoice }
+ */
+export async function stornoInvoice(invoiceId, reason = 'Storniranje fakture') {
+  // 1. Pronađi originalnu fakturu
+  const originalInvoice = await prisma.invoice.findUnique({
+    where: { id: invoiceId },
+    include: {
+      user: {
+        select: {
+          id: true,
+          fullName: true,
+          email: true,
+          companyName: true,
+          taxId: true,
+          city: true
+        }
+      },
+      subscription: true,
+      leadPurchase: {
+        include: {
+          job: {
+            select: {
+              title: true
+            }
+          }
+        }
+      }
+    }
+  });
+
+  if (!originalInvoice) {
+    throw new Error('Faktura nije pronađena');
+  }
+
+  // Provjeri je li već stornirana
+  if (originalInvoice.isStorno) {
+    throw new Error('Ova faktura je već storno faktura');
+  }
+
+  // Provjeri postoji li već storno faktura
+  const existingStorno = await prisma.invoice.findFirst({
+    where: {
+      originalInvoiceId: invoiceId,
+      isStorno: true
+    }
+  });
+
+  if (existingStorno) {
+    throw new Error('Faktura je već stornirana');
+  }
+
+  // Provjeri status - samo SENT ili PAID fakture mogu biti stornirane
+  if (originalInvoice.status === 'DRAFT') {
+    throw new Error('Faktura u statusu DRAFT ne može biti stornirana. Možete je jednostavno obrisati.');
+  }
+
+  if (originalInvoice.status === 'CANCELLED' || originalInvoice.status === 'STORNED') {
+    throw new Error('Faktura je već otkazana ili stornirana');
+  }
+
+  // 2. Kreiraj storno fakturu (negativni iznosi)
+  const stornoInvoiceNumber = await generateInvoiceNumber(); // Novi broj fakture
+  const stornoInvoice = await prisma.invoice.create({
+    data: {
+      userId: originalInvoice.userId,
+      invoiceNumber: stornoInvoiceNumber,
+      type: originalInvoice.type,
+      status: 'SENT',
+      amount: -originalInvoice.amount, // Negativan iznos
+      currency: originalInvoice.currency,
+      taxAmount: -originalInvoice.taxAmount, // Negativan PDV
+      totalAmount: -originalInvoice.totalAmount, // Negativan ukupni iznos
+      subscriptionId: originalInvoice.subscriptionId,
+      leadPurchaseId: originalInvoice.leadPurchaseId,
+      stripePaymentIntentId: null, // Storno faktura nema Stripe payment
+      stripeInvoiceId: null,
+      issueDate: new Date(),
+      dueDate: originalInvoice.dueDate,
+      isStorno: true,
+      originalInvoiceId: invoiceId,
+      notes: `Storno fakture ${originalInvoice.invoiceNumber}. Razlog: ${reason}`,
+      // Fiskalizacija za storno - može se pokrenuti kasnije
+      fiscalizationStatus: 'NOT_REQUIRED' // Storno fakture se ne fiskaliziraju automatski
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          fullName: true,
+          email: true,
+          companyName: true,
+          taxId: true,
+          city: true
+        }
+      },
+      subscription: true,
+      leadPurchase: {
+        include: {
+          job: {
+            select: {
+              title: true
+            }
+          }
+        }
+      }
+    }
+  });
+
+  // 3. Ažuriraj status originalne fakture na STORNED
+  await prisma.invoice.update({
+    where: { id: invoiceId },
+    data: {
+      status: 'STORNED',
+      notes: `${originalInvoice.notes || ''}\nStornirano: ${reason}. Storno faktura: ${stornoInvoice.invoiceNumber}`.trim()
+    }
+  });
+
+  console.log(`[INVOICE] Invoice ${originalInvoice.invoiceNumber} stornirana. Storno faktura: ${stornoInvoice.invoiceNumber}`);
+
+  return {
+    originalInvoice: await prisma.invoice.findUnique({ where: { id: invoiceId } }),
+    stornoInvoice
+  };
 }
 
 

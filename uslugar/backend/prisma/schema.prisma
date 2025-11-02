@@ -466,9 +466,9 @@ model Invoice {
   id            String        @id @default(cuid())
   user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId        String
-  invoiceNumber String        @unique // Format: INV-YYYY-MM-XXXX (npr. INV-2025-01-0001)
+  invoiceNumber String        @unique // Format: YYYY-XXXX (npr. 2025-0001) - resetira se na 1 svake godine
   type          InvoiceType
-  status        InvoiceStatus @default(DRAFT) // DRAFT, SENT, PAID, CANCELLED
+  status        InvoiceStatus @default(DRAFT) // DRAFT, SENT, PAID, CANCELLED, STORNED
   amount        Int // Iznos u centima (EUR)
   currency      String        @default("EUR")
   taxAmount     Int           @default(0) // PDV u centima
@@ -715,6 +715,7 @@ enum InvoiceStatus {
   SENT // Poslana korisniku
   PAID // Plaćena
   CANCELLED // Otkazana
+  STORNED // Stornirana (poništavajuća faktura je izdana)
 }
 
 enum ProviderApprovalStatus {

@@ -133,15 +133,23 @@ export async function refundSubscription(userId, reason = 'Requested by customer
     }
   });
 
-  // 4. Ažuriraj invoice status ako postoji
+  // 4. Storniraj fakturu ako postoji (kreira storno fakturu)
   if (invoice) {
-    await prisma.invoice.update({
-      where: { id: invoice.id },
-      data: {
-        status: 'CANCELLED',
-        notes: `Refunded: ${reason}. Stripe Refund ID: ${stripeRefund?.id || 'N/A'}`
-      }
-    });
+    try {
+      const { stornoInvoice } = await import('../services/invoice-service.js');
+      const stornoResult = await stornoInvoice(invoice.id, `Otkazivanje pretplate - refund: ${reason}`);
+      console.log(`[SUBSCRIPTION-REFUND] Invoice ${invoice.invoiceNumber} stornirana zbog otkazivanja pretplate. Storno faktura: ${stornoResult.stornoInvoice.invoiceNumber}`);
+    } catch (stornoError) {
+      // Ako storniranje ne uspije, samo označi kao CANCELLED
+      console.error('[SUBSCRIPTION-REFUND] Error storniranja fakture:', stornoError);
+      await prisma.invoice.update({
+        where: { id: invoice.id },
+        data: {
+          status: 'CANCELLED',
+          notes: `Refunded: ${reason}. Stripe Refund ID: ${stripeRefund?.id || 'N/A'}. Storno neuspjelo: ${stornoError.message}`
+        }
+      });
+    }
   }
 
   // 5. Oduzmi kredite ako je traženo (proportionalno ili sve)
