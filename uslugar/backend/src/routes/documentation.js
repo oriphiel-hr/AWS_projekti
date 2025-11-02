@@ -41,7 +41,10 @@ r.get('/', async (req, res, next) => {
     }
 
     // Filtriraj kategorije koje imaju javne features (ne samo admin-only)
-    const publicCategories = categories.filter(cat => cat.features.length > 0);
+    // Također ukloni "Statistike Implementacije" kategoriju
+    const publicCategories = categories.filter(cat => 
+      cat.features.length > 0 && cat.name !== 'Statistike Implementacije'
+    );
 
     // Transformiraj podatke u format koji komponenta očekuje
     const features = publicCategories.map(cat => ({
@@ -94,7 +97,10 @@ r.get('/stats', async (req, res, next) => {
     });
 
     // Filtriraj kategorije koje imaju javne features
-    const publicCategories = categories.filter(cat => cat.features.length > 0);
+    // Također ukloni "Statistike Implementacije" kategoriju
+    const publicCategories = categories.filter(cat => 
+      cat.features.length > 0 && cat.name !== 'Statistike Implementacije'
+    );
 
     let totalItems = 0;
     let implementedItems = 0;
