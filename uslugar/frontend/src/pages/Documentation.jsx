@@ -309,7 +309,7 @@ const Documentation = () => {
         { name: "Napredne analitike", implemented: true },
         { name: "Mesečni/godišnji izvještaji", implemented: true },
         { name: "Grafički prikaz statistika", implemented: true },
-        { name: "Usporedba s drugim providerima", implemented: false },
+        { name: "Usporedba s drugim providerima", implemented: true },
         { name: "Predviđanje budućih performansi", implemented: false }
       ]
     },

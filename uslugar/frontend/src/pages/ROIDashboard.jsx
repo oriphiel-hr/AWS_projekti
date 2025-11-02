@@ -8,19 +8,22 @@ import {
   LineElement,
   BarElement,
   ArcElement,
+  RadialLinearScale,
   Title,
   Tooltip,
   Legend,
   Filler
 } from 'chart.js';
-import { Line, Bar, Doughnut } from 'react-chartjs-2';
+import { Line, Bar, Doughnut, Radar } from 'react-chartjs-2';
 import { getROIDashboard, getMonthlyStats, getYearlyReport } from '../api/exclusive';
 import { useDarkMode } from '../contexts/DarkModeContext.jsx';
+import ProviderBenchmark from '../components/ProviderBenchmark.jsx';
 
 // Registriraj Chart.js komponente
 ChartJS.register(
   CategoryScale,
   LinearScale,
+  RadialLinearScale,
   PointElement,
   LineElement,
   BarElement,
@@ -540,6 +543,12 @@ export default function ROIDashboard() {
             <p className="text-yellow-600 dark:text-yellow-400 mt-1">⚠️ Nadopunite ako je &lt;5</p>
           </div>
         </div>
+      </div>
+
+      {/* Provider Benchmark Section */}
+      <div className="mt-8 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">🏆 Usporedba s drugim providerima</h2>
+        <ProviderBenchmark />
       </div>
 
       {/* Action Buttons */}

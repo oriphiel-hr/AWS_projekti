@@ -81,6 +81,14 @@ export const getTopLeads = (limit = 10) => {
   return api.get(`/exclusive/roi/top-leads?limit=${limit}`);
 };
 
+export const getBenchmark = () => {
+  return api.get('/exclusive/roi/benchmark');
+};
+
+export const getBenchmarkStats = () => {
+  return api.get('/exclusive/roi/benchmark/stats');
+};
+
 // ============================================================
 // VERIFICATION
 // ============================================================

@@ -8,6 +8,7 @@ import {
   generatePDFReport,
   generateCSVReport
 } from '../services/report-generator.js';
+import { getProviderPosition, calculateBenchmarks } from '../services/benchmark-service.js';
 
 const r = Router();
 
@@ -186,6 +187,35 @@ r.get('/top-leads', auth(true, ['PROVIDER']), async (req, res, next) => {
       total: topLeads.length,
       leads: topLeads
     });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * GET /api/roi/benchmark
+ * Usporedba s drugim providerima - benchmark statistike
+ */
+r.get('/benchmark', auth(true, ['PROVIDER']), async (req, res, next) => {
+  try {
+    const providerId = req.user.id;
+    
+    const position = await getProviderPosition(providerId);
+    
+    res.json(position);
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * GET /api/roi/benchmark/stats
+ * Samo benchmark statistike (bez pozicije providera)
+ */
+r.get('/benchmark/stats', auth(true, ['PROVIDER']), async (req, res, next) => {
+  try {
+    const benchmarks = await calculateBenchmarks();
+    res.json(benchmarks);
   } catch (e) {
     next(e);
   }
