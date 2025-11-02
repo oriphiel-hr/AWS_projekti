@@ -129,8 +129,16 @@ export async function createInvoice(data) {
  * Generira PDF fakturu s Uslugar brandingom
  */
 export async function generateInvoicePDF(invoice) {
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
     try {
+      // Ako je storno faktura, dohvati originalnu fakturu za prikaz broja
+      let originalInvoice = null;
+      if (invoice.originalInvoiceId) {
+        originalInvoice = await prisma.invoice.findUnique({
+          where: { id: invoice.originalInvoiceId },
+          select: { invoiceNumber: true }
+        });
+      }
       const doc = new PDFDocument({
         size: 'A4',
         margin: 50
@@ -188,14 +196,28 @@ export async function generateInvoicePDF(invoice) {
       // INVOICE DETAILS
       // ============================================
       yPos = 180;
+      const isStornoTitle = invoice.isStorno || invoice.amount < 0;
       doc
         .fontSize(20)
         .font('Helvetica-Bold')
-        .fillColor('#333333')
-        .text('FAKTURA', 50, yPos)
+        .fillColor(isStornoTitle ? '#DC2626' : '#333333')
+        .text(isStornoTitle ? 'STORNO FAKTURA' : 'FAKTURA', 50, yPos)
         .fontSize(12)
         .font('Helvetica')
-        .text(`Broj: ${invoice.invoiceNumber}`, 50, yPos + 30)
+        .fillColor('#333333')
+        .text(`Broj: ${invoice.invoiceNumber}`, 50, yPos + 30);
+      
+      if (originalInvoice && invoice.originalInvoiceId) {
+        doc
+          .fontSize(10)
+          .fillColor('#666666')
+          .text(`Storno fakture: ${originalInvoice.invoiceNumber}`, 50, yPos + 45);
+        yPos += 15;
+      }
+      
+      doc
+        .fontSize(12)
+        .fillColor('#333333')
         .text(`Datum izdavanja: ${formatDate(invoice.issueDate)}`, 50, yPos + 45)
         .text(`Rok plaćanja: ${formatDate(invoice.dueDate)}`, 50, yPos + 60);
 
@@ -286,12 +308,12 @@ export async function generateInvoicePDF(invoice) {
       }
       
       // Ako je storno, prikaži vezu na originalnu fakturu
-      if (invoice.originalInvoiceId) {
+      if (invoice.originalInvoiceId && originalInvoice) {
         doc
           .font('Helvetica')
           .fontSize(7)
           .fillColor('#666666')
-          .text(`Storno fakture: ${invoice.invoiceNumber.replace(/^[0-9]+-/, '')}`, 60, yPos + 28, { width: 200 });
+          .text(`Storno fakture: ${originalInvoice.invoiceNumber}`, 60, yPos + 28, { width: 200 });
       }
       
       // Prikaži negativan iznos ako je storno
