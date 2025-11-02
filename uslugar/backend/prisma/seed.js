@@ -362,6 +362,13 @@ async function main() {
     });
   }
   console.log('Seeded legal statuses.');
+
+  // Seed Documentation (optional - koristi se zasebno)
+  // Za kompletnu migraciju dokumentacije, pokreni:
+  // npm run seed:documentation
+  // ili
+  // node prisma/seeds/seed-documentation.js
+  console.log('💡 Napomena: Za seed dokumentacije, pokreni: npm run seed:documentation');
 }
 
 main().finally(async () => { await prisma.$disconnect(); });

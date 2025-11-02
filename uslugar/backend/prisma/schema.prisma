@@ -871,3 +871,37 @@ model TestRunItem {
   @@unique([runId, itemId])
   @@index([runId])
 }
+
+// Dokumentacija funkcionalnosti platforme
+model DocumentationCategory {
+  id        String   @id @default(cuid())
+  name      String   @unique // "Registracija i Autentifikacija"
+  order     Int      @default(0) // Redoslijed prikaza
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  features DocumentationFeature[]
+
+  @@index([isActive])
+  @@index([order])
+}
+
+model DocumentationFeature {
+  id          String   @id @default(cuid())
+  categoryId  String
+  name        String // "Registracija korisnika usluge"
+  summary     String? // Kratak opis
+  details     String? // Detaljni opis (markdown)
+  implemented Boolean  @default(true)
+  deprecated  Boolean  @default(false)
+  order       Int      @default(0) // Redoslijed unutar kategorije
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  category DocumentationCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([categoryId])
+  @@index([implemented])
+  @@index([order])
+}
