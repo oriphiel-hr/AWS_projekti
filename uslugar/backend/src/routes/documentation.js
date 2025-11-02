@@ -6,24 +6,38 @@ const r = Router();
 // GET /api/documentation - Dohvati sve kategorije i feature opise
 r.get('/', async (req, res, next) => {
   try {
-    const categories = await prisma.documentationCategory.findMany({
-      where: {
-        isActive: true
-      },
-      include: {
-        features: {
-          where: {
-            deprecated: false
-          },
-          orderBy: {
-            order: 'asc'
+    // Provjeri da li tablice postoje - ako ne, vrati prazan array
+    let categories;
+    try {
+      categories = await prisma.documentationCategory.findMany({
+        where: {
+          isActive: true
+        },
+        include: {
+          features: {
+            where: {
+              deprecated: false
+            },
+            orderBy: {
+              order: 'asc'
+            }
           }
+        },
+        orderBy: {
+          order: 'asc'
         }
-      },
-      orderBy: {
-        order: 'asc'
+      });
+    } catch (error) {
+      // Ako tablice ne postoje (npr. migracije nisu primijenjene), vrati prazan odgovor
+      if (error.message.includes('does not exist') || error.message.includes('Unknown table')) {
+        console.warn('⚠️  DocumentationCategory table does not exist - migrations may not be applied');
+        return res.json({
+          features: [],
+          featureDescriptions: {}
+        });
       }
-    });
+      throw error; // Re-throw other errors
+    }
 
     // Transformiraj podatke u format koji komponenta očekuje
     const features = categories.map(cat => ({
