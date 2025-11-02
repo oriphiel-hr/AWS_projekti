@@ -334,7 +334,7 @@ export async function generateInvoicePDF(invoice) {
       yPos += 50;
       doc.fontSize(10);
       
-      const isStorno = invoice.isStorno || invoice.amount < 0;
+      // isStorno is already defined above (line 276)
       const totalsX = 380;
       const baseAmount = Math.abs(invoice.amount / 100);
       const taxAmount = Math.abs(invoice.taxAmount / 100);
