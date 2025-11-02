@@ -355,27 +355,52 @@ r.get('/export/my-leads', auth(true, ['PROVIDER']), requirePlan('PREMIUM'), asyn
 });
 
 // Export kreditnih transakcija u CSV (PREMIUM/PRO feature)
-r.get('/export/credits-history', auth(true, ['PROVIDER']), requirePlan('PREMIUM'), async (req, res, next) => {
+r.get('/export/credits-history', auth(true, ['PROVIDER', 'ADMIN', 'USER']), async (req, res, next) => {
   try {
-    const history = await getCreditHistory(req.user.id, 1000);
+    const { type, limit } = req.query;
+    const history = await getCreditHistory(req.user.id, limit ? parseInt(limit) : 1000, type || null);
     
-    const csvHeader = 'ID,Type,Amount,Balance,Description,Related Job,Related Purchase,Created At\n';
+    // CSV Header
+    const csvHeader = 'ID,Tip Transakcije,Iznos,Stanje Nakon,Opis,Povezani Posao,Povezana Kupovina,Datum\n';
+    
+    // Map transactions to CSV rows with Croatian labels
+    const typeLabels = {
+      'PURCHASE': 'Kupovina kredita',
+      'LEAD_PURCHASE': 'Kupovina leada',
+      'REFUND': 'Refund',
+      'BONUS': 'Bonus',
+      'SUBSCRIPTION': 'Pretplata',
+      'ADMIN_ADJUST': 'Admin prilagodba'
+    };
+    
     const csvRows = history.map(t => [
       t.id,
-      t.type,
+      typeLabels[t.type] || t.type,
       t.amount,
       t.balance,
-      `"${t.description || ''}"`,
-      t.relatedJobId || '',
+      `"${(t.description || '').replace(/"/g, '""')}"`, // Escape quotes in CSV
+      t.relatedJob?.title || '',
       t.relatedPurchaseId || '',
-      new Date(t.createdAt).toISOString()
+      new Date(t.createdAt).toLocaleString('hr-HR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      })
     ].join(',')).join('\n');
     
     const csv = csvHeader + csvRows;
     
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename="credit-history.csv"');
-    res.send(csv);
+    // Generate filename with filter info if applicable
+    const filterSuffix = type ? `-${type}` : '';
+    const filename = `credit-history${filterSuffix}-${new Date().toISOString().split('T')[0]}.csv`;
+    
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Length', Buffer.byteLength(csv, 'utf8'));
+    res.send('\ufeff' + csv); // Add BOM for Excel UTF-8 compatibility
   } catch (e) {
     next(e);
   }

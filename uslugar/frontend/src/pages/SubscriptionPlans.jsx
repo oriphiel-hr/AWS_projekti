@@ -1,6 +1,6 @@
 // USLUGAR EXCLUSIVE - Subscription Plans Page
 import React, { useState, useEffect } from 'react';
-import { getSubscriptionPlans, getMySubscription, getCreditHistory } from '../api/exclusive';
+import { getSubscriptionPlans, getMySubscription, getCreditHistory, exportCreditsHistoryCSV } from '../api/exclusive';
 import api from '../api';
 import Toast from '../components/Toast';
 
@@ -431,6 +431,34 @@ function TransactionHistory() {
     }
   };
 
+  const handleExportTransactions = async () => {
+    try {
+      const typeFilter = filterType === 'all' ? null : filterType;
+      const response = await exportCreditsHistoryCSV(typeFilter);
+      
+      // Create blob URL and trigger download
+      const url = window.URL.createObjectURL(new Blob([response.data], { type: 'text/csv;charset=utf-8;' }));
+      const link = document.createElement('a');
+      link.href = url;
+      
+      // Generate filename
+      const filterSuffix = typeFilter ? `-${filterType}` : '';
+      const dateStr = new Date().toISOString().split('T')[0];
+      link.setAttribute('download', `credit-history${filterSuffix}-${dateStr}.csv`);
+      
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
+      // Show success message (could use toast)
+      alert('✅ Povijest transakcija izvezena!');
+    } catch (err) {
+      console.error('Error exporting transactions:', err);
+      alert('Greška pri izvozu: ' + (err.response?.data?.error || 'Neuspjelo'));
+    }
+  };
+
   const getTypeLabel = (type) => {
     const labels = {
       'PURCHASE': 'Kupovina kredita',
@@ -475,12 +503,25 @@ function TransactionHistory() {
       <div className="p-8">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-gray-900">Povijest Transakcija</h2>
-          <button
-            onClick={() => setShowHistory(!showHistory)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            {showHistory ? 'Sakrij' : 'Prikaži'}
-          </button>
+          <div className="flex gap-2">
+            {showHistory && transactions.length > 0 && (
+              <button
+                onClick={handleExportTransactions}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Izvezi CSV
+              </button>
+            )}
+            <button
+              onClick={() => setShowHistory(!showHistory)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              {showHistory ? 'Sakrij' : 'Prikaži'}
+            </button>
+          </div>
         </div>
 
         {showHistory && (

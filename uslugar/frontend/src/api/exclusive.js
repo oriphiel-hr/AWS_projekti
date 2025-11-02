@@ -131,8 +131,15 @@ export const exportMyLeadsCSV = () => {
   });
 };
 
-export const exportCreditsHistoryCSV = () => {
-  return api.get('/exclusive/leads/export/credits-history', {
+export const exportCreditsHistoryCSV = (type = null) => {
+  const params = new URLSearchParams();
+  if (type) {
+    params.append('type', type);
+  }
+  const url = params.toString() 
+    ? `/exclusive/leads/export/credits-history?${params.toString()}`
+    : '/exclusive/leads/export/credits-history';
+  return api.get(url, {
     responseType: 'blob'
   });
 };
