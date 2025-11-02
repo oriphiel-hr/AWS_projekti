@@ -363,12 +363,17 @@ async function main() {
   }
   console.log('Seeded legal statuses.');
 
-  // Seed Documentation (optional - koristi se zasebno)
-  // Za kompletnu migraciju dokumentacije, pokreni:
-  // npm run seed:documentation
-  // ili
-  // node prisma/seeds/seed-documentation.js
-  console.log('💡 Napomena: Za seed dokumentacije, pokreni: npm run seed:documentation');
+  // Seed Documentation - integrirano u glavni seed workflow
+  console.log('📚 Seeding documentation...');
+  try {
+    const seedDocumentation = await import('./seeds/seed-documentation.js');
+    await seedDocumentation.default();
+    console.log('✅ Documentation seeded successfully');
+  } catch (error) {
+    // Ne blokira glavni seed ako dokumentacija ne postoji ili ima grešku
+    console.warn('⚠️  Documentation seed skipped or failed:', error.message);
+    console.log('💡 Za ručni seed dokumentacije, pokreni: npm run seed:documentation');
+  }
 }
 
 main().finally(async () => { await prisma.$disconnect(); });
