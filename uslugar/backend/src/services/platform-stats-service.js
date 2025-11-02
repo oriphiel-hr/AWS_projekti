@@ -83,15 +83,25 @@ export async function getPlatformStatistics() {
     });
     
     // Provjerimo novi prihod ovog mjeseca (aproksimacija)
-    const monthlyNewRevenue = await prisma.leadPurchase.aggregate({
+    // Ne možemo direktno sumirati budgetMax preko aggregate, koristimo findMany umjesto toga
+    const monthlyConvertedPurchases = await prisma.leadPurchase.findMany({
       where: {
         status: 'CONVERTED',
         convertedAt: { gte: startOfMonth }
       },
-      _sum: {
-        // Ne možemo direktno sumirati budgetMax, ali možemo aproksimirati
+      include: {
+        job: {
+          select: { budgetMax: true }
+        }
       }
     });
+    
+    const monthlyNewRevenue = {
+      _sum: {
+        creditsSpent: monthlyConvertedPurchases.reduce((sum, p) => sum + (p.creditsSpent || 0), 0),
+        leadPrice: monthlyConvertedPurchases.reduce((sum, p) => sum + (p.leadPrice || 0), 0)
+      }
+    };
     
     // Godišnje statistike
     const yearlyLeadPurchases = await prisma.leadPurchase.count({
