@@ -322,7 +322,7 @@ const Documentation = () => {
         { name: "Povezivanje s kupnjama leadova", implemented: true },
         { name: "Stanje nakon svake transakcije", implemented: true },
         { name: "Opisi transakcija", implemented: true },
-        { name: "Filtriranje transakcija po tipu", implemented: false },
+        { name: "Filtriranje transakcija po tipu", implemented: true },
         { name: "Izvoz povijesti transakcija", implemented: false },
         { name: "Notifikacije o transakcijama", implemented: false }
       ]

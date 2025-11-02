@@ -48,8 +48,13 @@ export const getCreditsBalance = () => {
   return api.get('/exclusive/leads/credits/balance');
 };
 
-export const getCreditHistory = (limit = 50) => {
-  return api.get(`/exclusive/leads/credits/history?limit=${limit}`);
+export const getCreditHistory = (limit = 50, type = null) => {
+  const params = new URLSearchParams();
+  params.append('limit', limit);
+  if (type) {
+    params.append('type', type);
+  }
+  return api.get(`/exclusive/leads/credits/history?${params.toString()}`);
 };
 
 export const purchaseCredits = (amount, paymentIntentId) => {

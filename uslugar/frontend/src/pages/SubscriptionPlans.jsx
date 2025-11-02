@@ -1,6 +1,6 @@
 // USLUGAR EXCLUSIVE - Subscription Plans Page
 import React, { useState, useEffect } from 'react';
-import { getSubscriptionPlans, getMySubscription } from '../api/exclusive';
+import { getSubscriptionPlans, getMySubscription, getCreditHistory } from '../api/exclusive';
 import api from '../api';
 import Toast from '../components/Toast';
 

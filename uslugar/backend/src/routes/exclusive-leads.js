@@ -269,10 +269,10 @@ r.get('/credits/balance', auth(true, ['PROVIDER', 'ADMIN', 'USER']), async (req,
 });
 
 // Dohvati povijest transakcija
-r.get('/credits/history', auth(true, ['PROVIDER']), async (req, res, next) => {
+r.get('/credits/history', auth(true, ['PROVIDER', 'ADMIN', 'USER']), async (req, res, next) => {
   try {
-    const { limit } = req.query;
-    const history = await getCreditHistory(req.user.id, limit ? parseInt(limit) : 50);
+    const { limit, type } = req.query;
+    const history = await getCreditHistory(req.user.id, limit ? parseInt(limit) : 50, type || null);
     
     res.json({
       total: history.length,

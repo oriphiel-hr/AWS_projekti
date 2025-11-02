@@ -140,10 +140,19 @@ export async function getCreditsBalance(userId) {
 
 /**
  * Dohvati povijest transakcija kredita
+ * @param {String} userId - ID korisnika
+ * @param {Number} limit - Maksimalan broj transakcija
+ * @param {String} type - Filter po tipu transakcije (opcionalno)
  */
-export async function getCreditHistory(userId, limit = 50) {
+export async function getCreditHistory(userId, limit = 50, type = null) {
+  const where = { userId };
+  
+  if (type) {
+    where.type = type;
+  }
+
   const transactions = await prisma.creditTransaction.findMany({
-    where: { userId },
+    where,
     orderBy: { createdAt: 'desc' },
     take: limit,
     include: {
