@@ -1383,4 +1383,226 @@ r.post('/refunds/subscription/:userId/approve', auth(true, ['ADMIN']), async (re
   }
 });
 
+/**
+ * GET /api/admin/verification-documents
+ * Dohvati sve dokumente za verifikaciju (KYC, licence, osiguranje)
+ * 
+ * Query params:
+ * - status: 'all' | 'pending' | 'verified' | 'rejected' (default: 'all')
+ * - type: 'all' | 'kyc' | 'license' | 'insurance' (default: 'all')
+ * - skip: number (default: 0)
+ * - take: number (default: 50)
+ */
+r.get('/verification-documents', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const { status = 'all', type = 'all', skip = 0, take = 50 } = req.query;
+    
+    const documents = [];
+    
+    // KYC dokumenati
+    if (type === 'all' || type === 'kyc') {
+      const where = {};
+      
+      if (status === 'pending') {
+        where.kycDocumentUrl = { not: null };
+        where.kycVerified = false;
+      } else if (status === 'verified') {
+        where.kycVerified = true;
+      } else if (status === 'rejected') {
+        // Rejected = ima dokument ali nije verificiran nakon određenog vremena
+        where.kycDocumentUrl = { not: null };
+        where.kycVerified = false;
+        // Optional: dodati provjeru starijih od X dana
+      }
+      
+      const kycProfiles = await prisma.providerProfile.findMany({
+        where: {
+          ...where,
+          ...(status !== 'all' ? {} : { kycDocumentUrl: { not: null } })
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              fullName: true,
+              email: true,
+              taxId: true,
+              legalStatus: {
+                select: {
+                  code: true,
+                  name: true
+                }
+              }
+            }
+          }
+        },
+        skip: parseInt(skip),
+        take: parseInt(take)
+      });
+      
+      for (const profile of kycProfiles) {
+        if (profile.kycDocumentUrl) {
+          documents.push({
+            id: `kyc-${profile.userId}`,
+            type: 'kyc',
+            userId: profile.userId,
+            userName: profile.user.fullName || profile.user.email,
+            userEmail: profile.user.email,
+            taxId: profile.user.taxId,
+            legalStatus: profile.user.legalStatus,
+            documentUrl: profile.kycDocumentUrl,
+            status: profile.kycVerified ? 'verified' : 'pending',
+            verified: profile.kycVerified,
+            verifiedAt: profile.kycVerifiedAt,
+            extractedOIB: profile.kycExtractedOib,
+            extractedName: profile.kycExtractedName,
+            documentType: profile.kycDocumentType,
+            notes: profile.kycVerificationNotes,
+            createdAt: profile.createdAt,
+            // Calculate days since upload if not verified
+            daysPending: profile.kycVerified ? null : Math.floor((new Date() - new Date(profile.createdAt)) / (1000 * 60 * 60 * 24))
+          });
+        }
+      }
+    }
+    
+    // Licence dokumenati
+    if (type === 'all' || type === 'license') {
+      const where = {};
+      
+      if (status === 'pending') {
+        where.isVerified = false;
+        where.documentUrl = { not: null };
+      } else if (status === 'verified') {
+        where.isVerified = true;
+      }
+      
+      const licenses = await prisma.providerLicense.findMany({
+        where: {
+          ...where,
+          ...(status !== 'all' ? {} : { documentUrl: { not: null } })
+        },
+        include: {
+          provider: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  fullName: true,
+                  email: true,
+                  taxId: true
+                }
+              }
+            }
+          }
+        },
+        skip: parseInt(skip),
+        take: parseInt(take)
+      });
+      
+      for (const license of licenses) {
+        if (license.documentUrl) {
+          documents.push({
+            id: `license-${license.id}`,
+            type: 'license',
+            userId: license.provider.userId,
+            userName: license.provider.user.fullName || license.provider.user.email,
+            userEmail: license.provider.user.email,
+            taxId: license.provider.user.taxId,
+            documentUrl: license.documentUrl,
+            status: license.isVerified ? 'verified' : 'pending',
+            verified: license.isVerified,
+            verifiedAt: license.verifiedAt,
+            verifiedBy: license.verifiedBy,
+            licenseType: license.licenseType,
+            licenseNumber: license.licenseNumber,
+            issuingAuthority: license.issuingAuthority,
+            expiresAt: license.expiresAt,
+            notes: license.notes,
+            createdAt: license.createdAt,
+            daysPending: license.isVerified ? null : Math.floor((new Date() - new Date(license.createdAt)) / (1000 * 60 * 60 * 24))
+          });
+        }
+      }
+    }
+    
+    // Safety Insurance dokumenati
+    if (type === 'all' || type === 'insurance') {
+      const where = {};
+      
+      if (status === 'pending') {
+        where.safetyInsuranceUrl = { not: null };
+        // Optional: dodati status field za osiguranje ako postoji
+      }
+      
+      const insuranceProfiles = await prisma.providerProfile.findMany({
+        where: {
+          ...where,
+          ...(status !== 'all' ? {} : { safetyInsuranceUrl: { not: null } })
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              fullName: true,
+              email: true,
+              taxId: true
+            }
+          }
+        },
+        skip: parseInt(skip),
+        take: parseInt(take)
+      });
+      
+      for (const profile of insuranceProfiles) {
+        if (profile.safetyInsuranceUrl) {
+          documents.push({
+            id: `insurance-${profile.userId}`,
+            type: 'insurance',
+            userId: profile.userId,
+            userName: profile.user.fullName || profile.user.email,
+            userEmail: profile.user.email,
+            taxId: profile.user.taxId,
+            documentUrl: profile.safetyInsuranceUrl,
+            status: 'pending', // Insurance ne može biti verified (možda bi trebalo dodati status)
+            verified: false,
+            uploadedAt: profile.safetyInsuranceUploadedAt,
+            createdAt: profile.createdAt,
+            daysPending: Math.floor((new Date() - (profile.safetyInsuranceUploadedAt || profile.createdAt)) / (1000 * 60 * 60 * 24))
+          });
+        }
+      }
+    }
+    
+    // Sort by creation date (newest first)
+    documents.sort((a, b) => new Date(b.createdAt || b.uploadedAt) - new Date(a.createdAt || a.uploadedAt));
+    
+    // Apply status filter if needed (after combining)
+    let filteredDocuments = documents;
+    if (status === 'pending') {
+      filteredDocuments = documents.filter(d => !d.verified && d.status === 'pending');
+    } else if (status === 'verified') {
+      filteredDocuments = documents.filter(d => d.verified && d.status === 'verified');
+    }
+    
+    res.json({
+      success: true,
+      total: filteredDocuments.length,
+      documents: filteredDocuments.slice(parseInt(skip), parseInt(skip) + parseInt(take)),
+      summary: {
+        total: documents.length,
+        pending: documents.filter(d => !d.verified).length,
+        verified: documents.filter(d => d.verified).length,
+        byType: {
+          kyc: documents.filter(d => d.type === 'kyc').length,
+          license: documents.filter(d => d.type === 'license').length,
+          insurance: documents.filter(d => d.type === 'insurance').length
+        }
+      }
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
 export default r;

@@ -208,7 +208,7 @@ const Documentation = () => {
         { name: "Identity Badge sustav (Email, Phone, DNS, Business značke)", implemented: true },
         { name: "Datum verifikacije za svaku značku", implemented: true },
         { name: "Prikaz znački na profilu pružatelja", implemented: true },
-        { name: "Dokumenti za verifikaciju", implemented: false }
+        { name: "Dokumenti za verifikaciju", implemented: true }
       ]
     },
     {
