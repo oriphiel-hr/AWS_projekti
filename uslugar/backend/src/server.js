@@ -99,8 +99,10 @@ console.log('  SMTP_PORT:', process.env.SMTP_PORT || 'NOT SET');
 console.log('  FRONTEND_URL:', process.env.FRONTEND_URL || 'NOT SET');
 
 // === UNIVERZALNI CORS – STAVLJENO ODMAH NAKON create app ===================
-const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS || 'https://uslugar.oriph.io')
-  .split(',').map(s => s.trim())
+const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS || 'https://uslugar.oriph.io,https://uslugar.oriphiel.io')
+  .split(',').map(s => s.trim()).filter(Boolean)
+
+console.log('[CORS] Allowed origins:', ALLOWED_ORIGINS);
 
 app.use((req, res, next) => {
   const origin = req.headers.origin
@@ -109,7 +111,8 @@ app.use((req, res, next) => {
   }
   res.setHeader('Vary', 'Origin')
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, X-Requested-With')
+  res.setHeader('Access-Control-Max-Age', '86400') // 24 hours
   // res.setHeader('Access-Control-Allow-Credentials', 'true') // uključi samo ako koristiš cookies
 
   if (req.method === 'OPTIONS') {
@@ -123,12 +126,17 @@ app.use((req, res, next) => {
 app.use(cors({
   origin(origin, cb) {
     if (!origin) return cb(null, true)                     // server-to-server/no-origin
-    if (ALLOWED_ORIGINS.includes(origin)) return cb(null, true)
+    if (ALLOWED_ORIGINS.includes(origin)) {
+      return cb(null, true)
+    }
+    console.warn('[CORS] Blocked origin:', origin);
+    console.warn('[CORS] Allowed origins:', ALLOWED_ORIGINS);
     return cb(new Error('Not allowed by CORS'))
   },
   methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
-  allowedHeaders: ['Content-Type','Authorization'],
+  allowedHeaders: ['Content-Type','Authorization','Accept','X-Requested-With'],
   credentials: false,
+  maxAge: 86400,
 }))
 app.options('*', cors())
 app.options('/api/*', (req, res) => {
@@ -138,7 +146,8 @@ app.options('/api/*', (req, res) => {
   }
   res.setHeader('Vary', 'Origin')
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, X-Requested-With')
+  res.setHeader('Access-Control-Max-Age', '86400')
   return res.sendStatus(204)
 })
 
