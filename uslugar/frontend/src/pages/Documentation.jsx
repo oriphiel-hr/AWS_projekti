@@ -154,7 +154,7 @@ const Documentation = () => {
         { name: "Notifikacije za nove leadove u redu", implemented: true },
         { name: "Pregled mojih leadova u redu", implemented: true },
         { name: "Statistike queue sustava", implemented: true },
-        { name: "Admin upravljanje queue sustavom", implemented: false }
+        { name: "Admin upravljanje queue sustavom", implemented: true }
       ]
     },
     {

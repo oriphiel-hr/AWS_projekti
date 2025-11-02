@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { prisma } from '../lib/prisma.js';
 import { auth } from '../lib/auth.js';
 import { deleteUserWithRelations } from '../lib/delete-helpers.js';
+import { offerToNextInQueue } from '../lib/leadQueueManager.js';
 
 const r = Router();
 
@@ -705,5 +706,478 @@ Object.keys(MODELS).forEach(modelName => {
     }
   });
 }); // Zatvaranje forEach petlje
+
+// ============================================================
+// ADMIN QUEUE MANAGEMENT
+// ============================================================
+
+/**
+ * GET /api/admin/queue
+ * Pregled svih queue stavki s filterima i paginacijom
+ */
+r.get('/queue', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const { 
+      status, 
+      jobId, 
+      providerId, 
+      skip = 0, 
+      take = 50,
+      sortBy = 'createdAt',
+      sortOrder = 'desc'
+    } = req.query;
+
+    const where = {};
+    if (status) where.status = status;
+    if (jobId) where.jobId = jobId;
+    if (providerId) where.providerId = providerId;
+
+    const [queueItems, total] = await Promise.all([
+      prisma.leadQueue.findMany({
+        where,
+        include: {
+          job: {
+            include: {
+              category: true,
+              user: {
+                select: {
+                  id: true,
+                  fullName: true,
+                  email: true,
+                  city: true
+                }
+              }
+            }
+          },
+          provider: {
+            select: {
+              id: true,
+              fullName: true,
+              email: true,
+              city: true
+            }
+          }
+        },
+        orderBy: {
+          [sortBy]: sortOrder
+        },
+        skip: parseInt(skip),
+        take: parseInt(take)
+      }),
+      prisma.leadQueue.count({ where })
+    ]);
+
+    res.json({
+      success: true,
+      queueItems,
+      pagination: {
+        total,
+        skip: parseInt(skip),
+        take: parseInt(take),
+        hasMore: total > parseInt(skip) + parseInt(take)
+      }
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * GET /api/admin/queue/stats
+ * Statistika queue sustava
+ */
+r.get('/queue/stats', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    // Ukupan broj queue stavki po statusu
+    const statusCounts = await prisma.leadQueue.groupBy({
+      by: ['status'],
+      _count: true
+    });
+
+    // Ukupan broj aktivnih queue-ova (job-ovi koji još čekaju providera)
+    const activeQueues = await prisma.leadQueue.groupBy({
+      by: ['jobId'],
+      where: {
+        status: { in: ['WAITING', 'OFFERED'] }
+      },
+      _count: true
+    });
+
+    // Prosječno vrijeme odgovora
+    const avgResponseTime = await prisma.$queryRaw`
+      SELECT AVG(EXTRACT(EPOCH FROM ("respondedAt" - "offeredAt")) / 3600) as avg_hours
+      FROM "LeadQueue"
+      WHERE "respondedAt" IS NOT NULL AND "offeredAt" IS NOT NULL
+    `;
+
+    // Prosječna pozicija kada je lead prihvaćen
+    const avgAcceptPosition = await prisma.leadQueue.aggregate({
+      where: {
+        status: 'ACCEPTED'
+      },
+      _avg: {
+        position: true
+      }
+    });
+
+    // Broj isteklih ponuda
+    const expiredCount = await prisma.leadQueue.count({
+      where: {
+        status: 'EXPIRED'
+      }
+    });
+
+    // Broj uspješno prihvaćenih
+    const acceptedCount = await prisma.leadQueue.count({
+      where: {
+        status: 'ACCEPTED'
+      }
+    });
+
+    // Acceptance rate
+    const totalOffered = await prisma.leadQueue.count({
+      where: {
+        status: { in: ['ACCEPTED', 'DECLINED', 'EXPIRED'] }
+      }
+    });
+
+    const acceptanceRate = totalOffered > 0 
+      ? (acceptedCount / totalOffered * 100).toFixed(2)
+      : 0;
+
+    res.json({
+      success: true,
+      stats: {
+        statusCounts: statusCounts.map(s => ({
+          status: s.status,
+          count: s._count
+        })),
+        activeQueuesCount: activeQueues.length,
+        avgResponseTimeHours: avgResponseTime[0]?.avg_hours 
+          ? parseFloat(avgResponseTime[0].avg_hours) 
+          : null,
+        avgAcceptPosition: avgAcceptPosition._avg.position || null,
+        expiredCount,
+        acceptedCount,
+        acceptanceRate: parseFloat(acceptanceRate),
+        totalQueueItems: await prisma.leadQueue.count()
+      }
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * GET /api/admin/queue/job/:jobId
+ * Pregled queue za određeni job
+ */
+r.get('/queue/job/:jobId', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const { jobId } = req.params;
+
+    const queueItems = await prisma.leadQueue.findMany({
+      where: { jobId },
+      include: {
+        provider: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            city: true,
+            phone: true
+          }
+        }
+      },
+      orderBy: {
+        position: 'asc'
+      }
+    });
+
+    const job = await prisma.job.findUnique({
+      where: { id: jobId },
+      include: {
+        category: true,
+        user: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            city: true
+          }
+        }
+      }
+    });
+
+    res.json({
+      success: true,
+      job,
+      queueItems,
+      summary: {
+        total: queueItems.length,
+        waiting: queueItems.filter(q => q.status === 'WAITING').length,
+        offered: queueItems.filter(q => q.status === 'OFFERED').length,
+        accepted: queueItems.filter(q => q.status === 'ACCEPTED').length,
+        declined: queueItems.filter(q => q.status === 'DECLINED').length,
+        expired: queueItems.filter(q => q.status === 'EXPIRED').length,
+        skipped: queueItems.filter(q => q.status === 'SKIPPED').length
+      }
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * PATCH /api/admin/queue/:queueId
+ * Promjena statusa ili pozicije queue stavke
+ */
+r.patch('/queue/:queueId', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const { queueId } = req.params;
+    const { status, position, notes } = req.body;
+
+    const updateData = {};
+    if (status) {
+      if (!['WAITING', 'OFFERED', 'ACCEPTED', 'DECLINED', 'EXPIRED', 'SKIPPED'].includes(status)) {
+        return res.status(400).json({ error: 'Invalid status' });
+      }
+      updateData.status = status;
+      
+      if (status === 'OFFERED') {
+        updateData.offeredAt = new Date();
+        updateData.expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
+      }
+      if (status === 'ACCEPTED' || status === 'DECLINED') {
+        updateData.respondedAt = new Date();
+      }
+    }
+    if (position !== undefined) {
+      updateData.position = parseInt(position);
+    }
+    if (notes !== undefined) {
+      updateData.notes = notes;
+    }
+
+    const updatedQueue = await prisma.leadQueue.update({
+      where: { id: queueId },
+      data: updateData,
+      include: {
+        job: {
+          include: {
+            category: true
+          }
+        },
+        provider: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true
+          }
+        }
+      }
+    });
+
+    res.json({
+      success: true,
+      message: 'Queue stavka ažurirana',
+      queueItem: updatedQueue
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * POST /api/admin/queue/:queueId/skip
+ * Preskoči providera i ponudi lead sljedećem u queueu
+ */
+r.post('/queue/:queueId/skip', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const { queueId } = req.params;
+    const { reason } = req.body;
+
+    // Pronađi queue stavku
+    const queueItem = await prisma.leadQueue.findUnique({
+      where: { id: queueId },
+      include: {
+        job: true
+      }
+    });
+
+    if (!queueItem) {
+      return res.status(404).json({ error: 'Queue stavka nije pronađena' });
+    }
+
+    // Označi kao SKIPPED
+    await prisma.leadQueue.update({
+      where: { id: queueId },
+      data: {
+        status: 'SKIPPED',
+        notes: reason ? `Preskočeno od strane admina: ${reason}` : 'Preskočeno od strane admina'
+      }
+    });
+
+    // Ponudi sljedećem u queueu
+    const nextInQueue = await offerToNextInQueue(queueItem.jobId);
+
+    res.json({
+      success: true,
+      message: nextInQueue 
+        ? `Provider preskočen. Lead je ponuđen sljedećem provideru na poziciji ${nextInQueue.position}`
+        : 'Provider preskočen. Nema više providera u queueu',
+      skippedQueueItem: queueItem,
+      nextInQueue
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * POST /api/admin/queue/:queueId/offer
+ * Ručno ponuditi lead provideru
+ */
+r.post('/queue/:queueId/offer', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const { queueId } = req.params;
+
+    const queueItem = await prisma.leadQueue.findUnique({
+      where: { id: queueId },
+      include: {
+        job: {
+          include: {
+            category: true
+          }
+        },
+        provider: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true
+          }
+        }
+      }
+    });
+
+    if (!queueItem) {
+      return res.status(404).json({ error: 'Queue stavka nije pronađena' });
+    }
+
+    if (queueItem.status !== 'WAITING') {
+      return res.status(400).json({ 
+        error: `Provider je već u statusu ${queueItem.status}. Možete ponuditi samo stavke u statusu WAITING.` 
+      });
+    }
+
+    // Provjeri da li neki drugi provider već ima OFFERED status za ovaj job
+    const currentOffered = await prisma.leadQueue.findFirst({
+      where: {
+        jobId: queueItem.jobId,
+        status: 'OFFERED',
+        id: { not: queueId }
+      }
+    });
+
+    if (currentOffered) {
+      return res.status(400).json({ 
+        error: `Već postoji aktivna ponuda za ovaj job (pozicija ${currentOffered.position}). Prvo preskočite ili završite tu ponudu.` 
+      });
+    }
+
+    // Ažuriraj status na OFFERED
+    const updatedQueue = await prisma.leadQueue.update({
+      where: { id: queueId },
+      data: {
+        status: 'OFFERED',
+        offeredAt: new Date(),
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24h
+      },
+      include: {
+        provider: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true
+          }
+        },
+        job: {
+          include: {
+            category: true
+          }
+        }
+      }
+    });
+
+    // Pošalji notifikaciju provideru
+    await prisma.notification.create({
+      data: {
+        userId: queueItem.providerId,
+        type: 'NEW_JOB',
+        title: '🎯 Novi ekskluzivni lead dostupan!',
+        message: `${queueItem.job.category.name}: ${queueItem.job.title}. Cijena: ${queueItem.job.leadPrice} kredita. Imate 24h da odgovorite.`,
+        jobId: queueItem.jobId
+      }
+    });
+
+    res.json({
+      success: true,
+      message: `Lead ponuđen provideru ${updatedQueue.provider.fullName}`,
+      queueItem: updatedQueue
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * POST /api/admin/queue/reset/:jobId
+ * Resetiraj queue za job (briše sve postojeće queue stavke i kreira novi queue)
+ */
+r.post('/queue/reset/:jobId', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const { jobId } = req.params;
+    const { providerLimit = 5 } = req.body;
+
+    const job = await prisma.job.findUnique({
+      where: { id: jobId },
+      include: {
+        category: true
+      }
+    });
+
+    if (!job) {
+      return res.status(404).json({ error: 'Job nije pronađen' });
+    }
+
+    // Obriši postojeći queue
+    const deletedCount = await prisma.leadQueue.deleteMany({
+      where: { jobId }
+    });
+
+    // Ponovno pronađi top providere
+    const { findTopProviders, createLeadQueue } = await import('../lib/leadQueueManager.js');
+    const topProviders = await findTopProviders(job, parseInt(providerLimit));
+
+    if (topProviders.length === 0) {
+      return res.status(404).json({
+        error: 'Nema dostupnih providera za ovu kategoriju i lokaciju'
+      });
+    }
+
+    // Kreiraj novi queue
+    const newQueue = await createLeadQueue(jobId, topProviders);
+
+    res.json({
+      success: true,
+      message: `Queue resetiran. Obrisano ${deletedCount.count} stavki, kreirano ${newQueue.length} novih.`,
+      deletedCount: deletedCount.count,
+      newQueueItems: newQueue.length,
+      queue: newQueue
+    });
+  } catch (e) {
+    next(e);
+  }
+});
 
 export default r;
