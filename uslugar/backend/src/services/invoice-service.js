@@ -160,8 +160,8 @@ export async function generateInvoicePDF(invoice) {
         'Slavenskoga ulica 5',
         '10000 Zagreb',
         'Direktor: Tomislav Kranjec',
-        'Email: info@oriphiel.io',
-        'Web: https://uslugar.oriphiel.io'
+        'Email: <TREBA UNIJETI KAD SE PREBACI NA PRODUKCIJU>',
+        'Web: <TREBA UNIJETI KAD SE PREBACI NA PRODUKCIJU>'
       ];
 
       let yPos = 50;
