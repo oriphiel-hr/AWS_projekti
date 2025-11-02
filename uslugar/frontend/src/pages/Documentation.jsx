@@ -550,6 +550,264 @@ Sve promjene su commitane i pushane. Pružatelji usluga sada imaju grafički pri
    - Provjera svakih sat vremena
    - Batch processing neaktivnih leadova
 `
+    },
+    "Registracija korisnika usluge": {
+      implemented: true,
+      summary: "Registracija korisnika usluge omogućava korisnicima da objavljuju poslove i traže usluge.",
+      details: `## Implementirano:
+
+### 1. **Frontend - UserRegister.jsx**
+   - Forma za registraciju korisnika
+   - Odabir tipa korisnika (Korisnik usluge / Pružatelj usluge)
+   - Fizička osoba vs Pravna osoba za korisnike
+   - Validacija OIB-a za pravne osobe
+   - Firma opcija validirana (za pravne osobe)
+
+### 2. **Backend - auth.js**
+   - \`POST /api/auth/register\` - registracija korisnika
+   - Validacija emaila (unique per role)
+   - Hashiranje lozinke (bcrypt)
+   - Kreiranje User profila s \`role = USER\`
+   - Email verifikacija token generiran
+
+### 3. **Database Schema**
+   - \`User\` model - \`role\` enum (USER, PROVIDER, ADMIN)
+   - Composite unique constraint: \`@@unique([email, role])\`
+   - Omogućuje isti email za različite role
+   - \`UserProfile\` model za korisnike usluga
+
+### 4. **Funkcionalnosti**
+   - Registracija s email i lozinkom
+   - Automatski email za verifikaciju
+   - Navigacija specifična za korisnike usluge
+   - Sakrivanje provider-specifičnih linkova za korisnike
+   - Objavljivanje poslova od strane korisnika
+   - Pregled vlastitih poslova (MyJobs)
+`
+    },
+    "Registracija pružatelja usluga": {
+      implemented: true,
+      summary: "Registracija pružatelja usluga s obveznim pravnim statusom i OIB-om.",
+      details: `## Implementirano:
+
+### 1. **Frontend - ProviderRegister.jsx**
+   - Forma za registraciju pružatelja
+   - Pravni status OBAVEZAN (ne može biti FREELANCER bez odabira)
+   - OIB obavezan (pattern validation)
+   - Naziv firme obavezan (osim FREELANCER)
+   - JavaScript + HTML5 validacija
+   - Vizualni warning indicators
+
+### 2. **Backend - auth.js**
+   - \`POST /api/auth/register-provider\` - registracija pružatelja
+   - Validacija pravnog statusa
+   - OIB validacija (11 znamenki, checksum)
+   - Kreiranje ProviderProfile-a
+   - Automatska TRIAL pretplata (2 besplatna leada, 7 dana)
+
+### 3. **Database Schema**
+   - \`User.role = PROVIDER\`
+   - \`ProviderProfile\` model - detaljni profil pružatelja
+   - \`legalStatusId\` - povezivanje s LegalStatus
+   - Composite unique: \`@@unique([email, role])\`
+
+### 4. **Funkcionalnosti**
+   - Registracija s obveznim pravnim podacima
+   - Email verifikacija
+   - Automatski TRIAL plan (2 kredita, 7 dana)
+   - Pristup EXCLUSIVE leadovima
+   - ROI dashboard
+   - Upravljanje profilom i licencama
+`
+    },
+    "Email verifikacija": {
+      implemented: true,
+      summary: "Email verifikacija putem tokena za potvrdu korisničkog računa.",
+      details: `## Implementirano:
+
+### 1. **Backend - auth.js**
+   - Generiranje verifikacijskog tokena pri registraciji
+   - Token se šalje u email poruci
+   - \`POST /api/auth/verify-email\` - potvrda emaila
+   - Validacija tokena i expiration
+   - Ažuriranje \`User.emailVerified = true\`
+
+### 2. **Email Service**
+   - Nodemailer + SMTP konfiguracija
+   - HTML email template za verifikaciju
+   - Link s tokenom: \`/verify-email?token=xxx\`
+   - Expiration: token vrijedi 24 sata
+
+### 3. **Database Schema**
+   - \`User.emailVerified\` - Boolean
+   - \`User.emailVerificationToken\` - String, unique
+   - \`User.emailVerifiedAt\` - DateTime
+   - \`User.emailVerificationExpires\` - DateTime
+
+### 4. **Frontend**
+   - Verifikacijska stranica - provjera tokena iz URL-a
+   - Success/error poruke
+   - Redirect na login nakon verifikacije
+   - Resend email opcija
+
+### 5. **Security**
+   - Unique tokens
+   - Expiration check
+   - One-time use (token se invalidira nakon upotrebe)
+`
+    },
+    "Objavljivanje novih poslova": {
+      implemented: true,
+      summary: "Korisnici mogu objavljivati poslove s detaljnim informacijama.",
+      details: `## Implementirano:
+
+### 1. **Frontend - JobForm.jsx**
+   - Forma za kreiranje posla
+   - Polja: naslov, opis, kategorija, lokacija, budžet (min-max)
+   - Geolokacija (latitude/longitude) - Google Maps
+   - Upload slika (multiple)
+   - Status posla (OTVOREN, U TIJEKU, ZAVRŠEN, OTKAZAN)
+   - Hitnost (NORMALNA, HITNA)
+   - Veličina posla (MALA, SREDNJA, VELIKA)
+   - Rok izvršenja
+
+### 2. **Backend - jobs.js**
+   - \`POST /api/jobs\` - kreiranje novog posla
+   - Validacija podataka
+   - Upload slika (Multer)
+   - Geolokacija processing
+   - Automatski AI quality score izračun
+   - Kreiranje \`Job\` recorda u bazi
+
+### 3. **Database Schema**
+   - \`Job\` model - sva polja za posao
+   - \`Job.images\` - array URL-ova slika
+   - \`Job.location\` - grad
+   - \`Job.latitude\`, \`Job.longitude\` - GPS koordinate
+   - \`Job.budgetMin\`, \`Job.budgetMax\` - budžet
+   - \`Job.status\` - enum statusa
+   - \`Job.isExclusive\` - za EXCLUSIVE leadove
+
+### 4. **Funkcionalnosti**
+   - Rich text editor za opis (opcionalno)
+   - Image gallery
+   - Map preview (Google Maps)
+   - Kategorizacija
+   - Auto-save draft (opcionalno)
+   - Preview prije objave
+`
+    },
+    "Slanje ponuda za poslove": {
+      implemented: true,
+      summary: "Pružatelji mogu slati ponude za poslove s cijenom i porukom.",
+      details: `## Implementirano:
+
+### 1. **Frontend - OfferForm.jsx**
+   - Forma za slanje ponude
+   - Polja: iznos ponude, poruka uz ponudu
+   - Procijenjeni broj dana za izvršenje
+   - Označavanje kao pregovorno
+   - Status ponude prikazan
+
+### 2. **Backend - offers.js**
+   - \`POST /api/jobs/:jobId/offers\` - slanje ponude
+   - Validacija da provider nije već poslao ponudu
+   - Validacija da posao nije završen
+   - Kreiranje \`Offer\` recorda
+   - Notifikacija korisniku o novoj ponudi
+
+### 3. **Database Schema**
+   - \`Offer\` model
+   - \`Offer.amount\` - iznos ponude
+   - \`Offer.message\` - poruka
+   - \`Offer.status\` - NA_ČEKANJU, PRIHVAĆENA, ODBIJENA
+   - \`Offer.isNegotiable\` - Boolean
+   - \`Offer.estimatedDays\` - procijenjeni broj dana
+   - \`Offer.job\` - relacija s Job
+   - \`Offer.provider\` - relacija s ProviderProfile
+
+### 4. **Funkcionalnosti**
+   - Pregled svih ponuda za posao (korisnik)
+   - Prihvaćanje/odbijanje ponuda (korisnik)
+   - Pregled vlastitih ponuda (pružatelj)
+   - Status tracking
+   - Mogućnost pregovaranja
+`
+    },
+    "Ocjenjivanje pružatelja usluga (1-5 zvjezdica)": {
+      implemented: true,
+      summary: "Sustav recenzija i ocjenjivanja za bilateralno bodovanje.",
+      details: `## Implementirano:
+
+### 1. **Frontend - ReviewForm.jsx**
+   - Forma za ocjenjivanje (1-5 zvjezdica)
+   - Komentar uz ocjenu
+   - Bilateralno ocjenjivanje (korisnik ↔ pružatelj)
+   - Uređivanje postojećih recenzija
+   - Brisanje recenzija (samo vlastitih)
+
+### 2. **Backend - reviews.js**
+   - \`POST /api/reviews\` - kreiranje recenzije
+   - Validacija da korisnik nije već ocjenio
+   - Sprečavanje duplikata
+   - Automatsko izračunavanje prosječne ocjene
+   - Brojanje ukupnog broja recenzija
+   - \`PUT /api/reviews/:id\` - ažuriranje
+   - \`DELETE /api/reviews/:id\` - brisanje
+
+### 3. **Database Schema**
+   - \`Review\` model
+   - \`Review.rating\` - Integer (1-5)
+   - \`Review.comment\` - String
+   - \`Review.fromUserId\` - tko ocjenjuje
+   - \`Review.toUserId\` - tko se ocjenjuje
+   - \`Review.jobId\` - povezivanje s poslom
+   - Unique constraint: \`@@unique([fromUserId, toUserId, jobId])\`
+
+### 4. **Funkcionalnosti**
+   - Prikaz recenzija na profilu pružatelja
+   - Prosječna ocjena prikazana
+   - Ukupan broj recenzija
+   - Filtering po ocjeni
+   - Sorting (najnovije, najviše ocjene)
+   - Pagination
+`
+    },
+    "Real-time chat između korisnika i pružatelja": {
+      implemented: true,
+      summary: "Real-time chat sustav za komunikaciju oko poslova.",
+      details: `## Implementirano:
+
+### 1. **Frontend - Chat.jsx**
+   - Real-time chat komponenta
+   - Socket.io ili WebSocket integracija
+   - Chat sobe za svaki posao
+   - Povijest poruka
+   - Slanje slika u chatu
+   - Status poruke (poslana, pročitana)
+
+### 2. **Backend - chat.js**
+   - \`POST /api/chat/messages\` - slanje poruke
+   - \`GET /api/chat/:jobId/messages\` - dohvat poruka za posao
+   - File upload za slike (Multer)
+   - Status tracking (SENT, DELIVERED, READ)
+
+### 3. **Database Schema**
+   - \`ChatMessage\` model
+   - \`ChatMessage.content\` - tekst poruke
+   - \`ChatMessage.attachments\` - array URL-ova slika
+   - \`ChatMessage.status\` - SENT, DELIVERED, READ
+   - \`ChatMessage.jobId\` - povezivanje s poslom
+   - \`ChatMessage.fromUserId\` - pošiljatelj
+   - \`ChatMessage.toUserId\` - primatelj
+
+### 4. **Real-time Features**
+   - WebSocket/Socket.io za instant messaging
+   - Notifikacije za nove poruke
+   - Typing indicators (opcionalno)
+   - Online status (opcionalno)
+   - Message read receipts
+`
     }
   };
 
