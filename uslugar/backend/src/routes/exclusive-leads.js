@@ -8,7 +8,7 @@ import {
   purchaseLead,
   markLeadContacted,
   markLeadConverted,
-  refundLead,
+  requestLeadRefund,
   getAvailableLeads,
   getMyLeads,
   unlockContact
