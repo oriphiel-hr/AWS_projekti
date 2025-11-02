@@ -1,10 +1,103 @@
 // Admin Documentation - Dokumentacija za administratore
-import React from 'react';
+import React, { useState } from 'react';
 import { useDarkMode } from '../contexts/DarkModeContext.jsx';
 
 const AdminDocumentation = () => {
   const { isDarkMode } = useDarkMode();
+  const [expandedItem, setExpandedItem] = useState(null); // Track which item is expanded
   
+  // Detaljni opisi funkcionalnosti
+  const featureDescriptions = {
+    "Upravljanje korisnicima": {
+      implemented: true,
+      summary: "Upravljanje korisnicima je implementirano.",
+      details: `## Implementirano:
+
+### 1. **Admin panel za korisnike**
+   - Pregled svih korisnika platforme
+   - Filtriranje i pretraživanje korisnika
+   - Detalji korisnika (email, telefon, status, verifikacije)
+   
+### 2. **Upravljanje statusima**
+   - Aktivacija/deaktivacija korisnika
+   - Promjena uloga (USER, PROVIDER, ADMIN)
+   - Reset lozinke od strane admina
+   
+### 3. **Verifikacije**
+   - Pregled statusa verifikacija (email, telefon, ID, company)
+   - Ručna verifikacija od strane admina
+   - Reset pokušaja verifikacije
+
+### 4. **Statistike korisnika**
+   - Broj kreiranih poslova
+   - Broj aktivnih pretplata
+   - Kreditna bilanca
+   - Trust score
+`
+    },
+    "Upravljanje pružateljima": {
+      implemented: true,
+      summary: "Upravljanje pružateljima je implementirano.",
+      details: `## Implementirano:
+
+### 1. **Admin panel za pružatelje**
+   - Pregled svih pružatelja usluga
+   - Detalji profila (naziv, opis, kategorije)
+   - Pregled licenci i certifikata
+   
+### 2. **Odobravanje pružatelja**
+   - Approval status management
+   - Aktivacija/deaktivacija profila
+   - Featured profil postavke
+   
+### 3. **ROI statistike**
+   - Pregled ROI metrika za svakog pružatelja
+   - Conversion rate, revenue, profit
+   - Benchmarking s drugim pružateljima
+   
+### 4. **Upravljanje licencama**
+   - Verificiranje licenci
+   - Praćenje isteka
+   - Notifikacije o isteku licenci
+`
+    },
+    "Statistike platforme": {
+      implemented: true,
+      summary: "Statistike platforme su implementirane.",
+      details: `## Implementirano:
+
+### 1. **Općenite statistike**
+   - Ukupni korisnici (korisnici i pružatelji)
+   - Ukupni poslovi i leadovi
+   - Aktivne pretplate
+   - Ukupan prihod platforme
+   
+### 2. **Mesečne statistike**
+   - Trendovi kroz mjesece
+   - Novi korisnici po mjesecima
+   - Prihod po mjesecima
+   - Konverzije i ROI po mjesecima
+   
+### 3. **Statistike po kategorijama**
+   - Najpopularnije kategorije
+   - Prihod po kategorijama
+   - Konverzije po kategorijama
+   
+### 4. **Engagement metrike**
+   - Aktivni korisnici
+   - Broj recenzija
+   - Chat aktivnost
+   - Notifikacije i interakcije
+   
+### 5. **API i backend**
+   - \`platform-stats-service.js\` - servis za statistike
+   - \`/api/admin/platform-stats\` - endpoint za statistike
+   - Automatsko ažuriranje statistika
+   - Cache mehanizam za performanse
+`
+    }
+  };
+
   const adminFeatures = [
     {
       category: "Upravljanje Korisnicima i Pružateljima",
@@ -131,23 +224,109 @@ const AdminDocumentation = () => {
               {category.category}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {category.items.map((item, itemIndex) => (
-                <div
-                  key={itemIndex}
-                  className={`p-4 rounded-lg border-2 ${getStatusColor(item.implemented, item.deprecated)}`}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h3 className={`font-semibold mb-1 ${item.deprecated ? 'line-through' : ''}`}>
-                        {item.name}
-                      </h3>
+              {category.items.map((item, itemIndex) => {
+                const itemKey = `${categoryIndex}-${itemIndex}`;
+                const isExpanded = expandedItem === itemKey;
+                const description = featureDescriptions[item.name] || {
+                  implemented: item.implemented,
+                  summary: item.implemented ? `${item.name} je implementirano.` : `${item.name} nije implementirano.`,
+                  details: item.implemented 
+                    ? `## Implementirano:\n\n${item.name} je funkcionalnost koja je implementirana i dostupna u admin panelu.` 
+                    : `## Nije implementirano:\n\n${item.name} je funkcionalnost koja trenutno nije implementirana.`
+                };
+
+                return (
+                  <div
+                    key={itemIndex}
+                    className={`p-4 rounded-lg border-2 ${getStatusColor(item.implemented, item.deprecated)} transition-all`}
+                  >
+                    <div 
+                      className="flex items-start justify-between cursor-pointer"
+                      onClick={() => setExpandedItem(isExpanded ? null : itemKey)}
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className={`font-semibold mb-1 ${item.deprecated ? 'line-through' : ''}`}>
+                            {item.name}
+                          </h3>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            {isExpanded ? '▼' : '▶'}
+                          </span>
+                        </div>
+                        {description.summary && !isExpanded && (
+                          <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                            {description.summary}
+                          </p>
+                        )}
+                      </div>
+                      <span className="ml-2 text-sm font-medium">
+                        {getStatusText(item.implemented, item.deprecated)}
+                      </span>
                     </div>
-                    <span className="ml-2 text-sm font-medium">
-                      {getStatusText(item.implemented, item.deprecated)}
-                    </span>
+
+                    {/* Expanded details */}
+                    {isExpanded && (
+                      <div className="mt-4 pt-4 border-t border-gray-300 dark:border-gray-600">
+                        <div className="prose dark:prose-invert max-w-none text-sm">
+                          <div className="whitespace-pre-line text-gray-700 dark:text-gray-300">
+                            {description.details.split('\n').map((line, idx) => {
+                              // Format markdown-style headers
+                              if (line.startsWith('## ')) {
+                                return (
+                                  <h4 key={idx} className="text-lg font-bold mt-4 mb-2 text-gray-900 dark:text-white">
+                                    {line.replace('## ', '')}
+                                  </h4>
+                                );
+                              }
+                              if (line.startsWith('### ')) {
+                                return (
+                                  <h5 key={idx} className="text-base font-semibold mt-3 mb-2 text-gray-800 dark:text-gray-200">
+                                    {line.replace('### ', '')}
+                                  </h5>
+                                );
+                              }
+                              // Format bullet points
+                              if (line.trim().startsWith('- ')) {
+                                return (
+                                  <div key={idx} className="ml-4 mb-1 text-gray-700 dark:text-gray-300">
+                                    • {line.trim().substring(2)}
+                                  </div>
+                                );
+                              }
+                              // Format code blocks (inline)
+                              if (line.includes('`')) {
+                                const parts = line.split('`');
+                                return (
+                                  <div key={idx} className="mb-2">
+                                    {parts.map((part, partIdx) => 
+                                      partIdx % 2 === 0 ? (
+                                        <span key={partIdx}>{part}</span>
+                                      ) : (
+                                        <code key={partIdx} className="bg-gray-200 dark:bg-gray-700 px-1 rounded text-xs">
+                                          {part}
+                                        </code>
+                                      )
+                                    )}
+                                  </div>
+                                );
+                              }
+                              // Regular paragraphs
+                              if (line.trim()) {
+                                return (
+                                  <p key={idx} className="mb-2 text-gray-700 dark:text-gray-300">
+                                    {line}
+                                  </p>
+                                );
+                              }
+                              return <br key={idx} />;
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         ))}
