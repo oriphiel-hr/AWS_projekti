@@ -3,6 +3,9 @@ import { Router } from 'express';
 import { auth } from '../lib/auth.js';
 import { prisma } from '../lib/prisma.js';
 import { triggerAutoVerification, autoVerifyClient } from '../services/auto-verification.js';
+import { uploadDocument, getImageUrl } from '../lib/upload.js';
+import fs from 'fs/promises';
+import path from 'path';
 
 const r = Router();
 
@@ -113,37 +116,188 @@ r.post('/phone/verify-code', auth(true), async (req, res, next) => {
   }
 });
 
-// Verifikacija osobne (ID upload)
-r.post('/id/upload', auth(true), async (req, res, next) => {
+/**
+ * POST /api/verification/id/upload
+ * Upload osobne iskaznice (front i back) za verifikaciju
+ * Accepts multipart/form-data with 'front' and 'back' fields
+ */
+r.post('/id/upload', auth(true), uploadDocument.fields([
+  { name: 'front', maxCount: 1 },
+  { name: 'back', maxCount: 1 }
+]), async (req, res, next) => {
   try {
-    const { idImageFront, idImageBack } = req.body;
+    const frontFile = req.files?.['front']?.[0];
+    const backFile = req.files?.['back']?.[0];
     
-    if (!idImageFront) {
-      return res.status(400).json({ error: 'ID image required' });
+    if (!frontFile) {
+      return res.status(400).json({ 
+        error: 'Front image required',
+        message: 'Molimo uploadajte prednju stranu osobne iskaznice (JPG ili PNG)' 
+      });
     }
     
-    // TODO: Implementacija upload-a i AI provjere legitimnosti ID-a
-    // Za sada samo označavanje kao verified
+    // Pročitaj fajlove
+    const frontPath = path.join('./uploads', frontFile.filename);
+    const frontBuffer = await fs.readFile(frontPath);
     
-    const verification = await prisma.clientVerification.upsert({
-      where: { userId: req.user.id },
-      create: {
-        userId: req.user.id,
-        idVerified: true,
-        trustScore: 40
-      },
-      update: {
-        idVerified: true,
-        verifiedAt: new Date(),
-        trustScore: { increment: 30 },
-        notes: 'ID verification pending manual review'
-      }
+    let backBuffer = null;
+    if (backFile) {
+      const backPath = path.join('./uploads', backFile.filename);
+      backBuffer = await fs.readFile(backPath);
+    }
+    
+    // Kreiraj URL-e
+    const frontUrl = getImageUrl(req, frontFile.filename);
+    const backUrl = backFile ? getImageUrl(req, backFile.filename) : null;
+    
+    // Dohvati korisnika
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id }
     });
+    
+    if (!user) {
+      await fs.unlink(frontPath);
+      if (backFile) await fs.unlink(path.join('./uploads', backFile.filename));
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    // Verificiraj dokument
+    const { verifyIDDocument } = await import('../services/id-document-verification.js');
+    const verificationResult = await verifyIDDocument(frontBuffer, backBuffer, user);
+    
+    // Ažuriraj ili kreiraj verification record
+    let verification;
+    let trustScoreIncrement = 0;
+    let verificationNotes = '';
+    
+    if (verificationResult.success && verificationResult.verified) {
+      // Automatski verificirano
+      trustScoreIncrement = 30;
+      verificationNotes = `ID verificiran automatski (OCR confidence: ${Math.round(verificationResult.confidence || 0)}%)`;
+      if (verificationResult.validation.warnings.length > 0) {
+        verificationNotes += `. Upozorenja: ${verificationResult.validation.warnings.join('; ')}`;
+      }
+    } else if (verificationResult.success) {
+      // Uploadano, ali čeka ručnu provjeru
+      trustScoreIncrement = 0; // Ne dodaj bodove dok admin ne verifikira
+      verificationNotes = `ID uploadan, čeka ručnu provjeru (OCR confidence: ${Math.round(verificationResult.confidence || 0)}%)`;
+      if (verificationResult.validation.errors.length > 0) {
+        verificationNotes += `. Greške: ${verificationResult.validation.errors.join('; ')}`;
+      }
+      if (verificationResult.validation.warnings.length > 0) {
+        verificationNotes += `. Upozorenja: ${verificationResult.validation.warnings.join('; ')}`;
+      }
+    } else {
+      // Greška pri verifikaciji
+      verificationNotes = `ID uploadan, ali verifikacija neuspješna: ${verificationResult.error || 'Nepoznata greška'}`;
+    }
+    
+    // Provjeri postoji li već verification record
+    const existingVerification = await prisma.clientVerification.findUnique({
+      where: { userId: req.user.id }
+    });
+    
+    if (existingVerification) {
+      verification = await prisma.clientVerification.update({
+        where: { userId: req.user.id },
+        data: {
+          idVerified: verificationResult.success && verificationResult.verified ? true : existingVerification.idVerified,
+          trustScore: verificationResult.success && verificationResult.verified 
+            ? (existingVerification.trustScore + trustScoreIncrement)
+            : existingVerification.trustScore,
+          verifiedAt: verificationResult.success && verificationResult.verified ? new Date() : existingVerification.verifiedAt,
+          notes: existingVerification.notes 
+            ? `${existingVerification.notes}\n[${new Date().toISOString()}] ${verificationNotes}`
+            : verificationNotes,
+          updatedAt: new Date()
+        }
+      });
+    } else {
+      verification = await prisma.clientVerification.create({
+        data: {
+          userId: req.user.id,
+          idVerified: verificationResult.success && verificationResult.verified ? true : false,
+          emailVerified: user.isVerified || false,
+          phoneVerified: user.phoneVerified || false,
+          trustScore: verificationResult.success && verificationResult.verified ? trustScoreIncrement : 0,
+          verifiedAt: verificationResult.success && verificationResult.verified ? new Date() : null,
+          notes: verificationNotes
+        }
+      });
+    }
+    
+    // Ako je automatski verificiran, pokreni auto-verifikaciju
+    if (verificationResult.success && verificationResult.verified) {
+      try {
+        await triggerAutoVerification(req.user.id, { type: 'id', value: 'ID verified' });
+      } catch (autoVerifyError) {
+        console.error('[Client Verification] Auto-verification failed after ID verification:', autoVerifyError);
+      }
+      
+      // Obavijesti admine o novoj ID verifikaciji
+      try {
+        const admins = await prisma.user.findMany({
+          where: { role: 'ADMIN' }
+        });
+        
+        for (const admin of admins) {
+          await prisma.notification.create({
+            data: {
+              userId: admin.id,
+              type: 'SYSTEM',
+              title: 'Nova ID verifikacija',
+              message: `${user.fullName} (${user.email}) je verificirao osobnu iskaznicu automatski.`,
+            }
+          });
+        }
+      } catch (notifError) {
+        console.error('[Client Verification] Failed to notify admins:', notifError);
+      }
+    } else {
+      // Obavijesti admine da ručno provjere
+      try {
+        const admins = await prisma.user.findMany({
+          where: { role: 'ADMIN' }
+        });
+        
+        for (const admin of admins) {
+          await prisma.notification.create({
+            data: {
+              userId: admin.id,
+              type: 'SYSTEM',
+              title: 'ID verifikacija čeka odobrenje',
+              message: `${user.fullName} (${user.email}) je uploadao osobnu iskaznicu. Potrebna ručna provjera.`,
+            }
+          });
+        }
+      } catch (notifError) {
+        console.error('[Client Verification] Failed to notify admins:', notifError);
+      }
+    }
     
     res.json({
       success: true,
-      message: 'ID uploaded. Verification pending.',
-      verification
+      message: verificationResult.success && verificationResult.verified
+        ? 'ID verified successfully'
+        : 'ID uploaded. Verification pending manual review.',
+      verification: {
+        id: verification.id,
+        idVerified: verification.idVerified,
+        trustScore: verification.trustScore,
+        verifiedAt: verification.verifiedAt
+      },
+      document: {
+        frontUrl: frontUrl,
+        backUrl: backUrl
+      },
+      verificationResult: verificationResult.success ? {
+        verified: verificationResult.verified,
+        confidence: verificationResult.confidence,
+        extractedData: verificationResult.data,
+        validation: verificationResult.validation
+      } : {
+        error: verificationResult.error
+      }
     });
   } catch (e) {
     next(e);
