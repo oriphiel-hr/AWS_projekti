@@ -184,65 +184,9 @@ export const sendReviewNotification = async (toEmail, rating, comment, reviewerN
 };
 
 /**
- * Pošalji fakturu emailom s PDF attachmentom
+ * NOTE: sendInvoiceEmail is already defined above (line 99)
+ * Duplicate function removed to fix SyntaxError: Identifier 'sendInvoiceEmail' has already been declared
  */
-export const sendInvoiceEmail = async (toEmail, fullName, invoice, pdfBuffer) => {
-  if (!transporter) {
-    console.log('SMTP not configured, skipping invoice email:', toEmail);
-    return;
-  }
-
-  const invoiceUrl = `${process.env.FRONTEND_URL || 'https://uslugar.oriph.io'}#invoices/${invoice.id}`;
-  const formattedAmount = (invoice.totalAmount / 100).toFixed(2);
-
-  try {
-    await transporter.sendMail({
-      from: `"Uslugar" <${process.env.SMTP_USER}>`,
-      to: toEmail,
-      subject: `Faktura ${invoice.invoiceNumber} - Uslugar`,
-      html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="UTF-8">
-        </head>
-        <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
-          <div style="background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            <h2 style="color: #4CAF50; margin-top: 0;">Faktura ${invoice.invoiceNumber}</h2>
-            <p>Poštovani/na ${fullName},</p>
-            <p>U privitku vam šaljemo fakturu za vašu transakciju.</p>
-            <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
-              <p style="margin: 5px 0;"><strong>Broj fakture:</strong> ${invoice.invoiceNumber}</p>
-              <p style="margin: 5px 0;"><strong>Datum izdavanja:</strong> ${new Date(invoice.issueDate).toLocaleDateString('hr-HR')}</p>
-              <p style="margin: 5px 0;"><strong>Rok plaćanja:</strong> ${invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString('hr-HR') : 'N/A'}</p>
-              <p style="margin: 5px 0;"><strong>Ukupan iznos:</strong> <strong style="color: #4CAF50; font-size: 18px;">${formattedAmount} €</strong></p>
-            </div>
-            <p>Faktura je u privitku u PDF formatu. Možete je preuzeti i s vašeg profila:</p>
-            <a href="${invoiceUrl}" style="display: inline-block; background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin: 20px 0;">
-              Pregledaj fakture
-            </a>
-            <p style="color: #666; font-size: 12px; margin-top: 30px;">
-              Hvala vam na povjerenju!<br>
-              Uslugar tim
-            </p>
-          </div>
-        </body>
-        </html>
-      `,
-      attachments: [
-        {
-          filename: `faktura-${invoice.invoiceNumber}.pdf`,
-          content: pdfBuffer,
-          contentType: 'application/pdf'
-        }
-      ]
-    });
-    console.log(`Invoice email sent to: ${toEmail} for invoice ${invoice.invoiceNumber}`);
-  } catch (error) {
-    console.error('Error sending invoice email:', error);
-    throw error;
-  }
-};
 
 export const sendVerificationEmail = async (toEmail, fullName, verificationToken) => {
   if (!transporter) {
