@@ -539,6 +539,11 @@ model LeadPurchase {
   convertedAt           DateTime? // Kada je lead konvertiran u posao
   refundedAt            DateTime? // Kada je izvršena refundacija
   refundReason          String? // Razlog refundacije
+  refundRequestStatus   RefundRequestStatus? // Status refund zahtjeva (PENDING, APPROVED, REJECTED)
+  refundRequestedAt     DateTime? // Kada je zatražen refund
+  refundApprovedBy      String? // ID admina koji je odobrio refund
+  refundApprovedAt      DateTime? // Kada je refund odobren
+  refundRejectedReason  String? // Razlog odbijanja refund-a (ako je odbijen)
   stripePaymentIntentId String? // Stripe Payment Intent ID (za refund kroz Stripe)
   stripeRefundId        String? // Stripe Refund ID (nakon refund-a)
   notes                 String? // Dodatne bilješke
@@ -551,6 +556,7 @@ model LeadPurchase {
   @@index([jobId])
   @@index([providerId])
   @@index([status])
+  @@index([refundRequestStatus])
   @@index([createdAt])
 }
 
