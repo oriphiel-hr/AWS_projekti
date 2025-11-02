@@ -318,5 +318,135 @@ r.delete('/rooms/:roomId', auth(true), async (req, res, next) => {
   }
 });
 
+/**
+ * POST /api/chat/rooms/:roomId/upload-image
+ * Upload slike za chat poruku
+ */
+r.post('/rooms/:roomId/upload-image', auth(true), upload.single('image'), async (req, res, next) => {
+  try {
+    const { roomId } = req.params;
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'No image uploaded' });
+    }
+
+    // Verify user has access to this room
+    const room = await prisma.chatRoom.findFirst({
+      where: {
+        id: roomId,
+        participants: {
+          some: { id: req.user.id }
+        }
+      },
+      include: {
+        job: {
+          include: {
+            offers: {
+              where: { status: 'ACCEPTED' },
+              include: { user: true }
+            }
+          }
+        }
+      }
+    });
+
+    if (!room) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    // Additional validation: ensure job has accepted offer
+    if (!room.job.offers || room.job.offers.length === 0) {
+      return res.status(403).json({ error: 'Chat is only available after job acceptance' });
+    }
+
+    // Get image URL
+    const imageUrl = getImageUrl(req, req.file.filename);
+
+    res.json({
+      success: true,
+      imageUrl,
+      filename: req.file.filename,
+      size: req.file.size,
+      message: 'Image uploaded successfully'
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * POST /api/chat/rooms/:roomId/messages
+ * Kreiraj novu poruku (može sadržavati tekst i/ili slike)
+ */
+r.post('/rooms/:roomId/messages', auth(true), async (req, res, next) => {
+  try {
+    const { roomId } = req.params;
+    const { content = '', attachments = [] } = req.body;
+
+    // Validate: mora biti ili content ili attachments
+    if (!content.trim() && (!attachments || attachments.length === 0)) {
+      return res.status(400).json({ error: 'Message must have content or attachments' });
+    }
+
+    // Verify user has access to this room
+    const room = await prisma.chatRoom.findFirst({
+      where: {
+        id: roomId,
+        participants: {
+          some: { id: req.user.id }
+        }
+      },
+      include: {
+        job: {
+          include: {
+            offers: {
+              where: { status: 'ACCEPTED' },
+              include: { user: true }
+            }
+          }
+        }
+      }
+    });
+
+    if (!room) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    // Additional validation: ensure job has accepted offer
+    if (!room.job.offers || room.job.offers.length === 0) {
+      return res.status(403).json({ error: 'Chat is only available after job acceptance' });
+    }
+
+    // Create message
+    const message = await prisma.chatMessage.create({
+      data: {
+        content: content.trim() || '',
+        attachments: Array.isArray(attachments) ? attachments : [],
+        senderId: req.user.id,
+        roomId
+      },
+      include: {
+        sender: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true
+          }
+        }
+      }
+    });
+
+    // Update room updatedAt
+    await prisma.chatRoom.update({
+      where: { id: roomId },
+      data: { updatedAt: new Date() }
+    });
+
+    res.status(201).json(message);
+  } catch (e) {
+    next(e);
+  }
+});
+
 export default r;
 
