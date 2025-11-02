@@ -108,7 +108,7 @@ const Documentation = () => {
         { name: "Povijest poruka", implemented: true },
         { name: "Slanje slika u chatu", implemented: true },
         { name: "Notifikacije za nove poruke", implemented: true },
-        { name: "Status poruke (poslana, pročitana)", implemented: false }
+        { name: "Status poruke (poslana, pročitana)", implemented: true }
       ]
     },
     {

@@ -281,7 +281,43 @@ r.get('/rooms/:roomId/messages', auth(true), async (req, res, next) => {
       skip: parseInt(offset)
     });
 
-    res.json(messages.reverse());
+    // Označi poruke koje nisu od trenutnog korisnika kao DELIVERED ako još nisu
+    // A automatski kao READ ako korisnik dohvaća poruke (znači da gleda chat)
+    const now = new Date();
+    const messageIdsToUpdate = messages
+      .filter(msg => msg.senderId !== req.user.id && msg.status !== 'READ')
+      .map(msg => msg.id);
+
+    if (messageIdsToUpdate.length > 0) {
+      await prisma.chatMessage.updateMany({
+        where: {
+          id: { in: messageIdsToUpdate }
+        },
+        data: {
+          status: 'READ',
+          readAt: now
+        }
+      });
+    }
+
+    // Ponovno dohvati poruke s ažuriranim statusom
+    const updatedMessages = await prisma.chatMessage.findMany({
+      where: { roomId },
+      include: {
+        sender: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' },
+      take: parseInt(limit),
+      skip: parseInt(offset)
+    });
+
+    res.json(updatedMessages.reverse());
   } catch (e) {
     next(e);
   }
@@ -443,6 +479,112 @@ r.post('/rooms/:roomId/messages', auth(true), async (req, res, next) => {
     });
 
     res.status(201).json(message);
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * PATCH /api/chat/rooms/:roomId/messages/:messageId/read
+ * Označi poruku kao pročitanu
+ */
+r.patch('/rooms/:roomId/messages/:messageId/read', auth(true), async (req, res, next) => {
+  try {
+    const { roomId, messageId } = req.params;
+
+    // Verify user has access to this room
+    const room = await prisma.chatRoom.findFirst({
+      where: {
+        id: roomId,
+        participants: {
+          some: { id: req.user.id }
+        }
+      }
+    });
+
+    if (!room) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    // Get message
+    const message = await prisma.chatMessage.findUnique({
+      where: { id: messageId }
+    });
+
+    if (!message) {
+      return res.status(404).json({ error: 'Message not found' });
+    }
+
+    // Provjeri da poruka nije od trenutnog korisnika (ne možete označiti svoje poruke kao pročitane)
+    if (message.senderId === req.user.id) {
+      return res.status(400).json({ error: 'Cannot mark your own message as read' });
+    }
+
+    // Ažuriraj status
+    const updatedMessage = await prisma.chatMessage.update({
+      where: { id: messageId },
+      data: {
+        status: 'READ',
+        readAt: new Date()
+      },
+      include: {
+        sender: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true
+          }
+        }
+      }
+    });
+
+    res.json(updatedMessage);
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * POST /api/chat/rooms/:roomId/mark-all-read
+ * Označi sve poruke u sobi kao pročitane (za trenutnog korisnika)
+ */
+r.post('/rooms/:roomId/mark-all-read', auth(true), async (req, res, next) => {
+  try {
+    const { roomId } = req.params;
+
+    // Verify user has access to this room
+    const room = await prisma.chatRoom.findFirst({
+      where: {
+        id: roomId,
+        participants: {
+          some: { id: req.user.id }
+        }
+      }
+    });
+
+    if (!room) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    // Označi sve poruke koje nisu od trenutnog korisnika kao pročitane
+    const now = new Date();
+    const result = await prisma.chatMessage.updateMany({
+      where: {
+        roomId,
+        senderId: { not: req.user.id }, // Samo poruke od drugih korisnika
+        status: { not: 'READ' } // Samo one koje još nisu pročitane
+      },
+      data: {
+        status: 'READ',
+        readAt: now
+      }
+    });
+
+    res.json({
+      success: true,
+      messagesMarkedAsRead: result.count,
+      message: `${result.count} poruka označeno kao pročitano`
+    });
   } catch (e) {
     next(e);
   }

@@ -408,14 +408,19 @@ model ChatRoom {
 }
 
 model ChatMessage {
-  id         String    @id @default(cuid())
-  content    String    // Tekst poruke (može biti prazan ako su samo slike)
-  attachments String[] @default([]) // URL-ovi priloženih slika
-  sender     User      @relation("senderMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  id         String          @id @default(cuid())
+  content    String          // Tekst poruke (može biti prazan ako su samo slike)
+  attachments String[]        @default([]) // URL-ovi priloženih slika
+  status     MessageStatus   @default(SENT) // SENT, DELIVERED, READ
+  readAt     DateTime?       // Datum i vrijeme kada je poruka pročitana
+  sender     User            @relation("senderMessages", fields: [senderId], references: [id], onDelete: Cascade)
   senderId   String
-  room       ChatRoom  @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  room       ChatRoom        @relation(fields: [roomId], references: [id], onDelete: Cascade)
   roomId     String
-  createdAt  DateTime  @default(now())
+  createdAt  DateTime        @default(now())
+  
+  @@index([roomId, createdAt])
+  @@index([status])
 }
 
 // Pretplate (za provajdere usluga)
@@ -717,6 +722,12 @@ enum InvoiceStatus {
   PAID // Plaćena
   CANCELLED // Otkazana
   STORNED // Stornirana (poništavajuća faktura je izdana)
+}
+
+enum MessageStatus {
+  SENT // Poslana
+  DELIVERED // Dostavljena (opcionalno - može se koristiti za push notifikacije)
+  READ // Pročitana
 }
 
 enum ProviderApprovalStatus {

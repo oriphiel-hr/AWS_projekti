@@ -117,6 +117,9 @@ export const initSocket = (httpServer) => {
         // Broadcast to room
         io.to(roomId).emit('new-message', message);
 
+        // Automatski označi poruke kao DELIVERED kada se broadcast-aju (opcionalno)
+        // Status će biti READ kada korisnik otvori chat ili dohvati poruke
+
         // Create notification for other participants
         const otherParticipants = await prisma.chatRoom.findUnique({
           where: { id: roomId },
