@@ -338,6 +338,15 @@ r.get('/verify', async (req, res, next) => {
       }
     });
     
+    // Pokreni automatsku verifikaciju nakon email verifikacije
+    try {
+      const { triggerAutoVerification } = await import('../services/auto-verification.js');
+      await triggerAutoVerification(user.id, { type: 'email', value: user.email });
+    } catch (autoVerifyError) {
+      console.error('[Auth] Auto-verification failed after email verification:', autoVerifyError);
+      // Ne baci grešku - samo logiraj
+    }
+    
     res.json({ 
       message: 'Email successfully verified!',
       user: { email: user.email, fullName: user.fullName, isVerified: true }
