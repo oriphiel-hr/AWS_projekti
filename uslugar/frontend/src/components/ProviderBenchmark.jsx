@@ -1,8 +1,29 @@
 // Provider Benchmark Component - Usporedba s drugim providerima
 import React, { useState, useEffect } from 'react';
+import {
+  Chart as ChartJS,
+  RadialLinearScale,
+  BarElement,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+} from 'chart.js';
 import { Bar, Radar } from 'react-chartjs-2';
 import { getBenchmark } from '../api/exclusive';
 import { useDarkMode } from '../contexts/DarkModeContext.jsx';
+
+// Registriraj Chart.js komponente za benchmark grafove
+ChartJS.register(
+  RadialLinearScale,
+  BarElement,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 export default function ProviderBenchmark() {
   const { isDarkMode } = useDarkMode();
