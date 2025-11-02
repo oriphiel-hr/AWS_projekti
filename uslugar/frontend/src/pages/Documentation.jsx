@@ -5,7 +5,7 @@ const Documentation = () => {
   const { isDarkMode } = useDarkMode();
   const [expandedItem, setExpandedItem] = useState(null); // Track which item is expanded
 
-  // Detaljni opisi funkcionalnosti
+  // Detaljni opisi funkcionalnosti - izvučeni iz dokumentacije
   const featureDescriptions = {
     "Grafički prikaz statistika": {
       implemented: true,
@@ -218,6 +218,337 @@ Sve promjene su commitane i pushane. Pružatelji usluga sada imaju grafički pri
    - Resizable tekst
    - Color blind friendly paleta boja
    - Keyboard accessible modali i dropdown-ovi
+`
+    },
+    "Ekskluzivni lead sustav": {
+      implemented: true,
+      summary: "Ekskluzivni lead sustav omogućava 1 lead = 1 provider bez konkurencije.",
+      details: `## Implementirano:
+
+### 1. **Database Schema**
+   - \`Job.isExclusive\` - označava ekskluzivne leadove
+   - \`Job.assignedProviderId\` - ID providera koji je kupio lead
+   - \`Job.leadStatus\` - status leada (AVAILABLE, ASSIGNED, CONTACTED, CONVERTED, REFUNDED, EXPIRED)
+   - \`Job.leadPrice\` - cijena leada u kreditima (10-20)
+   - \`Job.qualityScore\` - AI quality score (0-100)
+   - \`LeadPurchase\` model - tracking kupljenih leadova
+
+### 2. **Backend Implementacija**
+   - \`lead-service.js\` - \`purchaseLead()\` funkcija
+   - Provjera da lead nije već kupljen (1 lead = 1 provider)
+   - Automatska assignment providera nakon kupovine
+   - Kreditni sustav - naplata kredita pri kupovini
+
+### 3. **API Endpoints**
+   - \`GET /api/exclusive/leads/available\` - dostupni leadovi
+   - \`POST /api/exclusive/leads/:jobId/purchase\` - kupovina leada
+   - \`GET /api/exclusive/leads/my-leads\` - moji kupljeni leadovi
+   - \`POST /api/exclusive/leads/purchases/:id/contacted\` - označi kontaktiran
+   - \`POST /api/exclusive/leads/purchases/:id/converted\` - označi konvertiran
+
+### 4. **Frontend**
+   - \`LeadMarketplace.jsx\` - pregled dostupnih leadova
+   - \`MyLeads.jsx\` - upravljanje kupljenim leadovima
+   - AI quality badges (VRHUNSKI 80-100, DOBAR 60-79, PROSJEČAN 40-59)
+   - Filteri po gradu, budgetu, kategoriji
+   - One-click purchase s potvrdom
+
+### 5. **Ključne Razlike od Konkurencije**
+   - **Trebam.hr/Emajstor.hr**: 1 lead dijeli se između 5-10 providera
+   - **Uslugar EXCLUSIVE**: 1 lead = 1 provider (bez konkurencije)
+   - Veća stopa konverzije (40% vs 10%)
+   - Ekskluzivni pristup kontaktima klijenta
+`
+    },
+    "ROI dashboard": {
+      implemented: true,
+      summary: "ROI dashboard pruža detaljne statistike i analitiku za providere.",
+      details: `## Implementirano:
+
+### 1. **Database Model**
+   - \`ProviderROI\` model - tracking ROI metrika
+   - Polja: \`totalLeadsPurchased\`, \`totalLeadsConverted\`, \`conversionRate\`, \`totalRevenue\`, \`roi\`, \`avgLeadValue\`
+
+### 2. **Backend Service**
+   - \`provider-roi.js\` - automatsko ažuriranje ROI-a
+   - \`updateProviderROI()\` - ažurira metrike pri konverziji
+   - Monthly stats - mjesečna statistika
+   - Top leads - najbolji konvertirani leadovi
+
+### 3. **API Endpoints**
+   - \`GET /api/exclusive/roi/dashboard\` - ROI pregled
+   - \`GET /api/exclusive/roi/monthly-stats\` - mjesečna statistika
+   - \`GET /api/exclusive/roi/top-leads\` - top leadovi
+
+### 4. **Frontend - ROIDashboard.jsx**
+   - Conversion rate prikaz (%)
+   - ROI % izračun
+   - Prosječna vrijednost leada
+   - Ukupan prihod od leadova
+   - Ukupno potrošenih kredita
+   - Mjesečna statistika s grafovima
+   - Personalizirani AI insights
+   - Subscription info widget
+   - Recent leads history
+
+### 5. **Metrike**
+   - Conversion rate: \`(totalLeadsConverted / totalLeadsPurchased) * 100\`
+   - ROI: \`((totalRevenue - totalCreditsSpent) / totalCreditsSpent) * 100\`
+   - Avg lead value: \`totalRevenue / totalLeadsConverted\`
+   - Automatsko tracking pri svakoj konverziji
+`
+    },
+    "Kreditni sustav": {
+      implemented: true,
+      summary: "Kreditni sustav omogućava fleksibilno plaćanje leadova.",
+      details: `## Implementirano:
+
+### 1. **Database Model**
+   - \`CreditTransaction\` model - povijest svih transakcija
+   - \`Subscription.creditsBalance\` - trenutni balans kredita
+   - \`Subscription.lifetimeCreditsUsed\` - ukupno potrošeno
+   - Tipovi transakcija: PURCHASE, LEAD_PURCHASE, REFUND, BONUS, SUBSCRIPTION, ADMIN_ADJUST
+
+### 2. **Backend Service - credit-service.js**
+   - \`addCredits()\` - dodavanje kredita
+   - \`deductCredits()\` - naplata kredita
+   - \`refundCredits()\` - vraćanje kredita
+   - \`getCreditsBalance()\` - dohvat balansa
+   - \`getCreditHistory()\` - povijest transakcija
+   - \`hasEnoughCredits()\` - provjera balansa
+
+### 3. **API Endpoints**
+   - \`GET /api/exclusive/leads/credits/balance\` - balans kredita
+   - \`GET /api/exclusive/leads/credits/history\` - povijest
+   - \`POST /api/exclusive/leads/credits/purchase\` - kupovina kredita
+
+### 4. **Frontend**
+   - \`CreditsWidget.jsx\` - real-time balans u headeru
+   - Low credits alert (animate pulse) - upozorenje pri niskom balansu
+   - Auto-refresh svake 30s
+   - Quick link za subscription
+
+### 5. **Integracija**
+   - Automatska naplata pri kupovini leada
+   - Automatski refund pri refund requestu
+   - Subscription planovi dodaju kredite pri pretplati
+   - Trial period - 5 besplatnih kredita
+`
+    },
+    "AI score kvalitete leadova": {
+      implemented: true,
+      summary: "AI scoring sustav ocjenjuje kvalitetu leadova od 0-100.",
+      details: `## Implementirano:
+
+### 1. **Backend Service - ai-lead-scoring.js**
+   - \`calculateLeadQualityScore()\` - izračun 0-100 score
+   - \`getLeadQualityCategory()\` - kategorizacija (VRHUNSKI, DOBAR, PROSJEČAN, SLAB)
+   - \`recommendLeadPrice()\` - preporuka cijene na osnovu score-a
+   - \`evaluateAndUpdateJobScore()\` - evaluacija i update u bazi
+
+### 2. **Scoring Faktori**
+   | Faktor | Bodovi | Opis |
+   |--------|--------|------|
+   | Client verification | +30 | Phone, email, ID, company verified |
+   | Budget definiran | +15 | Min i max budget postavljeni |
+   | Kvaliteta opisa | +10 | 50-100+ riječi |
+   | Slike | +10 | 1-3+ slike priložene |
+   | Urgency | +10 | HIGH/URGENT prioritet |
+   | Deadline | +5 | Definiran rok |
+   | Lokacija | +5 | Grad/GPS navedeni |
+   | Veličina posla | +10 | LARGE/EXTRA_LARGE |
+   | Account age | +5 | 30+ dana star account |
+
+### 3. **Kategorizacija i Cijene**
+   - 🟢 80-100: VRHUNSKI (20 kredita)
+   - 🔵 60-79: DOBAR (15 kredita)
+   - 🟡 40-59: PROSJEČAN (10 kredita)
+   - ⚪ 0-39: SLAB (5 kredita)
+
+### 4. **Frontend Prikaz**
+   - AI quality badges na lead kartama
+   - Sortiranje po quality score (PREMIUM/PRO planovi)
+   - Prikaz score-a u lead detaljima
+   - Filtering po min score (PRO plan - 80+)
+
+### 5. **Automatsko Ažuriranje**
+   - Score se izračunava pri kreiranju joba
+   - Batch processing za postojeće leadove
+   - Re-evaluacija pri promjeni podataka
+`
+    },
+    "SMS verifikacija telefonskog broja (Twilio)": {
+      implemented: true,
+      summary: "SMS verifikacija putem Twilio za provjeru telefonskog broja.",
+      details: `## Implementirano:
+
+### 1. **Backend Setup**
+   - Twilio SDK instaliran (\`twilio\` npm paket)
+   - \`sms-service.js\` - Twilio API integracija
+   - Fallback na simulation mode ako Twilio nije konfiguriran
+   - Environment variables: \`TWILIO_ACCOUNT_SID\`, \`TWILIO_AUTH_TOKEN\`, \`TWILIO_PHONE_NUMBER\`
+
+### 2. **Database Schema**
+   - \`User.phoneVerified\` - status verifikacije (Boolean)
+   - \`User.phoneVerificationCode\` - 6-znamenkasti kod (String, unique)
+   - \`User.phoneVerificationExpires\` - istek koda (DateTime, 10 minuta)
+   - \`User.phoneVerificationAttempts\` - broj pokušaja (Int, max 5)
+   - \`User.phoneVerifiedAt\` - datum verifikacije (DateTime)
+
+### 3. **Backend Endpoints**
+   - \`POST /api/sms-verification/send\` - slanje SMS koda
+     - Validira format telefona (+385XXXXXXXXX)
+     - Generira 6-znamenkasti kod
+     - Šalje SMS preko Twilio
+     - Postavlja expiration (10 minuta)
+     - Rate limiting (max 5 pokušaja)
+   - \`POST /api/sms-verification/verify\` - potvrda SMS koda
+     - Validira kod (6 znamenki)
+     - Provjerava expiration
+     - Provjerava pokušaje (max 5)
+     - Ažurira \`phoneVerified = true\`
+     - Ažurira \`ProviderProfile.identityPhoneVerified\` ako je provider
+   - \`GET /api/sms-verification/status\` - status verifikacije
+
+### 4. **Frontend Komponenta**
+   - \`PhoneVerification.jsx\` - UI za SMS verifikaciju
+     - Automatsko provjeravanje statusa verifikacije
+     - Forma za unos telefona i slanje SMS koda
+     - Countdown timer (60s za resend)
+     - Rate limiting UI (prikaz preostalih pokušaja)
+     - Success/error poruke
+   - Integracija u \`ProviderProfile.jsx\`
+
+### 5. **Sigurnost**
+   - Rate limiting: Max 5 pokušaja verifikacije
+   - Expiration: Kod vrijedi 10 minuta
+   - Format validation: Hrvatski format (+385XXXXXXXXX)
+   - Unique codes: Svaki kod je unique u bazi
+   - Attempts tracking: Svi pokušaji se prate
+
+### 6. **Development vs Production**
+   - Development: Kod se prikazuje u console i response
+   - Production: Kod se šalje stvarno preko Twilio
+`
+    },
+    "Prosječno vrijeme odgovora (avgResponseTimeMinutes)": {
+      implemented: true,
+      summary: "Reputacijski sustav prati prosječno vrijeme odgovora providera na leadove.",
+      details: `## Implementirano:
+
+### 1. **Database Schema**
+   - \`ProviderProfile.avgResponseTimeMinutes\` - prosječno vrijeme odgovora u minutama
+   - \`ProviderProfile.totalResponseTimeTracked\` - broj trackanih odgovora (za izračun prosjeka)
+   - \`ProviderProfile.conversionRate\` - stopa konverzije (cached iz ProviderROI)
+
+### 2. **Backend Tracking - lead-service.js**
+   - \`markLeadContacted()\` - računa response time kada provider označi lead kao kontaktiran
+   - Response time = razlika između \`contactUnlockedAt\` (ili \`createdAt\`) i \`contactedAt\`
+   - Ažurira \`avgResponseTimeMinutes\` koristeći rolling average
+   - Validira podatke (0-7 dana) da spriječi outlier-e
+
+### 3. **Rolling Average Formula**
+   - \`(stari_prosjek * broj_uzoraka + novi_response) / (broj_uzoraka + 1)\`
+   - Validacija: 0-10080 minuta (0-7 dana) - sprječava outlier-e
+
+### 4. **Lead Matching Algoritam**
+   - \`findTopProviders()\` koristi **Reputation Score**:
+   - **Rating (40% weight)**: \`ratingAvg * 0.4 + (ratingCount bonus) * 0.4\`
+   - **Response Time (30% weight)**: Normalizacija (0-60min = 1.0, 60-240min = 0.5, 240+ = 0.1)
+   - **Conversion Rate (30% weight)**: \`conversionRate / 100\`
+   - **Final Score** = \`(Rating * 0.4) + (ResponseTime * 0.3) + (ConversionRate * 0.3)\`
+
+### 5. **Frontend Prikaz**
+   - Komponenta ProviderProfile - sekcija "⚡ Reputacija"
+   - Prosječno vrijeme odgovora (min/h/d format)
+   - Badge "✓ Brz odgovor" ako je < 60 min
+   - Prikaz na profilu pružatelja
+   - Fallback na kategorije/iskustvo ako metrike nisu dostupne
+
+### 6. **Kako radi**
+   1. Provider kupi lead → \`purchaseLead()\` kreira \`LeadPurchase\`
+   2. Provider otključi kontakt → \`unlockContact()\` postavlja \`contactUnlockedAt\`
+   3. Provider kontaktira klijenta → \`markLeadContacted()\`:
+      - Računa response time
+      - Ažurira \`avgResponseTimeMinutes\` u \`ProviderProfile\`
+   4. Lead matching → \`findTopProviders()\` koristi reputation score za sortiranje
+`
+    },
+    "Online plaćanje (Stripe Checkout)": {
+      implemented: true,
+      summary: "Stripe Checkout integracija za plaćanje pretplata i leadova.",
+      details: `## Implementirano:
+
+### 1. **Backend Setup**
+   - Stripe SDK instaliran
+   - Payment routes (\`/api/payments/*\`)
+   - Checkout session creation
+   - Webhook handler za potvrdu plaćanja
+   - Auto-activate subscription after payment
+
+### 2. **AWS Secrets Manager**
+   - Secret created: \`uslugar/stripe-keys\`
+   - Contains: \`STRIPE_SECRET_KEY\`, \`STRIPE_PUBLISHABLE_KEY\`, \`CLIENT_URL\`
+   - ECS Task Definition - Stripe keys added to secrets
+
+### 3. **API Endpoints**
+   - \`GET /api/payments/config\` - Get publishable key
+   - \`POST /api/payments/create-checkout\` - Create payment session
+   - \`POST /api/payments/webhook\` - Handle Stripe webhook
+   - \`GET /api/payments/success\` - Confirmation page
+
+### 4. **Webhook Events**
+   - \`checkout.session.completed\` - subscription activated
+   - \`invoice.payment_succeeded\` - payment confirmed
+   - \`invoice.payment_failed\` - payment failed handling
+
+### 5. **Stripe Payment Intent**
+   - Za kupovinu leadova preko Stripe (opcionalno, umjesto internih kredita)
+   - PSD2 compliant refund API
+   - Kreiranje Payment Intent-a za pojedinačnu kupovinu leada
+
+### 6. **Test Cards**
+   - ✅ Success: 4242 4242 4242 4242
+   - ❌ Decline: 4000 0000 0000 0002
+   - 🔐 3D Secure: 4000 0025 0000 3155
+
+### 7. **Security**
+   - Stripe secret key sigurno skladišten u AWS Secrets Manager
+   - Webhook signature verification
+   - HTTPS only komunikacija
+`
+    },
+    "Automatski refund nakon 48h neaktivnosti": {
+      implemented: true,
+      summary: "Automatski refund leada ako provider ne kontaktira klijenta unutar 48 sati.",
+      details: `## Implementirano:
+
+### 1. **Backend Service**
+   - Scheduled task provjerava neaktivne leadove
+   - Provjera: \`contactUnlockedAt\` + 48h < \`now()\` && \`status != CONTACTED\`
+   - Automatski poziv \`refundLead()\` funkcije
+   - Ažuriranje statusa na REFUNDED
+
+### 2. **Refund Logika**
+   - Vraćanje kredita provideru
+   - Stripe refund ako je lead plaćen preko Stripe
+   - Fallback na interne kredite
+   - Lead se vraća na tržište (AVAILABLE)
+
+### 3. **Tracking**
+   - \`LeadPurchase.refundedAt\` - datum refunda
+   - \`LeadPurchase.refundReason\` - "Automatski refund - neaktivnost 48h"
+   - \`CreditTransaction\` - REFUND tip transakcije
+
+### 4. **Notifikacije**
+   - Email notifikacija provideru
+   - In-app notifikacija o refundu
+   - Razlog refunda prikazan u MyLeads
+
+### 5. **Scheduler**
+   - Cron job ili scheduled task
+   - Provjera svakih sat vremena
+   - Batch processing neaktivnih leadova
 `
     }
   };
