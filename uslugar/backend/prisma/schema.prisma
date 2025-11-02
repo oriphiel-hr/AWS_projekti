@@ -299,6 +299,13 @@ model Job {
   leadQueue             LeadQueue[]         @relation("JobQueue")
   notifications         Notification[]
   reviews               Review[] // Recenzije ostavljene na ovom job-u
+  
+  // MODERATION
+  moderationStatus     ModerationStatus @default(PENDING) // Status moderacije
+  moderationReviewedBy String? // ID admina koji je pregledao
+  moderationReviewedAt DateTime? // Kada je pregledano
+  moderationRejectionReason String? // Razlog odbijanja (ako je odbijen)
+  moderationNotes      String? // Bilješke moderatora
 }
 
 model Offer {
@@ -315,6 +322,15 @@ model Offer {
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   notifications Notification[]
+  
+  // MODERATION
+  moderationStatus     ModerationStatus @default(PENDING) // Status moderacije
+  moderationReviewedBy String? // ID admina koji je pregledao
+  moderationReviewedAt DateTime? // Kada je pregledano
+  moderationRejectionReason String? // Razlog odbijanja (ako je odbijen)
+  moderationNotes      String? // Bilješke moderatora
+  
+  @@index([moderationStatus])
 }
 
 model Review {
@@ -328,10 +344,18 @@ model Review {
   to         User     @relation("reviewsReceived", fields: [toUserId], references: [id], onDelete: Cascade)
   toUserId   String
   createdAt  DateTime @default(now())
+  
+  // MODERATION
+  moderationStatus     ModerationStatus @default(PENDING) // Status moderacije
+  moderationReviewedBy String? // ID admina koji je pregledao
+  moderationReviewedAt DateTime? // Kada je pregledano
+  moderationRejectionReason String? // Razlog odbijanja (ako je odbijen)
+  moderationNotes      String? // Bilješke moderatora
 
   @@unique([jobId, fromUserId]) // Jedna recenzija po job-u od svake strane
   @@index([jobId])
   @@index([toUserId])
+  @@index([moderationStatus])
 }
 
 enum Role {
@@ -419,8 +443,18 @@ model ChatMessage {
   roomId     String
   createdAt  DateTime        @default(now())
   
+  // MODERATION (samo za poruke koje su prijavljene)
+  moderationStatus     ModerationStatus? // Status moderacije (null = nije prijavljeno)
+  moderationReportedBy String? // ID korisnika koji je prijavio
+  moderationReportedAt DateTime? // Kada je prijavljeno
+  moderationReviewedBy String? // ID admina koji je pregledao
+  moderationReviewedAt DateTime? // Kada je pregledano
+  moderationRejectionReason String? // Razlog odbijanja (ako je odbijen)
+  moderationNotes      String? // Bilješke moderatora
+  
   @@index([roomId, createdAt])
   @@index([status])
+  @@index([moderationStatus])
 }
 
 // Pretplate (za provajdere usluga)

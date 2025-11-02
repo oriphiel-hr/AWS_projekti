@@ -4,6 +4,7 @@ import { auth } from '../lib/auth.js';
 import { deleteUserWithRelations } from '../lib/delete-helpers.js';
 import { offerToNextInQueue } from '../lib/leadQueueManager.js';
 import { getPlatformStatistics, getMonthlyTrends } from '../services/platform-stats-service.js';
+import { getPendingModeration, moderateContent, getModerationStats, reportMessage } from '../services/moderation-service.js';
 
 const r = Router();
 
@@ -30,6 +31,63 @@ r.get('/platform-trends', auth(true, ['ADMIN']), async (req, res, next) => {
     const monthsBack = parseInt(req.query.months) || 12;
     const trends = await getMonthlyTrends(monthsBack);
     res.json(trends);
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * GET /api/admin/moderation/pending
+ * Dohvati sadržaj koji čeka moderaciju
+ * Query params: type (job|review|offer|message|all), limit, offset
+ */
+r.get('/moderation/pending', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const contentType = req.query.type || 'all';
+    const limit = parseInt(req.query.limit) || 50;
+    const offset = parseInt(req.query.offset) || 0;
+    
+    const result = await getPendingModeration(contentType, limit, offset);
+    res.json(result);
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * GET /api/admin/moderation/stats
+ * Statistike moderacije
+ */
+r.get('/moderation/stats', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const stats = await getModerationStats();
+    res.json(stats);
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * POST /api/admin/moderation/:type/:id
+ * Odobri ili odbij sadržaj
+ * Body: { approved: boolean, reason?: string, notes?: string }
+ */
+r.post('/moderation/:type/:id', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const { type, id } = req.params;
+    const { approved, reason, notes } = req.body;
+    const adminId = req.user.id;
+    
+    if (!['job', 'review', 'offer', 'message'].includes(type)) {
+      return res.status(400).json({ error: 'Invalid content type' });
+    }
+    
+    if (typeof approved !== 'boolean') {
+      return res.status(400).json({ error: 'approved must be boolean' });
+    }
+    
+    const result = await moderateContent(type, id, adminId, approved, reason, notes);
+    res.json(result);
   } catch (e) {
     next(e);
   }
