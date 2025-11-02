@@ -176,7 +176,7 @@ r.post('/subscribe', auth(true, ['PROVIDER']), async (req, res, next) => {
       }
     });
 
-    // Create notification
+    // Create notification (subscription activation)
     await prisma.notification.create({
       data: {
         title: 'Pretplata aktivirana!',
