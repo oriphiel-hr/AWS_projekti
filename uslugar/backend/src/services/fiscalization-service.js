@@ -18,8 +18,10 @@ import { prisma } from '../lib/prisma.js';
 const ERACUN_API_URL = process.env.ERACUN_API_URL || 'https://cistest.apis.hr/api/v1/fiscalization';
 const ERACUN_API_KEY = process.env.ERACUN_API_KEY || ''; // API ključ iz Porezne
 const ERACUN_CERT_PATH = process.env.ERACUN_CERT_PATH || ''; // Putanja do SSL certifikata
-const COMPANY_OIB = process.env.COMPANY_OIB || ''; // OIB tvrtke koja izdaje fakture
-const COMPANY_NAME = process.env.COMPANY_NAME || 'Uslugar d.o.o.'; // Naziv tvrtke
+const COMPANY_OIB = process.env.COMPANY_OIB || '88070789896'; // OIB tvrtke koja izdaje fakture
+const COMPANY_NAME = process.env.COMPANY_NAME || 'ORIPHIEL d.o.o.'; // Naziv tvrtke
+const COMPANY_ADDRESS = process.env.COMPANY_ADDRESS || 'Slavenskoga ulica 5, 10000 Zagreb';
+const COMPANY_DIRECTOR = process.env.COMPANY_DIRECTOR || 'Tomislav Kranjec';
 const FISCALIZATION_ENABLED = process.env.FISCALIZATION_ENABLED === 'true'; // Omogući/onemogući fiskalizaciju
 
 /**
@@ -99,6 +101,9 @@ export async function sendToFiscalAPI(invoice) {
     // Pripremi podatke za eRačun API
     const fiscalData = {
       oib: COMPANY_OIB,
+      companyName: COMPANY_NAME,
+      companyAddress: COMPANY_ADDRESS,
+      director: COMPANY_DIRECTOR,
       invoiceNumber: invoice.invoiceNumber,
       issueDate: invoice.issueDate.toISOString(),
       dueDate: invoice.dueDate?.toISOString() || null,

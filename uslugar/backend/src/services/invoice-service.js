@@ -155,16 +155,24 @@ export async function generateInvoicePDF(invoice) {
       // COMPANY INFO (Desno)
       // ============================================
       const companyInfo = [
-        'Uslugar d.o.o.',
-        'OIB: 12345678901',
-        'Email: info@uslugar.oriph.io',
-        'Web: https://uslugar.oriph.io'
+        'ORIPHIEL d.o.o.',
+        'OIB: 88070789896',
+        'Slavenskoga ulica 5',
+        '10000 Zagreb',
+        'Direktor: Tomislav Kranjec',
+        'Email: info@oriphiel.io',
+        'Web: https://uslugar.oriphiel.io'
       ];
 
       let yPos = 50;
-      doc.fontSize(9).text('IZDAVATELJ:', 400, yPos, { align: 'left' });
+      doc
+        .fontSize(9)
+        .font('Helvetica-Bold')
+        .text('IZDAVATELJ:', 400, yPos, { align: 'left' });
       yPos += 15;
-      doc.fontSize(8);
+      doc
+        .font('Helvetica')
+        .fontSize(8);
       companyInfo.forEach(line => {
         doc.text(line, 400, yPos, { align: 'left' });
         yPos += 12;
@@ -229,19 +237,38 @@ export async function generateInvoicePDF(invoice) {
         .rect(50, yPos, 495, 25)
         .fill()
         .fillColor('#FFFFFF')
-        .text('Opis', 60, yPos + 7)
+        .text('Opis usluge', 60, yPos + 7)
         .text('Količina', 280, yPos + 7)
         .text('Cijena', 380, yPos + 7)
         .text('Ukupno', 470, yPos + 7);
 
       // Table row
       yPos += 25;
+      const description = getInvoiceDescription(invoice);
       doc
         .fillColor('#333333')
         .font('Helvetica')
-        .rect(50, yPos, 495, 30)
-        .stroke()
-        .text(getInvoiceDescription(invoice), 60, yPos + 10)
+        .rect(50, yPos, 495, 35)
+        .stroke();
+      
+      // Opis usluge - podebljano i jasno
+      doc
+        .font('Helvetica-Bold')
+        .fontSize(10)
+        .text(description.title, 60, yPos + 8, { width: 200 });
+      
+      if (description.details) {
+        doc
+          .font('Helvetica')
+          .fontSize(8)
+          .fillColor('#666666')
+          .text(description.details, 60, yPos + 20, { width: 200 });
+      }
+      
+      doc
+        .fillColor('#333333')
+        .font('Helvetica')
+        .fontSize(10)
         .text('1', 280, yPos + 10)
         .text(formatCurrency(invoice.amount / 100), 380, yPos + 10)
         .text(formatCurrency(invoice.amount / 100), 470, yPos + 10);
@@ -351,11 +378,22 @@ function getInvoiceDescription(invoice) {
       'PREMIUM': 'Premium Plan',
       'PRO': 'Pro Plan'
     };
-    return `Pretplata - ${planNames[invoice.subscription.plan] || invoice.subscription.plan} Plan`;
+    const planName = planNames[invoice.subscription.plan] || invoice.subscription.plan;
+    return {
+      title: `Pretplata na Uslugar platformu - ${planName}`,
+      details: `Mjesečna pretplata za pristup Uslugar platformi za povezivanje korisnika i pružatelja usluga. Plan: ${planName}`
+    };
   } else if (invoice.type === 'LEAD_PURCHASE' && invoice.leadPurchase) {
-    return `Kupovina leada: ${invoice.leadPurchase.job?.title || 'Lead'}`;
+    const jobTitle = invoice.leadPurchase.job?.title || 'Lead';
+    return {
+      title: `Kupovina ekskluzivnog leada: ${jobTitle}`,
+      details: `Kupovina ekskluzivnog leada za posao "${jobTitle}" na Uslugar platformi. Pružatelj dobiva ekskluzivni pristup kontakt podacima klijenta.`
+    };
   }
-  return 'Usluga';
+  return {
+    title: 'Usluga na Uslugar platformi',
+    details: 'Usluga povezivanja korisnika i pružatelja usluga'
+  };
 }
 
 /**
