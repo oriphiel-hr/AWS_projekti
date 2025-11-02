@@ -280,7 +280,7 @@ const Documentation = () => {
         { name: "Broj licence i datum izdavanja", implemented: true },
         { name: "Notifikacije o isteku licenci", implemented: true },
         { name: "Automatska provjera valjanosti licenci", implemented: true },
-        { name: "Skener dokumenata za licence", implemented: false }
+        { name: "Skener dokumenata za licence", implemented: true }
       ]
     },
     {

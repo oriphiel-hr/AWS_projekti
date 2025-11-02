@@ -899,17 +899,34 @@ r.post('/upload-license', auth(true, ['PROVIDER']), uploadDocument.single('file'
       return res.status(404).json({ error: 'Provider profile not found' });
     }
 
+    // Scan license document with OCR
+    const fs = await import('fs/promises');
+    const path = await import('path');
+    const filePath = path.join('./uploads', req.file.filename);
+    const fileBuffer = await fs.readFile(filePath);
+    
+    const { scanLicenseDocument, validateExtractedData } = await import('../services/license-scanner.js');
+    const scanResult = await scanLicenseDocument(fileBuffer, req.file.originalname);
+    
     // Create or update license
     const documentUrl = getImageUrl(req, req.file.filename);
-
+    
+    // Koristi ekstrahirane podatke iz skenera, ili fallback na category podatke
+    const extractedData = scanResult.success ? scanResult.data : null;
+    const validation = extractedData ? validateExtractedData(extractedData) : null;
+    
     const licenseData = {
       providerId: provider.id,
-      licenseType: category.licenseType || docType || 'Licenca',
-      licenseNumber: '',
-      issuingAuthority: category.licenseAuthority || 'N/A',
-      issuedAt: new Date(),
+      licenseType: extractedData?.licenseType || category.licenseType || docType || 'Licenca',
+      licenseNumber: extractedData?.licenseNumber || '',
+      issuingAuthority: extractedData?.issuingAuthority || category.licenseAuthority || 'N/A',
+      issuedAt: extractedData?.issuedAt || new Date(),
+      expiresAt: extractedData?.expiresAt || null,
       documentUrl: documentUrl,
-      isVerified: false
+      isVerified: false,
+      notes: scanResult.success 
+        ? `OCR confidence: ${Math.round(scanResult.confidence || 0)}%. ${validation?.warnings?.join('; ') || ''}` 
+        : `OCR nije uspješan: ${scanResult.message || 'Nepoznata greška'}. Molimo unesite podatke ručno.`
     };
 
     const license = await prisma.providerLicense.create({
@@ -943,13 +960,36 @@ r.post('/upload-license', auth(true, ['PROVIDER']), uploadDocument.single('file'
     }
 
     res.json({
-      message: 'License document uploaded successfully. Your license is pending admin approval.',
+      message: scanResult.success 
+        ? 'License document uploaded and scanned successfully. Please review the extracted data.'
+        : 'License document uploaded successfully. Please enter the license details manually.',
       url: documentUrl,
+      scanResult: scanResult.success ? {
+        success: true,
+        confidence: scanResult.confidence,
+        extractedData: extractedData ? {
+          licenseType: extractedData.licenseType,
+          licenseNumber: extractedData.licenseNumber,
+          issuingAuthority: extractedData.issuingAuthority,
+          issuedAt: extractedData.issuedAt?.toISOString().split('T')[0],
+          expiresAt: extractedData.expiresAt?.toISOString().split('T')[0]
+        } : null,
+        validation: validation
+      } : {
+        success: false,
+        message: scanResult.message,
+        requiresManual: scanResult.requiresManual || false
+      },
       license: {
         id: license.id,
         documentUrl: documentUrl,
         licenseType: license.licenseType,
-        isVerified: license.isVerified
+        licenseNumber: license.licenseNumber,
+        issuingAuthority: license.issuingAuthority,
+        issuedAt: license.issuedAt,
+        expiresAt: license.expiresAt,
+        isVerified: license.isVerified,
+        notes: license.notes
       }
     });
   } catch (e) {
