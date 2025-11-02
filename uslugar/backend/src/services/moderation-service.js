@@ -1,6 +1,6 @@
 // Content Moderation Service - Moderacija sadržaja
 import { prisma } from '../lib/prisma.js';
-import { notifyUser } from '../lib/notifications.js';
+import { notifyClient } from '../lib/notifications.js';
 
 /**
  * Odobri ili odbij sadržaj
@@ -133,7 +133,7 @@ export async function moderateContent(contentType, contentId, adminId, approved,
     
     // Pošalji notifikaciju korisniku
     if (userId) {
-      await notifyUser(userId, {
+      await notifyClient(userId, {
         title: approved ? 'Sadržaj odobren' : 'Sadržaj odbijen',
         message: approved
           ? `Vaš sadržaj "${contentTitle}" je odobren i sada je vidljiv na platformi.`
