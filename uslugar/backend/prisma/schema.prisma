@@ -680,6 +680,12 @@ enum LeadPurchaseStatus {
   CANCELLED // Otkazan
 }
 
+enum RefundRequestStatus {
+  PENDING // Zahtjev za refund čeka odobrenje
+  APPROVED // Refund je odobren
+  REJECTED // Refund je odbijen
+}
+
 enum CreditTransactionType {
   PURCHASE // Kupovina kredita
   LEAD_PURCHASE // Trošenje kredita za lead

@@ -376,7 +376,10 @@ export async function markLeadConverted(purchaseId, providerId, revenue = 0) {
  * Ova funkcija priprema zahtjev za povrat i vraća interne kredite.
  * Ako lead kupnja koristi Stripe Payment Intent, refund se prosljeđuje Stripe-u.
  */
-export async function refundLead(purchaseId, providerId, reason = 'Client unresponsive') {
+/**
+ * Zatraži refund za lead (kreira zahtjev koji čeka admin odobrenje)
+ */
+export async function requestLeadRefund(purchaseId, providerId, reason = 'Client unresponsive') {
   const purchase = await prisma.leadPurchase.findUnique({
     where: { id: purchaseId },
     include: { job: true }
@@ -394,6 +397,101 @@ export async function refundLead(purchaseId, providerId, reason = 'Client unresp
     throw new Error('Zahtjev za povrat već je obrađen');
   }
 
+  if (purchase.status === 'CONVERTED') {
+    throw new Error('Ne može se zatražiti povrat za uspješno konvertirani lead');
+  }
+
+  if (purchase.refundRequestStatus === 'PENDING') {
+    throw new Error('Zahtjev za povrat već je podnesen i čeka odobrenje');
+  }
+
+  if (purchase.refundRequestStatus === 'APPROVED') {
+    throw new Error('Refund je već odobren');
+  }
+
+  // Kreiraj refund zahtjev (čeka admin odobrenje)
+  const updated = await prisma.leadPurchase.update({
+    where: { id: purchaseId },
+    data: {
+      refundRequestStatus: 'PENDING',
+      refundRequestedAt: new Date(),
+      refundReason: reason
+    }
+  });
+
+  // Kreiraj notifikaciju za admina
+  const admins = await prisma.user.findMany({
+    where: { role: 'ADMIN' },
+    select: { id: true }
+  });
+
+  for (const admin of admins) {
+    await prisma.notification.create({
+      data: {
+        userId: admin.id,
+        type: 'SYSTEM',
+        title: 'Novi zahtjev za refund',
+        message: `Provider ${purchase.providerId} je zatražio refund za lead "${purchase.job.title}". Razlog: ${reason}`,
+        jobId: purchase.jobId
+      }
+    });
+  }
+
+  console.log(`[REFUND-REQUEST] Refund zahtjev kreiran za purchase ${purchaseId}, čeka admin odobrenje`);
+
+  return updated;
+}
+
+/**
+ * Procesira refund za lead (poziva admin nakon odobrenja)
+ * @param {String} purchaseId - ID purchase-a
+ * @param {String} adminId - ID admina koji odobrava
+ * @param {Boolean} approved - Da li je odobreno ili odbijeno
+ * @param {String} adminNotes - Bilješke admina (opcionalno)
+ */
+export async function processLeadRefund(purchaseId, adminId, approved = true, adminNotes = null) {
+  const purchase = await prisma.leadPurchase.findUnique({
+    where: { id: purchaseId },
+    include: { job: true, provider: true }
+  });
+
+  if (!purchase) {
+    throw new Error('Purchase not found');
+  }
+
+  if (purchase.refundRequestStatus !== 'PENDING') {
+    throw new Error(`Refund zahtjev nije u statusu PENDING (trenutni status: ${purchase.refundRequestStatus || 'N/A'})`);
+  }
+
+  if (!approved) {
+    // Odbij refund zahtjev
+    const updated = await prisma.leadPurchase.update({
+      where: { id: purchaseId },
+      data: {
+        refundRequestStatus: 'REJECTED',
+        refundRejectedReason: adminNotes || 'Odbijen od strane admina',
+        refundApprovedBy: adminId,
+        refundApprovedAt: new Date()
+      }
+    });
+
+    // Obavijesti providera
+    await prisma.notification.create({
+      data: {
+        userId: purchase.providerId,
+        type: 'SYSTEM',
+        title: 'Refund zahtjev odbijen',
+        message: `Vaš zahtjev za refund za lead "${purchase.job.title}" je odbijen. Razlog: ${adminNotes || 'Nije naveden'}`,
+        jobId: purchase.jobId
+      }
+    });
+
+    console.log(`[REFUND-REJECT] Refund zahtjev odbijen za purchase ${purchaseId}`);
+    return updated;
+  }
+
+  // Odobri i procesira refund
+  // Ovo je stara refundLead logika, ali sada se poziva samo nakon admin odobrenja
   if (purchase.status === 'CONVERTED') {
     throw new Error('Ne može se zatražiti povrat za uspješno konvertirani lead');
   }

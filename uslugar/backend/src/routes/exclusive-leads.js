@@ -218,7 +218,7 @@ r.post('/purchases/:purchaseId/converted', auth(true, ['PROVIDER']), async (req,
   }
 });
 
-// Zatraži povrat za lead (Request Refund)
+// Zatraži povrat za lead (Request Refund - kreira zahtjev koji čeka admin odobrenje)
 // PRAVNO: Platforma ne provodi povrate sredstava samostalno.
 // Povrati se provode putem ovlaštene platne institucije u skladu s PSD2 pravilima.
 r.post('/purchases/:purchaseId/refund', auth(true, ['PROVIDER']), async (req, res, next) => {
@@ -226,7 +226,7 @@ r.post('/purchases/:purchaseId/refund', auth(true, ['PROVIDER']), async (req, re
     const { purchaseId } = req.params;
     const { reason } = req.body;
     
-    const updated = await refundLead(purchaseId, req.user.id, reason || 'Client unresponsive');
+    const updated = await requestLeadRefund(purchaseId, req.user.id, reason || 'Client unresponsive');
     
     res.json({
       success: true,

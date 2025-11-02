@@ -1180,4 +1180,207 @@ r.post('/queue/reset/:jobId', auth(true, ['ADMIN']), async (req, res, next) => {
   }
 });
 
+// ============================================================
+// ADMIN REFUND MANAGEMENT
+// ============================================================
+
+/**
+ * GET /api/admin/refunds/pending
+ * Pregled svih refund zahtjeva koji čekaju odobrenje
+ */
+r.get('/refunds/pending', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const { skip = 0, take = 50, type = 'all' } = req.query;
+
+    // Lead purchase refunds
+    const leadRefunds = type === 'all' || type === 'lead' ? await prisma.leadPurchase.findMany({
+      where: {
+        refundRequestStatus: 'PENDING'
+      },
+      include: {
+        job: {
+          include: {
+            category: true,
+            user: {
+              select: {
+                id: true,
+                fullName: true,
+                email: true,
+                city: true
+              }
+            }
+          }
+        },
+        provider: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            city: true
+          }
+        }
+      },
+      orderBy: {
+        refundRequestedAt: 'asc' // Stariji zahtjevi prvo
+      },
+      skip: parseInt(skip),
+      take: parseInt(take)
+    }) : [];
+
+    res.json({
+      success: true,
+      refunds: {
+        leadPurchases: leadRefunds.map(r => ({
+          id: r.id,
+          type: 'lead_purchase',
+          purchaseId: r.id,
+          job: r.job,
+          provider: r.provider,
+          creditsSpent: r.creditsSpent,
+          refundReason: r.refundReason,
+          refundRequestedAt: r.refundRequestedAt,
+          createdAt: r.createdAt,
+          status: r.status,
+          stripePaymentIntentId: r.stripePaymentIntentId
+        })),
+        // Subscription refunds - možemo dodati kasnije ako zatreba
+        subscriptions: []
+      },
+      total: leadRefunds.length
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * GET /api/admin/refunds/stats
+ * Statistika refund-ova
+ */
+r.get('/refunds/stats', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const pendingCount = await prisma.leadPurchase.count({
+      where: { refundRequestStatus: 'PENDING' }
+    });
+
+    const approvedCount = await prisma.leadPurchase.count({
+      where: { refundRequestStatus: 'APPROVED' }
+    });
+
+    const rejectedCount = await prisma.leadPurchase.count({
+      where: { refundRequestStatus: 'REJECTED' }
+    });
+
+    const totalRefundedAmount = await prisma.leadPurchase.aggregate({
+      where: { refundRequestStatus: 'APPROVED' },
+      _sum: {
+        creditsSpent: true
+      }
+    });
+
+    const avgResponseTime = await prisma.$queryRaw`
+      SELECT AVG(EXTRACT(EPOCH FROM ("refundApprovedAt" - "refundRequestedAt")) / 3600) as avg_hours
+      FROM "LeadPurchase"
+      WHERE "refundRequestStatus" = 'APPROVED' 
+        AND "refundApprovedAt" IS NOT NULL 
+        AND "refundRequestedAt" IS NOT NULL
+    `;
+
+    res.json({
+      success: true,
+      stats: {
+        pending: pendingCount,
+        approved: approvedCount,
+        rejected: rejectedCount,
+        totalRefundedCredits: totalRefundedAmount._sum.creditsSpent || 0,
+        approvalRate: (approvedCount + rejectedCount) > 0
+          ? ((approvedCount / (approvedCount + rejectedCount)) * 100).toFixed(2)
+          : 0,
+        avgResponseTimeHours: avgResponseTime[0]?.avg_hours 
+          ? parseFloat(avgResponseTime[0].avg_hours) 
+          : null
+      }
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * POST /api/admin/refunds/lead/:purchaseId/approve
+ * Odobri refund zahtjev za lead purchase
+ */
+r.post('/refunds/lead/:purchaseId/approve', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const { purchaseId } = req.params;
+    const { adminNotes } = req.body;
+
+    const { processLeadRefund } = await import('../services/lead-service.js');
+    
+    const result = await processLeadRefund(purchaseId, req.user.id, true, adminNotes);
+
+    res.json({
+      success: true,
+      message: 'Refund odobren i procesiran',
+      purchase: result
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * POST /api/admin/refunds/lead/:purchaseId/reject
+ * Odbij refund zahtjev za lead purchase
+ */
+r.post('/refunds/lead/:purchaseId/reject', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const { purchaseId } = req.params;
+    const { reason } = req.body;
+
+    if (!reason) {
+      return res.status(400).json({ error: 'Razlog odbijanja je obavezan' });
+    }
+
+    const { processLeadRefund } = await import('../services/lead-service.js');
+    
+    const result = await processLeadRefund(purchaseId, req.user.id, false, reason);
+
+    res.json({
+      success: true,
+      message: 'Refund zahtjev odbijen',
+      purchase: result
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * POST /api/admin/refunds/subscription/:userId/approve
+ * Odobri refund za pretplatu (subscription refund već ima admin mogućnost, ali dodajemo eksplicitni endpoint)
+ */
+r.post('/refunds/subscription/:userId/approve', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    const { reason, refundCredits } = req.body;
+
+    const { refundSubscription } = await import('../services/subscription-refund-service.js');
+    
+    const result = await refundSubscription(
+      userId,
+      reason || 'Approved by admin',
+      refundCredits !== false // Default: true
+    );
+
+    res.json({
+      success: true,
+      message: 'Refund za pretplatu odobren i procesiran',
+      ...result
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
 export default r;
