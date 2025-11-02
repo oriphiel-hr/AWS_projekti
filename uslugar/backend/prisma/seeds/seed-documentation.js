@@ -10689,7 +10689,31 @@ async function seedDocumentation() {
    - Povezan s korisnicima i pružateljima
    - Obavezno polje pri registraciji korisnika
    - Validacija OIB-a za pravne osobe
-`
+`,
+        technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/AdminLegalStatuses.jsx\`
+- **Route:** \`/admin/legal-statuses\`
+- **State management:** useState, useEffect hooks
+- **CRUD operacije:** Kreiranje, ažuriranje, brisanje pravnih statusa
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/admin.js\`
+- **Middleware:** \`auth(true, ['ADMIN'])\`
+- **Prisma:** CRUD operacije na LegalStatus model
+
+### Baza podataka:
+- **Tablice:** \`LegalStatus\`, \`User\`
+- **Relacije:** User → LegalStatus (legalStatusId)
+- **Indeksi:** \`@@index([name])\`
+
+### API pozivi:
+- \`GET /api/admin/legal-statuses\` - Lista svih pravnih statusa
+- \`POST /api/admin/legal-statuses\` - Body: \`{ name, description, isActive }\`
+- \`PUT /api/admin/legal-statuses/:id\` - Ažuriranje pravnog statusa
+- \`DELETE /api/admin/legal-statuses/:id\` - Brisanje (soft delete)
+      `
       },
       "Upravljanje poslovima": {
         summary: "Admin panel za moderaciju i upravljanje poslovima",
@@ -10712,7 +10736,30 @@ async function seedDocumentation() {
    - Prosječna vrijednost poslova
    - Najpopularnije kategorije
    - Aktivnost po mjesecima
-`
+`,
+        technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/AdminJobs.jsx\`
+- **Route:** \`/admin/jobs\`
+- **State management:** useState, useEffect hooks
+- **Filtriranje:** Status, kategorija, lokacija
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/admin.js\`
+- **Middleware:** \`auth(true, ['ADMIN'])\`
+- **Prisma:** Query za Job model s relacijama
+
+### Baza podataka:
+- **Tablice:** \`Job\`, \`User\`, \`Category\`, \`Offer\`
+- **Relacije:** Job → User, Job → Category
+- **Indeksi:** \`@@index([status])\`, \`@@index([categoryId])\`
+
+### API pozivi:
+- \`GET /api/admin/jobs\` - Query params: \`status\`, \`categoryId\`, \`userId\`
+- \`PUT /api/admin/jobs/:id\` - Body: \`{ status?, title?, description? }\`
+- \`DELETE /api/admin/jobs/:id\` - Soft delete posla
+      `
       },
       "Upravljanje ponudama": {
         summary: "Pregled i moderacija ponuda za poslove",
@@ -10734,7 +10781,30 @@ async function seedDocumentation() {
    - Prosječne vrijednosti ponuda po kategorijama
    - Stopa prihvaćanja ponuda
    - Najaktivniji pružatelji
-`
+`,
+        technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/AdminOffers.jsx\`
+- **Route:** \`/admin/offers\`
+- **State management:** useState, useEffect hooks
+- **Filtriranje:** Status, posao, pružatelj
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/admin.js\`
+- **Middleware:** \`auth(true, ['ADMIN'])\`
+- **Prisma:** Query za Offer model s relacijama
+
+### Baza podataka:
+- **Tablice:** \`Offer\`, \`Job\`, \`User\`
+- **Relacije:** Offer → Job, Offer → User (pružatelj)
+- **Indeksi:** \`@@index([status])\`, \`@@index([jobId])\`
+
+### API pozivi:
+- \`GET /api/admin/offers\` - Query params: \`status\`, \`jobId\`, \`providerId\`
+- \`PUT /api/admin/offers/:id\` - Body: \`{ status?, amount? }\`
+- \`DELETE /api/admin/offers/:id\` - Brisanje ponude
+      `
       },
       "Admin upravljanje recenzijama": {
         summary: "Moderacija recenzija i upravljanje ocjenama",
