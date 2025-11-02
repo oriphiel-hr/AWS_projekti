@@ -1,7 +1,6 @@
 // src/server.js  (ESM)
 
 import express from 'express'
-import cors from 'cors'
 import morgan from 'morgan'
 import { PrismaClient } from '@prisma/client'
 import { createServer } from 'http'
@@ -98,76 +97,48 @@ console.log('  SMTP_USER:', process.env.SMTP_USER ? 'SET (' + process.env.SMTP_U
 console.log('  SMTP_PORT:', process.env.SMTP_PORT || 'NOT SET');
 console.log('  FRONTEND_URL:', process.env.FRONTEND_URL || 'NOT SET');
 
-// === UNIVERZALNI CORS – STAVLJENO ODMAH NAKON create app ===================
+// === CORS KONFIGURACIJA – PRIJE SVIH DRUGIH MIDDLEWARE-A ===================
 const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS || 'https://uslugar.oriph.io,https://uslugar.oriphiel.io')
   .split(',').map(s => s.trim()).filter(Boolean)
 
 console.log('[CORS] Allowed origins:', ALLOWED_ORIGINS);
 
+// Custom CORS middleware - handles ALL requests including OPTIONS
 app.use((req, res, next) => {
   const origin = req.headers.origin
   
-  // Always set CORS headers for allowed origins
+  // Handle preflight OPTIONS requests immediately
+  if (req.method === 'OPTIONS') {
+    if (origin && ALLOWED_ORIGINS.includes(origin)) {
+      res.setHeader('Access-Control-Allow-Origin', origin)
+      res.setHeader('Access-Control-Allow-Credentials', 'true')
+    }
+    res.setHeader('Vary', 'Origin')
+    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS')
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, X-Requested-With')
+    res.setHeader('Access-Control-Max-Age', '86400')
+    return res.sendStatus(204) // End preflight request immediately
+  }
+  
+  // For actual requests, set CORS headers if origin is allowed
   if (origin && ALLOWED_ORIGINS.includes(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin)
     res.setHeader('Access-Control-Allow-Credentials', 'true')
   } else if (origin) {
-    // Log blocked origins
-    console.warn('[CORS Middleware] Blocked origin:', origin);
-    console.warn('[CORS Middleware] Allowed origins:', ALLOWED_ORIGINS);
+    // Log blocked origins for debugging
+    console.warn('[CORS] Blocked origin:', origin);
+    console.warn('[CORS] Allowed origins:', ALLOWED_ORIGINS);
+    // Note: We still continue, but without CORS headers (browser will block)
   }
   
+  // Always set Vary header
   res.setHeader('Vary', 'Origin')
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, X-Requested-With')
-  res.setHeader('Access-Control-Max-Age', '86400') // 24 hours
-
-  // Handle preflight requests
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(204) // preflight završi odmah
-  }
+  
   next()
 })
 // ===========================================================================
 
-// (opcionalno) dodatni CORS sloj preko paketa – neće smetati
-app.use(cors({
-  origin(origin, cb) {
-    // Allow requests without origin (server-to-server, Postman, etc.)
-    if (!origin) return cb(null, true)
-    
-    // Check if origin is in allowed list
-    if (ALLOWED_ORIGINS.includes(origin)) {
-      return cb(null, true)
-    }
-    
-    // Log blocked origins for debugging
-    console.warn('[CORS Package] Blocked origin:', origin);
-    console.warn('[CORS Package] Allowed origins:', ALLOWED_ORIGINS);
-    
-    // Deny request if origin not allowed
-    return cb(new Error('Not allowed by CORS'))
-  },
-  methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
-  allowedHeaders: ['Content-Type','Authorization','Accept','X-Requested-With'],
-  credentials: false,
-  maxAge: 86400,
-  preflightContinue: false, // Stop after OPTIONS
-}))
-
-// Explicit OPTIONS handler for all routes - handles preflight requests
-app.options('*', (req, res) => {
-  const origin = req.headers.origin
-  if (origin && ALLOWED_ORIGINS.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin)
-    res.setHeader('Access-Control-Allow-Credentials', 'true')
-  }
-  res.setHeader('Vary', 'Origin')
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, X-Requested-With')
-  res.setHeader('Access-Control-Max-Age', '86400')
-  return res.sendStatus(204)
-})
+// Remove cors package middleware - our custom middleware handles everything
 
 // ostali middlewares
 app.use(express.json())
