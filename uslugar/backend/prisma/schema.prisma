@@ -888,17 +888,18 @@ model DocumentationCategory {
 }
 
 model DocumentationFeature {
-  id          String   @id @default(cuid())
-  categoryId  String
-  name        String // "Registracija korisnika usluge"
-  summary     String? // Kratak opis
-  details     String? // Detaljni opis (markdown)
-  implemented Boolean  @default(true)
-  deprecated  Boolean  @default(false)
-  isAdminOnly Boolean  @default(false) // Samo za admin dokumentaciju
-  order       Int      @default(0) // Redoslijed unutar kategorije
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id              String   @id @default(cuid())
+  categoryId      String
+  name            String // "Registracija korisnika usluge"
+  summary         String? // Kratak opis
+  details         String? // Detaljni opis (markdown)
+  technicalDetails String? // Tehnički opis (frontend, backend, baza, API poziv) - samo admin
+  implemented     Boolean  @default(true)
+  deprecated      Boolean  @default(false)
+  isAdminOnly     Boolean  @default(false) // Samo za admin dokumentaciju
+  order           Int      @default(0) // Redoslijed unutar kategorije
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   category DocumentationCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 

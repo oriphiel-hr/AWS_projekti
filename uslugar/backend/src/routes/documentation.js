@@ -259,15 +259,16 @@ r.get('/admin', async (req, res, next) => {
       }))
     }));
 
-    // Kreiraj featureDescriptions objekt
+    // Kreiraj featureDescriptions objekt (uključujući technicalDetails)
     const featureDescriptions = {};
     adminCategories.forEach(cat => {
       cat.features.forEach(f => {
-        if (f.summary || f.details) {
+        if (f.summary || f.details || f.technicalDetails) {
           featureDescriptions[f.name] = {
             implemented: f.implemented,
             summary: f.summary || '',
-            details: f.details || ''
+            details: f.details || '',
+            technicalDetails: f.technicalDetails || '' // Tehnički opis (frontend, backend, baza, API)
           };
         }
       });

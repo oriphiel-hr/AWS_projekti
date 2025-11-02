@@ -10247,7 +10247,8 @@ async function seedDocumentation() {
             isAdminOnly: item.isAdminOnly || false, // Admin-only flag
             order: itemIndex,
             summary: description?.summary || null,
-            details: description?.details || null
+            details: description?.details || null,
+            technicalDetails: description?.technicalDetails || null // Tehnički opis (samo admin)
           };
 
           const existing = await prisma.documentationFeature.findFirst({
@@ -10357,12 +10358,40 @@ async function seedDocumentation() {
    - Aktivnost na platformi
 
 ### 5. **API endpointi**
-   - \`GET /api/admin/users\` - Lista svih korisnika
-   - \`GET /api/admin/users/:id\` - Detalji korisnika
-   - \`PUT /api/admin/users/:id\` - Ažuriranje korisnika
-   - \`POST /api/admin/users/:id/reset-password\` - Reset lozinke
-`
-      },
+         - \`GET /api/admin/users\` - Lista svih korisnika
+         - \`GET /api/admin/users/:id\` - Detalji korisnika
+         - \`PUT /api/admin/users/:id\` - Ažuriranje korisnika
+         - \`POST /api/admin/users/:id/reset-password\` - Reset lozinke
+      `,
+        technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/AdminUsers.jsx\`
+- **Route:** \`/admin/users\`
+- **Biblioteke:** React, React Router, Axios
+- **State management:** useState, useEffect hooks
+- **Filtriranje:** Pretraživanje po email, ime, status
+- **Tablice:** Sortiranje, paginacija, eksport podataka
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/admin.js\`
+- **Middleware:** \`auth(true, ['ADMIN'])\` - zahtjeva admin ulogu
+- **Prisma:** Query za User model s relacijama
+- **Validacija:** Joi ili express-validator za input validaciju
+
+### Baza podataka:
+- **Tablice:** \`User\`, \`ProviderProfile\`, \`ClientVerification\`, \`CreditTransaction\`
+- **Relacije:** User → ProviderProfile, User → ClientVerification
+- **Indeksi:** \`@@index([email, role])\`, \`@@index([role])\`
+- **Query optimizacija:** \`include\` za eager loading relacija
+
+### API pozivi:
+- \`GET /api/admin/users\` - Query params: \`page\`, \`limit\`, \`search\`, \`role\`
+- \`GET /api/admin/users/:id\` - Vraća korisnika s relacijama
+- \`PUT /api/admin/users/:id\` - Body: \`{ fullName, email, role, isVerified }\`
+- \`POST /api/admin/users/:id/reset-password\` - Generira novi reset token
+      `
+        },
       "Upravljanje pružateljima": {
         summary: "Kompletan admin panel za upravljanje pružateljima usluga",
         details: `## Implementirano:
@@ -11035,7 +11064,8 @@ async function seedDocumentation() {
             isAdminOnly: true, // Vazno: admin-only flag
             order: itemIndex,
             summary: description?.summary || null,
-            details: description?.details || null
+            details: description?.details || null,
+            technicalDetails: description?.technicalDetails || null // Tehnički opis
           };
 
           const existing = await prisma.documentationFeature.findFirst({

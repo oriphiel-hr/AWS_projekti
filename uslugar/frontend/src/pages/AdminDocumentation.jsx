@@ -444,62 +444,126 @@ Sve promjene su commitane i pushane. Pružatelji usluga sada imaju grafički pri
 
                     {/* Expanded details */}
                     {isExpanded && (
-                      <div className="mt-4 pt-4 border-t border-gray-300 dark:border-gray-600">
-                        <div className="prose dark:prose-invert max-w-none text-sm">
-                          <div className="whitespace-pre-line text-gray-700 dark:text-gray-300">
-                            {description.details.split('\n').map((line, idx) => {
-                              // Format markdown-style headers
-                              if (line.startsWith('## ')) {
-                                return (
-                                  <h4 key={idx} className="text-lg font-bold mt-4 mb-2 text-gray-900 dark:text-white">
-                                    {line.replace('## ', '')}
-                                  </h4>
-                                );
-                              }
-                              if (line.startsWith('### ')) {
-                                return (
-                                  <h5 key={idx} className="text-base font-semibold mt-3 mb-2 text-gray-800 dark:text-gray-200">
-                                    {line.replace('### ', '')}
-                                  </h5>
-                                );
-                              }
-                              // Format bullet points
-                              if (line.trim().startsWith('- ')) {
-                                return (
-                                  <div key={idx} className="ml-4 mb-1 text-gray-700 dark:text-gray-300">
-                                    • {line.trim().substring(2)}
-                                  </div>
-                                );
-                              }
-                              // Format code blocks (inline)
-                              if (line.includes('`')) {
-                                const parts = line.split('`');
-                                return (
-                                  <div key={idx} className="mb-2">
-                                    {parts.map((part, partIdx) => 
-                                      partIdx % 2 === 0 ? (
-                                        <span key={partIdx}>{part}</span>
-                                      ) : (
-                                        <code key={partIdx} className="bg-gray-200 dark:bg-gray-700 px-1 rounded text-xs">
-                                          {part}
-                                        </code>
-                                      )
-                                    )}
-                                  </div>
-                                );
-                              }
-                              // Regular paragraphs
-                              if (line.trim()) {
-                                return (
-                                  <p key={idx} className="mb-2 text-gray-700 dark:text-gray-300">
-                                    {line}
-                                  </p>
-                                );
-                              }
-                              return <br key={idx} />;
-                            })}
+                      <div className="mt-4 pt-4 border-t border-gray-300 dark:border-gray-600 space-y-6">
+                        {/* Regular details */}
+                        {description.details && (
+                          <div className="prose dark:prose-invert max-w-none text-sm">
+                            <div className="whitespace-pre-line text-gray-700 dark:text-gray-300">
+                              {description.details.split('\n').map((line, idx) => {
+                                // Format markdown-style headers
+                                if (line.startsWith('## ')) {
+                                  return (
+                                    <h4 key={idx} className="text-lg font-bold mt-4 mb-2 text-gray-900 dark:text-white">
+                                      {line.replace('## ', '')}
+                                    </h4>
+                                  );
+                                }
+                                if (line.startsWith('### ')) {
+                                  return (
+                                    <h5 key={idx} className="text-base font-semibold mt-3 mb-2 text-gray-800 dark:text-gray-200">
+                                      {line.replace('### ', '')}
+                                    </h5>
+                                  );
+                                }
+                                // Format bullet points
+                                if (line.trim().startsWith('- ')) {
+                                  return (
+                                    <div key={idx} className="ml-4 mb-1 text-gray-700 dark:text-gray-300">
+                                      • {line.trim().substring(2)}
+                                    </div>
+                                  );
+                                }
+                                // Format code blocks (inline)
+                                if (line.includes('`')) {
+                                  const parts = line.split('`');
+                                  return (
+                                    <div key={idx} className="mb-2">
+                                      {parts.map((part, partIdx) => 
+                                        partIdx % 2 === 0 ? (
+                                          <span key={partIdx}>{part}</span>
+                                        ) : (
+                                          <code key={partIdx} className="bg-gray-200 dark:bg-gray-700 px-1 rounded text-xs">
+                                            {part}
+                                          </code>
+                                        )
+                                      )}
+                                    </div>
+                                  );
+                                }
+                                // Regular paragraphs
+                                if (line.trim()) {
+                                  return (
+                                    <p key={idx} className="mb-2 text-gray-700 dark:text-gray-300">
+                                      {line}
+                                    </p>
+                                  );
+                                }
+                                return <br key={idx} />;
+                              })}
+                            </div>
                           </div>
-                        </div>
+                        )}
+
+                        {/* Technical Details - Only for admin */}
+                        {description.technicalDetails && (
+                          <div className="mt-6 pt-6 border-t-2 border-indigo-300 dark:border-indigo-700">
+                            <h4 className="text-lg font-bold mb-3 text-indigo-700 dark:text-indigo-400 flex items-center gap-2">
+                              🔧 Tehnički Detalji
+                              <span className="text-xs font-normal bg-indigo-100 dark:bg-indigo-900 px-2 py-1 rounded">
+                                ADMIN ONLY
+                              </span>
+                            </h4>
+                            <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-4">
+                              <div className="prose dark:prose-invert max-w-none text-sm">
+                                <div className="whitespace-pre-line text-gray-700 dark:text-gray-300">
+                                  {description.technicalDetails.split('\n').map((line, idx) => {
+                                    // Format markdown-style headers
+                                    if (line.startsWith('## ')) {
+                                      return (
+                                        <h5 key={idx} className="text-base font-bold mt-3 mb-2 text-gray-900 dark:text-white">
+                                          {line.replace('## ', '')}
+                                        </h5>
+                                      );
+                                    }
+                                    // Format markdown-style subheaders
+                                    if (line.startsWith('### ')) {
+                                      return (
+                                        <h6 key={idx} className="text-sm font-semibold mt-2 mb-1 text-gray-800 dark:text-gray-200">
+                                          {line.replace('### ', '')}
+                                        </h6>
+                                      );
+                                    }
+                                    // Format code blocks
+                                    if (line.trim().startsWith('`') && line.trim().endsWith('`')) {
+                                      return (
+                                        <code key={idx} className="bg-indigo-100 dark:bg-indigo-900 px-2 py-1 rounded text-xs font-mono text-indigo-800 dark:text-indigo-200 block my-1">
+                                          {line.replace(/`/g, '')}
+                                        </code>
+                                      );
+                                    }
+                                    // Format lists
+                                    if (line.trim().startsWith('- ')) {
+                                      return (
+                                        <div key={idx} className="ml-4 mb-1 text-gray-700 dark:text-gray-300">
+                                          • {line.trim().substring(2)}
+                                        </div>
+                                      );
+                                    }
+                                    // Regular paragraphs
+                                    if (line.trim()) {
+                                      return (
+                                        <p key={idx} className="mb-2 text-gray-700 dark:text-gray-300">
+                                          {line}
+                                        </p>
+                                      );
+                                    }
+                                    return <br key={idx} />;
+                                  })}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
