@@ -278,7 +278,7 @@ const Documentation = () => {
         { name: "Različiti tipovi licenci po kategorijama", implemented: true },
         { name: "Tijela koja izdaju licence", implemented: true },
         { name: "Broj licence i datum izdavanja", implemented: true },
-        { name: "Notifikacije o isteku licenci", implemented: false },
+        { name: "Notifikacije o isteku licenci", implemented: true },
         { name: "Automatska provjera valjanosti licenci", implemented: false },
         { name: "Skener dokumenata za licence", implemented: false }
       ]
