@@ -2,6 +2,12 @@
 import { Router } from 'express';
 import { auth } from '../lib/auth.js';
 import { prisma } from '../lib/prisma.js';
+import {
+  generateMonthlyReport,
+  generateYearlyReport,
+  generatePDFReport,
+  generateCSVReport
+} from '../services/report-generator.js';
 
 const r = Router();
 
