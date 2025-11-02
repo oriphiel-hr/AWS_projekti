@@ -10,6 +10,9 @@ on:
       - ".github/workflows/prisma-uslugar.yml"
       - "uslugar/backend/src/services/invoice-service.js"
       - "uslugar/backend/src/routes/invoices.js"
+      - "uslugar/backend/src/routes/documentation.js"
+      - "uslugar/frontend/src/pages/Documentation.jsx"
+      - "uslugar/backend/scripts/extract-documentation.js"
 
 env:
   AWS_REGION: eu-north-1
@@ -272,7 +275,7 @@ jobs:
               },
               "command": [
                 "sh","-lc",
-                "npm run seed"
+                "npx prisma db seed || npm run seed"
               ]
             }
           ]
