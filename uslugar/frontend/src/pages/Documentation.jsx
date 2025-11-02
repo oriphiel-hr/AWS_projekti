@@ -828,7 +828,7 @@ Sve promjene su commitane i pushane. Pružatelji usluga sada imaju grafički pri
     {
       category: "Upravljanje Kategorijama",
       items: [
-        { name: "51 kategorija usluga iz 'Trebam hr' baze", implemented: true },
+        { name: "51 kategorija usluga", implemented: true },
         { name: "Dinamičko učitavanje kategorija iz baze", implemented: true },
         { name: "Emoji ikone za kategorije", implemented: true },
         { name: "Opisi kategorija", implemented: true },
