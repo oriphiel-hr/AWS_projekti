@@ -124,7 +124,7 @@ jobs:
               },
               "command": [
                 "sh","-lc",
-                "npx prisma migrate resolve --rolled-back 20251021140000_add_support_tickets --schema=./prisma/schema.prisma || true && npx prisma migrate deploy --schema=./prisma/schema.prisma && npx prisma migrate status --schema=./prisma/schema.prisma && echo '✅ Migrations completed successfully'"
+                "npx prisma migrate resolve --rolled-back 20251021140000_add_support_tickets --schema=./prisma/schema.prisma || true && npx prisma migrate resolve --rolled-back 20250208000001_add_lead_purchase_status_enum --schema=./prisma/schema.prisma || true && npx prisma migrate deploy --schema=./prisma/schema.prisma && npx prisma migrate status --schema=./prisma/schema.prisma && echo '✅ Migrations completed successfully'"
               ]
             }
           ]
