@@ -11,6 +11,7 @@ import cron from 'node-cron'
 import { checkExpiredOffers } from './leadQueueManager.js'
 import { checkInactiveLeadPurchases } from '../services/lead-service.js'
 import { checkExpiringLicenses } from '../services/license-expiry-checker.js'
+import { validateAllLicenses } from '../services/license-validator.js'
 
 export function startQueueScheduler() {
   console.log('⏰ Starting Queue Scheduler...')
@@ -52,6 +53,22 @@ export function startQueueScheduler() {
     console.log('='.repeat(50) + '\n')
   })
   
+  // Provjeri valjanost licenci svaki dan u 10:00 (1h nakon expiry check-a)
+  cron.schedule('0 10 * * *', async () => {
+    console.log(`\n${'='.repeat(50)}`)
+    console.log(`⏰ License Validity Check: ${new Date().toISOString()}`)
+    console.log('='.repeat(50))
+    
+    try {
+      await validateAllLicenses()
+      console.log('✅ License validity check completed')
+    } catch (error) {
+      console.error('❌ License validity check failed:', error)
+    }
+    
+    console.log('='.repeat(50) + '\n')
+  })
+  
   // Također pokreni svake 15 minuta za hitne poslove
   cron.schedule('*/15 * * * *', async () => {
     // Samo log svake 15 min, za monitoring
@@ -62,6 +79,7 @@ export function startQueueScheduler() {
   console.log('   - Expired offers check: Every hour at :00')
   console.log('   - Inactive lead purchases check (48h auto-refund): Every hour at :00')
   console.log('   - License expiry check: Daily at 09:00')
+  console.log('   - License validity check: Daily at 10:00')
   console.log('   - Monitor heartbeat: Every 15 minutes')
 }
 
