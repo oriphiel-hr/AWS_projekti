@@ -74,7 +74,6 @@ const Documentation = () => {
         { name: "Automatsko izračunavanje prosječne ocjene", implemented: true },
         { name: "Brojanje ukupnog broja recenzija", implemented: true },
         { name: "Prikaz recenzija na profilu pružatelja", implemented: true },
-        { name: "Admin upravljanje recenzijama", implemented: true }
       ]
     },
     {
@@ -154,7 +153,6 @@ const Documentation = () => {
         { name: "Notifikacije za nove leadove u redu", implemented: true },
         { name: "Pregled mojih leadova u redu", implemented: true },
         { name: "Statistike queue sustava", implemented: true },
-        { name: "Admin upravljanje queue sustavom", implemented: true }
       ]
     },
     {
@@ -172,7 +170,6 @@ const Documentation = () => {
         { name: "Stripe refund ID tracking (stripeRefundId)", implemented: true },
         { name: "Fallback na interne kredite ako Stripe refund ne uspije", implemented: true },
         { name: "Povrat novca za pretplate (refund subscription payment)", implemented: true },
-        { name: "Admin odobravanje refund-a", implemented: true },
         { name: "Automatski refund nakon 48h neaktivnosti", implemented: true }
       ]
     },
@@ -189,7 +186,6 @@ const Documentation = () => {
         { name: "Povijest pretplata", implemented: true },
         { name: "Trial period (7 dana)", implemented: true },
         { name: "Besplatni krediti za trial (5 leadova)", implemented: true },
-        { name: "Admin upravljanje pretplatama", implemented: true },
         { name: "Automatsko vraćanje na BASIC plan", implemented: true }
       ]
     },
@@ -222,7 +218,6 @@ const Documentation = () => {
         { name: "Status verifikacije na profilu", implemented: true },
         { name: "Identity Badge Verifikacija komponenta", implemented: true },
         { name: "Rate limiting za SMS verifikaciju", implemented: true },
-        { name: "Admin reset SMS pokušaja", implemented: true },
         { name: "Verifikacijski kod expiration (10 minuta)", implemented: true }
       ]
     },
@@ -273,7 +268,6 @@ const Documentation = () => {
       category: "Upravljanje Licencama",
       items: [
         { name: "Upload dokumenata licenci", implemented: true },
-        { name: "Verificiranje licenci od strane admina", implemented: true },
         { name: "Praćenje isteka licenci", implemented: true },
         { name: "Različiti tipovi licenci po kategorijama", implemented: true },
         { name: "Tijela koja izdaju licence", implemented: true },
@@ -325,27 +319,6 @@ const Documentation = () => {
         { name: "Filtriranje transakcija po tipu", implemented: true },
         { name: "Izvoz povijesti transakcija", implemented: true },
         { name: "Notifikacije o transakcijama", implemented: true }
-      ]
-    },
-    {
-      category: "Admin Panel",
-      items: [
-        { name: "Upravljanje korisnicima", implemented: true },
-        { name: "Upravljanje pružateljima", implemented: true },
-        { name: "Upravljanje kategorijama", implemented: true },
-        { name: "Upravljanje poslovima", implemented: true },
-        { name: "Upravljanje ponudama", implemented: true },
-        { name: "Upravljanje recenzijama", implemented: true },
-        { name: "Upravljanje notifikacijama", implemented: true },
-        { name: "Upravljanje chat sobama", implemented: true },
-        { name: "Upravljanje pretplatama", implemented: true },
-        { name: "Upravljanje pravnim statusima", implemented: true },
-        { name: "Upravljanje licencama", implemented: true },
-        { name: "Upravljanje verifikacijama klijenata", implemented: true },
-        { name: "Upravljanje transakcijama kredita", implemented: true },
-        { name: "Upravljanje ROI statistikama", implemented: true },
-        { name: "Statistike platforme", implemented: true },
-        { name: "Moderacija sadržaja", implemented: true }
       ]
     },
     {
