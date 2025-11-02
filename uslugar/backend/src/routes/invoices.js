@@ -11,6 +11,7 @@ import {
   generateAndSendInvoice,
   markInvoiceAsPaid
 } from '../services/invoice-service.js';
+import { fiscalizeInvoice } from '../services/fiscalization-service.js';
 
 const r = Router();
 
@@ -236,6 +237,45 @@ r.post('/:invoiceId/mark-paid', auth(true, ['ADMIN']), async (req, res, next) =>
       success: true,
       invoice,
       message: 'Faktura je označena kao plaćena'
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * POST /api/invoices/:invoiceId/fiscalize
+ * Ručno pokreni fiskalizaciju fakture (admin ili vlasnik fakture)
+ */
+r.post('/:invoiceId/fiscalize', auth(true, ['ADMIN', 'PROVIDER', 'USER']), async (req, res, next) => {
+  try {
+    const { invoiceId } = req.params;
+    const userId = req.user.id;
+
+    const invoice = await prisma.invoice.findUnique({
+      where: { id: invoiceId }
+    });
+
+    if (!invoice) {
+      return res.status(404).json({ error: 'Faktura nije pronađena' });
+    }
+
+    // Provjeri autorizaciju
+    if (invoice.userId !== userId && req.user.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Nemate pristup ovoj fakturi' });
+    }
+
+    // Pokreni fiskalizaciju
+    const result = await fiscalizeInvoice(invoiceId);
+
+    res.json({
+      success: true,
+      invoice: result.invoice,
+      zkiCode: result.zkiCode,
+      jirCode: result.jirCode,
+      message: result.jirCode 
+        ? 'Faktura je uspješno fiskalizirana'
+        : 'Faktura ne zahtijeva fiskalizaciju'
     });
   } catch (e) {
     next(e);

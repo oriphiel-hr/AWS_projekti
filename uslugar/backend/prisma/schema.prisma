@@ -77,31 +77,31 @@ model WhiteLabel {
 }
 
 model User {
-  id                   String       @id @default(cuid())
-  email                String // Unique per role, not globally
-  passwordHash         String
-  fullName             String
-  role                 Role         @default(USER)
-  phone                String?
-  phoneVerified        Boolean      @default(false) // SMS verifikacija telefona
-  phoneVerificationCode String?      @unique // 6-digit SMS kod
-  phoneVerificationExpires DateTime? // Istek SMS verifikacijskog koda (10 min)
-  phoneVerificationAttempts Int     @default(0) // Broj pokušaja verifikacije (max 5)
-  phoneVerifiedAt      DateTime? // Kada je telefon verificiran
-  city                 String?
-  latitude             Float? // Geolokacija
-  longitude            Float? // Geolokacija
-  isVerified           Boolean      @default(false) // Verifikacija korisnika
-  verificationToken    String?      @unique // Token za email verifikaciju
-  tokenExpiresAt       DateTime? // Istek verifikacijskog tokena
-  resetPasswordToken   String?      @unique // Token za resetiranje lozinke
-  resetPasswordExpires DateTime? // Istek reset tokena (1h)
-  legalStatus          LegalStatus? @relation("UserLegalStatus", fields: [legalStatusId], references: [id])
-  legalStatusId        String? // Pravni status (za firme koje traže usluge)
-  taxId                String? // OIB
-  companyName          String? // Naziv firme
-  createdAt            DateTime     @default(now())
-  updatedAt            DateTime     @updatedAt
+  id                        String       @id @default(cuid())
+  email                     String // Unique per role, not globally
+  passwordHash              String
+  fullName                  String
+  role                      Role         @default(USER)
+  phone                     String?
+  phoneVerified             Boolean      @default(false) // SMS verifikacija telefona
+  phoneVerificationCode     String?      @unique // 6-digit SMS kod
+  phoneVerificationExpires  DateTime? // Istek SMS verifikacijskog koda (10 min)
+  phoneVerificationAttempts Int          @default(0) // Broj pokušaja verifikacije (max 5)
+  phoneVerifiedAt           DateTime? // Kada je telefon verificiran
+  city                      String?
+  latitude                  Float? // Geolokacija
+  longitude                 Float? // Geolokacija
+  isVerified                Boolean      @default(false) // Verifikacija korisnika
+  verificationToken         String?      @unique // Token za email verifikaciju
+  tokenExpiresAt            DateTime? // Istek verifikacijskog tokena
+  resetPasswordToken        String?      @unique // Token za resetiranje lozinke
+  resetPasswordExpires      DateTime? // Istek reset tokena (1h)
+  legalStatus               LegalStatus? @relation("UserLegalStatus", fields: [legalStatusId], references: [id])
+  legalStatusId             String? // Pravni status (za firme koje traže usluge)
+  taxId                     String? // OIB
+  companyName               String? // Naziv firme
+  createdAt                 DateTime     @default(now())
+  updatedAt                 DateTime     @updatedAt
 
   providerProfile    ProviderProfile?
   jobs               Job[]               @relation("UserJobs")
@@ -122,7 +122,7 @@ model User {
   whiteLabel         WhiteLabel?         @relation("UserWhiteLabel")
 
   // Testing runs authored by this user (admin)
-  testRuns          TestRun[]               @relation("TestRunAuthor")
+  testRuns TestRun[] @relation("TestRunAuthor")
 
   // Composite unique constraint: email + role must be unique
   // This allows same email for different roles (e.g., USER and PROVIDER)
@@ -131,20 +131,20 @@ model User {
 }
 
 model ProviderProfile {
-  id            String       @id @default(cuid())
-  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId        String       @unique
-  bio           String?
-  categories    Category[]   @relation("ProviderCategories")
-  portfolio     Json? // Portfolio slike i radovi
-  ratingAvg     Float        @default(0)
-  ratingCount   Int          @default(0)
-  
+  id          String     @id @default(cuid())
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String     @unique
+  bio         String?
+  categories  Category[] @relation("ProviderCategories")
+  portfolio   Json? // Portfolio slike i radovi
+  ratingAvg   Float      @default(0)
+  ratingCount Int        @default(0)
+
   // REPUTATION SYSTEM - Response time & conversion tracking
-  avgResponseTimeMinutes Float @default(0) // Prosječno vrijeme odgovora u minutama
-  totalResponseTimeTracked Int @default(0) // Broj trackanih odgovora (za izračun prosjeka)
-  conversionRate Float @default(0) // Stopa konverzije leadova (iz ProviderROI, cached za brzi pristup)
-  
+  avgResponseTimeMinutes   Float @default(0) // Prosječno vrijeme odgovora u minutama
+  totalResponseTimeTracked Int   @default(0) // Broj trackanih odgovora (za izračun prosjeka)
+  conversionRate           Float @default(0) // Stopa konverzije leadova (iz ProviderROI, cached za brzi pristup)
+
   serviceArea   String?
   specialties   String[] // Specijalizacije pružatelja
   experience    Int? // Godine iskustva
@@ -201,34 +201,34 @@ model ProviderProfile {
 
 // Geo-dynamic team locations (mobilni timovi, više lokacija)
 model ProviderTeamLocation {
-  id          String   @id @default(cuid())
-  provider    ProviderProfile @relation(fields: [providerId], references: [id], onDelete: Cascade)
-  providerId  String
-  
+  id         String          @id @default(cuid())
+  provider   ProviderProfile @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  providerId String
+
   // Lokacija tima
-  name        String  // npr. "Tim A - Dalmacija", "Sjedište Zagreb"
-  city        String  // Grad
-  latitude    Float?  // GPS koordinata
-  longitude   Float?  // GPS koordinata
-  address     String? // Puna adresa (opcionalno)
-  postalCode  String? // Poštanski broj
-  
+  name       String // npr. "Tim A - Dalmacija", "Sjedište Zagreb"
+  city       String // Grad
+  latitude   Float? // GPS koordinata
+  longitude  Float? // GPS koordinata
+  address    String? // Puna adresa (opcionalno)
+  postalCode String? // Poštanski broj
+
   // Geo-pokrivanje
-  radiusKm    Int     @default(50) // Radijus pokrivanja u km (npr. 80 km)
-  isActive    Boolean @default(true) // Privremeno aktivirati/deaktivirati
-  isPrimary   Boolean @default(false) // Glavna lokacija (administrativno sjedište)
-  
+  radiusKm  Int     @default(50) // Radijus pokrivanja u km (npr. 80 km)
+  isActive  Boolean @default(true) // Privremeno aktivirati/deaktivirati
+  isPrimary Boolean @default(false) // Glavna lokacija (administrativno sjedište)
+
   // Metapodaci
-  notes       String? // Napomene (npr. "Tim je ovdje do kraja ožujka")
+  notes        String? // Napomene (npr. "Tim je ovdje do kraja ožujka")
   lastActiveAt DateTime? // Kada je tim zadnji put aktivan bio na ovoj lokaciji
-  
+
   // Statistika po regiji
-  leadsReceived Int @default(0)
+  leadsReceived  Int @default(0)
   leadsAccepted  Int @default(0)
   leadsConverted Int @default(0)
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([providerId])
   @@index([isActive])
@@ -295,10 +295,10 @@ model Job {
   acceptedOfferId       String?
   chatRooms             ChatRoom[]          @relation("jobChatRooms")
   leadPurchases         LeadPurchase[]
-  creditTransactions    CreditTransaction[]   @relation("JobTransactions")
-  leadQueue             LeadQueue[]            @relation("JobQueue")
+  creditTransactions    CreditTransaction[] @relation("JobTransactions")
+  leadQueue             LeadQueue[]         @relation("JobQueue")
   notifications         Notification[]
-  reviews               Review[]               // Recenzije ostavljene na ovom job-u
+  reviews               Review[] // Recenzije ostavljene na ovom job-u
 }
 
 model Offer {
@@ -322,13 +322,13 @@ model Review {
   rating     Int
   comment    String?
   job        Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  jobId      String   // Job na kojem su radili zajedno
+  jobId      String // Job na kojem su radili zajedno
   from       User     @relation("reviewsGiven", fields: [fromUserId], references: [id], onDelete: Cascade)
   fromUserId String
   to         User     @relation("reviewsReceived", fields: [toUserId], references: [id], onDelete: Cascade)
   toUserId   String
   createdAt  DateTime @default(now())
-  
+
   @@unique([jobId, fromUserId]) // Jedna recenzija po job-u od svake strane
   @@index([jobId])
   @@index([toUserId])
@@ -433,7 +433,7 @@ model Subscription {
   createdAt              DateTime           @default(now())
   updatedAt              DateTime           @updatedAt
 
-  invoices               Invoice[]
+  invoices Invoice[]
 
   @@index([userId])
   @@index([status])
@@ -463,44 +463,52 @@ model SubscriptionPlan {
 
 // Fakture za plaćanja
 model Invoice {
-  id                String        @id @default(cuid())
-  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId            String
-  invoiceNumber     String        @unique // Format: INV-YYYY-MM-XXXX (npr. INV-2025-01-0001)
-  type              InvoiceType
-  status            InvoiceStatus @default(DRAFT) // DRAFT, SENT, PAID, CANCELLED
-  amount            Int // Iznos u centima (EUR)
-  currency          String        @default("EUR")
-  taxAmount         Int           @default(0) // PDV u centima
-  totalAmount       Int // Ukupno (amount + taxAmount)
-  
+  id            String        @id @default(cuid())
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String
+  invoiceNumber String        @unique // Format: INV-YYYY-MM-XXXX (npr. INV-2025-01-0001)
+  type          InvoiceType
+  status        InvoiceStatus @default(DRAFT) // DRAFT, SENT, PAID, CANCELLED
+  amount        Int // Iznos u centima (EUR)
+  currency      String        @default("EUR")
+  taxAmount     Int           @default(0) // PDV u centima
+  totalAmount   Int // Ukupno (amount + taxAmount)
+
   // Povezano sa transakcijama
-  subscription      Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
-  subscriptionId    String?
-  leadPurchase      LeadPurchase? @relation(fields: [leadPurchaseId], references: [id], onDelete: SetNull)
-  leadPurchaseId    String?
-  
+  subscription   Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  subscriptionId String?
+  leadPurchase   LeadPurchase? @relation(fields: [leadPurchaseId], references: [id], onDelete: SetNull)
+  leadPurchaseId String?
+
   // Stripe povezanost
   stripePaymentIntentId String? // Za subscription payment
   stripeInvoiceId       String? // Stripe invoice ID (ako postoji)
-  
+
   // Podaci fakture
-  issueDate         DateTime @default(now())
-  dueDate           DateTime?
-  paidAt            DateTime?
-  
+  issueDate DateTime  @default(now())
+  dueDate   DateTime?
+  paidAt    DateTime?
+
   // PDF faktura
-  pdfUrl            String? // URL za preuzimanje PDF-a (S3 ili storage)
-  pdfGeneratedAt    DateTime?
-  
+  pdfUrl         String? // URL za preuzimanje PDF-a (S3 ili storage)
+  pdfGeneratedAt DateTime?
+
   // Email
-  emailSentAt       DateTime?
-  emailSentTo       String? // Email adresa na koju je poslano
-  
+  emailSentAt DateTime?
+  emailSentTo String? // Email adresa na koju je poslano
+
+  // HR Fiskalizacija - ZKI i JIR
+  zkiCode             String? // Zaštitni Kod Izdavatelja (ZKI) - generira se lokalno
+  jirCode             String? // Jedinstveni Identifikacijski Registar (JIR) - dobiva se iz Porezne
+  fiscalizedAt        DateTime? // Datum kada je faktura fiskalizirana
+  fiscalizationStatus String? // PENDING, SUCCESS, FAILED, NOT_REQUIRED
+  fiscalizationError  String? // Greška ako fiskalizacija ne uspije
+  qrCodeUrl           String? // URL QR koda s ZKI i JIR podacima
+
   // Metapodaci
-  notes             String?
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId])
   @@index([invoiceNumber])
@@ -511,25 +519,25 @@ model Invoice {
 
 // Kupljeni ekskluzivni leadovi (1 lead = 1 provider)
 model LeadPurchase {
-  id               String             @id @default(cuid())
-  job              Job                @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  jobId            String
-  provider         User               @relation(fields: [providerId], references: [id], onDelete: Cascade)
-  providerId       String
-  creditsSpent     Int // Broj kredita potrošenih za kupovinu
-  leadPrice        Int // Cijena leada u trenutku kupnje
-  status           LeadPurchaseStatus @default(ACTIVE)
-  contactUnlocked  Boolean            @default(false) // Pay-per-contact: je li kontakt otključan
-  contactUnlockedAt DateTime? // Kada je kontakt otključan
-  contactedAt      DateTime? // Kada je provider kontaktirao klijenta
-  convertedAt      DateTime? // Kada je lead konvertiran u posao
-  refundedAt       DateTime? // Kada je izvršena refundacija
-  refundReason     String? // Razlog refundacije
+  id                    String             @id @default(cuid())
+  job                   Job                @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  jobId                 String
+  provider              User               @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  providerId            String
+  creditsSpent          Int // Broj kredita potrošenih za kupovinu
+  leadPrice             Int // Cijena leada u trenutku kupnje
+  status                LeadPurchaseStatus @default(ACTIVE)
+  contactUnlocked       Boolean            @default(false) // Pay-per-contact: je li kontakt otključan
+  contactUnlockedAt     DateTime? // Kada je kontakt otključan
+  contactedAt           DateTime? // Kada je provider kontaktirao klijenta
+  convertedAt           DateTime? // Kada je lead konvertiran u posao
+  refundedAt            DateTime? // Kada je izvršena refundacija
+  refundReason          String? // Razlog refundacije
   stripePaymentIntentId String? // Stripe Payment Intent ID (za refund kroz Stripe)
-  stripeRefundId   String? // Stripe Refund ID (nakon refund-a)
-  notes            String? // Dodatne bilješke
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
+  stripeRefundId        String? // Stripe Refund ID (nakon refund-a)
+  notes                 String? // Dodatne bilješke
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
 
   creditTransactions CreditTransaction[]
   invoices           Invoice[]
@@ -735,49 +743,49 @@ enum TestItemStatus {
 }
 
 model TestPlan {
-  id          String     @id @default(cuid())
+  id          String   @id @default(cuid())
   name        String
   description String?
   category    String? // npr. "Korisnik", "Provider", "KYC"
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  items       TestItem[]
-  runs        TestRun[]    @relation("TestPlanRuns")
+  items TestItem[]
+  runs  TestRun[]  @relation("TestPlanRuns")
 
   @@index([name])
 }
 
 model TestItem {
-  id             String    @id @default(cuid())
-  plan           TestPlan  @relation(fields: [planId], references: [id], onDelete: Cascade)
+  id             String   @id @default(cuid())
+  plan           TestPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
   planId         String
   title          String
   description    String?
   expectedResult String?
   dataVariations Json? // npr. { examples: ["ispravan OIB", "neispravan OIB"] }
-  order          Int       @default(0)
-  createdAt      DateTime  @default(now())
+  order          Int      @default(0)
+  createdAt      DateTime @default(now())
 
-  runItems       TestRunItem[]
+  runItems TestRunItem[]
 
   @@index([planId])
   @@index([order])
 }
 
 model TestRun {
-  id         String        @id @default(cuid())
-  plan       TestPlan      @relation("TestPlanRuns", fields: [planId], references: [id], onDelete: Cascade)
-  planId     String
-  name       String
-  createdBy  User?         @relation("TestRunAuthor", fields: [createdById], references: [id], onDelete: SetNull)
+  id          String        @id @default(cuid())
+  plan        TestPlan      @relation("TestPlanRuns", fields: [planId], references: [id], onDelete: Cascade)
+  planId      String
+  name        String
+  createdBy   User?         @relation("TestRunAuthor", fields: [createdById], references: [id], onDelete: SetNull)
   createdById String?
-  status     TestRunStatus @default(DRAFT)
-  notes      String?
-  createdAt  DateTime      @default(now())
-  updatedAt  DateTime      @updatedAt
+  status      TestRunStatus @default(DRAFT)
+  notes       String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 
-  items      TestRunItem[]
+  items TestRunItem[]
 
   @@index([planId])
   @@index([status])
@@ -791,7 +799,7 @@ model TestRunItem {
   itemId      String
   status      TestItemStatus @default(PENDING)
   comment     String?
-  screenshots String[]       // URL-ovi slika (upload API)
+  screenshots String[] // URL-ovi slika (upload API)
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
 

@@ -5,6 +5,7 @@
 import PDFDocument from 'pdfkit';
 import { prisma } from '../lib/prisma.js';
 import { sendInvoiceEmail } from '../lib/email.js';
+import { fiscalizeInvoice, requiresFiscalization, generateQRCodeURL } from './fiscalization-service.js';
 
 /**
  * Generira jedinstveni broj fakture
@@ -270,9 +271,41 @@ export async function generateInvoicePDF(invoice) {
         .text(formatCurrency(invoice.totalAmount / 100), totalsX + 110, yPos, { align: 'right', width: 60 });
 
       // ============================================
+      // FISCAL INFO (ZKI/JIR) - HR Fiskalizacija
+      // ============================================
+      let fiscalY = 720;
+      if (invoice.zkiCode || invoice.jirCode) {
+        doc
+          .fillColor('#333333')
+          .fontSize(8)
+          .font('Helvetica-Bold')
+          .text('FISKALIZACIJA:', 50, fiscalY)
+          .font('Helvetica');
+        
+        fiscalY += 12;
+        if (invoice.zkiCode) {
+          doc.text(`ZKI: ${invoice.zkiCode}`, 50, fiscalY);
+          fiscalY += 10;
+        }
+        if (invoice.jirCode) {
+          doc.text(`JIR: ${invoice.jirCode}`, 50, fiscalY);
+          fiscalY += 10;
+        }
+        if (invoice.qrCodeUrl) {
+          doc
+            .fontSize(7)
+            .fillColor('#0066CC')
+            .text(`Verifikacija: ${invoice.qrCodeUrl}`, 50, fiscalY, { link: invoice.qrCodeUrl });
+          fiscalY += 15;
+        }
+        
+        fiscalY += 5;
+      }
+
+      // ============================================
       // FOOTER
       // ============================================
-      const footerY = 750;
+      const footerY = fiscalY + 10;
       doc
         .fillColor('#666666')
         .fontSize(8)
@@ -376,7 +409,7 @@ export async function generateAndSendInvoice(invoiceId) {
   await saveInvoicePDF(invoice, pdfBuffer);
 
   // Ažuriraj status fakture
-  const updated = await prisma.invoice.update({
+  let updated = await prisma.invoice.update({
     where: { id: invoiceId },
     data: {
       status: 'SENT',
@@ -386,8 +419,68 @@ export async function generateAndSendInvoice(invoiceId) {
     }
   });
 
+  // Pokušaj fiskalizirati fakturu (ako je potrebno)
+  try {
+    if (requiresFiscalization(updated)) {
+      console.log(`[INVOICE] Attempting fiscalization for invoice ${updated.invoiceNumber}`);
+      const fiscalResult = await fiscalizeInvoice(invoiceId);
+      updated = fiscalResult.invoice;
+      
+      // Generiraj QR kod URL ako postoje ZKI i JIR
+      if (fiscalResult.zkiCode && fiscalResult.jirCode) {
+        const qrCodeURL = generateQRCodeURL(fiscalResult.zkiCode, fiscalResult.jirCode);
+        if (qrCodeURL) {
+          updated = await prisma.invoice.update({
+            where: { id: invoiceId },
+            data: { qrCodeUrl: qrCodeURL }
+          });
+        }
+      }
+    } else {
+      console.log(`[INVOICE] Fiscalization not required for invoice ${updated.invoiceNumber}`);
+    }
+  } catch (fiscalError) {
+    console.error('[INVOICE] Fiscalization error (non-critical):', fiscalError);
+    // Ne baci grešku - faktura je kreirana i poslana, fiskalizacija može biti ponovljena
+  }
+
+  // Regeneriraj PDF s ZKI/JIR ako je fiskalizirana
+  if (updated.zkiCode && updated.jirCode) {
+    try {
+      const updatedInvoice = await prisma.invoice.findUnique({
+        where: { id: invoiceId },
+        include: {
+          user: {
+            select: {
+              id: true,
+              fullName: true,
+              email: true,
+              companyName: true,
+              taxId: true,
+              city: true
+            }
+          },
+          subscription: true,
+          leadPurchase: {
+            include: {
+              job: {
+                select: {
+                  title: true
+                }
+              }
+            }
+          }
+        }
+      });
+      pdfBuffer = await generateInvoicePDF(updatedInvoice);
+    } catch (pdfError) {
+      console.error('[INVOICE] Error regenerating PDF with fiscal data:', pdfError);
+      // Koristi originalni PDF ako regeneriranje ne uspije
+    }
+  }
+
   // Pošalji email
-  await sendInvoiceEmail(invoice.user.email, invoice.user.fullName, invoice, pdfBuffer);
+  await sendInvoiceEmail(invoice.user.email, invoice.user.fullName, updated, pdfBuffer);
 
   return { invoice: updated, pdfBuffer };
 }
