@@ -4,6 +4,85 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Starting seed...');
 
+  // Fix LeadPurchaseStatus enum and column (if migration failed)
+  console.log('🔧 Fixing LeadPurchaseStatus enum...');
+  try {
+    // Step 1: Create enum if it doesn't exist
+    await prisma.$executeRaw`
+      DO $$ BEGIN
+        CREATE TYPE "LeadPurchaseStatus" AS ENUM ('ACTIVE', 'CONTACTED', 'CONVERTED', 'REFUNDED', 'EXPIRED', 'CANCELLED');
+      EXCEPTION
+        WHEN duplicate_object THEN NULL;
+      END $$;
+    `;
+    console.log('✅ LeadPurchaseStatus enum created or already exists');
+
+    // Step 2: Check if column is already enum type
+    const columnInfo = await prisma.$queryRaw`
+      SELECT data_type, udt_name
+      FROM information_schema.columns
+      WHERE table_name = 'LeadPurchase' AND column_name = 'status';
+    `;
+
+    if (columnInfo && columnInfo.length > 0) {
+      const colType = columnInfo[0];
+      
+      if (colType.udt_name !== 'LeadPurchaseStatus') {
+        console.log('🔄 Converting status column from TEXT to LeadPurchaseStatus enum...');
+        
+        // Drop default
+        await prisma.$executeRaw`ALTER TABLE "LeadPurchase" ALTER COLUMN "status" DROP DEFAULT`;
+        
+        // Convert type
+        await prisma.$executeRaw`
+          ALTER TABLE "LeadPurchase" 
+            ALTER COLUMN "status" TYPE "LeadPurchaseStatus" 
+            USING CASE 
+              WHEN "status"::text = 'ACTIVE' THEN 'ACTIVE'::"LeadPurchaseStatus"
+              WHEN "status"::text = 'CONTACTED' THEN 'CONTACTED'::"LeadPurchaseStatus"
+              WHEN "status"::text = 'CONVERTED' THEN 'CONVERTED'::"LeadPurchaseStatus"
+              WHEN "status"::text = 'REFUNDED' THEN 'REFUNDED'::"LeadPurchaseStatus"
+              WHEN "status"::text = 'EXPIRED' THEN 'EXPIRED'::"LeadPurchaseStatus"
+              WHEN "status"::text = 'CANCELLED' THEN 'CANCELLED'::"LeadPurchaseStatus"
+              ELSE 'ACTIVE'::"LeadPurchaseStatus"
+            END
+        `;
+        
+        // Restore default
+        await prisma.$executeRaw`ALTER TABLE "LeadPurchase" ALTER COLUMN "status" SET DEFAULT 'ACTIVE'::"LeadPurchaseStatus"`;
+        
+        console.log('✅ Status column converted to LeadPurchaseStatus enum');
+      } else {
+        console.log('✅ Status column is already LeadPurchaseStatus enum');
+      }
+    } else {
+      console.log('⚠️  LeadPurchase table or status column not found, skipping conversion');
+    }
+
+    // Step 3: Add ADMIN_ADJUST to CreditTransactionType if needed
+    await prisma.$executeRaw`
+      DO $$ 
+      BEGIN
+        IF EXISTS (SELECT 1 FROM pg_type WHERE typname = 'CreditTransactionType') THEN
+          BEGIN
+            ALTER TYPE "CreditTransactionType" ADD VALUE 'ADMIN_ADJUST';
+          EXCEPTION
+            WHEN duplicate_object THEN NULL;
+            WHEN others THEN NULL;
+          END;
+        END IF;
+      END $$;
+    `;
+    console.log('✅ CreditTransactionType enum updated (ADMIN_ADJUST added if needed)');
+
+  } catch (error) {
+    console.error('❌ Error fixing LeadPurchaseStatus enum:', error.message);
+    // Don't fail seed if enum already exists or other minor issues
+    if (!error.message.includes('already exists') && !error.message.includes('duplicate')) {
+      throw error;
+    }
+  }
+
   // Seed Subscription Plans
   console.log('📦 Seeding subscription plans...');
   
