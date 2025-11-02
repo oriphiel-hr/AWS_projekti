@@ -275,6 +275,64 @@ r.post('/add-categories', async (req, res, next) => {
   }
 });
 
+/**
+ * POST /api/admin/licenses/:licenseId/validate
+ * Automatska provjera valjanosti licence
+ */
+r.post('/licenses/:licenseId/validate', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const { licenseId } = req.params;
+    
+    const license = await prisma.providerLicense.findUnique({
+      where: { id: licenseId },
+      include: {
+        provider: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+                fullName: true
+              }
+            }
+          }
+        }
+      }
+    });
+    
+    if (!license) {
+      return res.status(404).json({ error: 'Licenca nije pronađena' });
+    }
+    
+    const { validateLicense } = await import('../services/license-validator.js');
+    const result = await validateLicense(license);
+    
+    // Ažuriraj notes sa rezultatom provjere
+    await prisma.providerLicense.update({
+      where: { id: licenseId },
+      data: {
+        notes: result.message + (license.notes ? ` | ${license.notes}` : ''),
+        updatedAt: new Date()
+      }
+    });
+    
+    res.json({
+      success: true,
+      validation: result,
+      license: {
+        id: license.id,
+        licenseType: license.licenseType,
+        licenseNumber: license.licenseNumber,
+        issuingAuthority: license.issuingAuthority,
+        expiresAt: license.expiresAt,
+        isVerified: license.isVerified
+      }
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
 // Verify license - Admin endpoint
 r.patch('/licenses/:licenseId/verify', auth(true, ['ADMIN']), async (req, res, next) => {
   try {
