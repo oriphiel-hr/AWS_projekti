@@ -3,8 +3,37 @@ import { prisma } from '../lib/prisma.js';
 import { auth } from '../lib/auth.js';
 import { deleteUserWithRelations } from '../lib/delete-helpers.js';
 import { offerToNextInQueue } from '../lib/leadQueueManager.js';
+import { getPlatformStatistics, getMonthlyTrends } from '../services/platform-stats-service.js';
 
 const r = Router();
+
+/**
+ * GET /api/admin/platform-stats
+ * Statistike platforme - sveobuhvatan pregled
+ */
+r.get('/platform-stats', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const stats = await getPlatformStatistics();
+    res.json(stats);
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * GET /api/admin/platform-trends
+ * Mjesečni trendovi platforme
+ * Query params: months (default: 12)
+ */
+r.get('/platform-trends', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const monthsBack = parseInt(req.query.months) || 12;
+    const trends = await getMonthlyTrends(monthsBack);
+    res.json(trends);
+  } catch (e) {
+    next(e);
+  }
+});
 
 // KYC Metrike - Admin Dashboard
 r.get('/kyc-metrics', auth(true, ['ADMIN']), async (req, res, next) => {

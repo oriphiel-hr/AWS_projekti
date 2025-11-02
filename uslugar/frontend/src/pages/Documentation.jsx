@@ -344,7 +344,7 @@ const Documentation = () => {
         { name: "Upravljanje verifikacijama klijenata", implemented: true },
         { name: "Upravljanje transakcijama kredita", implemented: true },
         { name: "Upravljanje ROI statistikama", implemented: true },
-        { name: "Statistike platforme", implemented: false },
+        { name: "Statistike platforme", implemented: true },
         { name: "Moderacija sadržaja", implemented: false }
       ]
     },

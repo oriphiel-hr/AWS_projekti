@@ -10,6 +10,7 @@ import AdminKYCMetrics from '../pages/AdminKYCMetrics'
 import AdminDataCleanup from '../pages/AdminDataCleanup'
 import AdminTesting from '../pages/AdminTesting'
 import AdminVerificationDocuments from '../pages/AdminVerificationDocuments'
+import AdminPlatformStats from '../pages/AdminPlatformStats'
 import api from '../api'
 
 // Model nazivi u PascalCase kako backend očekuje
@@ -97,6 +98,7 @@ export default function AdminRouter(){
           <Route path="/admin/provider-approvals" element={<AdminProviderApprovals />} />
           <Route path="/admin/kyc-metrics" element={<AdminKYCMetrics />} />
           <Route path="/admin/verification-documents" element={<AdminVerificationDocuments />} />
+          <Route path="/admin/platform-stats" element={<AdminPlatformStats />} />
           <Route path="/admin/cleanup" element={<AdminDataCleanup />} />
           <Route path="/admin/testing" element={<AdminTesting />} />
         </Route>
