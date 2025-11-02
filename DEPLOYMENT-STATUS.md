@@ -1,55 +1,56 @@
-# 🚀 Deployment Status
+# ✅ Backend Deployment - Pokrenuto
 
-## ✅ Push Uspješan
+## Što je napravljeno:
 
-**Commit:** `4b4c1a5`  
-**Branch:** `main`  
-**Status:** Push na GitHub uspješan ✅
+1. ✅ **Route ažuriran** sa error handling-om
+   - Route neće crashati ako tablice ne postoje
+   - Vraća prazan odgovor umjesto errora
+
+2. ✅ **Commit i push**
+   - Promjene su pushane na main branch
+   - Workflow će se automatski pokrenuti
+
+## 📊 Provjeri status:
+
+**GitHub Actions:**
+👉 https://github.com/oriphiel/AWS_projekti/actions
+
+**Traži:**
+- "Backend - Reuse existing Task Definition (ECR→ECS)"
+- Najnoviji workflow run
+
+## ⏱️ Timeline:
+
+- **Workflow start** → ~1 minuta nakon push-a
+- **Docker build** → ~3-5 minuta
+- **ECR push** → ~1 minuta
+- **ECS deployment** → ~2-3 minuta
+
+**Ukupno: ~7-10 minuta**
+
+## ✅ Nakon deploymenta:
+
+### Test endpoint:
+```powershell
+curl https://uslugar.oriph.io/api/documentation
+```
+
+**Očekivano:**
+- ✅ Ne vraća više 404
+- ✅ Ako tablice postoje → JSON sa podacima
+- ✅ Ako tablice ne postoje → `{ features: [], featureDescriptions: {} }`
+
+### Test u browseru:
+```
+https://uslugar.oriph.io/api/documentation
+```
+
+### Ako još uvijek ne radi:
+
+1. **Provjeri da li workflow je završio** → GitHub Actions
+2. **Provjeri da li su tablice kreirane** → Pokreni Prisma workflow ako treba
+3. **Provjeri CloudWatch logs** → Traži greške u backend aplikaciji
 
 ---
 
-## 📋 Automatski Deployment
-
-GitHub Actions će automatski pokrenuti deployment ako su promjene u:
-- `uslugar/backend/**` → Backend deployment
-- `uslugar/frontend/**` → Frontend deployment
-
-**Provjeri status:**
-https://github.com/oriphiel-hr/AWS_projekti/actions
-
----
-
-## 🔧 Ručno Pokretanje (Ako treba)
-
-### Backend:
-1. Idi na: https://github.com/oriphiel-hr/AWS_projekti/actions/workflows/backend-uslugar-ecs.yml
-2. Klikni **"Run workflow"** → **"Run workflow"**
-3. Čekaj ~5-10 minuta
-
-### Frontend:
-1. Idi na: https://github.com/oriphiel-hr/AWS_projekti/actions/workflows/frontend-uslugar.yml
-2. Klikni **"Run workflow"** → **"Run workflow"**
-3. Čekaj ~3-5 minuta
-
----
-
-## 📝 Što će biti deployano:
-
-✅ DNS verifikacija (TXT record provjera)  
-✅ Email verifikacija (domain matching)  
-✅ SMS verifikacija (s rate limiting fix)  
-✅ Identity badge workflow improvements  
-✅ Deployment skripte i dokumentacija  
-
----
-
-## 🔍 Provjera nakon deploymenta:
-
-- **Backend API:** https://uslugar.api.oriph.io/api/health
-- **Frontend:** https://uslugar.oriph.io
-- **SMS Test:** Testiraj na https://uslugar.oriph.io/#profile
-
----
-
-**Vrijeme deploymenta:** ~10-15 minuta (backend + frontend)
-
+**Status:** ⏳ Deployment u tijeku... Provjeri GitHub Actions za napredak!
