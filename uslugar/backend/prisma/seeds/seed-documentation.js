@@ -1057,7 +1057,30 @@ Email verifikacija osigurava da email adresa koju ste naveli pri registraciji st
 - Pomaže u sigurnosti vašeg računa
 
 Email verifikacija je brz i jednostavan proces - samo kliknite na link u email poruci i vaš račun je spreman!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/VerifyEmail.jsx\`
+- **Route:** \`/verify-email/:token\`
+- **State management:** useState, useEffect hooks
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/auth.js\`
+- **Endpoint:** \`GET /api/auth/verify-email/:token\`
+- **Prisma:** Update User zapisa (\`isVerified = true\`, \`verificationToken = null\`)
+- **Validacija:** Provjera \`tokenExpiresAt\` (24h expiry)
+
+### Baza podataka:
+- **Tablice:** \`User\`
+- **Polja:** \`verificationToken\`, \`tokenExpiresAt\`, \`isVerified\`
+- **Indeksi:** \`@@unique([verificationToken])\`
+
+### API pozivi:
+- \`GET /api/auth/verify-email/:token\` - Verificira email
+- Query \`User\` gdje \`verificationToken = token\` i \`tokenExpiresAt > now()\`
+- Update: \`isVerified = true\`, \`verificationToken = null\`, \`tokenExpiresAt = null\`
+      `
     },
     "Objavljivanje novih poslova": {
       implemented: true,
@@ -11060,7 +11083,31 @@ async function seedDocumentation() {
    - Prosječna vrijednost transakcije
    - Transakcije po tipu
    - Revenue po mjesecima
-`
+`,
+        technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/AdminCreditTransactions.jsx\`
+- **Route:** \`/admin/credit-transactions\`
+- **State management:** useState, useEffect hooks
+- **Filtriranje:** Korisnik, tip, datum
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/admin.js\`
+- **Middleware:** \`auth(true, ['ADMIN'])\`
+- **Prisma:** Query za CreditTransaction model
+
+### Baza podataka:
+- **Tablice:** \`CreditTransaction\`, \`User\`
+- **Relacije:** CreditTransaction → User
+- **Tipovi:** PURCHASE, REFUND, SUBSCRIPTION, ADMIN_ADJUST
+- **Indeksi:** \`@@index([userId])\`, \`@@index([type])\`, \`@@index([createdAt])\`
+
+### API pozivi:
+- \`GET /api/admin/credit-transactions\` - Query params: \`userId\`, \`type\`, \`startDate\`, \`endDate\`
+- \`POST /api/admin/credit-transactions\` - Body: \`{ userId, amount, type: 'ADMIN_ADJUST', description? }\`
+- \`GET /api/admin/credit-transactions/export\` - Export CSV
+      `
       },
       "Admin odobravanje refund-a": {
         summary: "Odobravanje povrata novca za neuspjele leadove",
@@ -11082,7 +11129,31 @@ async function seedDocumentation() {
    - Provjera razloga refund-a
    - Provjera da li lead ispunjava uvjete za refund
    - Praćenje refund rate po pružatelju
-`
+`,
+        technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/AdminRefunds.jsx\`
+- **Route:** \`/admin/refunds\`
+- **State management:** useState, useEffect hooks
+- **Filtriranje:** Status, pružatelj, datum
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/admin.js\`
+- **Middleware:** \`auth(true, ['ADMIN'])\`
+- **Prisma:** Query za LeadPurchase i CreditTransaction modele
+
+### Baza podataka:
+- **Tablice:** \`LeadPurchase\`, \`CreditTransaction\`, \`User\`
+- **Relacije:** LeadPurchase → User (pružatelj), CreditTransaction (REFUND tip)
+- **Polja:** \`refundRequested\`, \`refundReason\`, \`refundStatus\`
+- **Indeksi:** \`@@index([refundStatus])\`, \`@@index([providerId])\`
+
+### API pozivi:
+- \`GET /api/admin/refunds\` - Query params: \`status\`, \`providerId\`
+- \`POST /api/admin/refunds/:id/approve\` - Odobravanje refund-a
+- \`POST /api/admin/refunds/:id/reject\` - Body: \`{ reason: string }\`
+      `
       },
       "Admin upravljanje queue sustavom": {
         summary: "Upravljanje queue sustavom za ekskluzivne leadove",
@@ -11105,7 +11176,32 @@ async function seedDocumentation() {
    - Prvi u queue-u za featured providere
    - Algoritam za dodjelu leadova
    - Statistike uspješnosti queue-a
-`
+`,
+        technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/AdminQueue.jsx\`
+- **Route:** \`/admin/queue\`
+- **State management:** useState, useEffect hooks
+- **Filtriranje:** Status, kategorija, lokacija
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/admin.js\`
+- **Middleware:** \`auth(true, ['ADMIN'])\`
+- **Servis:** \`leadQueueManager.js\`
+- **Prisma:** Query za LeadQueue model
+
+### Baza podataka:
+- **Tablice:** \`LeadQueue\`, \`Job\`, \`User\`, \`Category\`
+- **Relacije:** LeadQueue → Job, LeadQueue → User (pružatelj)
+- **Statusi:** WAITING, OFFERED, ACCEPTED, DECLINED, EXPIRED, SKIPPED
+- **Indeksi:** \`@@index([status])\`, \`@@index([jobId])\`, \`@@index([position])\`
+
+### API pozivi:
+- \`GET /api/admin/queue\` - Query params: \`status\`, \`categoryId\`, \`jobId\`
+- \`POST /api/admin/queue/:id/assign\` - Body: \`{ providerId: string }\`
+- \`PUT /api/admin/queue/:id\` - Ažuriranje pozicije ili statusa
+      `
       },
       "Upravljanje ROI statistikama": {
         summary: "Pregled i upravljanje ROI metrikama za pružatelje",
@@ -11128,7 +11224,32 @@ async function seedDocumentation() {
    - Najprofitabilnije kategorije
    - Prosječni ROI po kategorijama
    - ROI trendovi kroz godine
-`
+`,
+        technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/AdminROI.jsx\`
+- **Route:** \`/admin/roi\`
+- **State management:** useState, useEffect hooks
+- **Grafovi:** Chart.js za vizualizaciju
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/admin.js\`
+- **Middleware:** \`auth(true, ['ADMIN'])\`
+- **Servis:** \`provider-roi-service.js\`
+- **Prisma:** Query za ProviderROI model
+
+### Baza podataka:
+- **Tablice:** \`ProviderROI\`, \`ProviderProfile\`, \`LeadPurchase\`, \`Job\`
+- **Relacije:** ProviderROI → ProviderProfile, ProviderROI → LeadPurchase
+- **Polja:** \`revenue\`, \`cost\`, \`profit\`, \`conversionRate\`
+- **Indeksi:** \`@@index([providerId])\`, \`@@index([year])\`
+
+### API pozivi:
+- \`GET /api/admin/roi/stats\` - Svi ROI statistički podaci
+- \`GET /api/admin/roi/provider/:id\` - ROI za određenog pružatelja
+- \`GET /api/admin/roi/yearly-report?year=2024\` - Godišnji izvještaj
+      `
       },
       "Upravljanje licencama": {
         summary: "Verificiranje i upravljanje licencama pružatelja",
@@ -11151,7 +11272,31 @@ async function seedDocumentation() {
    - Automatske notifikacije o isteku
    - Aktivacija/deaktivacija licenci
    - Pregled historije verifikacija
-`
+`,
+        technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/AdminLicenses.jsx\`
+- **Route:** \`/admin/licenses\`
+- **State management:** useState, useEffect hooks
+- **Filtriranje:** Status, tip licence, pružatelj
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/admin.js\`
+- **Middleware:** \`auth(true, ['ADMIN'])\`
+- **Prisma:** Query za ProviderLicense model
+
+### Baza podataka:
+- **Tablice:** \`ProviderLicense\`, \`ProviderProfile\`
+- **Relacije:** ProviderLicense → ProviderProfile
+- **Polja:** \`licenseType\`, \`licenseNumber\`, \`issuingAuthority\`, \`expiresAt\`, \`isVerified\`
+- **Indeksi:** \`@@index([isVerified])\`, \`@@index([expiresAt])\`
+
+### API pozivi:
+- \`GET /api/admin/licenses\` - Query params: \`verified\`, \`providerId\`, \`licenseType\`
+- \`PATCH /api/admin/licenses/:licenseId/verify\` - Body: \`{ isVerified: boolean, notes? }\`
+- \`GET /api/admin/licenses/expiring\` - Licence koje ističu uskoro
+      `
       },
       "Verificiranje licenci od strane admina": {
         summary: "Ručna verifikacija licenci i certifikata",
@@ -11174,7 +11319,32 @@ async function seedDocumentation() {
    - Admin bilješke o verifikaciji
    - Datum verifikacije i admin koji je verificirao
    - Historija svih verifikacijskih pokušaja
-`
+`,
+        technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/AdminLicenseVerification.jsx\`
+- **Route:** \`/admin/licenses/verify\`
+- **State management:** useState, useEffect hooks
+- **Pregled:** Upload-ani dokumenti, OCR rezultati
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/admin.js\`
+- **Middleware:** \`auth(true, ['ADMIN'])\`
+- **Servis:** \`license-validator.js\`
+- **Prisma:** Query za ProviderLicense model
+
+### Baza podataka:
+- **Tablice:** \`ProviderLicense\`, \`ProviderProfile\`, \`User\`
+- **Relacije:** ProviderLicense → ProviderProfile
+- **Polja:** \`verifiedAt\`, \`verifiedBy\`, \`notes\`, \`documentUrl\`
+- **Indeksi:** \`@@index([isVerified])\`, \`@@index([verifiedBy])\`
+
+### API pozivi:
+- \`GET /api/admin/licenses/:licenseId\` - Detalji licence
+- \`PATCH /api/admin/licenses/:licenseId/verify\` - Body: \`{ isVerified: boolean, notes? }\`
+- \`POST /api/admin/licenses/:licenseId/validate\` - Validacija licence (automatska provjera)
+      `
       },
       "Upravljanje verifikacijama klijenata": {
         summary: "Upravljanje KYC i drugim verifikacijama korisnika",
@@ -11197,7 +11367,31 @@ async function seedDocumentation() {
    - Admin bilješke o verifikaciji
    - Historija verifikacijskih pokušaja
    - Status badge-ova (BUSINESS, IDENTITY, SAFETY)
-`
+`,
+        technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/AdminKYC.jsx\`
+- **Route:** \`/admin/kyc\`
+- **State management:** useState, useEffect hooks
+- **Pregled:** KYC dokumenti, OCR rezultati, badge statusi
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/admin.js\`
+- **Middleware:** \`auth(true, ['ADMIN'])\`
+- **Servis:** \`kyc-service.js\`
+- **Prisma:** Query za ProviderProfile (KYC polja)
+
+### Baza podataka:
+- **Tablice:** \`ProviderProfile\`, \`User\`
+- **KYC polja:** \`kycVerified\`, \`kycDocumentUrl\`, \`kycDocumentType\`, \`kycOcrVerified\`, \`kycOibValidated\`, \`badgeData\`
+- **Indeksi:** \`@@index([kycVerified])\`, \`@@index([kycOcrVerified])\`
+
+### API pozivi:
+- \`GET /api/admin/kyc\` - Query params: \`verified\`, \`userId\`
+- \`POST /api/admin/kyc/:userId/verify\` - Body: \`{ kycVerified: boolean, notes? }\`
+- \`GET /api/admin/kyc/:userId/document\` - Pregled upload-anog dokumenta
+      `
       },
       "Dokumenti za verifikaciju": {
         summary: "Upravljanje dokumentima za KYC i verifikaciju",
@@ -11220,7 +11414,32 @@ async function seedDocumentation() {
    - Verificiranje ekstrahiranih podataka
    - Ručna korekcija ako OCR ne radi ispravno
    - Odobravanje/odbijanje dokumenta
-`
+`,
+        technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/AdminVerificationDocuments.jsx\`
+- **Route:** \`/admin/verification-documents\`
+- **State management:** useState, useEffect hooks
+- **Pregled:** Upload-ani dokumenti, OCR rezultati
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/admin.js\`
+- **Middleware:** \`auth(true, ['ADMIN'])\`
+- **Servis:** \`kyc-service.js\`, OCR servis
+- **Prisma:** Query za ProviderProfile (dokument polja)
+
+### Baza podataka:
+- **Tablice:** \`ProviderProfile\`, \`User\`
+- **Dokument polja:** \`kycDocumentUrl\`, \`kycDocumentType\`, \`kycExtractedOib\`, \`kycExtractedName\`
+- **OCR polja:** \`kycOcrVerified\`, \`kycOibValidated\`
+- **Indeksi:** \`@@index([kycDocumentType])\`
+
+### API pozivi:
+- \`GET /api/admin/verification-documents\` - Query params: \`type\`, \`userId\`
+- \`GET /api/admin/verification-documents/:id\` - Pregled dokumenta
+- \`POST /api/admin/verification-documents/:id/approve\` - Odobravanje dokumenta
+      `
       },
       "Admin reset SMS pokušaja": {
         summary: "Reset pokušaja SMS verifikacije za korisnike",
@@ -11243,7 +11462,29 @@ async function seedDocumentation() {
    - SMS kod nije stigao
    - Tehnički problemi s SMS servisom
    - Korisnik traži pomoć od admina
-`
+`,
+        technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/AdminUsers.jsx\` (user details)
+- **Route:** \`/admin/users/:id\`
+- **State management:** useState hooks
+- **Funkcionalnost:** Reset SMS pokušaja u user details sekciji
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/admin.js\`
+- **Middleware:** \`auth(true, ['ADMIN'])\`
+- **Prisma:** Update User model polja za SMS verifikaciju
+
+### Baza podataka:
+- **Tablice:** \`User\`
+- **SMS polja:** \`phoneVerificationAttempts\`, \`phoneVerificationCode\`, \`phoneVerificationExpires\`
+- **Reset:** Postavlja \`phoneVerificationAttempts = 0\`, generira novi kod
+
+### API pozivi:
+- \`POST /api/admin/users/:id/reset-sms\` - Reset SMS pokušaja
+- Generira novi \`phoneVerificationCode\`, postavlja \`phoneVerificationExpires\` (novi expiry), \`phoneVerificationAttempts = 0\`
+      `
       },
       "KYC Metrike": {
         summary: "Statistike i analitika KYC verifikacija",
@@ -11267,7 +11508,32 @@ async function seedDocumentation() {
    - Trend uspješnosti verifikacije
    - Najčešći razlozi neuspjeha
    - Pregled po kategorijama usluga
-`
+`,
+        technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/AdminKYCMetrics.jsx\`
+- **Route:** \`/admin/kyc-metrics\`
+- **State management:** useState, useEffect hooks
+- **Grafovi:** Chart.js za vizualizaciju trendova
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/admin.js\`
+- **Middleware:** \`auth(true, ['ADMIN'])\`
+- **Servis:** \`kyc-service.js\`
+- **Prisma:** Agregacije za ProviderProfile (KYC polja)
+
+### Baza podataka:
+- **Tablice:** \`ProviderProfile\`, \`User\`
+- **Agregacije:** COUNT, AVG po mjesecima/kategorijama
+- **KYC polja:** \`kycVerified\`, \`kycVerifiedAt\`, \`kycOcrVerified\`, \`kycOibValidated\`
+- **Indeksi:** \`@@index([kycVerified])\`, \`@@index([kycVerifiedAt])\`
+
+### API pozivi:
+- \`GET /api/admin/kyc-metrics\` - Sve KYC metrike
+- \`GET /api/admin/kyc-metrics?period=monthly\` - Mesečne statistike
+- \`GET /api/admin/kyc-metrics?breakdown=category\` - Breakdown po kategorijama
+      `
       },
       "Provider Approvals": {
         summary: "Statistike odobravanja novih pružatelja",
@@ -11290,7 +11556,31 @@ async function seedDocumentation() {
    - Trend odobrenja kroz vrijeme
    - Breakdown po kategorijama
    - Pregled pending zahtjeva
-`
+`,
+        technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/AdminProviderApprovals.jsx\`
+- **Route:** \`/admin/provider-approvals\`
+- **State management:** useState, useEffect hooks
+- **Grafovi:** Chart.js za trendove odobrenja
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/admin.js\`
+- **Middleware:** \`auth(true, ['ADMIN'])\`
+- **Prisma:** Agregacije za ProviderProfile (approvalStatus)
+
+### Baza podataka:
+- **Tablice:** \`ProviderProfile\`, \`User\`
+- **Polja:** \`approvalStatus\` (WAITING_FOR_APPROVAL, APPROVED, REJECTED)
+- **Agregacije:** COUNT po statusu, trendovi po mjesecima
+- **Indeksi:** \`@@index([approvalStatus])\`, \`@@index([createdAt])\`
+
+### API pozivi:
+- \`GET /api/admin/provider-approvals\` - Query params: \`status\`, \`categoryId\`
+- \`GET /api/admin/provider-approvals/stats\` - Statistike odobrenja
+- \`PUT /api/admin/providers/:id/approval\` - Body: \`{ approvalStatus: 'APPROVED' | 'REJECTED' }\`
+      `
       }
     };
 
