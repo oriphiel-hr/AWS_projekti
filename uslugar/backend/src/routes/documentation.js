@@ -16,7 +16,8 @@ r.get('/', async (req, res, next) => {
         include: {
           features: {
             where: {
-              deprecated: false
+              deprecated: false,
+              isAdminOnly: false // Samo javne funkcionalnosti (ne admin-only)
             },
             orderBy: {
               order: 'asc'
@@ -82,7 +83,8 @@ r.get('/stats', async (req, res, next) => {
       include: {
         features: {
           where: {
-            deprecated: false
+            deprecated: false,
+            isAdminOnly: false // Samo javne funkcionalnosti
           }
         }
       }
@@ -189,6 +191,79 @@ r.post('/migrate', async (req, res, next) => {
       categoriesCreated,
       featuresCreated,
       featuresUpdated
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+// GET /api/documentation/admin - Dohvati admin-only dokumentaciju
+r.get('/admin', async (req, res, next) => {
+  try {
+    // Provjeri da li tablice postoje - ako ne, vrati prazan array
+    let categories;
+    try {
+      categories = await prisma.documentationCategory.findMany({
+        where: {
+          isActive: true
+        },
+        include: {
+          features: {
+            where: {
+              deprecated: false,
+              isAdminOnly: true // Samo admin-only funkcionalnosti
+            },
+            orderBy: {
+              order: 'asc'
+            }
+          }
+        },
+        orderBy: {
+          order: 'asc'
+        }
+      });
+    } catch (error) {
+      // Ako tablice ne postoje (npr. migracije nisu primijenjene), vrati prazan odgovor
+      if (error.message.includes('does not exist') || error.message.includes('Unknown table')) {
+        console.warn('⚠️  DocumentationCategory table does not exist - migrations may not be applied');
+        return res.json({
+          features: [],
+          featureDescriptions: {}
+        });
+      }
+      throw error; // Re-throw other errors
+    }
+
+    // Filtriraj kategorije koje imaju admin-only features
+    const adminCategories = categories.filter(cat => cat.features.length > 0);
+
+    // Transformiraj podatke u format koji komponenta očekuje
+    const features = adminCategories.map(cat => ({
+      category: cat.name,
+      items: cat.features.map(f => ({
+        name: f.name,
+        implemented: f.implemented,
+        deprecated: f.deprecated
+      }))
+    }));
+
+    // Kreiraj featureDescriptions objekt
+    const featureDescriptions = {};
+    adminCategories.forEach(cat => {
+      cat.features.forEach(f => {
+        if (f.summary || f.details) {
+          featureDescriptions[f.name] = {
+            implemented: f.implemented,
+            summary: f.summary || '',
+            details: f.details || ''
+          };
+        }
+      });
+    });
+
+    res.json({
+      features,
+      featureDescriptions
     });
   } catch (e) {
     next(e);

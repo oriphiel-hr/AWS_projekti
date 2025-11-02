@@ -1,13 +1,41 @@
 // Admin Documentation - Dokumentacija za administratore
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDarkMode } from '../contexts/DarkModeContext.jsx';
+import api from '../api.js';
 
 const AdminDocumentation = () => {
   const { isDarkMode } = useDarkMode();
   const [expandedItem, setExpandedItem] = useState(null); // Track which item is expanded
+  const [features, setFeatures] = useState([]);
+  const [featureDescriptions, setFeatureDescriptions] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Učitaj podatke iz baze
+  useEffect(() => {
+    const loadAdminDocumentation = async () => {
+      try {
+        setLoading(true);
+        const response = await api.get('/documentation/admin');
+        setFeatures(response.data.features);
+        setFeatureDescriptions(response.data.featureDescriptions);
+        setError(null);
+      } catch (err) {
+        console.error('Error loading admin documentation:', err);
+        setError('Greška pri učitavanju admin dokumentacije. Molimo pokušajte ponovo.');
+        // Fallback na prazne podatke
+        setFeatures([]);
+        setFeatureDescriptions({});
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadAdminDocumentation();
+  }, []);
   
-  // Detaljni opisi funkcionalnosti
-  const featureDescriptions = {
+  // Detaljni opisi funkcionalnosti - sada se učitavaju iz baze preko featureDescriptions state-a
+  const _oldFeatureDescriptions = {
     "Upravljanje korisnicima": {
       implemented: true,
       summary: "Upravljanje korisnicima je implementirano.",
@@ -198,7 +226,8 @@ Sve promjene su commitane i pushane. Pružatelji usluga sada imaju grafički pri
     }
   };
 
-  const adminFeatures = [
+  // Admin features - sada se učitavaju iz baze preko features state-a
+  const _oldAdminFeatures = [
     {
       category: "Upravljanje Korisnicima i Pružateljima",
       items: [
@@ -262,18 +291,67 @@ Sve promjene su commitane i pushane. Pružatelji usluga sada imaju grafički pri
   };
 
   const getImplementationStats = () => {
-    const totalItems = adminFeatures.reduce(
+    if (!features || features.length === 0) {
+      return { totalItems: 0, implementedItems: 0, percentage: 0 };
+    }
+    const totalItems = features.reduce(
       (sum, category) => sum + category.items.length, 0
     );
-    const implementedItems = adminFeatures.reduce(
+    const implementedItems = features.reduce(
       (sum, category) => sum + category.items.filter(item => item.implemented).length, 0
     );
-    const percentage = Math.round((implementedItems / totalItems) * 100);
+    const percentage = totalItems > 0 ? Math.round((implementedItems / totalItems) * 100) : 0;
     
     return { totalItems, implementedItems, percentage };
   };
 
   const stats = getImplementationStats();
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className={`max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 ${isDarkMode ? 'dark' : ''}`}>
+        <div className="text-center">
+          <div className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+            Učitavanje admin dokumentacije...
+          </div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className={`max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 ${isDarkMode ? 'dark' : ''}`}>
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 text-center">
+          <h2 className="text-xl font-semibold text-red-800 dark:text-red-400 mb-2">Greška pri učitavanju dokumentacije</h2>
+          <p className="text-red-600 dark:text-red-300 mb-4">{error}</p>
+          <p className="text-sm text-red-500 dark:text-red-400">
+            Dokumentacija se učitava iz baze podataka. Provjeri da li je backend pokrenut i da li su podaci seedani.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // No data state
+  if (!features || features.length === 0) {
+    return (
+      <div className={`max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 ${isDarkMode ? 'dark' : ''}`}>
+        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-6 text-center">
+          <h2 className="text-xl font-semibold text-yellow-800 dark:text-yellow-400 mb-2">Nema dostupnih podataka</h2>
+          <p className="text-yellow-600 dark:text-yellow-300 mb-4">
+            Admin dokumentacija još nije dodana u bazu podataka.
+          </p>
+          <p className="text-sm text-yellow-500 dark:text-yellow-400">
+            Pokreni seed dokumentacije: <code className="bg-yellow-100 dark:bg-yellow-900 px-2 py-1 rounded">npm run seed:documentation</code>
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 ${isDarkMode ? 'dark' : ''}`}>
@@ -315,7 +393,7 @@ Sve promjene su commitane i pushane. Pružatelji usluga sada imaju grafički pri
 
       {/* Kategorije funkcionalnosti */}
       <div className="space-y-8">
-        {adminFeatures.map((category, categoryIndex) => (
+        {features.map((category, categoryIndex) => (
           <div 
             key={categoryIndex}
             className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 border-indigo-500"

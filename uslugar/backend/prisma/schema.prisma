@@ -895,6 +895,7 @@ model DocumentationFeature {
   details     String? // Detaljni opis (markdown)
   implemented Boolean  @default(true)
   deprecated  Boolean  @default(false)
+  isAdminOnly Boolean  @default(false) // Samo za admin dokumentaciju
   order       Int      @default(0) // Redoslijed unutar kategorije
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -904,5 +905,6 @@ model DocumentationFeature {
   @@unique([categoryId, name])
   @@index([categoryId])
   @@index([implemented])
+  @@index([isAdminOnly])
   @@index([order])
 }

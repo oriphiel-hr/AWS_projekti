@@ -10244,6 +10244,7 @@ async function seedDocumentation() {
             name: item.name,
             implemented: item.implemented !== undefined ? item.implemented : true,
             deprecated: item.deprecated || false,
+            isAdminOnly: item.isAdminOnly || false, // Admin-only flag
             order: itemIndex,
             summary: description?.summary || null,
             details: description?.details || null
@@ -10269,6 +10270,798 @@ async function seedDocumentation() {
         }
       }
     }
+
+    // === ADMIN-ONLY FUNKCIONALNOSTI ===
+    console.log('');
+    console.log('🔐 Seeding admin-only funkcionalnosti...');
+    
+    const adminFeatures = [
+      {
+        category: "Upravljanje Korisnicima i Pružateljima",
+        items: [
+          { name: "Upravljanje korisnicima", implemented: true, isAdminOnly: true },
+          { name: "Upravljanje pružateljima", implemented: true, isAdminOnly: true },
+          { name: "Upravljanje kategorijama", implemented: true, isAdminOnly: true },
+          { name: "Upravljanje pravnim statusima", implemented: true, isAdminOnly: true }
+        ]
+      },
+      {
+        category: "Upravljanje Sadržajem",
+        items: [
+          { name: "Upravljanje poslovima", implemented: true, isAdminOnly: true },
+          { name: "Upravljanje ponudama", implemented: true, isAdminOnly: true },
+          { name: "Admin upravljanje recenzijama", implemented: true, isAdminOnly: true },
+          { name: "Upravljanje notifikacijama", implemented: true, isAdminOnly: true },
+          { name: "Upravljanje chat sobama", implemented: true, isAdminOnly: true },
+          { name: "Moderacija sadržaja", implemented: true, isAdminOnly: true }
+        ]
+      },
+      {
+        category: "Upravljanje Pretplatama i Transakcijama",
+        items: [
+          { name: "Upravljanje pretplatama", implemented: true, isAdminOnly: true },
+          { name: "Upravljanje transakcijama kredita", implemented: true, isAdminOnly: true },
+          { name: "Admin odobravanje refund-a", implemented: true, isAdminOnly: true },
+          { name: "Admin upravljanje queue sustavom", implemented: true, isAdminOnly: true },
+          { name: "Upravljanje ROI statistikama", implemented: true, isAdminOnly: true }
+        ]
+      },
+      {
+        category: "Verifikacije i Licence",
+        items: [
+          { name: "Upravljanje licencama", implemented: true, isAdminOnly: true },
+          { name: "Verificiranje licenci od strane admina", implemented: true, isAdminOnly: true },
+          { name: "Upravljanje verifikacijama klijenata", implemented: true, isAdminOnly: true },
+          { name: "Dokumenti za verifikaciju", implemented: true, isAdminOnly: true },
+          { name: "Admin reset SMS pokušaja", implemented: true, isAdminOnly: true }
+        ]
+      },
+      {
+        category: "Statistike i Analitika",
+        items: [
+          { name: "Statistike platforme", implemented: true, isAdminOnly: true },
+          { name: "Grafički prikaz statistika", implemented: true, isAdminOnly: true },
+          { name: "KYC Metrike", implemented: true, isAdminOnly: true },
+          { name: "Provider Approvals", implemented: true, isAdminOnly: true }
+        ]
+      }
+    ];
+
+    const adminFeatureDescriptions = {
+      "Upravljanje korisnicima": {
+        summary: "Admin panel za upravljanje svim korisnicima platforme",
+        details: `## Implementirano:
+
+### 1. **Admin panel za korisnike**
+   - Pregled svih korisnika platforme s filtriranjem i pretraživanjem
+   - Detalji korisnika: email, telefon, status, verifikacije, pravni status
+   - Historija aktivnosti i transakcija
+   
+### 2. **Upravljanje statusima**
+   - Aktivacija/deaktivacija korisničkih računa
+   - Promjena uloga korisnika (USER, PROVIDER, ADMIN)
+   - Reset lozinke od strane admina bez poznavanja stare lozinke
+   - Blokiranje/odblokiranje korisnika
+   
+### 3. **Verifikacije**
+   - Pregled statusa svih verifikacija (email, telefon, ID, company)
+   - Ručna verifikacija korisnika od strane admina
+   - Reset pokušaja verifikacije (npr. SMS pokušaji)
+   - Pregled dokumenta za verifikaciju
+   
+### 4. **Statistike korisnika**
+   - Broj kreiranih poslova po korisniku
+   - Broj aktivnih pretplata
+   - Kreditna bilanca i transakcije
+   - Trust score i reputacija
+   - Aktivnost na platformi
+
+### 5. **API endpointi**
+   - \`GET /api/admin/users\` - Lista svih korisnika
+   - \`GET /api/admin/users/:id\` - Detalji korisnika
+   - \`PUT /api/admin/users/:id\` - Ažuriranje korisnika
+   - \`POST /api/admin/users/:id/reset-password\` - Reset lozinke
+`
+      },
+      "Upravljanje pružateljima": {
+        summary: "Kompletan admin panel za upravljanje pružateljima usluga",
+        details: `## Implementirano:
+
+### 1. **Admin panel za pružatelje**
+   - Pregled svih pružatelja usluga s naprednim filtriranjem
+   - Detalji profila: naziv, opis, kategorije, lokacije
+   - Pregled licenci i certifikata
+   - Status verifikacije i odobrenja
+   
+### 2. **Odobravanje pružatelja**
+   - Approval status management (WAITING_FOR_APPROVAL, APPROVED, REJECTED)
+   - Aktivacija/deaktivacija profila pružatelja
+   - Featured profil postavke (istaknuti pružatelji)
+   - Pregled i odobravanje novih registracija
+   
+### 3. **ROI statistike**
+   - Pregled ROI metrika za svakog pružatelja
+   - Conversion rate, revenue, profit po pružatelju
+   - Benchmarking s drugim pružateljima u istoj kategoriji
+   - Godišnji izvještaji i trend analiza
+   
+### 4. **Upravljanje licencama**
+   - Verificiranje upload-anih licenci
+   - Praćenje isteka licenci s automatskim notifikacijama
+   - Pregled statusa svih licenci u sustavu
+   - Notifikacije o isteku licenci
+
+### 5. **KYC verifikacija**
+   - Pregled KYC dokumenta (Rješenja Porezne uprave, itd.)
+   - Verificiranje OIB-a i podataka
+   - OCR provjera dokumenta
+   - Provjera u Obrtnom registru i komorskim imenicima
+
+### 6. **API endpointi**
+   - \`GET /api/admin/providers\` - Lista pružatelja
+   - \`PUT /api/admin/providers/:id/approval\` - Odobravanje
+   - \`GET /api/admin/providers/:id/roi\` - ROI statistike
+`
+      },
+      "Statistike platforme": {
+        summary: "Sveobuhvatne statistike i analitika za cijelu platformu",
+        details: `## Implementirano:
+
+### 1. **Općenite statistike**
+   - Ukupni korisnici (korisnici i pružatelji) s breakdown po ulogama
+   - Ukupni poslovi i leadovi s trendovima
+   - Aktivne pretplate po planovima
+   - Ukupan prihod platforme (MRR, ARR)
+   - Prosječna vrijednost transakcije
+   
+### 2. **Mesečne statistike**
+   - Trendovi kroz mjesece (korisnici, prihod, aktivnost)
+   - Novi korisnici po mjesecima s breakdown po ulogama
+   - Prihod po mjesecima s forecast-om
+   - Konverzije i ROI po mjesecima
+   - Churn rate i retention metrike
+   
+### 3. **Statistike po kategorijama**
+   - Najpopularnije kategorije usluga
+   - Prihod po kategorijama
+   - Konverzije po kategorijama
+   - Prosječne cijene po kategorijama
+   - Kategorije s najboljim ROI-om
+   
+### 4. **Engagement metrike**
+   - Aktivni korisnici (DAU, WAU, MAU)
+   - Broj recenzija i prosječne ocjene
+   - Chat aktivnost i poruka po razgovoru
+   - Notifikacije poslane i otvorene
+   - Conversion funnel analiza
+   
+### 5. **API i backend**
+   - \`platform-stats-service.js\` - Centralizirani servis za statistike
+   - \`GET /api/admin/platform-stats\` - Glavni endpoint za statistike
+   - Automatsko ažuriranje statistika u real-time
+   - Cache mehanizam za performanse (5 min cache)
+   - Export podataka u CSV/JSON format
+
+### 6. **Dashboard komponente**
+   - Grafički prikazi (Chart.js integracija)
+   - Trend linije za vremenske serije
+   - Stupčasti grafovi za usporedbe
+   - Krugovni grafovi za breakdown
+`
+      },
+      "Grafički prikaz statistika": {
+        summary: "Interaktivni grafički prikaz svih statistika platforme",
+        details: `## Implementirano:
+
+### 1. **Instalirane biblioteke**
+   - \`chart.js\` - Glavna biblioteka za grafove
+   - \`react-chartjs-2\` - React wrapper za Chart.js
+   - Podrška za sve tipove grafova (Line, Bar, Doughnut, Pie)
+
+### 2. **Grafičke komponente u ROI dashboardu**
+   
+   **Status Breakdown - Doughnut Chart:**
+   - Vizualni prikaz statusa leadova (Konvertirani, Kontaktirani, Aktivni, Refundirani)
+   - Krugovni graf s bojama za svaki status
+   - Interaktivni tooltips s detaljnim informacijama
+   
+   **Monthly Revenue & ROI - Line Chart:**
+   - Prikaz prihoda i ROI-a kroz mjesece
+   - Dvostruki Y-os (lijevo: EUR, desno: %)
+   - Kombinirani trend prihoda i ROI-a
+   - Predikcija za sljedeće mjesece
+   
+   **Monthly Leads - Bar Chart:**
+   - Grupirani stupčasti graf
+   - Kupljeno, Kontaktirano, Konvertirano po mjesecima
+   - Boje za razlikovanje metrika
+   - Stacked bars za ukupne vrijednosti
+   
+   **Conversion Rate - Line Chart:**
+   - Trend stope konverzije kroz godinu
+   - Linijski graf s ispunom
+   - Benchmark linije (prosjek, cilj)
+   
+   **Category Revenue - Bar Chart:**
+   - Prihod po kategorijama
+   - Top 8 kategorija po prihodu
+   - Boje za svaku kategoriju
+   - Sortiranje po prihodu ili imenu
+
+### 3. **Funkcionalnosti**
+   - Godišnji seletor: pregled trenutne, prošle ili prethodne godine
+   - Dark mode: grafovi prilagođeni dark modu s automatskom detekcijom
+   - Responzivni dizajn: prilagođeno različitim veličinama ekrana
+   - Interaktivni tooltips: detalji pri hoveru (vrijednosti, postoci, trendi)
+   - Tematske boje: konzistentne boje kroz grafove
+   - Export grafova: download kao PNG/JPEG
+
+### 4. **API integracija**
+   - Dodan \`getYearlyReport()\` u \`exclusive.js\`
+   - Automatsko učitavanje godišnjeg izvještaja pri učitavanju stranice
+   - Dinamičko ažuriranje grafova pri promjeni godine
+   - Loading states za svaki graf
+
+### 5. **Dizajn**
+   - Grafovi prilagođeni dashboard temi
+   - Spacing i layout optimizirani za desktop i mobile
+   - Dark mode podrška za sve grafove s automatskom paletom boja
+   - Profesionalni stil s legendama i osima
+   - Grid layout za organizaciju grafova
+
+### 6. **Chart.js konfiguracija**
+   - Registrirane sve potrebne komponente (Line, Bar, Doughnut, Legend, Tooltip)
+   - Custom opcije za tooltips i legende
+   - Multiple Y-axes za kombinirane metrike
+   - Theme-aware boje (light/dark mode) s automatskim prepoznavanjem
+   - Animacije i tranzicije za smooth UX
+
+### 7. **Korisničko iskustvo**
+   - Interaktivni grafovi: hover za detalje, zoom za povećanje
+   - Pregled trendova: linijski grafovi za vremenske serije
+   - Usporedbe: bar chartovi za usporedbu kategorija/perioda
+   - Vizualna razgradnja: doughnut chart za status breakdown
+   - Dinamički prikaz: seletor godine za pregled različitih perioda
+`
+      },
+      "Upravljanje kategorijama": {
+        summary: "CRUD operacije za upravljanje kategorijama usluga",
+        details: `## Implementirano:
+
+### 1. **CRUD operacije**
+   - Kreiranje novih kategorija s kompletnim podacima
+   - Ažuriranje postojećih kategorija (naziv, opis, ikona, NKD kod)
+   - Brisanje kategorija (soft delete s isActive flagom)
+   - Pregled svih kategorija s filtriranjem
+   
+### 2. **Hijerarhijska struktura**
+   - Parent-child odnos kategorija
+   - Podkategorije i glavne kategorije
+   - Rekurzivno prikazivanje strukture u admin panelu
+   - Drag & drop za promjenu redoslijeda
+   
+### 3. **Dodatna polja**
+   - NKD kodovi djelatnosti (NKD 2007 standard)
+   - Opisi kategorija s markdown podrškom
+   - Emoji ikone za vizualni prikaz
+   - Oznake za licencirane djelatnosti
+   - Tipovi licenci i tijela koja izdaju licence
+   
+### 4. **Upravljanje**
+   - Aktivacija/deaktivacija kategorija
+   - Display order (poredak prikaza) s drag & drop
+   - Filtering i search kroz sve kategorije
+   - Bulk operacije (aktivacija/deaktivacija više odjednom)
+   - Export kategorija u CSV format
+
+### 5. **Validacija**
+   - Provjera jedinstvenosti naziva
+   - Validacija NKD kodova
+   - Provjera referenci (npr. parent kategorije mora postojati)
+   
+### 6. **API endpointi**
+   - \`GET /api/admin/categories\` - Lista kategorija
+   - \`POST /api/admin/categories\` - Kreiranje
+   - \`PUT /api/admin/categories/:id\` - Ažuriranje
+   - \`DELETE /api/admin/categories/:id\` - Brisanje
+`
+      },
+      "Upravljanje pravnim statusima": {
+        summary: "Upravljanje pravnim oblicima za registraciju korisnika",
+        details: `## Implementirano:
+
+### 1. **Pravni statusi**
+   - Fizička osoba - Privatna osoba bez registrirane djelatnosti
+   - Obrtnik - Registrirani obrt s OIB-om
+   - Paušalni obrt - Obrt s paušalnim oporezivanjem
+   - d.o.o. - Društvo s ograničenom odgovornošću
+   - j.d.o.o. - Jednostavno društvo s ograničenom odgovornošću
+   - Samostalni djelatnik - Freelancer s paušalnim oporezivanjem
+
+### 2. **CRUD operacije**
+   - Kreiranje novih pravnih statusa
+   - Ažuriranje postojećih statusa
+   - Aktivacija/deaktivacija statusa
+   - Pregled svih pravnih statusa
+
+### 3. **Integracija**
+   - Povezan s korisnicima i pružateljima
+   - Obavezno polje pri registraciji korisnika
+   - Validacija OIB-a za pravne osobe
+`
+      },
+      "Upravljanje poslovima": {
+        summary: "Admin panel za moderaciju i upravljanje poslovima",
+        details: `## Implementirano:
+
+### 1. **Pregled poslova**
+   - Lista svih poslova na platformi s filtriranjem
+   - Statusi poslova (OTVOREN, U TIJEKU, ZAVRŠEN, OTKAZAN)
+   - Detalji posla: opis, budžet, lokacija, kategorija
+   - Povezani korisnik i dodijeljeni pružatelj
+
+### 2. **Moderacija**
+   - Odobravanje/odbijanje poslova
+   - Uklanjanje neprikladnih poslova
+   - Uređivanje detalja posla (ako je potrebno)
+   - Blokiranje korisnika zbog spam poslova
+
+### 3. **Statistike**
+   - Broj poslova po statusu
+   - Prosječna vrijednost poslova
+   - Najpopularnije kategorije
+   - Aktivnost po mjesecima
+`
+      },
+      "Upravljanje ponudama": {
+        summary: "Pregled i moderacija ponuda za poslove",
+        details: `## Implementirano:
+
+### 1. **Pregled ponuda**
+   - Lista svih ponuda s filtriranjem
+   - Statusi ponuda (NA ČEKANJU, PRIHVAĆENA, ODBIJENA)
+   - Povezanost s poslom i pružateljem
+   - Iznos ponude i poruka
+
+### 2. **Moderacija**
+   - Pregled detalja ponude
+   - Mogućnost uklanjanja neprikladnih ponuda
+   - Uređivanje statusa ponude (ako je potrebno)
+   - Praćenje pregovora oko cijene
+
+### 3. **Analitika**
+   - Prosječne vrijednosti ponuda po kategorijama
+   - Stopa prihvaćanja ponuda
+   - Najaktivniji pružatelji
+`
+      },
+      "Admin upravljanje recenzijama": {
+        summary: "Moderacija recenzija i upravljanje ocjenama",
+        details: `## Implementirano:
+
+### 1. **Pregled recenzija**
+   - Lista svih recenzija s filtriranjem
+   - Ocjene (1-5 zvjezdica) i komentari
+   - Povezanost s korisnikom i pružateljem
+   - Status recenzije (aktivna, uklonjena)
+
+### 2. **Moderacija**
+   - Brisanje neprikladnih recenzija
+   - Uređivanje recenzija (ako je potrebno)
+   - Blokiranje korisnika za spam recenzije
+   - Verifikacija autentičnosti recenzija
+
+### 3. **Automatski sustav**
+   - Sprečavanje duplikata recenzija
+   - Automatsko izračunavanje prosječne ocjene
+   - Notifikacije o novim recenzijama
+   - Rating breakdown po kategorijama
+`
+      },
+      "Upravljanje notifikacijama": {
+        summary: "Upravljanje push, email i SMS notifikacijama",
+        details: `## Implementirano:
+
+### 1. **Pregled notifikacija**
+   - Lista svih poslanih notifikacija
+   - Tipovi notifikacija (push, email, SMS)
+   - Status dostave (poslano, pročitano, greška)
+   - Povezanost s korisnikom i akcijom
+
+### 2. **Upravljanje**
+   - Slanje masovnih notifikacija korisnicima
+   - Testiranje notifikacija prije slanja
+   - Pregled statistika otvorenosti
+   - Podešavanje template-a notifikacija
+
+### 3. **Automatske notifikacije**
+   - Novi posao/ponuda notifikacije
+   - Pretplata i plaćanje notifikacije
+   - Verifikacija i status promjene
+   - Systém notifikacija za sve važne događaje
+`
+      },
+      "Upravljanje chat sobama": {
+        summary: "Moderacija chat razgovora između korisnika i pružatelja",
+        details: `## Implementirano:
+
+### 1. **Pregled chat soba**
+   - Lista svih aktivnih chat soba
+   - Povezanost s poslom i korisnicima
+   - Broj poruka i aktivnost
+   - Status chat-a (aktivan, arhiviran)
+
+### 2. **Moderacija**
+   - Pregled poruka u chat sobama
+   - Uklanjanje neprikladnih poruka
+   - Blokiranje korisnika za spam
+   - Arhiviranje starih chat soba
+
+### 3. **Statistike**
+   - Prosječan broj poruka po razgovoru
+   - Vrijeme odgovora pružatelja
+   - Aktivnost chat-a po kategorijama
+`
+      },
+      "Moderacija sadržaja": {
+        summary: "Sveobuhvatna moderacija sadržaja na platformi",
+        details: `## Implementirano:
+
+### 1. **Moderacija profila**
+   - Pregled profila korisnika i pružatelja
+   - Verificiranje informacija u profilu
+   - Uklanjanje neprikladnih slika ili opisa
+   - Blokiranje korisnika
+
+### 2. **Moderacija sadržaja**
+   - Pregled objavljenih poslova
+   - Moderacija ponuda i recenzija
+   - Provjera licence i dokumenata
+   - Reporting sustav za neprikladan sadržaj
+
+### 3. **Automatska detekcija**
+   - Spam detekcija u porukama
+   - Duplikat detekcija za poslove/ponude
+   - Provjera autentičnosti profila
+   - Flagging sustav za korisnički reporting
+`
+      },
+      "Upravljanje pretplatama": {
+        summary: "Upravljanje subscription planovima i aktivnim pretplatama",
+        details: `## Implementirano:
+
+### 1. **Subscription planovi**
+   - Pregled svih planova (BASIC, PREMIUM, PRO)
+   - Kreiranje i ažuriranje planova
+   - Postavljanje cijena i kredita
+   - Aktivacija/deaktivacija planova
+
+### 2. **Aktivne pretplate**
+   - Lista svih aktivnih pretplata korisnika
+   - Status pretplate (aktivna, istekla, otkazana)
+   - Pregled plaćanja i faktura
+   - Ručno ažuriranje pretplata
+
+### 3. **Upravljanje**
+   - Produženje pretplate ručno
+   - Otkazivanje pretplate
+   - Povrat novca za pretplate
+   - Statistike pretplata po planovima
+   - Churn rate analiza
+
+### 4. **API endpointi**
+   - \`GET /api/admin/subscriptions\` - Lista pretplata
+   - \`PUT /api/admin/subscriptions/:id\` - Ažuriranje
+   - \`POST /api/admin/subscriptions/:id/cancel\` - Otkaz
+`
+      },
+      "Upravljanje transakcijama kredita": {
+        summary: "Upravljanje kreditnim transakcijama i balansama",
+        details: `## Implementirano:
+
+### 1. **Pregled transakcija**
+   - Lista svih kreditnih transakcija
+   - Tipovi transakcija (PURCHASE, REFUND, SUBSCRIPTION, ADMIN_ADJUST)
+   - Filtriranje po korisniku, datumu, tipu
+   - Status transakcije (uspješna, neuspješna, pending)
+
+### 2. **Admin operacije**
+   - Ručno dodavanje/oduzimanje kredita korisniku
+   - ADMIN_ADJUST tip transakcije za admin prilagodbe
+   - Pregled historije transakcija korisnika
+   - Export transakcija u CSV format
+
+### 3. **Statistike**
+   - Ukupan iznos transakcija po periodu
+   - Prosječna vrijednost transakcije
+   - Transakcije po tipu
+   - Revenue po mjesecima
+`
+      },
+      "Admin odobravanje refund-a": {
+        summary: "Odobravanje povrata novca za neuspjele leadove",
+        details: `## Implementirano:
+
+### 1. **Pregled refund zahtjeva**
+   - Lista svih refund zahtjeva s filtriranjem
+   - Status refund-a (PENDING, APPROVED, REJECTED)
+   - Razlog refund-a (npr. klijent nije odgovorio)
+   - Povezanost s lead purchase-om
+
+### 2. **Odobravanje**
+   - Pregled detalja refund zahtjeva
+   - Odobravanje ili odbijanje refund-a
+   - Automatsko vraćanje kredita na račun pružatelja
+   - Notifikacija pružatelju o odluci
+
+### 3. **Validacija**
+   - Provjera razloga refund-a
+   - Provjera da li lead ispunjava uvjete za refund
+   - Praćenje refund rate po pružatelju
+`
+      },
+      "Admin upravljanje queue sustavom": {
+        summary: "Upravljanje queue sustavom za ekskluzivne leadove",
+        details: `## Implementirano:
+
+### 1. **Queue sustav**
+   - Pregled svih leadova u queue-u
+   - Status leadova (WAITING, ASSIGNED, PURCHASED, EXPIRED)
+   - Prioritet leadova (AI prioritet, featured providers)
+   - Filtri po kategoriji, lokaciji, statusu
+
+### 2. **Upravljanje**
+   - Ručno dodjeljivanje leadova pružateljima
+   - Premještanje leadova između pružatelja
+   - Uklanjanje neispravnih leadova
+   - Priprema leadova za dodjelu
+
+### 3. **AI prioritet**
+   - Provjera AI prioriteta za pružatelje
+   - Prvi u queue-u za featured providere
+   - Algoritam za dodjelu leadova
+   - Statistike uspješnosti queue-a
+`
+      },
+      "Upravljanje ROI statistikama": {
+        summary: "Pregled i upravljanje ROI metrikama za pružatelje",
+        details: `## Implementirano:
+
+### 1. **ROI statistike**
+   - Pregled ROI metrika za sve pružatelje
+   - Conversion rate, revenue, profit po pružatelju
+   - Benchmarking s prosjekom platforme
+   - Trend analiza ROI-a kroz vrijeme
+
+### 2. **Godišnji izvještaji**
+   - Godišnji ROI izvještaji po pružatelju
+   - Mesečni breakdown prihoda i troškova
+   - Pregled svih leadova i konverzija
+   - Export izvještaja u PDF/CSV
+
+### 3. **Analitika**
+   - Top pružatelji po ROI-u
+   - Najprofitabilnije kategorije
+   - Prosječni ROI po kategorijama
+   - ROI trendovi kroz godine
+`
+      },
+      "Upravljanje licencama": {
+        summary: "Verificiranje i upravljanje licencama pružatelja",
+        details: `## Implementirano:
+
+### 1. **Pregled licenci**
+   - Lista svih upload-anih licenci
+   - Status verifikacije (pending, verified, rejected)
+   - Tipovi licenci (Elektrotehnička, Građevinska, itd.)
+   - Tijela koja izdaju licence
+
+### 2. **Verifikacija**
+   - Ručna verifikacija licenci od strane admina
+   - Provjera autentičnosti dokumenta
+   - Validacija broja licence i datuma isteka
+   - OCR provjera dokumenta (ako je podržano)
+
+### 3. **Upravljanje**
+   - Praćenje isteka licenci
+   - Automatske notifikacije o isteku
+   - Aktivacija/deaktivacija licenci
+   - Pregled historije verifikacija
+`
+      },
+      "Verificiranje licenci od strane admina": {
+        summary: "Ručna verifikacija licenci i certifikata",
+        details: `## Implementirano:
+
+### 1. **Verifikacijski proces**
+   - Pregled upload-anog dokumenta licence
+   - Provjera broja licence u relevantnom tijelu
+   - Validacija datuma isteka
+   - Provjera da li licenca odgovara kategoriji
+
+### 2. **Admin akcije**
+   - Odobravanje licence (verified)
+   - Odbijanje licence (rejected) s razlogom
+   - Zahtjevanje dodatnih dokumenata
+   - Notifikacija pružatelju o statusu
+
+### 3. **Dokumentacija**
+   - Spremljen upload-an dokument
+   - Admin bilješke o verifikaciji
+   - Datum verifikacije i admin koji je verificirao
+   - Historija svih verifikacijskih pokušaja
+`
+      },
+      "Upravljanje verifikacijama klijenata": {
+        summary: "Upravljanje KYC i drugim verifikacijama korisnika",
+        details: `## Implementirano:
+
+### 1. **KYC verifikacija**
+   - Pregled upload-anih KYC dokumenata (Rješenja Porezne uprave)
+   - OCR provjera dokumenta i ekstrakcija podataka
+   - Validacija OIB-a algoritamskim provjerama
+   - Provjera u Obrtnom registru i komorskim imenicima
+
+### 2. **Email i telefon verifikacija**
+   - Pregled statusa email verifikacije
+   - SMS verifikacija telefona
+   - Reset pokušaja verifikacije
+   - Ručna verifikacija od strane admina
+
+### 3. **Dokumentacija**
+   - Pregled upload-anih dokumenata
+   - Admin bilješke o verifikaciji
+   - Historija verifikacijskih pokušaja
+   - Status badge-ova (BUSINESS, IDENTITY, SAFETY)
+`
+      },
+      "Dokumenti za verifikaciju": {
+        summary: "Upravljanje dokumentima za KYC i verifikaciju",
+        details: `## Implementirano:
+
+### 1. **Tipovi dokumenata**
+   - Rješenja Porezne uprave (RPO_SOLUTION)
+   - Obrtni registar dokumenti (OBRT_REGISTRY)
+   - Licencni dokumenti
+   - Dokumenti identiteta
+
+### 2. **Upload i procesiranje**
+   - Upload dokumenta od strane korisnika
+   - Automatska OCR provjera
+   - Ekstrakcija podataka (OIB, ime, datum)
+   - Spremanje dokumenta u sigurno skladište
+
+### 3. **Admin pregled**
+   - Pregled upload-anog dokumenta
+   - Verificiranje ekstrahiranih podataka
+   - Ručna korekcija ako OCR ne radi ispravno
+   - Odobravanje/odbijanje dokumenta
+`
+      },
+      "Admin reset SMS pokušaja": {
+        summary: "Reset pokušaja SMS verifikacije za korisnike",
+        details: `## Implementirano:
+
+### 1. **SMS verifikacija**
+   - Korisnik prima 6-digit SMS kod
+   - Maksimalno 5 pokušaja verifikacije
+   - 10 minuta vrijeme isteka koda
+   - Automatsko blokiranje nakon previše pokušaja
+
+### 2. **Admin reset**
+   - Reset broja pokušaja verifikacije
+   - Generiranje novog SMS koda
+   - Produženje vremena isteka koda
+   - Odblokiranje korisnika
+
+### 3. **Kada koristiti**
+   - Korisnik je potrošio sve pokušaje
+   - SMS kod nije stigao
+   - Tehnički problemi s SMS servisom
+   - Korisnik traži pomoć od admina
+`
+      },
+      "KYC Metrike": {
+        summary: "Statistike i analitika KYC verifikacija",
+        details: `## Implementirano:
+
+### 1. **KYC statistike**
+   - Broj verificiranih korisnika
+   - Stopa uspješnosti KYC verifikacije
+   - Prosječno vrijeme verifikacije
+   - Razlozi odbijanja verifikacija
+
+### 2. **Breakdown po tipovima**
+   - OCR provjera - uspješnost
+   - OIB validacija - uspješnost
+   - Obrtni registar provjera
+   - Komorski imenik provjera
+   - VIES (PDV) provjera
+
+### 3. **Trendovi**
+   - KYC verifikacije po mjesecima
+   - Trend uspješnosti verifikacije
+   - Najčešći razlozi neuspjeha
+   - Pregled po kategorijama usluga
+`
+      },
+      "Provider Approvals": {
+        summary: "Statistike odobravanja novih pružatelja",
+        details: `## Implementirano:
+
+### 1. **Approval statistike**
+   - Broj novih registracija pružatelja
+   - Status odobrenja (WAITING, APPROVED, REJECTED)
+   - Prosječno vrijeme odobrenja
+   - Stopa odobrenja/odbijanja
+
+### 2. **Razlozi odbijanja**
+   - Najčešći razlozi odbijanja
+   - Provjera dokumentacije
+   - Validacija podataka
+   - KYC provjera
+
+### 3. **Trendovi**
+   - Novi pružatelji po mjesecima
+   - Trend odobrenja kroz vrijeme
+   - Breakdown po kategorijama
+   - Pregled pending zahtjeva
+`
+      }
+    };
+
+    // Seed admin funkcionalnosti
+    for (let catIndex = 0; catIndex < adminFeatures.length; catIndex++) {
+      const categoryData = adminFeatures[catIndex];
+      
+      const category = await prisma.documentationCategory.upsert({
+        where: { name: categoryData.category },
+        update: { order: 1000 + catIndex, isActive: true },
+        create: { name: categoryData.category, order: 1000 + catIndex, isActive: true }
+      });
+
+      console.log(`✅ Admin kategorija: ${categoryData.category}`);
+
+      if (categoryData.items && Array.isArray(categoryData.items)) {
+        for (let itemIndex = 0; itemIndex < categoryData.items.length; itemIndex++) {
+          const item = categoryData.items[itemIndex];
+          const description = adminFeatureDescriptions[item.name];
+
+          const featureData = {
+            categoryId: category.id,
+            name: item.name,
+            implemented: item.implemented !== undefined ? item.implemented : true,
+            deprecated: item.deprecated || false,
+            isAdminOnly: true, // Vazno: admin-only flag
+            order: itemIndex,
+            summary: description?.summary || null,
+            details: description?.details || null
+          };
+
+          const existing = await prisma.documentationFeature.findFirst({
+            where: { categoryId: category.id, name: item.name }
+          });
+
+          if (existing) {
+            await prisma.documentationFeature.update({
+              where: { id: existing.id },
+              data: featureData
+            });
+            featuresUpdated++;
+            console.log(`   📝 Ažuriran: ${item.name}`);
+          } else {
+            await prisma.documentationFeature.create({ data: featureData });
+            featuresCreated++;
+            console.log(`   ➕ Kreiran: ${item.name}`);
+          }
+          
+          totalFeatures++;
+          if (item.implemented) implementedFeatures++;
+        }
+      }
+    }
+
+    console.log('✅ Admin funkcionalnosti seedane!');
 
     // Dodaj statistiku
     console.log('');
