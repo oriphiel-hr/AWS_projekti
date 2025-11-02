@@ -164,13 +164,23 @@ export async function refundSubscription(userId, reason = 'Requested by customer
     });
 
     // Kreiraj credit transaction za refund
-    await prisma.creditTransaction.create({
+    const transaction = await prisma.creditTransaction.create({
       data: {
         userId,
         type: 'REFUND',
         amount: -subscription.creditsBalance, // Negativno jer oduzimamo
         balance: 0,
         description: `Refund subscription payment - ${reason}`
+      }
+    });
+    
+    // Kreiraj notifikaciju o transakciji
+    await prisma.notification.create({
+      data: {
+        userId,
+        type: 'SYSTEM',
+        title: 'Refund kredita',
+        message: `Vraćeno vam je ${Math.abs(transaction.amount)} kredita. ${transaction.description || ''} Novo stanje: 0 kredita.`,
       }
     });
   }

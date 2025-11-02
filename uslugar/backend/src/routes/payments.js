@@ -415,7 +415,7 @@ r.post('/activate-by-email', async (req, res, next) => {
       }
     });
     
-    await prisma.creditTransaction.create({
+    const transaction = await prisma.creditTransaction.create({
       data: {
         userId: userIdNum,
         type: 'SUBSCRIPTION',
@@ -425,10 +425,22 @@ r.post('/activate-by-email', async (req, res, next) => {
       }
     });
     
+    // Notification will be sent by credit-service notifyTransaction function
+    // But we'll also keep the existing subscription notification for consistency
     await prisma.notification.create({
       data: {
         title: 'Pretplata aktivirana!',
         message: `Uspješno ste se pretplatili na ${plan} plan! Dodano ${credits} kredita.`,
+        type: 'SYSTEM',
+        userId: userIdNum
+      }
+    });
+    
+    // Also send transaction-specific notification
+    await prisma.notification.create({
+      data: {
+        title: 'Krediti iz pretplate',
+        message: `Dodano vam je ${credits} kredita iz pretplate ${plan}. Novo stanje: ${subscription.creditsBalance} kredita.`,
         type: 'SYSTEM',
         userId: userIdNum
       }
@@ -643,7 +655,7 @@ async function activateSubscription(userId, plan, credits, stripePaymentIntentId
     console.log(`[ACTIVATE SUBSCRIPTION] Subscription upserted successfully:`, subscription);
 
     // Create credit transaction
-    await prisma.creditTransaction.create({
+    const transaction = await prisma.creditTransaction.create({
       data: {
         userId: userIdStr,
         type: 'SUBSCRIPTION',
@@ -653,11 +665,21 @@ async function activateSubscription(userId, plan, credits, stripePaymentIntentId
       }
     });
 
-    // Create notification
+    // Create notification (subscription activation)
     await prisma.notification.create({
       data: {
         title: 'Pretplata aktivirana!',
         message: `Uspješno ste se pretplatili na ${plan} plan! Dodano ${credits} kredita.`,
+        type: 'SYSTEM',
+        userId: userIdStr
+      }
+    });
+    
+    // Also send transaction-specific notification
+    await prisma.notification.create({
+      data: {
+        title: 'Krediti iz pretplate',
+        message: `Dodano vam je ${credits} kredita iz pretplate ${plan}. Novo stanje: ${subscription.creditsBalance} kredita.`,
         type: 'SYSTEM',
         userId: userIdStr
       }

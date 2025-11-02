@@ -166,7 +166,7 @@ r.post('/subscribe', auth(true, ['PROVIDER']), async (req, res, next) => {
     });
 
     // Kreiraj credit transaction
-    await prisma.creditTransaction.create({
+    const transaction = await prisma.creditTransaction.create({
       data: {
         userId: req.user.id,
         type: 'SUBSCRIPTION',

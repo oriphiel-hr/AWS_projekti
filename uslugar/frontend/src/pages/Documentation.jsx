@@ -324,7 +324,7 @@ const Documentation = () => {
         { name: "Opisi transakcija", implemented: true },
         { name: "Filtriranje transakcija po tipu", implemented: true },
         { name: "Izvoz povijesti transakcija", implemented: true },
-        { name: "Notifikacije o transakcijama", implemented: false }
+        { name: "Notifikacije o transakcijama", implemented: true }
       ]
     },
     {

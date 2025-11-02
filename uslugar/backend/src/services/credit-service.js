@@ -2,6 +2,62 @@
 import { prisma } from '../lib/prisma.js';
 
 /**
+ * Kreiraj notifikaciju o transakciji kredita
+ */
+async function notifyTransaction(userId, transaction, newBalance) {
+  try {
+    let title = '';
+    let message = '';
+    
+    switch (transaction.type) {
+      case 'PURCHASE':
+        title = 'Krediti dodani';
+        message = `Dodano vam je ${transaction.amount} kredita. ${transaction.description || ''} Novo stanje: ${newBalance} kredita.`;
+        break;
+      case 'LEAD_PURCHASE':
+        title = 'Kupovina leada';
+        message = `Potrošeno ${Math.abs(transaction.amount)} kredita za kupovinu leada. ${transaction.description || ''} Novo stanje: ${newBalance} kredita.`;
+        break;
+      case 'REFUND':
+        title = 'Refund kredita';
+        message = `Vraćeno vam je ${transaction.amount} kredita. ${transaction.description || ''} Novo stanje: ${newBalance} kredita.`;
+        break;
+      case 'BONUS':
+        title = 'Bonus krediti';
+        message = `Dodano vam je ${transaction.amount} bonus kredita! ${transaction.description || ''} Novo stanje: ${newBalance} kredita.`;
+        break;
+      case 'SUBSCRIPTION':
+        title = 'Krediti iz pretplate';
+        message = `Dodano vam je ${transaction.amount} kredita iz pretplate. ${transaction.description || ''} Novo stanje: ${newBalance} kredita.`;
+        break;
+      case 'ADMIN_ADJUST':
+        title = 'Prilagodba kredita';
+        message = `Admin je prilagodio vaše kredite za ${transaction.amount > 0 ? '+' : ''}${transaction.amount}. ${transaction.description || ''} Novo stanje: ${newBalance} kredita.`;
+        break;
+      default:
+        title = 'Transakcija kredita';
+        message = `Transakcija: ${transaction.description || 'Krediti ažurirani'}. Novo stanje: ${newBalance} kredita.`;
+    }
+
+    // Create in-app notification
+    await prisma.notification.create({
+      data: {
+        userId,
+        type: 'SYSTEM',
+        title,
+        message,
+        jobId: transaction.relatedJobId || null
+      }
+    });
+
+    console.log(`[NOTIFICATION] Transaction notification sent to user ${userId}: ${title}`);
+  } catch (error) {
+    console.error('[NOTIFICATION] Error sending transaction notification:', error);
+    // Don't throw - notification failure shouldn't break transaction
+  }
+}
+
+/**
  * Dodaj kredite korisniku
  */
 export async function addCredits(userId, amount, type, description = null, relatedJobId = null) {
@@ -32,6 +88,9 @@ export async function addCredits(userId, amount, type, description = null, relat
       relatedJobId
     }
   });
+
+  // Send notification about transaction
+  await notifyTransaction(userId, transaction, newBalance);
 
   console.log(`[CREDITS] Added ${amount} credits to user ${userId}. New balance: ${newBalance}`);
   return { balance: newBalance, transaction };
@@ -76,6 +135,9 @@ export async function deductCredits(userId, amount, description = null, relatedJ
       relatedPurchaseId
     }
   });
+
+  // Send notification about transaction
+  await notifyTransaction(userId, transaction, newBalance);
 
   console.log(`[CREDITS] Deducted ${amount} credits from user ${userId}. New balance: ${newBalance}`);
   return { balance: newBalance, transaction };

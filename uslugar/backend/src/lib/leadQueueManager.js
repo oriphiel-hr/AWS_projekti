@@ -342,8 +342,27 @@ export async function respondToLeadOffer(queueId, response, userId) {
       
       console.log(`✅ Lead uspješno kupljen za ${leadPrice} kredita`)
       
-      return leadPurchase
+      return { leadPurchase, transaction }
     })
+    
+    // Kreiraj notifikaciju o transakciji nakon što je transakcija commitana
+    if (result.transaction) {
+      try {
+        await prisma.notification.create({
+          data: {
+            userId,
+            type: 'SYSTEM',
+            title: 'Kupovina leada',
+            message: `Potrošeno ${leadPrice} kredita za kupovinu leada "${queueItem.job.title}". Novo stanje: ${subscription.creditsBalance - leadPrice} kredita.`,
+            jobId: queueItem.jobId
+          }
+        });
+      } catch (notifError) {
+        console.error('[NOTIFICATION] Error sending transaction notification:', notifError);
+      }
+    }
+    
+    return result.leadPurchase
   } else {
     // Provider odbija lead
     await prisma.leadQueue.update({
