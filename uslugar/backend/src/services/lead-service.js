@@ -147,8 +147,9 @@ export async function purchaseLead(jobId, providerId, options = {}) {
     }
   }
 
-  // 6. Kreiraj LeadPurchase zapis (BEZ otključavanja kontakta - pay-per-contact)
-  const purchase = await prisma.leadPurchase.create({
+  try {
+    // 6. Kreiraj LeadPurchase zapis (BEZ otključavanja kontakta - pay-per-contact)
+    const purchase = await prisma.leadPurchase.create({
     data: {
       jobId,
       providerId,
