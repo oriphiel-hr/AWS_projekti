@@ -106,15 +106,23 @@ console.log('[CORS] Allowed origins:', ALLOWED_ORIGINS);
 
 app.use((req, res, next) => {
   const origin = req.headers.origin
+  
+  // Always set CORS headers for allowed origins
   if (origin && ALLOWED_ORIGINS.includes(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin)
+    res.setHeader('Access-Control-Allow-Credentials', 'true')
+  } else if (origin) {
+    // Log blocked origins
+    console.warn('[CORS Middleware] Blocked origin:', origin);
+    console.warn('[CORS Middleware] Allowed origins:', ALLOWED_ORIGINS);
   }
+  
   res.setHeader('Vary', 'Origin')
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, X-Requested-With')
   res.setHeader('Access-Control-Max-Age', '86400') // 24 hours
-  // res.setHeader('Access-Control-Allow-Credentials', 'true') // uključi samo ako koristiš cookies
 
+  // Handle preflight requests
   if (req.method === 'OPTIONS') {
     return res.sendStatus(204) // preflight završi odmah
   }
@@ -125,18 +133,26 @@ app.use((req, res, next) => {
 // (opcionalno) dodatni CORS sloj preko paketa – neće smetati
 app.use(cors({
   origin(origin, cb) {
-    if (!origin) return cb(null, true)                     // server-to-server/no-origin
+    // Allow requests without origin (server-to-server, Postman, etc.)
+    if (!origin) return cb(null, true)
+    
+    // Check if origin is in allowed list
     if (ALLOWED_ORIGINS.includes(origin)) {
       return cb(null, true)
     }
-    console.warn('[CORS] Blocked origin:', origin);
-    console.warn('[CORS] Allowed origins:', ALLOWED_ORIGINS);
+    
+    // Log blocked origins for debugging
+    console.warn('[CORS Package] Blocked origin:', origin);
+    console.warn('[CORS Package] Allowed origins:', ALLOWED_ORIGINS);
+    
+    // Deny request if origin not allowed
     return cb(new Error('Not allowed by CORS'))
   },
   methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
   allowedHeaders: ['Content-Type','Authorization','Accept','X-Requested-With'],
   credentials: false,
   maxAge: 86400,
+  preflightContinue: false, // Stop after OPTIONS
 }))
 app.options('*', cors())
 app.options('/api/*', (req, res) => {
