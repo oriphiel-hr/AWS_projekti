@@ -40,8 +40,11 @@ r.get('/', async (req, res, next) => {
       throw error; // Re-throw other errors
     }
 
+    // Filtriraj kategorije koje imaju javne features (ne samo admin-only)
+    const publicCategories = categories.filter(cat => cat.features.length > 0);
+
     // Transformiraj podatke u format koji komponenta očekuje
-    const features = categories.map(cat => ({
+    const features = publicCategories.map(cat => ({
       category: cat.name,
       items: cat.features.map(f => ({
         name: f.name,
@@ -50,9 +53,9 @@ r.get('/', async (req, res, next) => {
       }))
     }));
 
-    // Kreiraj featureDescriptions objekt
+    // Kreiraj featureDescriptions objekt (samo za javne features)
     const featureDescriptions = {};
-    categories.forEach(cat => {
+    publicCategories.forEach(cat => {
       cat.features.forEach(f => {
         if (f.summary || f.details) {
           featureDescriptions[f.name] = {
@@ -90,10 +93,13 @@ r.get('/stats', async (req, res, next) => {
       }
     });
 
+    // Filtriraj kategorije koje imaju javne features
+    const publicCategories = categories.filter(cat => cat.features.length > 0);
+
     let totalItems = 0;
     let implementedItems = 0;
 
-    categories.forEach(cat => {
+    publicCategories.forEach(cat => {
       cat.features.forEach(f => {
         totalItems++;
         if (f.implemented) {
