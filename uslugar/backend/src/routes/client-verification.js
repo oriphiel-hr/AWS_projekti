@@ -2,6 +2,7 @@
 import { Router } from 'express';
 import { auth } from '../lib/auth.js';
 import { prisma } from '../lib/prisma.js';
+import { triggerAutoVerification, autoVerifyClient } from '../services/auto-verification.js';
 
 const r = Router();
 
@@ -94,6 +95,14 @@ r.post('/phone/verify-code', auth(true), async (req, res, next) => {
       }
     });
     
+    // Pokreni automatsku verifikaciju nakon telefonske verifikacije
+    try {
+      await triggerAutoVerification(req.user.id, { type: 'phone', value: req.user.phone });
+    } catch (autoVerifyError) {
+      console.error('[Client Verification] Auto-verification failed after phone verification:', autoVerifyError);
+      // Ne baci grešku - samo logiraj
+    }
+    
     res.json({
       success: true,
       message: 'Phone verified successfully',
@@ -173,6 +182,13 @@ r.post('/company/verify', auth(true), async (req, res, next) => {
       }
     });
     
+    // Pokreni automatsku verifikaciju nakon company verifikacije
+    try {
+      await triggerAutoVerification(req.user.id, { type: 'company', value: user.companyName });
+    } catch (autoVerifyError) {
+      console.error('[Client Verification] Auto-verification failed after company verification:', autoVerifyError);
+    }
+    
     res.json({
       success: true,
       message: 'Company verification successful',
@@ -217,6 +233,33 @@ r.post('/admin/verify/:userId', auth(true, ['ADMIN']), async (req, res, next) =>
       message: 'Client verification updated by admin',
       verification
     });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * POST /api/verification/auto-verify
+ * Ručno pokretanje automatske verifikacije za trenutnog korisnika
+ */
+r.post('/auto-verify', auth(true), async (req, res, next) => {
+  try {
+    const result = await autoVerifyClient(req.user.id);
+    
+    if (result.success) {
+      res.json({
+        success: true,
+        message: 'Auto-verification completed',
+        verifications: result.verifications,
+        trustScore: result.trustScore,
+        verification: result.verification
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        error: result.error || 'Auto-verification failed'
+      });
+    }
   } catch (e) {
     next(e);
   }

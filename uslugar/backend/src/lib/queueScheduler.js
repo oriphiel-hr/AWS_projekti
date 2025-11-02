@@ -12,6 +12,7 @@ import { checkExpiredOffers } from './leadQueueManager.js'
 import { checkInactiveLeadPurchases } from '../services/lead-service.js'
 import { checkExpiringLicenses } from '../services/license-expiry-checker.js'
 import { validateAllLicenses } from '../services/license-validator.js'
+import { batchAutoVerifyClients } from '../services/auto-verification.js'
 
 export function startQueueScheduler() {
   console.log('⏰ Starting Queue Scheduler...')
@@ -69,6 +70,22 @@ export function startQueueScheduler() {
     console.log('='.repeat(50) + '\n')
   })
   
+  // Batch automatska verifikacija klijenata svaki dan u 11:00
+  cron.schedule('0 11 * * *', async () => {
+    console.log(`\n${'='.repeat(50)}`)
+    console.log(`⏰ Batch Auto Verification: ${new Date().toISOString()}`)
+    console.log('='.repeat(50))
+    
+    try {
+      const result = await batchAutoVerifyClients()
+      console.log(`✅ Batch auto-verification completed: ${result.verified}/${result.total} verified, ${result.errors} errors`)
+    } catch (error) {
+      console.error('❌ Batch auto-verification failed:', error)
+    }
+    
+    console.log('='.repeat(50) + '\n')
+  })
+  
   // Također pokreni svake 15 minuta za hitne poslove
   cron.schedule('*/15 * * * *', async () => {
     // Samo log svake 15 min, za monitoring
@@ -80,6 +97,7 @@ export function startQueueScheduler() {
   console.log('   - Inactive lead purchases check (48h auto-refund): Every hour at :00')
   console.log('   - License expiry check: Daily at 09:00')
   console.log('   - License validity check: Daily at 10:00')
+  console.log('   - Batch auto-verification: Daily at 11:00')
   console.log('   - Monitor heartbeat: Every 15 minutes')
 }
 
