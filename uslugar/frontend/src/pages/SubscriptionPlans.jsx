@@ -385,6 +385,9 @@ export default function SubscriptionPlans() {
         </div>
       </div>
 
+      {/* Transaction History Section */}
+      <TransactionHistory />
+
       {/* CTA */}
       <div className="mt-12 text-center">
         <button
