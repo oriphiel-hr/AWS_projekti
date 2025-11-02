@@ -405,3 +405,189 @@ export default function SubscriptionPlans() {
   );
 }
 
+// Transaction History Component with Filtering
+function TransactionHistory() {
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filterType, setFilterType] = useState('all');
+  const [showHistory, setShowHistory] = useState(false);
+
+  useEffect(() => {
+    if (showHistory) {
+      loadTransactions();
+    }
+  }, [showHistory, filterType]);
+
+  const loadTransactions = async () => {
+    try {
+      setLoading(true);
+      const typeFilter = filterType === 'all' ? null : filterType;
+      const response = await getCreditHistory(100, typeFilter);
+      setTransactions(response.data.transactions || []);
+    } catch (err) {
+      console.error('Error loading transactions:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getTypeLabel = (type) => {
+    const labels = {
+      'PURCHASE': 'Kupovina kredita',
+      'LEAD_PURCHASE': 'Kupovina leada',
+      'REFUND': 'Refund',
+      'BONUS': 'Bonus',
+      'SUBSCRIPTION': 'Pretplata',
+      'ADMIN_ADJUST': 'Admin prilagodba'
+    };
+    return labels[type] || type;
+  };
+
+  const getTypeColor = (type) => {
+    const colors = {
+      'PURCHASE': 'bg-green-100 text-green-800',
+      'LEAD_PURCHASE': 'bg-blue-100 text-blue-800',
+      'REFUND': 'bg-orange-100 text-orange-800',
+      'BONUS': 'bg-purple-100 text-purple-800',
+      'SUBSCRIPTION': 'bg-indigo-100 text-indigo-800',
+      'ADMIN_ADJUST': 'bg-gray-100 text-gray-800'
+    };
+    return colors[type] || 'bg-gray-100 text-gray-800';
+  };
+
+  const formatAmount = (amount) => {
+    const sign = amount >= 0 ? '+' : '';
+    return `${sign}${amount}`;
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleString('hr-HR', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  return (
+    <div className="bg-white rounded-2xl shadow-xl overflow-hidden mb-12">
+      <div className="p-8">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold text-gray-900">Povijest Transakcija</h2>
+          <button
+            onClick={() => setShowHistory(!showHistory)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            {showHistory ? 'Sakrij' : 'Prikaži'}
+          </button>
+        </div>
+
+        {showHistory && (
+          <>
+            {/* Filter */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Filtriraj po tipu:
+              </label>
+              <select
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value)}
+                className="block w-full md:w-64 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="all">Svi tipovi</option>
+                <option value="PURCHASE">Kupovina kredita</option>
+                <option value="LEAD_PURCHASE">Kupovina leada</option>
+                <option value="REFUND">Refund</option>
+                <option value="BONUS">Bonus</option>
+                <option value="SUBSCRIPTION">Pretplata</option>
+                <option value="ADMIN_ADJUST">Admin prilagodba</option>
+              </select>
+            </div>
+
+            {/* Transactions Table */}
+            {loading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+              </div>
+            ) : transactions.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <p>Nema transakcija za prikazati.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Datum
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Tip
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Opis
+                      </th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Iznos
+                      </th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Stanje nakon
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {transactions.map((tx) => (
+                      <tr key={tx.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                          {formatDate(tx.createdAt)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getTypeColor(tx.type)}`}>
+                            {getTypeLabel(tx.type)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-900">
+                          {tx.description || '-'}
+                          {tx.relatedJob && (
+                            <div className="text-xs text-gray-500 mt-1">
+                              Posao: {tx.relatedJob.title}
+                            </div>
+                          )}
+                        </td>
+                        <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-semibold ${
+                          tx.amount >= 0 ? 'text-green-600' : 'text-red-600'
+                        }`}>
+                          {formatAmount(tx.amount)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-600">
+                          {tx.balance}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* Summary */}
+            {transactions.length > 0 && (
+              <div className="mt-6 pt-6 border-t border-gray-200">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-600">
+                    Prikazano: <strong>{transactions.length}</strong> transakcija
+                    {filterType !== 'all' && ` (tip: ${getTypeLabel(filterType)})`}
+                  </span>
+                  <span className="text-gray-900 font-semibold">
+                    Ukupno stanje: {transactions[0]?.balance || 0} kredita
+                  </span>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
