@@ -578,6 +578,136 @@ export async function processLeadRefund(purchaseId, adminId, approved = true, ad
 }
 
 /**
+ * Provjerava lead purchase-ove koji su neaktivni 48h i automatski procesira refund
+ * Poziva se iz cron joba/scheduler-a
+ */
+export async function checkInactiveLeadPurchases() {
+  console.log('⏰ Provjeravam lead purchase-ove za automatski refund nakon 48h neaktivnosti...');
+  
+  const now = new Date();
+  const fortyEightHoursAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000); // 48h prije sada
+  
+  // Pronađi sve purchase-ove koji:
+  // 1. Su aktivni ili kontaktirani (ali ne konvertirani)
+  // 2. Nisu već refundirani
+  // 3. Nemaju već PENDING refund zahtjev (možda je korisnik već zatražio)
+  // 4. Su stariji od 48h
+  // Filtriranje po kontaktu će biti u memoriji (Prisma ne može lako izračunati createdAt + 48h)
+  const allActivePurchases = await prisma.leadPurchase.findMany({
+    where: {
+      status: {
+        in: ['ACTIVE', 'CONTACTED']
+      },
+      refundRequestStatus: null,
+      createdAt: {
+        lt: fortyEightHoursAgo
+      }
+    },
+    include: {
+      job: {
+        select: {
+          id: true,
+          title: true,
+          category: {
+            select: {
+              name: true
+            }
+          }
+        }
+      },
+      provider: {
+        select: {
+          id: true,
+          fullName: true,
+          email: true
+        }
+      }
+    }
+  });
+
+  // Filtriraj u memoriji - purchase je neaktivan ako:
+  // - Prošlo je 48h od kupnje (createdAt)
+  // - I nije kontaktiran unutar 48h od kupnje (contactedAt je null ILI contactedAt - createdAt > 48h)
+  const trulyInactive = allActivePurchases.filter(purchase => {
+    const purchaseAge = now.getTime() - purchase.createdAt.getTime();
+    const hoursSincePurchase = purchaseAge / (1000 * 60 * 60);
+    
+    // Mora biti stariji od 48h
+    if (hoursSincePurchase < 48) {
+      return false;
+    }
+
+    // Ako nikad nije kontaktiran, sigurno je neaktivan
+    if (!purchase.contactedAt) {
+      return true;
+    }
+
+    // Ako je kontaktiran, provjeri je li kontakt bio unutar 48h od kupnje
+    const contactDelay = purchase.contactedAt.getTime() - purchase.createdAt.getTime();
+    const hoursBeforeContact = contactDelay / (1000 * 60 * 60);
+    
+    // Ako je kontaktiran nakon 48h od kupnje, smatra se neaktivnim (nije kontaktirao unutar 48h)
+    // Ako je kontaktiran unutar 48h, ne smatra se neaktivnim
+    return hoursBeforeContact >= 48;
+  });
+
+  console.log(`   Pronađeno ${trulyInactive.length} neaktivnih purchase-ova (stariji od 48h bez kontakta)`);
+
+  let refundedCount = 0;
+  let errorCount = 0;
+
+  for (const purchase of trulyInactive) {
+    try {
+      console.log(`   🔄 Automatski refund za purchase ${purchase.id} (lead: ${purchase.job.title})`);
+      
+      // Kreiraj refund zahtjev prvo (da ima isti workflow)
+      await prisma.leadPurchase.update({
+        where: { id: purchase.id },
+        data: {
+          refundRequestStatus: 'PENDING',
+          refundRequestedAt: new Date(),
+          refundReason: 'Automatski refund - 48h neaktivnosti (provider nije kontaktirao klijenta unutar 48h)'
+        }
+      });
+
+      // Procesiraj refund (odobri i izvrši) - koristimo funkciju iz istog modula
+      await processLeadRefund(
+        purchase.id,
+        'SYSTEM_AUTO_REFUND', // Poseban admin ID za automatske refundove
+        true, // Odobri
+        'Automatski refund - 48h neaktivnosti'
+      );
+
+      // Kreiraj notifikaciju za providera
+      await prisma.notification.create({
+        data: {
+          userId: purchase.providerId,
+          type: 'SYSTEM',
+          title: 'Automatski refund - 48h neaktivnosti',
+          message: `Lead "${purchase.job.title}" je automatski refundiran jer niste kontaktirali klijenta unutar 48h od kupnje. ${purchase.creditsSpent} kredita je vraćeno na vaš račun.`,
+          jobId: purchase.jobId
+        }
+      });
+
+      refundedCount++;
+      console.log(`   ✅ Refund procesiran za purchase ${purchase.id}`);
+    } catch (error) {
+      errorCount++;
+      console.error(`   ❌ Greška pri refund-u purchase ${purchase.id}:`, error.message);
+      // Nastavi s drugim purchase-ovima
+    }
+  }
+
+  console.log(`✅ Provjera neaktivnih purchase-ova završena: ${refundedCount} refund-ova procesirano, ${errorCount} grešaka`);
+  
+  return {
+    checked: trulyInactive.length,
+    refunded: refundedCount,
+    errors: errorCount
+  };
+}
+
+/**
  * Ažuriraj ROI statistiku providera
  */
 async function updateProviderROI(providerId, updates) {

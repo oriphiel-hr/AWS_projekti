@@ -173,7 +173,7 @@ const Documentation = () => {
         { name: "Fallback na interne kredite ako Stripe refund ne uspije", implemented: true },
         { name: "Povrat novca za pretplate (refund subscription payment)", implemented: true },
         { name: "Admin odobravanje refund-a", implemented: true },
-        { name: "Automatski refund nakon 48h neaktivnosti", implemented: false }
+        { name: "Automatski refund nakon 48h neaktivnosti", implemented: true }
       ]
     },
     {

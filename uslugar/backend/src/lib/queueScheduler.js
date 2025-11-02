@@ -3,10 +3,12 @@
  * 
  * Pokreće se kao dio glavnog servera
  * Provjerava istekle leadove svaki sat
+ * Provjerava neaktivne lead purchase-ove svaki sat (automatski refund nakon 48h)
  */
 
 import cron from 'node-cron'
 import { checkExpiredOffers } from './leadQueueManager.js'
+import { checkInactiveLeadPurchases } from '../services/lead-service.js'
 
 export function startQueueScheduler() {
   console.log('⏰ Starting Queue Scheduler...')
@@ -18,7 +20,12 @@ export function startQueueScheduler() {
     console.log('='.repeat(50))
     
     try {
+      // Provjeri istekle ponude u queueu
       await checkExpiredOffers()
+      
+      // Provjeri neaktivne lead purchase-ove (automatski refund nakon 48h)
+      await checkInactiveLeadPurchases()
+      
       console.log('✅ Scheduled check completed')
     } catch (error) {
       console.error('❌ Scheduled check failed:', error)
@@ -35,6 +42,7 @@ export function startQueueScheduler() {
   
   console.log('✅ Queue Scheduler started successfully')
   console.log('   - Expired offers check: Every hour at :00')
+  console.log('   - Inactive lead purchases check (48h auto-refund): Every hour at :00')
   console.log('   - Monitor heartbeat: Every 15 minutes')
 }
 
