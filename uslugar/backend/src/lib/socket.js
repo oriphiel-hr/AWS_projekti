@@ -76,7 +76,13 @@ export const initSocket = (httpServer) => {
     // Send message
     socket.on('send-message', async (data) => {
       try {
-        const { roomId, content } = data;
+        const { roomId, content = '', attachments = [] } = data;
+
+        // Validate: mora biti ili content ili attachments
+        if (!content.trim() && (!attachments || attachments.length === 0)) {
+          socket.emit('error', 'Message must have content or attachments');
+          return;
+        }
 
         // Verify user has access to this room
         const room = await prisma.chatRoom.findFirst({
@@ -96,7 +102,8 @@ export const initSocket = (httpServer) => {
         // Save message to database
         const message = await prisma.chatMessage.create({
           data: {
-            content,
+            content: content.trim() || '', // Može biti prazan ako su samo slike
+            attachments: Array.isArray(attachments) ? attachments : [],
             senderId: socket.userId,
             roomId
           },

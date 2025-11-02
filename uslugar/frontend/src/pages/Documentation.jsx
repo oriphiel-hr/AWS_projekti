@@ -106,7 +106,7 @@ const Documentation = () => {
         { name: "Real-time chat između korisnika i pružatelja", implemented: true },
         { name: "Chat sobe za svaki posao", implemented: true },
         { name: "Povijest poruka", implemented: true },
-        { name: "Slanje slika u chatu", implemented: false },
+        { name: "Slanje slika u chatu", implemented: true },
         { name: "Notifikacije za nove poruke", implemented: true },
         { name: "Status poruke (poslana, pročitana)", implemented: false }
       ]

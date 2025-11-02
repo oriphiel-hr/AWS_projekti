@@ -408,13 +408,14 @@ model ChatRoom {
 }
 
 model ChatMessage {
-  id        String   @id @default(cuid())
-  content   String
-  sender    User     @relation("senderMessages", fields: [senderId], references: [id], onDelete: Cascade)
-  senderId  String
-  room      ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  roomId    String
-  createdAt DateTime @default(now())
+  id         String    @id @default(cuid())
+  content    String    // Tekst poruke (može biti prazan ako su samo slike)
+  attachments String[] @default([]) // URL-ovi priloženih slika
+  sender     User      @relation("senderMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  senderId   String
+  room       ChatRoom  @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  roomId     String
+  createdAt  DateTime  @default(now())
 }
 
 // Pretplate (za provajdere usluga)

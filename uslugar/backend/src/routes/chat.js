@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { prisma } from '../lib/prisma.js';
 import { auth } from '../lib/auth.js';
+import { upload, getImageUrl } from '../lib/upload.js';
 
 const r = Router();
 
