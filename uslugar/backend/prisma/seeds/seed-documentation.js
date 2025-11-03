@@ -1050,7 +1050,32 @@ Registracija kao pružatelj usluga omogućava vam pristup ekskluzivnim leadovima
 - To omogućava da istovremeno tražite usluge i nudite svoje usluge
 
 Registracija kao pružatelj usluga je jednostavna - za nekoliko minuta možete početi primati ekskluzivne leadove i rasti svoj posao!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/ProviderRegister.jsx\`
+- **Route:** \`/register-provider\`
+- **State management:** useState hooks
+- **Form validacija:** Email format, password strength, OIB validacija
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/auth.js\`
+- **Endpoint:** \`POST /api/auth/register\`
+- **Prisma:** Kreiranje User zapisa (role: 'PROVIDER') + ProviderProfile
+- **Validacija:** Joi ili express-validator, OIB algoritamska provjera
+
+### Baza podataka:
+- **Tablice:** \`User\`, \`ProviderProfile\`, \`LegalStatus\`, \`Subscription\`
+- **Relacije:** User → ProviderProfile, User → LegalStatus, User → Subscription (trial)
+- **Polja:** \`email\`, \`passwordHash\`, \`fullName\`, \`role: 'PROVIDER'\`, \`taxId\`, \`companyName\`
+- **Indeksi:** \`@@unique([email, role])\`, \`@@index([role])\`
+
+### API pozivi:
+- \`POST /api/auth/register\` - Body: \`{ email, password, fullName, role: 'PROVIDER', legalStatusId, taxId, companyName?, phone? }\`
+- Automatski kreira ProviderProfile i Subscription (trial period 7 dana, 5 kredita)
+- Generira \`verificationToken\` i šalje email verifikaciju
+      `
     },
     "Email verifikacija": {
       implemented: true,
@@ -1210,7 +1235,32 @@ Kada vidite posao koji vas zanima, možete korisniku poslati ponudu s cijenom i 
 - **Odbijena** - Korisnik je odbio vašu ponudu (može biti iz različitih razloga)
 
 Slanje ponuda je besplatno i jednostavno - pošaljite konkurentnu ponudu i povećajte svoje šanse za dobivanje posla!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/JobDetails.jsx\` (offer form)
+- **Route:** \`/jobs/:id\`
+- **State management:** useState hooks
+- **Form validacija:** Amount > 0, message required
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/offers.js\`
+- **Endpoint:** \`POST /api/offers\`
+- **Middleware:** \`auth(true)\` - zahtjeva autentifikaciju
+- **Prisma:** Kreiranje Offer zapisa
+
+### Baza podataka:
+- **Tablice:** \`Offer\`, \`Job\`, \`User\`
+- **Relacije:** Offer → Job, Offer → User (pružatelj)
+- **Polja:** \`jobId\`, \`providerId\`, \`amount\`, \`message\`, \`estimatedDays\`, \`isNegotiable\`, \`status\`
+- **Indeksi:** \`@@index([jobId])\`, \`@@index([providerId])\`, \`@@index([status])\`
+
+### API pozivi:
+- \`POST /api/offers\` - Body: \`{ jobId, amount, message, estimatedDays?, isNegotiable?: boolean }\`
+- Vraća: \`{ offer: { id, amount, status: 'NA_CEKANJU', ... } }\`
+- Automatski šalje notifikaciju korisniku koji je objavio posao
+      `
     },
     "Ocjenjivanje pružatelja usluga (1-5 zvjezdica)": {
       implemented: true,
@@ -1256,7 +1306,32 @@ Nakon što pružatelj završi posao, možete ga ocijeniti od 1 do 5 zvjezdica i 
 - Gradi povjerenje u platformu
 
 Ocjenjivanje pružatelja je važan dio sustava - vaša ocjena pomaže drugim korisnicima i potiče kvalitetu usluga!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/components/ReviewForm.jsx\` ili \`JobDetails.jsx\`
+- **Route:** \`/jobs/:id/review\` ili inline u job details
+- **State management:** useState hooks
+- **Form validacija:** Rating 1-5, comment optional
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/reviews.js\`
+- **Endpoint:** \`POST /api/reviews\`
+- **Middleware:** \`auth(true)\` - zahtjeva autentifikaciju
+- **Prisma:** Kreiranje Review zapisa, update prosječne ocjene ProviderProfile
+
+### Baza podataka:
+- **Tablice:** \`Review\`, \`Job\`, \`User\`, \`ProviderProfile\`
+- **Relacije:** Review → Job, Review → User (reviewer), Review → User (reviewed - pružatelj)
+- **Polja:** \`jobId\`, \`reviewerId\`, \`reviewedUserId\`, \`rating\` (1-5), \`comment\`
+- **Indeksi:** \`@@unique([jobId, reviewerId])\`, \`@@index([reviewedUserId])\`, \`@@index([rating])\`
+
+### API pozivi:
+- \`POST /api/reviews\` - Body: \`{ jobId, rating, comment? }\`
+- Automatski izračunava prosječnu ocjenu i ažurira ProviderProfile.averageRating
+- Sprečava duplikate - samo jedna recenzija po poslu
+      `
     },
     "Real-time chat između korisnika i pružatelja": {
       implemented: true,
@@ -1300,7 +1375,34 @@ Chat sustav omogućava direktnu komunikaciju između korisnika i pružatelja oko
 - Povijest razgovora pomaže u slučaju sporova
 
 Real-time chat čini komunikaciju brzom i jednostavnom - možete razgovarati s korisnicima ili pružateljima direktno na platformi!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/components/ChatRoom.jsx\` ili \`ChatWindow.jsx\`
+- **Route:** \`/jobs/:id/chat\` ili modal/popup
+- **State management:** useState, useEffect hooks
+- **Real-time:** WebSocket ili Server-Sent Events (SSE)
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/chat.js\`
+- **Endpoints:** \`GET /api/chat/rooms/:jobId\`, \`POST /api/chat/messages\`, \`GET /api/chat/messages/:roomId\`
+- **WebSocket:** \`socket.io\` ili \`ws\` za real-time komunikaciju
+- **Middleware:** \`auth(true)\` - zahtjeva autentifikaciju
+- **Prisma:** ChatRoom i ChatMessage modele
+
+### Baza podataka:
+- **Tablice:** \`ChatRoom\`, \`ChatMessage\`, \`User\`, \`Job\`
+- **Relacije:** ChatRoom → Job, ChatRoom → User[], ChatMessage → ChatRoom, ChatMessage → User
+- **Polja:** \`jobId\`, \`participants\` (User[]), \`messages\`, \`messageText\`, \`senderId\`, \`readAt\`, \`imageUrl?\`
+- **Indeksi:** \`@@index([jobId])\`, \`@@index([senderId])\`, \`@@index([createdAt])\`
+
+### API pozivi:
+- \`GET /api/chat/rooms/:jobId\` - Dohvaća ili kreira chat sobu za posao
+- \`POST /api/chat/messages\` - Body: \`{ roomId, message, imageUrl? }\` - Slanje poruke
+- \`GET /api/chat/messages/:roomId\` - Povijest poruka u sobi
+- WebSocket: \`socket.on('message', ...)\` - Real-time primanje poruka
+      `
     },
     "Prijava korisnika": {
       implemented: true,
@@ -1332,7 +1434,32 @@ Prijava omogućava vam pristup vašem računu i svim funkcionalnostima platforme
 - Nemate potrebe za ponovnom prijavom svaki put kada otvorite platformu
 
 Prijava je jednostavna i brza - za nekoliko sekundi imate pristup svojem računu!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/Login.jsx\`
+- **Route:** \`/login\`
+- **State management:** useState hooks
+- **Form validacija:** Email format, password required
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/auth.js\`
+- **Endpoint:** \`POST /api/auth/login\`
+- **Prisma:** Query User zapisa, provjera passwordHash (bcrypt)
+- **JWT:** Generira JWT token nakon uspješne prijave
+
+### Baza podataka:
+- **Tablice:** \`User\`
+- **Polja:** \`email\`, \`passwordHash\`, \`role\`, \`isVerified\`
+- **Indeksi:** \`@@unique([email, role])\`
+
+### API pozivi:
+- \`POST /api/auth/login\` - Body: \`{ email, password, rememberMe?: boolean }\`
+- Query \`User\` gdje \`email = email\` i \`role\` (opcionalno)
+- Provjera \`passwordHash\` s \`bcrypt.compare()\`
+- Generira JWT token i vraća: \`{ token, user: { id, email, fullName, role } }\`
+      `
     },
     "Resetiranje lozinke": {
       implemented: true,
@@ -1361,7 +1488,32 @@ Ako zaboravite lozinku ili želite promijeniti postojeću, možete je resetirati
 - Osigurava da samo vi imate pristup vašem računu
 
 Resetiranje lozinke je sigurno i jednostavno - samo slijedite upute u emailu!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/ForgotPassword.jsx\` i \`ResetPassword.jsx\`
+- **Route:** \`/forgot-password\`, \`/reset-password/:token\`
+- **State management:** useState hooks
+- **Form validacija:** Email format, password strength, password confirmation match
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/auth.js\`
+- **Endpoints:** \`POST /api/auth/forgot-password\`, \`POST /api/auth/reset-password/:token\`
+- **Prisma:** Update User zapisa (\`resetToken\`, \`resetTokenExpires\`, \`passwordHash\`)
+- **Validacija:** Provjera \`resetTokenExpires\` (1h expiry)
+
+### Baza podataka:
+- **Tablice:** \`User\`
+- **Polja:** \`resetToken\`, \`resetTokenExpires\`, \`passwordHash\`
+- **Indeksi:** \`@@unique([resetToken])\`
+
+### API pozivi:
+- \`POST /api/auth/forgot-password\` - Body: \`{ email }\` - Generira resetToken i šalje email
+- \`POST /api/auth/reset-password/:token\` - Body: \`{ password }\` - Reset lozinke
+- Query \`User\` gdje \`resetToken = token\` i \`resetTokenExpires > now()\`
+- Update: \`passwordHash = bcrypt.hash(password)\`, \`resetToken = null\`, \`resetTokenExpires = null\`
+      `
     },
     "Zaboravljena lozinka": {
       implemented: true,
@@ -1389,7 +1541,32 @@ Ako ste zaboravili lozinku, ne morate izgubiti pristup svom računu - možete kr
 - Nakon što resetirate lozinku, možete se prijaviti odmah
 
 Ako zaboravite lozinku, resetirajte je putem emaila - jednostavno i sigurno!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/ForgotPassword.jsx\`
+- **Route:** \`/forgot-password\`
+- **State management:** useState hooks
+- **Form validacija:** Email format
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/auth.js\`
+- **Endpoint:** \`POST /api/auth/forgot-password\`
+- **Prisma:** Update User zapisa (\`resetToken\`, \`resetTokenExpires\`)
+- **Email:** Šalje email s linkom za reset
+
+### Baza podataka:
+- **Tablice:** \`User\`
+- **Polja:** \`resetToken\`, \`resetTokenExpires\`
+- **Indeksi:** \`@@unique([resetToken])\`
+
+### API pozivi:
+- \`POST /api/auth/forgot-password\` - Body: \`{ email }\`
+- Query \`User\` gdje \`email = email\`
+- Generira \`resetToken\` i \`resetTokenExpires\` (1h expiry)
+- Šalje email s linkom: \`/reset-password/:token\`
+      `
     },
     "51 kategorija usluga": {
       implemented: true,
@@ -1425,7 +1602,32 @@ Platforma pokriva širok spektar usluga kroz 51 različitu kategoriju koje se pr
 - Možete biti aktivni u više kategorija odjednom
 
 51 kategorija usluga osigurava da možete pronaći ili ponuditi gotovo svaku vrstu usluge!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/components/CategoryList.jsx\` ili slično
+- **Route:** \`/categories\` ili dropdown/selector
+- **State management:** useState, useEffect hooks
+- **API poziv:** Dohvat kategorija iz baze
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/categories.js\`
+- **Endpoint:** \`GET /api/categories\`
+- **Prisma:** Query \`Category\` modela
+- **Filtri:** \`isActive: true\`, sort po \`order\`
+
+### Baza podataka:
+- **Tablice:** \`Category\`
+- **Polja:** \`id\`, \`name\`, \`description\`, \`emoji\`, \`order\`, \`isActive\`, \`parentId?\`
+- **Relacije:** Category → Category (parent-child za hijerarhiju)
+- **Indeksi:** \`@@index([isActive])\`, \`@@index([parentId])\`, \`@@index([order])\`
+
+### API pozivi:
+- \`GET /api/categories\` - Vraća sve aktivne kategorije
+- \`GET /api/categories/:id\` - Vraća detalje kategorije
+- Kategorije se učitavaju dinamički iz baze (ne hardkodirano)
+      `
     },
     "ROI dashboard": {
       implemented: true,
@@ -2538,7 +2740,31 @@ Platforma koristi geolokaciju (širina i dužina) za precizno određivanje pozic
 - Planirate najefikasnije rute
 
 Geolokacija čini pronalaženje i uparivanje poslova preciznijim i efikasnijim!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/components/JobForm.jsx\` (location picker)
+- **Library:** Google Maps API ili OpenStreetMap za kartu
+- **State management:** useState hooks za latitude/longitude
+- **Auto-complete:** Geocoding API za pretvaranje adrese u koordinate
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/jobs.js\`
+- **Endpoint:** \`POST /api/jobs\`, \`PUT /api/jobs/:id\`
+- **Prisma:** Spremanje \`latitude\` i \`longitude\` u \`Job\` model
+- **Validacija:** Provjera da koordinate su unutar HR ili validnog raspona
+
+### Baza podataka:
+- **Tablice:** \`Job\`
+- **Polja:** \`latitude\` (Decimal), \`longitude\` (Decimal), \`address\`, \`city\`
+- **Indeksi:** \`@@index([latitude, longitude])\` za geolokacijsko pretraživanje
+
+### API pozivi:
+- \`POST /api/jobs\` - Body: \`{ ..., latitude, longitude, address, city }\`
+- Geocoding: Integracija s Google Maps Geocoding API ili OpenStreetMap Nominatim
+- Query poslova po lokaciji: \`GET /api/jobs?lat=45.123&lng=15.456&radius=10\` (radius u km)
+      `
     },
     "Slike posla": {
       implemented: true,
@@ -2576,7 +2802,32 @@ Prilikom objavljivanja posla, možete priložiti slike koje prikazuju situaciju 
 - Označite problematična područja ako je moguće
 
 Slike posla značajno poboljšavaju komunikaciju i kvalitetu ponuda!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/components/JobForm.jsx\` (image upload)
+- **Library:** react-dropzone ili HTML5 File API
+- **State management:** useState hooks za image files
+- **Preview:** Prikaz slika prije upload-a
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/jobs.js\`, \`uslugar/backend/src/routes/upload.js\`
+- **Endpoint:** \`POST /api/jobs\`, \`POST /api/upload/images\`
+- **Storage:** AWS S3 ili Cloudinary za čuvanje slika
+- **Validacija:** Provjera tipa fajla (jpeg, png, webp), maksimalna veličina (npr. 5MB)
+
+### Baza podataka:
+- **Tablice:** \`JobImage\`, \`Job\`
+- **Relacije:** JobImage → Job
+- **Polja:** \`jobId\`, \`imageUrl\`, \`order\`, \`altText?\`
+- **Indeksi:** \`@@index([jobId])\`, \`@@index([order])\`
+
+### API pozivi:
+- \`POST /api/upload/images\` - Multipart/form-data, vraća \`imageUrl\`(s) (S3/Cloudinary URL)
+- \`POST /api/jobs\` - Body: \`{ ..., images: [imageUrl1, imageUrl2, ...] }\`
+- \`GET /api/jobs/:id\` - Vraća \`job.images\` array s URL-ovima slika
+      `
     },
     "Status posla (OTVOREN, U TIJEKU, ZAVRŠEN, OTKAZAN)": {
       implemented: true,
@@ -2607,7 +2858,30 @@ Svaki posao na platformi ima status koji pokazuje trenutno stanje posla i kako n
 - Jasna komunikacija o tome što se događa s poslom
 
 Status posla osigurava transparentnost i jasnu komunikaciju o napretku posla!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/components/JobCard.jsx\`, \`JobDetails.jsx\`
+- **State management:** useState hooks
+- **Badge/Pill:** Prikaz statusa s bojama (npr. zeleno za ZAVRŠEN, plavo za U TIJEKU)
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/jobs.js\`
+- **Endpoint:** \`PUT /api/jobs/:id/status\`, \`POST /api/offers/:id/accept\` (automatski mijenja status)
+- **Prisma:** Enum \`JobStatus\` s vrijednostima: \`OTVOREN\`, \`U_TIJEKU\`, \`ZAVRŠEN\`, \`OTKAZAN\`
+- **Validacija:** Provjera prijelaza statusa (npr. ne može direktno OTVOREN → ZAVRŠEN)
+
+### Baza podataka:
+- **Tablice:** \`Job\`
+- **Polja:** \`status\` (Enum: JobStatus)
+- **Indeksi:** \`@@index([status])\` za filtriranje
+
+### API pozivi:
+- \`PUT /api/jobs/:id/status\` - Body: \`{ status: 'ZAVRŠEN' }\`
+- \`POST /api/offers/:id/accept\` - Automatski mijenja Job.status na \`U_TIJEKU\`
+- \`GET /api/jobs?status=OTVOREN\` - Filtriranje poslova po statusu
+      `
     },
     "Hitnost posla (NORMALNA, HITNA)": {
       implemented: true,
@@ -2641,7 +2915,30 @@ Prilikom objavljivanja posla, možete označiti koliko je posao hitan - to poma�
 - Odlučujete možete li prihvatiti hitan posao
 
 Hitnost posla pomaže u boljem uparivanju i postavljanju realnih očekivanja!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/components/JobForm.jsx\`
+- **UI:** Radio button ili dropdown za odabir hitnosti
+- **Badge:** Prikaz "HITNA" badge na kartici posla ako je hitan
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/jobs.js\`
+- **Endpoint:** \`POST /api/jobs\`, \`PUT /api/jobs/:id\`
+- **Prisma:** Enum \`Urgency\` ili Boolean \`isUrgent\`
+- **Default:** \`NORMALNA\` ako nije navedeno
+
+### Baza podataka:
+- **Tablice:** \`Job\`
+- **Polja:** \`urgency\` (Enum: \`NORMALNA\`, \`HITNA\`) ili \`isUrgent\` (Boolean)
+- **Indeksi:** \`@@index([urgency])\` za filtriranje/sortiranje hitnih poslova
+
+### API pozivi:
+- \`POST /api/jobs\` - Body: \`{ ..., urgency: 'HITNA' }\`
+- \`GET /api/jobs?urgency=HITNA\` - Filtriranje samo hitnih poslova
+- Sortiranje: \`GET /api/jobs?sort=urgency\` - Hitni poslovi prvo
+      `
     },
     "Veličina posla (MALA, SREDNJA, VELIKA)": {
       implemented: true,
@@ -2676,7 +2973,30 @@ Prilikom objavljivanja posla, možete označiti veličinu posla - to pomaže pru
 - Odlučujete možete li se uklopiti u raspored
 
 Veličina posla olakšava komunikaciju i postavljanje realnih očekivanja!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/components/JobForm.jsx\`
+- **UI:** Radio button ili dropdown za odabir veličine
+- **Badge:** Prikaz ikone/oznake veličine na kartici posla
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/jobs.js\`
+- **Endpoint:** \`POST /api/jobs\`, \`PUT /api/jobs/:id\`
+- **Prisma:** Enum \`JobSize\` s vrijednostima: \`MALA\`, \`SREDNJA\`, \`VELIKA\`
+- **Default:** \`SREDNJA\` ako nije navedeno
+
+### Baza podataka:
+- **Tablice:** \`Job\`
+- **Polja:** \`size\` (Enum: JobSize)
+- **Indeksi:** \`@@index([size])\` za filtriranje po veličini
+
+### API pozivi:
+- \`POST /api/jobs\` - Body: \`{ ..., size: 'VELIKA' }\`
+- \`GET /api/jobs?size=MALA\` - Filtriranje po veličini
+- Kombinirano filtriranje: \`GET /api/jobs?category=Elektrotehnika&size=SREDNJA\`
+      `
     },
     "Rok izvršenja": {
       implemented: true,
@@ -2712,7 +3032,31 @@ Prilikom objavljivanja posla, možete navesti željeni rok izvršenja - datum do
 - Dogovorite se na rok koji odgovara obje strane
 
 Rok izvršenja pomaže u planiranju i postavljanju realnih očekivanja!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/components/JobForm.jsx\`
+- **UI:** Date picker za odabir datuma
+- **Validacija:** Provjera da datum nije u prošlosti
+- **Prikaz:** Formatiranje datuma (npr. "Do 15. siječnja 2025")
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/jobs.js\`
+- **Endpoint:** \`POST /api/jobs\`, \`PUT /api/jobs/:id\`
+- **Prisma:** \`deadline\` (DateTime?)
+- **Validacija:** Provjera da deadline nije u prošlosti, provjera formata
+
+### Baza podataka:
+- **Tablice:** \`Job\`
+- **Polja:** \`deadline\` (DateTime?, nullable)
+- **Indeksi:** \`@@index([deadline])\` za sortiranje po rokovima
+
+### API pozivi:
+- \`POST /api/jobs\` - Body: \`{ ..., deadline: '2025-02-15T00:00:00Z' }\`
+- \`GET /api/jobs?deadlineBefore=2025-02-01\` - Poslovi s rokom prije određenog datuma
+- Sortiranje: \`GET /api/jobs?sort=deadline\` - Najbliži rokovi prvo
+      `
     },
     "Filtriranje po kategoriji, lokaciji, budžetu": {
       implemented: true,
@@ -2748,7 +3092,31 @@ Napredno filtriranje omogućava vam da kombinirate više filtera za precizno pro
 - Fokus na relevantne prilike
 
 Filtriranje po kategoriji, lokaciji i budžetu čini pronalaženje točno onoga što tražite jednostavnijim!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/components/JobFilters.jsx\`, \`ProviderFilters.jsx\`
+- **State management:** useState hooks za filtere
+- **URL params:** Query parametri u URL-u za shareable filtere
+- **Debouncing:** Debounce za search input kako ne bi bilo previše API poziva
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/jobs.js\`, \`uslugar/backend/src/routes/providers.js\`
+- **Endpoint:** \`GET /api/jobs\`, \`GET /api/providers\`
+- **Query params:** \`category\`, \`location\`, \`minBudget\`, \`maxBudget\`, \`sort\`
+- **Prisma:** Dinamička where klauzula ovisno o filterima
+
+### Baza podataka:
+- **Tablice:** \`Job\`, \`ProviderProfile\`, \`Category\`
+- **Polja:** \`categoryId\`, \`city\`, \`budgetMin\`, \`budgetMax\`
+- **Indeksi:** \`@@index([categoryId])\`, \`@@index([city])\`, \`@@index([budgetMin, budgetMax])\`
+
+### API pozivi:
+- \`GET /api/jobs?category=elektrotehnika&city=Zagreb&minBudget=5000&maxBudget=10000\`
+- \`GET /api/providers?category=elektrotehnika&city=Split&sort=rating\`
+- Kombinirani filteri se primjenjuju AND logikom
+      `
     },
     "Pregled detalja posla": {
       implemented: true,
@@ -2788,7 +3156,30 @@ Klikom na posao otvara se stranica s detaljima gdje možete vidjeti sve informac
 - Ocjenjivanje nakon završetka
 
 Pregled detalja posla omogućava vam potpunu sliku o poslu i donošenje informirane odluke!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/JobDetails.jsx\`
+- **Route:** \`/jobs/:id\`
+- **State management:** useState, useEffect hooks
+- **Dohvat podataka:** API poziv za dohvat svih detalja posla
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/jobs.js\`
+- **Endpoint:** \`GET /api/jobs/:id\`
+- **Prisma:** Query \`Job\` s \`include\` za sve relacije (offers, images, category, user, reviews)
+- **Optimizacija:** Eager loading svih potrebnih podataka u jednom query-ju
+
+### Baza podataka:
+- **Tablice:** \`Job\`, \`Offer\`, \`JobImage\`, \`Category\`, \`User\`, \`Review\`
+- **Relacije:** Job → Category, Job → User, Job → Offer[], Job → JobImage[], Job → Review[]
+- **Polja:** Svi polja iz \`Job\` modela + nested objekti
+
+### API pozivi:
+- \`GET /api/jobs/:id\` - Vraća kompletan objekt posla sa svim relacijama
+- Response: \`{ job: { id, title, description, images: [...], offers: [...], category: {...}, user: {...}, ... } }\`
+      `
     },
     "Iznos ponude": {
       implemented: true,
@@ -2819,7 +3210,29 @@ Kada šaljete ponudu za posao, unesete iznos - cijenu koju tražite za obavljanj
 - Možete pregovarati o konačnoj cijeni
 
 Iznos ponude je vaš način da komuniciramo cjenovno očekivanje i privučete korisnika!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/components/OfferForm.jsx\`
+- **State management:** useState hooks
+- **Validacija:** Provjera da je iznos > 0, formatiranje prikaza (npr. "5.000 kn")
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/offers.js\`
+- **Endpoint:** \`POST /api/offers\`
+- **Prisma:** Spremanje \`amount\` (Decimal ili Int) u \`Offer\` model
+- **Validacija:** Provjera da je iznos pozitivan, da nije prevelik (npr. max 1.000.000)
+
+### Baza podataka:
+- **Tablice:** \`Offer\`
+- **Polja:** \`amount\` (Decimal ili Int), \`jobId\`, \`providerId\`
+- **Indeksi:** \`@@index([amount])\` za sortiranje po cijeni
+
+### API pozivi:
+- \`POST /api/offers\` - Body: \`{ jobId, amount: 5000, message, isNegotiable: false }\`
+- Vraća: \`{ offer: { id, amount, status: 'NA_CEKANJU', ... } }\`
+      `
     },
     "Poruka uz ponudu": {
       implemented: true,
@@ -2854,7 +3267,29 @@ Uz iznos ponude, možete priložiti poruku u kojoj objašnjavate svoj pristup i 
 - Poruka je vidljiva u svim ponudama za posao
 
 Poruka uz ponudu je vaša prilika da se istaknete i pokažete profesionalnost!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/components/OfferForm.jsx\`
+- **UI:** Textarea za unos poruke
+- **Validacija:** Maksimalna duljina (npr. 1000 karaktera), optional ali preporučuje se
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/offers.js\`
+- **Endpoint:** \`POST /api/offers\`
+- **Prisma:** Spremanje \`message\` (String?) u \`Offer\` model
+- **Validacija:** Max length provjera, sanitizacija HTML-a ako je potrebno
+
+### Baza podataka:
+- **Tablice:** \`Offer\`
+- **Polja:** \`message\` (String?, nullable)
+- **Nema posebnih indeksa** za message (tekstualno polje)
+
+### API pozivi:
+- \`POST /api/offers\` - Body: \`{ jobId, amount, message: "Vaša poruka...", ... }\`
+- \`GET /api/jobs/:id/offers\` - Vraća sve ponude uključujući message za svaku
+      `
     },
     "Status ponude (NA ČEKANJU, PRIHVAĆENA, ODBIJENA)": {
       implemented: true,
@@ -2890,7 +3325,30 @@ Svaka ponuda koju pošaljete ima status koji pokazuje kako korisnik reagira na v
 - Mogućnost praćenja svih vaših ponuda na jednom mjestu
 
 Status ponude daje vam uvid u napredak vaših ponuda i omogućava planiranje!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/components/OfferCard.jsx\`, \`MyOffers.jsx\`
+- **Badge/Pill:** Prikaz statusa s bojama (npr. žuto za NA_CEKANJU, zeleno za PRIHVAĆENA)
+- **Auto-refresh:** Polling ili WebSocket za real-time ažuriranje statusa
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/offers.js\`
+- **Endpoint:** \`PUT /api/offers/:id/accept\`, \`PUT /api/offers/:id/reject\`
+- **Prisma:** Enum \`OfferStatus\` s vrijednostima: \`NA_CEKANJU\`, \`PRIHVAĆENA\`, \`ODBIJENA\`
+- **Automatizacija:** Kada se ponuda prihvati, automatski se odbijaju sve ostale ponude za taj posao
+
+### Baza podataka:
+- **Tablice:** \`Offer\`
+- **Polja:** \`status\` (Enum: OfferStatus)
+- **Indeksi:** \`@@index([status])\`, \`@@index([jobId, status])\` za filtriranje
+
+### API pozivi:
+- \`PUT /api/offers/:id/accept\` - Mijenja status na PRIHVAĆENA, automatski odbija ostale
+- \`PUT /api/offers/:id/reject\` - Mijenja status na ODBIJENA
+- \`GET /api/offers?status=NA_CEKANJU\` - Filtriranje ponuda po statusu
+      `
     },
     "Mogućnost pregovaranja o cijeni": {
       implemented: true,
@@ -2926,7 +3384,30 @@ Ako iznos ponude nije idealan, možete pregovarati o cijeni kako biste postigli 
 - Osobna komunikacija gradi povjerenje
 
 Mogućnost pregovaranja omogućava vam postizanje dogovora koji odgovara svima!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/components/ChatRoom.jsx\`
+- **Chat integracija:** Pregovaranje se odvija kroz chat sistem
+- **UI:** Mogućnost slanja ponuda/kontraponuda kroz chat interfejs
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/offers.js\`, \`uslugar/backend/src/routes/chat.js\`
+- **Endpoint:** \`PUT /api/offers/:id\` (ažuriranje ponude), \`POST /api/chat/messages\`
+- **Prisma:** Update \`Offer.amount\` ili kreiranje nove ponude s drugim iznosom
+- **Validacija:** Provjera da je novi iznos različit od originalnog
+
+### Baza podataka:
+- **Tablice:** \`Offer\`, \`ChatMessage\`
+- **Polja:** \`amount\`, \`isNegotiable\`, \`message\` u Offer, chat poruke u ChatMessage
+- **History:** Moguće čuvanje povijesti pregovora
+
+### API pozivi:
+- \`PUT /api/offers/:id\` - Body: \`{ amount: 4500 }\` - Ažuriranje iznosa ponude
+- \`POST /api/chat/messages\` - Slanje poruke s novim iznosom
+- \`GET /api/offers/:id/history\` - Povijest izmjena ponude (ako se čuva)
+      `
     },
     "Označavanje ponuda kao pregovorno": {
       implemented: true,
@@ -2951,7 +3432,29 @@ Kada šaljete ponudu, možete je označiti kao "pregovorno" - to znači da ste s
 - Više vjerojatnost da će korisnik odgovoriti
 
 Označavanje ponude kao pregovorne daje vam više fleksibilnosti u postizanju dogovora!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/components/OfferForm.jsx\`
+- **UI:** Checkbox "Pregovorno" u formi za ponudu
+- **Badge:** Prikaz badge-a "Pregovorno" na kartici ponude ako je omogućeno
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/offers.js\`
+- **Endpoint:** \`POST /api/offers\`
+- **Prisma:** Boolean polje \`isNegotiable\` u \`Offer\` modelu
+- **Default:** \`false\` ako nije navedeno
+
+### Baza podataka:
+- **Tablice:** \`Offer\`
+- **Polja:** \`isNegotiable\` (Boolean, default: false)
+- **Indeksi:** \`@@index([isNegotiable])\` za filtriranje pregovornih ponuda
+
+### API pozivi:
+- \`POST /api/offers\` - Body: \`{ jobId, amount, message, isNegotiable: true }\`
+- \`GET /api/jobs/:id/offers?negotiable=true\` - Filtriranje samo pregovornih ponuda
+      `
     },
     "Procijenjeni broj dana za izvršenje": {
       implemented: true,
@@ -2983,7 +3486,29 @@ Prilikom slanja ponude, možete navesti procijenjeni broj dana koliko vam je pot
 - Komunicirajte ako vrijeme treba prilagoditi
 
 Procijenjeni broj dana pomaže korisnicima planirati i postavlja realna očekivanja!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/components/OfferForm.jsx\`
+- **UI:** Number input za unos broja dana
+- **Validacija:** Provjera da je broj > 0, max (npr. 365 dana)
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/offers.js\`
+- **Endpoint:** \`POST /api/offers\`
+- **Prisma:** Spremanje \`estimatedDays\` (Int?) u \`Offer\` model
+- **Validacija:** Provjera da je pozitivan broj, max vrijednost
+
+### Baza podataka:
+- **Tablice:** \`Offer\`
+- **Polja:** \`estimatedDays\` (Int?, nullable)
+- **Indeksi:** \`@@index([estimatedDays])\` za sortiranje po vremenu izvršenja
+
+### API pozivi:
+- \`POST /api/offers\` - Body: \`{ jobId, amount, estimatedDays: 7, ... }\`
+- \`GET /api/jobs/:id/offers?estimatedDaysMax=5\` - Filtriranje ponuda s kraćim vremenom
+      `
     },
     "Pregled svih ponuda za posao": {
       implemented: true,
@@ -3018,7 +3543,32 @@ Kao korisnik, kada pružatelji pošalju ponude za vaš posao, vidite sve ponude 
 - Mogućnost pronalaska najbolje kombinacije cijene i kvalitete
 
 Pregled svih ponuda omogućava vam informirano donošenje odluke o odabiru pružatelja!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/JobDetails.jsx\` (offers section)
+- **State management:** useState, useEffect hooks
+- **Sorting:** Sortiranje po cijeni, vremenu, ocjeni pružatelja
+- **UI:** Lista ili grid ponuda s mogućnošću prihvatanja/odbijanja
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/offers.js\`
+- **Endpoint:** \`GET /api/jobs/:id/offers\`
+- **Prisma:** Query \`Offer\` gdje \`jobId = :id\` s include za \`provider\` (User + ProviderProfile)
+- **Sorting:** Sortiranje po \`amount\`, \`estimatedDays\`, ili \`provider.rating\`
+
+### Baza podataka:
+- **Tablice:** \`Offer\`, \`User\`, \`ProviderProfile\`
+- **Relacije:** Offer → User (provider), User → ProviderProfile
+- **Polja:** Svi polja iz Offer + nested provider info (rating, reviews count)
+- **Indeksi:** \`@@index([jobId])\` za efikasno filtriranje
+
+### API pozivi:
+- \`GET /api/jobs/:id/offers\` - Vraća sve ponude za posao s provider informacijama
+- Response: \`{ offers: [{ id, amount, message, provider: { name, rating, ... }, ... }] }\`
+- Query params: \`?sort=amount\`, \`?sort=estimatedDays\`, \`?sort=rating\`
+      `
     },
     "Prihvaćanje/odbijanje ponuda": {
       implemented: true,
@@ -3051,7 +3601,33 @@ Kada pružatelji pošalju ponude za vaš posao, možete ih prihvatiti ili odbiti
 - Jasna komunikacija o statusu ponuda
 
 Prihvaćanje ili odbijanje ponuda daje vam kontrolu nad odabiron pružatelja za vaš posao!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/JobDetails.jsx\`, \`OfferCard.jsx\`
+- **UI:** Gumb "Prihvati" i "Odbij" na kartici ponude
+- **Modal:** Opcionalni modal za unos razloga odbijanja
+- **Optimistic update:** UI se ažurira odmah prije API poziva
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/offers.js\`
+- **Endpoint:** \`PUT /api/offers/:id/accept\`, \`PUT /api/offers/:id/reject\`
+- **Prisma:** Update \`Offer.status\`, automatski odbijanje ostalih ponuda za taj posao
+- **Transakcija:** Sve se izvršava u jednoj transakciji (ACCEPT + REJECT ostalih)
+
+### Baza podataka:
+- **Tablice:** \`Offer\`, \`Job\`
+- **Polja:** \`status\` u Offer, \`status\` u Job (mijenja se u U_TIJEKU)
+- **Relacije:** Offer → Job
+- **Transakcija:** Atomic update - sve ili ništa
+
+### API pozivi:
+- \`PUT /api/offers/:id/accept\` - Accept ponude, automatski reject ostalih
+- \`PUT /api/offers/:id/reject\` - Body: \`{ reason?: string }\` - Reject ponude
+- Automatski: Update \`Job.status = 'U_TIJEKU'\` kada se ponuda prihvati
+- Notifikacije: Automatski šalje notifikacije pružateljima o statusu ponude
+      `
     },
     "Komentiranje iskustva s pružateljem": {
       implemented: true,
@@ -3086,7 +3662,29 @@ Nakon završenog posla, možete napisati komentar o svom iskustvu s pružateljem
 - Potiče kvalitetu usluga
 
 Komentiranje iskustva pomaže svima - i korisnicima i pružateljima!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/components/ReviewForm.jsx\`
+- **UI:** Textarea za unos komentara uz ocjenu
+- **Validacija:** Maksimalna duljina (npr. 500 karaktera), optional ali preporučuje se
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/reviews.js\`
+- **Endpoint:** \`POST /api/reviews\`
+- **Prisma:** Spremanje \`comment\` (String?) u \`Review\` model
+- **Validacija:** Max length provjera, sanitizacija HTML-a
+
+### Baza podataka:
+- **Tablice:** \`Review\`
+- **Polja:** \`comment\` (String?, nullable)
+- **Nema posebnih indeksa** za comment (tekstualno polje)
+
+### API pozivi:
+- \`POST /api/reviews\` - Body: \`{ jobId, rating, comment: "Vaš komentar..." }\`
+- \`GET /api/reviews?userId=:id\` - Vraća sve recenzije s komentarima za korisnika
+      `
     },
     "Bilateralno ocjenjivanje (korisnik ↔ pružatelj)": {
       implemented: true,
@@ -3124,7 +3722,32 @@ Sustav bilateralnog ocjenjivanja znači da i vi možete ocijeniti pružatelja, i
 - Transparentnost u ocjenjivanju
 
 Bilateralno ocjenjivanje osigurava fer i objektivan sustav ocjenjivanja za sve!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/components/ReviewForm.jsx\`
+- **UI:** Forma za ocjenjivanje dostupna i korisniku i pružatelju
+- **Conditional rendering:** Prikaz forme samo nakon završenog posla
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/reviews.js\`
+- **Endpoint:** \`POST /api/reviews\`
+- **Prisma:** Kreiranje \`Review\` zapisa s \`reviewerId\` i \`reviewedUserId\`
+- **Logic:** Provjera da je posao završen, provjera da još nema recenziju za taj posao
+
+### Baza podataka:
+- **Tablice:** \`Review\`
+- **Polja:** \`reviewerId\` (User koji daje ocjenu), \`reviewedUserId\` (User koji prima ocjenu), \`jobId\`
+- **Unique constraint:** \`@@unique([jobId, reviewerId])\` - jedna recenzija po poslu po korisniku
+- **Indeksi:** \`@@index([reviewedUserId])\` za dohvat svih recenzija za pružatelja
+
+### API pozivi:
+- \`POST /api/reviews\` - Body: \`{ jobId, rating, comment? }\`
+- Korisnik ocjenjuje pružatelja: \`reviewerId = userId\`, \`reviewedUserId = providerId\`
+- Pružatelj ocjenjuje korisnika: \`reviewerId = providerId\`, \`reviewedUserId = userId\`
+- \`GET /api/users/:id/reviews\` - Vraća sve recenzije za korisnika (kao reviewer i kao reviewed)
+      `
     },
     "Sprečavanje duplikata recenzija": {
       implemented: true,
@@ -3155,7 +3778,31 @@ Sustav osigurava da možete napisati recenziju za svaki posao samo jednom - to s
 - Ne možete napisati novu recenziju nakon brisanja
 
 Sprečavanje duplikata osigurava fer i pouzdan sustav ocjenjivanja!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/components/ReviewForm.jsx\`
+- **Validacija:** Provjera da već postoji recenzija za taj posao prije slanja
+- **UI:** Disable gumb "Pošalji recenziju" ako već postoji
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/reviews.js\`
+- **Endpoint:** \`POST /api/reviews\`
+- **Prisma:** Unique constraint \`@@unique([jobId, reviewerId])\` na \`Review\` modelu
+- **Validacija:** Provjera prije kreiranja da ne postoji recenzija za isti \`jobId\` i \`reviewerId\`
+
+### Baza podataka:
+- **Tablice:** \`Review\`
+- **Unique constraint:** \`@@unique([jobId, reviewerId])\` - jedna recenzija po poslu po korisniku
+- **Polja:** \`jobId\`, \`reviewerId\`
+- **Error handling:** Ako se pokuša kreirati duplikat, baza vraća error koji se hvata i vraća 409 Conflict
+
+### API pozivi:
+- \`POST /api/reviews\` - Body: \`{ jobId, rating, comment? }\`
+- Error response: \`{ error: "Već imate recenziju za ovaj posao" }\` - 409 Conflict ako postoji duplikat
+- \`GET /api/reviews?jobId=:id&reviewerId=:id\` - Provjera postoji li recenzija
+      `
     },
     "Uređivanje postojećih recenzija": {
       implemented: true,
@@ -3186,7 +3833,31 @@ Nakon što napišete recenziju, možete je urediti ako želite promijeniti ocjen
 - Fleksibilnost u održavanju recenzije aktualnom
 
 Uređivanje recenzija omogućava vam održavanje vaših komentara aktualnim i točnim!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/components/ReviewForm.jsx\`, \`ReviewCard.jsx\`
+- **UI:** Gumb "Uredi" na vlastitoj recenziji, modal ili inline edit forma
+- **State:** Pre-fill forme s postojećim podacima
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/reviews.js\`
+- **Endpoint:** \`PUT /api/reviews/:id\`
+- **Prisma:** Update \`Review\` zapisa (rating, comment, updatedAt)
+- **Authorization:** Provjera da je \`reviewerId\` trenutni korisnik (samo svoju recenziju može urediti)
+
+### Baza podataka:
+- **Tablice:** \`Review\`
+- **Polja:** \`rating\`, \`comment\`, \`updatedAt\` (automatski se ažurira)
+- **Polja:** \`reviewerId\` za provjeru autorizacije
+- **Triggers:** \`updatedAt\` se automatski ažurira na \`now()\` pri update-u
+
+### API pozivi:
+- \`PUT /api/reviews/:id\` - Body: \`{ rating: 5, comment: "Ažurirani komentar..." }\`
+- Authorization: Samo \`reviewerId\` može urediti svoju recenziju
+- Automatski: Recalculation prosječne ocjene pružatelja nakon update-a
+      `
     },
     "Brisanje recenzija": {
       implemented: true,
@@ -3217,7 +3888,32 @@ Ako želite ukloniti svoju recenziju, možete je obrisati s profila pružatelja.
 - Održavanje relevantnosti recenzija
 
 Brisanje recenzija daje vam kontrolu nad svojim komentarima i ocjenama!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/components/ReviewCard.jsx\`
+- **UI:** Gumb "Obriši" na vlastitoj recenziji s confirm dialog
+- **Optimistic update:** Uklanjanje recenzije iz liste odmah nakon brisanja
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/reviews.js\`
+- **Endpoint:** \`DELETE /api/reviews/:id\`
+- **Prisma:** Soft delete ili hard delete \`Review\` zapisa
+- **Authorization:** Provjera da je \`reviewerId\` trenutni korisnik (samo svoju recenziju može obrisati)
+
+### Baza podataka:
+- **Tablice:** \`Review\`
+- **Polja:** \`reviewerId\` za provjeru autorizacije
+- **Cascade:** Ako se koristi soft delete, možda \`deletedAt\` polje
+- **Automatski:** Recalculation prosječne ocjene pružatelja nakon brisanja
+
+### API pozivi:
+- \`DELETE /api/reviews/:id\` - Brisanje recenzije
+- Authorization: Samo \`reviewerId\` može obrisati svoju recenziju
+- Response: \`{ success: true, message: "Recenzija je obrisana" }\`
+- Automatski: Update \`ProviderProfile.averageRating\` nakon brisanja
+      `
     },
     "Automatsko izračunavanje prosječne ocjene": {
       implemented: true,
@@ -3248,7 +3944,32 @@ Platforma automatski izračunava prosječnu ocjenu pružatelja na temelju svih r
 - Osnova za odluku o odabiru
 
 Automatsko izračunavanje osigurava da uvijek vidite ažurnu prosječnu ocjenu!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/components/ProviderCard.jsx\`, \`ProviderProfile.jsx\`
+- **Display:** Prikaz prosječne ocjene (npr. "4.5 ⭐") i broja recenzija
+- **Auto-update:** Osježavanje nakon dodavanja/uređivanja/brisanja recenzija
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/reviews.js\`
+- **Endpoint:** Automatski se izračunava nakon CREATE/UPDATE/DELETE recenzije
+- **Prisma:** Aggregate query: \`AVG(rating)\` i \`COUNT(*)\` na \`Review\` tablici
+- **Update:** Automatski update \`ProviderProfile.averageRating\` i \`totalReviews\` nakon svake promjene
+
+### Baza podataka:
+- **Tablice:** \`Review\`, \`ProviderProfile\`
+- **Polja:** \`averageRating\` (Decimal) i \`totalReviews\` (Int) u \`ProviderProfile\`
+- **Calculation:** \`SELECT AVG(rating) FROM Review WHERE reviewedUserId = :id\`
+- **Triggers:** Možda database trigger za automatski update, ili application-level logic
+
+### API pozivi:
+- Automatski: Nakon \`POST /api/reviews\`, backend izračunava i update-uje \`ProviderProfile.averageRating\`
+- Automatski: Nakon \`PUT /api/reviews/:id\`, ponovno izračunavanje
+- Automatski: Nakon \`DELETE /api/reviews/:id\`, ponovno izračunavanje
+- \`GET /api/providers/:id\` - Vraća \`{ averageRating: 4.5, totalReviews: 23, ... }\`
+      `
     },
     "Brojanje ukupnog broja recenzija": {
       implemented: true,
@@ -3278,7 +3999,28 @@ Platforma prikazuje ukupan broj recenzija koje je pružatelj primio, što pokazu
 - Više recenzija s visokom ocjenom = pouzdan pružatelj
 
 Brojanje recenzija pomaže vam razumjeti iskustvo i pouzdanost pružatelja!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/components/ProviderCard.jsx\`, \`ProviderProfile.jsx\`
+- **Display:** Prikaz broja (npr. "23 recenzije") uz prosječnu ocjenu
+- **Format:** Kombinacija s ocjenom (npr. "4.5 ⭐ (23 recenzije)")
+
+### Backend:
+- **Route:** Automatski se računa zajedno s prosječnom ocjenom
+- **Prisma:** Aggregate query: \`COUNT(*)\` na \`Review\` tablici gdje \`reviewedUserId = :id\`
+- **Update:** Automatski update \`ProviderProfile.totalReviews\` nakon CREATE/UPDATE/DELETE recenzije
+
+### Baza podataka:
+- **Tablice:** \`Review\`, \`ProviderProfile\`
+- **Polja:** \`totalReviews\` (Int) u \`ProviderProfile\`
+- **Calculation:** \`SELECT COUNT(*) FROM Review WHERE reviewedUserId = :id\`
+
+### API pozivi:
+- Automatski: Nakon svake promjene recenzije, update-uje se \`totalReviews\`
+- \`GET /api/providers/:id\` - Vraća \`{ totalReviews: 23, averageRating: 4.5, ... }\`
+      `
     },
     "Prikaz recenzija na profilu pružatelja": {
       implemented: true,
@@ -3316,7 +4058,32 @@ Sve recenzije koje je pružatelj primio prikazuju se na njegovom javnom profilu 
 - Motivacija za pružatelje da pružaju kvalitetne usluge
 
 Prikaz recenzija osigurava transparentnost i gradi povjerenje u platformu!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/ProviderProfile.jsx\` (reviews section)
+- **State management:** useState, useEffect hooks
+- **Pagination:** Ako ima puno recenzija, paginacija ili "load more"
+- **Filtering:** Sortiranje po datumu, ocjeni (opcionalno)
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/reviews.js\`, \`uslugar/backend/src/routes/providers.js\`
+- **Endpoint:** \`GET /api/providers/:id/reviews\` ili \`GET /api/reviews?reviewedUserId=:id\`
+- **Prisma:** Query \`Review\` gdje \`reviewedUserId = :id\` s include za \`reviewer\` (User info)
+- **Sorting:** Default sort po \`createdAt DESC\` (najnovije najprije)
+
+### Baza podataka:
+- **Tablice:** \`Review\`, \`User\`
+- **Relacije:** Review → User (reviewer), Review → User (reviewed - pružatelj)
+- **Polja:** \`rating\`, \`comment\`, \`createdAt\`, \`reviewerId\`, \`reviewedUserId\`
+- **Indeksi:** \`@@index([reviewedUserId, createdAt])\` za efikasno dohvaćanje
+
+### API pozivi:
+- \`GET /api/providers/:id/reviews\` - Vraća sve recenzije za pružatelja
+- Response: \`{ reviews: [{ id, rating, comment, createdAt, reviewer: { name, ... }, ... }] }\`
+- Query params: \`?sort=rating\`, \`?sort=date\`, \`?page=1&limit=10\` (paginacija)
+      `
     },
     "Detaljni profil pružatelja": {
       implemented: true,
@@ -3353,7 +4120,35 @@ Detaljni profil pružatelja je vaša javna stranica gdje korisnici mogu vidjeti 
 - Profesionalan pristup
 
 Detaljni profil je vaša virtuelna poslovna kartica koja privlači klijente!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/ProviderProfile.jsx\`
+- **Route:** \`/providers/:id\`
+- **State management:** useState, useEffect hooks
+- **Sections:** Tabs ili sekcije za različite dijelove profila (biografija, portfolio, recenzije, licence)
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/providers.js\`
+- **Endpoint:** \`GET /api/providers/:id\`
+- **Prisma:** Query \`User\` s role='PROVIDER' i include za sve relacije:
+  - \`ProviderProfile\` (biografija, godine iskustva, itd.)
+  - \`License[]\` (licence i certifikati)
+  - \`PortfolioImage[]\` (slike portfolija)
+  - \`Review[]\` (recenzije)
+  - \`Category[]\` (kategorije u kojima radi)
+  - Verifikacije (email, phone, dns, business badges)
+
+### Baza podataka:
+- **Tablice:** \`User\`, \`ProviderProfile\`, \`License\`, \`PortfolioImage\`, \`Review\`, \`Category\`, \`Verification\`
+- **Relacije:** User → ProviderProfile, User → License[], User → PortfolioImage[], User → Review[], User → Category[]
+- **Polja:** Sve polja iz svih povezanih tablica
+
+### API pozivi:
+- \`GET /api/providers/:id\` - Vraća kompletan profil pružatelja sa svim relacijama
+- Response: \`{ provider: { id, name, bio, yearsOfExperience, licenses: [...], portfolio: [...], reviews: [...], ... } }\`
+      `
     },
     "Biografija pružatelja": {
       implemented: true,
@@ -3388,7 +4183,30 @@ Biografija je kratki tekst na vašem profilu koji predstavlja vas i vaše usluge
 - Gradi povjerenje u vašu profesionalnost
 
 Biografija je vaša prilika da se predstavite i privučete prave klijente!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/ProviderProfile.jsx\` (edit form)
+- **UI:** Textarea za unos biografije s character count
+- **Validacija:** Max length (npr. 1000 karaktera), min length (npr. 50)
+- **Preview:** Real-time preview kako će izgledati na javnom profilu
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/providers.js\`
+- **Endpoint:** \`PUT /api/providers/:id/profile\`
+- **Prisma:** Update \`ProviderProfile.bio\` (String?)
+- **Validacija:** Max length provjera, sanitizacija HTML-a
+
+### Baza podataka:
+- **Tablice:** \`ProviderProfile\`
+- **Polja:** \`bio\` (String?, nullable)
+- **Nema posebnih indeksa** za bio (tekstualno polje)
+
+### API pozivi:
+- \`PUT /api/providers/:id/profile\` - Body: \`{ bio: "Vaša biografija..." }\`
+- \`GET /api/providers/:id\` - Vraća \`provider.profile.bio\`
+      `
     },
     "Specijalizacije": {
       implemented: true,
@@ -3419,7 +4237,29 @@ Specijalizacije su područja u kojima ste najbolji i što najviše volite raditi
 - Bolje uparivanje poslova s pravim stručnjacima
 
 Specijalizacije pokazuju vaše najjače strane i privlače prave klijente!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/ProviderProfile.jsx\` (edit form)
+- **UI:** Multi-select dropdown ili tag input za odabir specijalizacija
+- **State management:** useState hooks za array specijalizacija
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/providers.js\`
+- **Endpoint:** \`PUT /api/providers/:id/profile\`
+- **Prisma:** Update \`ProviderProfile.specializations\` (String[] ili JSON)
+- **Validacija:** Provjera da su specijalizacije iz dozvoljenog popisa
+
+### Baza podataka:
+- **Tablice:** \`ProviderProfile\`, možda \`ProviderSpecialization\` (many-to-many)
+- **Polja:** \`specializations\` (String[] ili JSON) ili relacija kroz \`ProviderSpecialization\`
+- **Indeksi:** \`@@index([specializations])\` ako je array, ili index na junction tablici
+
+### API pozivi:
+- \`PUT /api/providers/:id/profile\` - Body: \`{ specializations: ["Klima uređaji", "Keramičarski radovi", ...] }\`
+- \`GET /api/providers?specializations=Klima\` - Filtriranje pružatelja po specijalizacijama
+      `
     },
     "Godine iskustva": {
       implemented: true,
@@ -3450,7 +4290,29 @@ Godine iskustva pokazuju koliko dugo radite u svojoj djelatnosti i koliko iskust
 - Gradite povjerenje
 
 Godine iskustva pokazuju vašu profesionalnost i privlače klijente koji cijene iskustvo!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/ProviderProfile.jsx\` (edit form)
+- **UI:** Number input za unos broja godina
+- **Validacija:** Min 0, max (npr. 50 godina)
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/providers.js\`
+- **Endpoint:** \`PUT /api/providers/:id/profile\`
+- **Prisma:** Update \`ProviderProfile.yearsOfExperience\` (Int?)
+- **Validacija:** Provjera da je pozitivan broj, max vrijednost
+
+### Baza podataka:
+- **Tablice:** \`ProviderProfile\`
+- **Polja:** \`yearsOfExperience\` (Int?, nullable)
+- **Indeksi:** \`@@index([yearsOfExperience])\` za filtriranje/sortiranje po iskustvu
+
+### API pozivi:
+- \`PUT /api/providers/:id/profile\` - Body: \`{ yearsOfExperience: 10 }\`
+- \`GET /api/providers?minExperience=5\` - Filtriranje pružatelja s minimalnim iskustvom
+      `
     },
     "Web stranica": {
       implemented: true,
@@ -3481,7 +4343,29 @@ Možete dodati link na svoju web stranicu na profil kako bi korisnici mogli vidj
 - Povećanje prometa na vašu web stranicu
 
 Web stranica dodaje profesionalnost vašem profilu i omogućava korisnicima da saznaju više o vama!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/ProviderProfile.jsx\` (edit form)
+- **UI:** URL input s validacijom formata
+- **Validacija:** Provjera da je validan URL format
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/providers.js\`
+- **Endpoint:** \`PUT /api/providers/:id/profile\`
+- **Prisma:** Update \`ProviderProfile.websiteUrl\` (String?)
+- **Validacija:** URL format provjera (regex), provjera da počinje s http:// ili https://
+
+### Baza podataka:
+- **Tablice:** \`ProviderProfile\`
+- **Polja:** \`websiteUrl\` (String?, nullable, max length 2048)
+- **Nema posebnih indeksa** za URL
+
+### API pozivi:
+- \`PUT /api/providers/:id/profile\` - Body: \`{ websiteUrl: "https://mojatvrtka.hr" }\`
+- \`GET /api/providers/:id\` - Vraća \`provider.profile.websiteUrl\`
+      `
     },
     "Područje rada": {
       implemented: true,
@@ -3512,7 +4396,29 @@ Područje rada pokazuje u kojim gradovima ili područjima nudite svoje usluge - 
 - Smanjujete nepotrebne upite iz drugih područja
 
 Područje rada pomaže korisnicima pronaći pružatelje u svojem području!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/ProviderProfile.jsx\` (edit form)
+- **UI:** Multi-select dropdown za odabir gradova/općina
+- **State management:** useState hooks za array lokacija
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/providers.js\`
+- **Endpoint:** \`PUT /api/providers/:id/profile\`
+- **Prisma:** Update \`ProviderProfile.serviceAreas\` (String[] ili JSON) ili many-to-many relacija
+- **Validacija:** Provjera da su lokacije iz dozvoljenog popisa (HR gradovi/općine)
+
+### Baza podataka:
+- **Tablice:** \`ProviderProfile\`, možda \`ProviderServiceArea\` (many-to-many)
+- **Polja:** \`serviceAreas\` (String[] ili JSON) ili relacija kroz \`ProviderServiceArea\`
+- **Indeksi:** \`@@index([serviceAreas])\` ako je array, ili index na junction tablici
+
+### API pozivi:
+- \`PUT /api/providers/:id/profile\` - Body: \`{ serviceAreas: ["Zagreb", "Split", "Rijeka"] }\`
+- \`GET /api/providers?city=Zagreb\` - Filtriranje pružatelja po gradu
+      `
     },
     "Status dostupnosti": {
       implemented: true,
@@ -3548,7 +4454,29 @@ Status dostupnosti pokazuje korisnicima jesite li trenutno dostupni za nove posl
 - Planirate radni raspored
 
 Status dostupnosti osigurava da korisnici kontaktiraju samo dostupne pružatelje!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/ProviderProfile.jsx\` (status toggle)
+- **UI:** Toggle switch ili dropdown za promjenu statusa
+- **Badge:** Prikaz statusa s bojama (npr. zeleno za DOSTUPAN, crveno za ZAUZET)
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/providers.js\`
+- **Endpoint:** \`PUT /api/providers/:id/availability\`
+- **Prisma:** Enum \`AvailabilityStatus\` s vrijednostima: \`DOSTUPAN\`, \`ZAUZET\`, \`NEAKTIVAN\`
+- **Update:** Update \`ProviderProfile.availabilityStatus\`
+
+### Baza podataka:
+- **Tablice:** \`ProviderProfile\`
+- **Polja:** \`availabilityStatus\` (Enum: AvailabilityStatus)
+- **Indeksi:** \`@@index([availabilityStatus])\` za filtriranje dostupnih pružatelja
+
+### API pozivi:
+- \`PUT /api/providers/:id/availability\` - Body: \`{ status: 'DOSTUPAN' }\`
+- \`GET /api/providers?availability=DOSTUPAN\` - Filtriranje samo dostupnih pružatelja
+      `
     },
     "Kategorije u kojima radi": {
       implemented: true,
@@ -3580,7 +4508,31 @@ Odabirom kategorija u kojima radite, određujete koje poslove vidite i u kojim p
 - Znate možete li kontaktirati pružatelja za svoj posao
 
 Kategorije u kojima radite određuju vaš fokus i privlače prave klijente!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/ProviderProfile.jsx\` (categories selector)
+- **UI:** Multi-select dropdown ili checkbox list za odabir kategorija
+- **State management:** useState hooks za array odabranih kategorija
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/providers.js\`
+- **Endpoint:** \`PUT /api/providers/:id/categories\`
+- **Prisma:** Many-to-many relacija: \`User\` ↔ \`Category\` kroz \`ProviderCategory\` junction tablicu
+- **Validacija:** Provjera da kategorije postoje i da su aktivne
+
+### Baza podataka:
+- **Tablice:** \`User\`, \`Category\`, \`ProviderCategory\` (junction tablica)
+- **Relacije:** User ← ProviderCategory → Category
+- **Polja:** \`providerId\`, \`categoryId\` u \`ProviderCategory\`
+- **Indeksi:** \`@@index([providerId])\`, \`@@index([categoryId])\`, \`@@unique([providerId, categoryId])\`
+
+### API pozivi:
+- \`PUT /api/providers/:id/categories\` - Body: \`{ categoryIds: ["cat1", "cat2", ...] }\`
+- \`GET /api/providers/:id/categories\` - Vraća sve kategorije u kojima pružatelj radi
+- \`GET /api/jobs?category=elektrotehnika\` - Filtriranje poslova po kategoriji (automatski filtrira i po provider kategorijama)
+      `
     },
     "Odabir kategorija za primanje leadova": {
       implemented: true,
@@ -3611,7 +4563,29 @@ Ako koristite EXCLUSIVE sustav, možete odabrati u kojim kategorijama želite pr
 - Možete eksperimentirati s različitim kategorijama
 
 Odabir kategorija za primanje leadova fokusira vas na najprofitabilnije prilike!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/ProviderProfile.jsx\` ili \`LeadMarket.jsx\`
+- **UI:** Multi-select dropdown za odabir kategorija za leadove
+- **State management:** useState hooks, možda različito od općih kategorija rada
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/providers.js\`, \`uslugar/backend/src/routes/leads.js\`
+- **Endpoint:** \`PUT /api/providers/:id/lead-categories\`
+- **Prisma:** Many-to-many relacija: \`User\` ↔ \`Category\` kroz \`ProviderLeadCategory\` ili flag u \`ProviderCategory\`
+- **Logic:** Moguće da je odvojeno od općih kategorija rada (može raditi u kategoriji, ali ne primati leadove)
+
+### Baza podataka:
+- **Tablice:** \`User\`, \`Category\`, \`ProviderLeadCategory\` ili \`receiveLeads\` flag u \`ProviderCategory\`
+- **Relacije:** User ← ProviderLeadCategory → Category
+- **Polja:** \`providerId\`, \`categoryId\`, \`receiveLeads\` (Boolean)
+
+### API pozivi:
+- \`PUT /api/providers/:id/lead-categories\` - Body: \`{ categoryIds: ["cat1", "cat2"] }\`
+- \`GET /api/leads?category=elektrotehnika\` - Filtriranje leadova po kategoriji (samo oni gdje provider prima leadove)
+      `
     },
     "Filtriranje leadova po kategorijama": {
       implemented: true,
@@ -3680,7 +4654,32 @@ Kao korisnik, možete pregledati sve pružatelje na platformi i pronaći onog ko
 - Informirana odluka o odabiru
 
 Pregled svih pružatelja omogućava vam pronalaženje pravog pružatelja za vaš posao!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/Providers.jsx\` ili \`ProviderList.jsx\`
+- **Route:** \`/providers\`
+- **State management:** useState, useEffect hooks
+- **UI:** Grid ili list prikaz pružatelja s kartama
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/providers.js\`
+- **Endpoint:** \`GET /api/providers\`
+- **Prisma:** Query \`User\` gdje \`role = 'PROVIDER'\` s include za \`ProviderProfile\`, \`Review[]\`, \`Category[]\`
+- **Pagination:** \`skip\` i \`take\` za paginaciju
+
+### Baza podataka:
+- **Tablice:** \`User\`, \`ProviderProfile\`, \`Review\`, \`Category\`
+- **Relacije:** User → ProviderProfile, User → Review[], User → Category[]
+- **Polja:** Sve relevantne informacije za prikaz liste
+- **Indeksi:** \`@@index([role])\` za filtriranje samo PROVIDER korisnika
+
+### API pozivi:
+- \`GET /api/providers\` - Vraća listu svih pružatelja
+- Query params: \`?page=1&limit=20\`, \`?category=elektrotehnika\`, \`?city=Zagreb\`, \`?sort=rating\`
+- Response: \`{ providers: [{ id, name, rating, categories: [...], ... }], total, page, limit }\`
+      `
     },
     "Chat sobe za svaki posao": {
       implemented: true,
@@ -3717,7 +4716,32 @@ Svaki posao na platformi ima svoju chat sobu gdje možete komunicirati s korisni
 - Korisno za pregled dogovora
 
 Chat sobe osiguravaju organiziranu komunikaciju oko svakog posla!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/components/ChatRoom.jsx\`
+- **Route:** \`/jobs/:id/chat\` ili modal/popup
+- **State management:** useState, useEffect hooks
+- **Real-time:** WebSocket ili Server-Sent Events za live chat
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/chat.js\`
+- **Endpoint:** \`GET /api/chat/rooms/:jobId\` (dohvat ili kreiranje sobe)
+- **WebSocket:** \`socket.io\` ili \`ws\` za real-time komunikaciju
+- **Prisma:** \`ChatRoom\` model s \`jobId\`, automatsko kreiranje ako ne postoji
+
+### Baza podataka:
+- **Tablice:** \`ChatRoom\`, \`Job\`
+- **Relacije:** ChatRoom → Job (one-to-one: jedna soba po poslu)
+- **Polja:** \`id\`, \`jobId\`, \`createdAt\`
+- **Unique constraint:** \`@@unique([jobId])\` - jedna soba po poslu
+
+### API pozivi:
+- \`GET /api/chat/rooms/:jobId\` - Dohvaća ili kreira chat sobu za posao
+- Response: \`{ room: { id, jobId, participants: [...], ... } }\`
+- WebSocket: \`socket.join(roomId)\` - Pridruživanje sobi za real-time poruke
+      `
     },
     "Povijest poruka": {
       implemented: true,
@@ -3750,7 +4774,32 @@ Sve poruke koje pošaljete i primite u chatu su spremljene tako da možete vidje
 - Pregledavate detalje posla kroz razgovor
 
 Povijest poruka osigurava da nikada ne izgubite informacije iz razgovora!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/components/ChatRoom.jsx\` (message history)
+- **UI:** Scrollable lista poruka s timestamp-ovima
+- **Pagination:** Infinite scroll ili load all messages
+- **Format:** Grupiranje poruka po datumu ili čovjeku
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/chat.js\`
+- **Endpoint:** \`GET /api/chat/messages/:roomId\`
+- **Prisma:** Query \`ChatMessage\` gdje \`roomId = :roomId\` sort po \`createdAt ASC\`
+- **Pagination:** \`skip\` i \`take\` za paginaciju starih poruka
+
+### Baza podataka:
+- **Tablice:** \`ChatMessage\`, \`ChatRoom\`
+- **Relacije:** ChatMessage → ChatRoom, ChatMessage → User (sender)
+- **Polja:** \`id\`, \`roomId\`, \`senderId\`, \`message\`, \`imageUrl?\`, \`createdAt\`, \`readAt?\`
+- **Indeksi:** \`@@index([roomId, createdAt])\` za efikasno dohvaćanje poruka po sobi i datumu
+
+### API pozivi:
+- \`GET /api/chat/messages/:roomId\` - Vraća sve poruke iz sobe
+- Query params: \`?limit=50\`, \`?before=timestamp\` za paginaciju
+- Response: \`{ messages: [{ id, message, sender: { name, ... }, createdAt, ... }] }\`
+      `
     },
     "Notifikacije za nove poruke": {
       implemented: true,
@@ -3783,7 +4832,33 @@ Kada vam netko pošalje poruku u chatu, automatski primite obavijest kako ne bis
 - Email notifikacije osiguravaju da vidite poruku i ako niste na platformi
 
 Notifikacije za nove poruke osiguravaju da uvijek ostanete povezani s komunikacijom!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/components/NotificationBell.jsx\`
+- **UI:** Badge s brojem nepročitanih notifikacija, dropdown lista
+- **Real-time:** WebSocket ili polling za live notifikacije
+- **Browser:** Push API za browser notifikacije ako je dozvoljeno
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/notifications.js\`, \`uslugar/backend/src/routes/chat.js\`
+- **Endpoint:** Automatski se kreira nakon \`POST /api/chat/messages\`
+- **Prisma:** Kreiranje \`Notification\` zapisa nakon slanja poruke
+- **WebSocket:** Emit \`new-message\` eventa svim subscriberima sobe
+
+### Baza podataka:
+- **Tablice:** \`Notification\`, \`ChatMessage\`
+- **Relacije:** Notification → User (recipient), Notification → ChatMessage
+- **Polja:** \`id\`, \`userId\`, \`type\` ('MESSAGE'), \`messageId?\`, \`read\` (Boolean), \`createdAt\`
+- **Indeksi:** \`@@index([userId, read])\` za dohvat nepročitanih notifikacija
+
+### API pozivi:
+- Automatski: Nakon \`POST /api/chat/messages\`, kreiranje Notification za primatelja
+- \`GET /api/notifications\` - Vraća sve notifikacije za korisnika
+- \`PUT /api/notifications/:id/read\` - Označava notifikaciju kao pročitanu
+- WebSocket: \`socket.on('new-message', ...)\` - Real-time primanje notifikacije
+      `
     },
     "Notifikacije za prihvaćene ponude": {
       implemented: true,
@@ -3815,7 +4890,31 @@ Kada korisnik prihvati vašu ponudu za posao, automatski primite obavijest kako 
 - Jasna komunikacija o statusu ponude
 
 Notifikacije za prihvaćene ponude osiguravaju da znate kada možete započeti rad!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/components/NotificationBell.jsx\`
+- **UI:** Badge s brojem notifikacija, dropdown lista
+- **Real-time:** WebSocket ili polling za live notifikacije
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/notifications.js\`, \`uslugar/backend/src/routes/offers.js\`
+- **Endpoint:** Automatski se kreira nakon \`PUT /api/offers/:id/accept\`
+- **Prisma:** Kreiranje \`Notification\` zapisa s \`type = 'OFFER_ACCEPTED'\`
+- **Recipient:** Pružatelj koji je poslao ponudu (offer.providerId)
+
+### Baza podataka:
+- **Tablice:** \`Notification\`, \`Offer\`
+- **Relacije:** Notification → User (recipient), Notification → Offer
+- **Polja:** \`id\`, \`userId\` (providerId), \`type\` ('OFFER_ACCEPTED'), \`offerId?\`, \`read\`, \`createdAt\`
+- **Indeksi:** \`@@index([userId, read])\` za dohvat nepročitanih
+
+### API pozivi:
+- Automatski: Nakon \`PUT /api/offers/:id/accept\`, kreiranje Notification za providera
+- \`GET /api/notifications?type=OFFER_ACCEPTED\` - Filtriranje notifikacija po tipu
+- WebSocket: \`socket.on('offer-accepted', ...)\` - Real-time notifikacija
+      `
     },
     "Notifikacije za nove poslove (providere)": {
       implemented: true,
@@ -3854,7 +4953,31 @@ Kada se objavi novi posao u kategorijama u kojima radite, automatski primite oba
 - Email notifikacije osiguravaju da vidite posao i ako niste na platformi
 
 Notifikacije za nove poslove osiguravaju da ne propustite nijednu priliku!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/components/NotificationBell.jsx\`
+- **UI:** Badge s brojem notifikacija
+- **Real-time:** WebSocket ili polling za live notifikacije
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/notifications.js\`, \`uslugar/backend/src/routes/jobs.js\`
+- **Endpoint:** Automatski se kreira nakon \`POST /api/jobs\`
+- **Prisma:** Kreiranje \`Notification\` zapisa s \`type = 'NEW_JOB'\` za sve providere u toj kategoriji
+- **Logic:** Query svih Providera koji rade u kategoriji posla, kreira Notification za svakog
+
+### Baza podataka:
+- **Tablice:** \`Notification\`, \`Job\`, \`ProviderCategory\`
+- **Relacije:** Notification → User (recipient), Notification → Job, ProviderCategory → User
+- **Polja:** \`id\`, \`userId\` (providerId), \`type\` ('NEW_JOB'), \`jobId?\`, \`read\`, \`createdAt\`
+- **Indeksi:** \`@@index([userId, read])\`, \`@@index([type])\`
+
+### API pozivi:
+- Automatski: Nakon \`POST /api/jobs\`, kreiranje Notification za sve providere u kategoriji
+- Batch insert: Jedan query za sve providere u kategoriji
+- \`GET /api/notifications?type=NEW_JOB\` - Filtriranje notifikacija za nove poslove
+      `
     },
     "Email notifikacije": {
       implemented: true,
@@ -3888,7 +5011,30 @@ Pored in-app notifikacija, možete primati važne obavijesti i na svoju email ad
 - Ne propustite prilike
 
 Email notifikacije osiguravaju da uvijek budete u toku s važnim događajima!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/Settings.jsx\` (notification preferences)
+- **UI:** Toggle switches za omogućavanje/onemogućavanje različitih tipova email notifikacija
+- **State management:** useState hooks za preference settings
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/notifications.js\`, \`uslugar/backend/src/routes/users.js\`
+- **Endpoint:** Automatski slanje nakon kreiranja Notification (ako je email omogućen)
+- **Email service:** Nodemailer ili SendGrid za slanje emailova
+- **Template:** HTML email template za različite tipove notifikacija
+
+### Baza podataka:
+- **Tablice:** \`User\`, \`Notification\`, možda \`EmailPreference\`
+- **Polja:** \`emailNotificationsEnabled\` (Boolean) u \`User\`, ili \`emailPreferences\` (JSON)
+- **Polja:** \`emailSent\` (Boolean) u \`Notification\` za tracking
+
+### API pozivi:
+- Automatski: Nakon kreiranja Notification, provjera \`user.emailNotificationsEnabled\` i slanje emaila ako je true
+- \`PUT /api/users/:id/email-preferences\` - Body: \`{ notificationsEnabled: true, types: {...} }\`
+- Email template: Različiti template-i za različite tipove notifikacija (ponuda, poruka, posao, itd.)
+      `
     },
     "In-app notifikacije": {
       implemented: true,
@@ -3923,7 +5069,33 @@ In-app notifikacije su obavijesti koje vidite direktno na platformi dok je koris
 - Mogućnost brzog odgovora
 
 In-app notifikacije osiguravaju da ste uvijek u toku s događajima na platformi!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/components/NotificationBell.jsx\`, \`NotificationDropdown.jsx\`
+- **UI:** Badge s brojem nepročitanih, dropdown lista s notifikacijama
+- **Real-time:** WebSocket ili Server-Sent Events za live ažuriranja
+- **State management:** useState hooks, možda Context za globalni notification state
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/notifications.js\`
+- **Endpoint:** \`GET /api/notifications\`, \`PUT /api/notifications/:id/read\`
+- **Prisma:** Query \`Notification\` gdje \`userId = :id\` i \`read = false\`
+- **WebSocket:** Emit notifikacija u realnom vremenu
+
+### Baza podataka:
+- **Tablice:** \`Notification\`
+- **Polja:** \`id\`, \`userId\`, \`type\`, \`title\`, \`message\`, \`read\` (Boolean), \`createdAt\`, \`link?\`
+- **Indeksi:** \`@@index([userId, read, createdAt])\` za dohvat nepročitanih, sort po datumu
+
+### API pozivi:
+- \`GET /api/notifications\` - Vraća sve notifikacije za korisnika
+- Query params: \`?read=false\`, \`?type=MESSAGE\`, \`?limit=20\`
+- \`PUT /api/notifications/:id/read\` - Označava notifikaciju kao pročitanu
+- \`PUT /api/notifications/read-all\` - Označava sve kao pročitane
+- WebSocket: \`socket.on('notification', ...)\` - Real-time primanje nove notifikacije
+      `
     },
     "Brojač nepročitanih notifikacija": {
       implemented: true,
@@ -3950,7 +5122,31 @@ Ikonica zvona u gornjem desnom kutu prikazuje broj nepročitanih notifikacija ka
 - Pročitajte notifikacije da se brojač resetira
 
 Brojač nepročitanih notifikacija pomaže vam pratiti važne obavijesti!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/components/NotificationBell.jsx\`
+- **UI:** Badge s brojem iznad ikonice zvona
+- **State management:** useState hooks, real-time ažuriranje preko WebSocket-a
+- **Display:** Brojač se automatski ažurira kada se promijeni \`read\` status notifikacije
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/notifications.js\`
+- **Endpoint:** Automatski se računa iz \`GET /api/notifications\` query-a
+- **Prisma:** Aggregate query: \`COUNT(*)\` gdje \`userId = :id\` i \`read = false\`
+- **Caching:** Možda Redis cache za brže dohvaćanje broja
+
+### Baza podataka:
+- **Tablice:** \`Notification\`
+- **Calculation:** \`SELECT COUNT(*) FROM Notification WHERE userId = :id AND read = false\`
+- **Indeksi:** \`@@index([userId, read])\` za efikasno brojanje
+
+### API pozivi:
+- \`GET /api/notifications/unread-count\` - Vraća samo broj: \`{ count: 5 }\`
+- Automatski se ažurira nakon \`PUT /api/notifications/:id/read\`
+- WebSocket: \`socket.on('notification-count-updated', { count: 5 })\` - Real-time ažuriranje
+      `
     },
     "Cijene leadova (10-20 kredita)": {
       implemented: true,
@@ -3983,7 +5179,34 @@ Cijene ekskluzivnih leadova variraju između 10 i 20 kredita ovisno o kvaliteti 
 - Odaberite strategiju koja vam odgovara
 
 Cijene leadova osiguravaju fleksibilnost i različite strategije za različite budžete!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/LeadMarket.jsx\`
+- **UI:** Prikaz cijene (npr. "20 kredita") na lead kartici
+- **Color coding:** Možda različite boje za različite kvalitete (zeleno za vrhunsku, crveno za slabu)
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/leads.js\`
+- **Endpoint:** Automatski se računa prilikom dohvaćanja leadova
+- **Prisma:** Logic za određivanje cijene na temelju AI score:
+  - \`aiScore >= 80\` → 20 kredita
+  - \`aiScore >= 60\` → 15 kredita
+  - \`aiScore >= 40\` → 10 kredita
+  - \`aiScore < 40\` → 5 kredita
+- **Calculation:** Switch/case ili if-else logika u backendu
+
+### Baza podataka:
+- **Tablice:** \`Lead\` (ili \`Job\` ako se leadovi čuvaju kao Job)
+- **Polja:** \`aiScore\` (Decimal), \`priceInCredits\` (Int) - možda cached ili calculated
+- **Indeksi:** \`@@index([aiScore])\` ako se koristi za filtriranje po cijeni
+
+### API pozivi:
+- \`GET /api/leads\` - Vraća leadove s \`priceInCredits\` poljem
+- Response: \`{ leads: [{ id, title, aiScore: 85, priceInCredits: 20, ... }] }\`
+- Automatski se računa na backendu na temelju AI score-a
+      `
     },
     "Kupnja leadova": {
       implemented: true,
@@ -4017,7 +5240,36 @@ Kupovina leadova je jednostavna - odaberete lead koji vas zanima i kliknete "Kup
 - Automatsko ažuriranje balansa kredita
 
 Kupovina leadova je brza, jednostavna i sigurna - samo jedan klik i imate ekskluzivni pristup!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/LeadMarket.jsx\` (buy button)
+- **UI:** "Kupi lead" gumb s loading state
+- **State management:** useState hooks za kupovinu, error handling
+- **Payment flow:** Ako nema dovoljno kredita, redirect na Stripe Checkout
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/leads.js\`
+- **Endpoint:** \`POST /api/leads/:id/purchase\`
+- **Prisma:** 
+  1. Provjera balansa kredita korisnika
+  2. Ako ima dovoljno: Update \`User.credits\` (decrease), kreiranje \`LeadPurchase\` zapisa
+  3. Ako nema: Kreiranje Stripe Payment Intent za kupnju kredita
+- **Transaction:** Atomic transaction za provjeru i update balansa
+
+### Baza podataka:
+- **Tablice:** \`Lead\`, \`User\`, \`LeadPurchase\`, \`Transaction\`
+- **Relacije:** LeadPurchase → User, LeadPurchase → Lead
+- **Polja:** \`purchasedAt\`, \`userId\`, \`leadId\`, \`creditsSpent\`, \`status\`
+- **Transaction:** \`BEGIN TRANSACTION\`, provjera balansa, update balansa, kreiranje LeadPurchase, \`COMMIT\`
+
+### API pozivi:
+- \`POST /api/leads/:id/purchase\` - Body: prazan ili \`{ paymentMethodId?: "pm_..." }\`
+- Response (ima kredita): \`{ success: true, lead: {...}, creditsRemaining: 50 }\`
+- Response (nema kredita): \`{ requiresPayment: true, paymentIntent: {...}, clientSecret: "pi_..." }\`
+- Stripe: Redirect na Stripe Checkout ako treba dodatno plaćanje
+      `
     },
     "Red čekanja za leadove": {
       implemented: true,
@@ -4048,7 +5300,32 @@ Red čekanja za leadove omogućava vam da se prijavite za automatsko primanje le
 - Što ste aktivniji, to brže prolazite kroz red
 
 Red čekanja osigurava fer distribuciju leadova među svim providerima!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/LeadQueue.jsx\` ili u LeadMarket
+- **UI:** Toggle za prijavu/odjavu iz reda, prikaz pozicije u redu
+- **State management:** useState hooks za queue status
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/leads.js\`
+- **Endpoint:** \`POST /api/leads/queue\`, \`DELETE /api/leads/queue/:categoryId\`
+- **Prisma:** Many-to-many relacija: \`User\` ↔ \`Category\` kroz \`LeadQueue\` tablicu
+- **Logic:** FIFO (First In First Out) algoritam za distribuciju leadova
+
+### Baza podataka:
+- **Tablice:** \`LeadQueue\`, \`User\`, \`Category\`, \`Lead\`
+- **Relacije:** LeadQueue → User, LeadQueue → Category
+- **Polja:** \`id\`, \`userId\`, \`categoryId\`, \`position\` (Int), \`joinedAt\` (DateTime)
+- **Indeksi:** \`@@index([categoryId, position])\` za sortiranje po poziciji, \`@@unique([userId, categoryId])\`
+
+### API pozivi:
+- \`POST /api/leads/queue\` - Body: \`{ categoryIds: ["cat1", "cat2"] }\` - Prijava u red
+- \`GET /api/leads/queue\` - Vraća pozicije korisnika u svim kategorijama
+- \`DELETE /api/leads/queue/:categoryId\` - Odjava iz reda za određenu kategoriju
+- Automatska distribucija: Cron job ili background job koji dijeli leadove redom
+      `
     },
     "Verifikacija klijenata": {
       implemented: true,
@@ -4080,7 +5357,32 @@ Platforma automatski verifikira klijente na temelju različitih faktora kako bi 
 - Bolje ROI s kvalitetnijim leadovima
 
 Verifikacija klijenata osigurava kvalitetu leadova i veću šansu za uspjeh!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/LeadMarket.jsx\` (verification badges)
+- **UI:** Badge ikone za različite verifikacije (email ✓, phone ✓, business ✓)
+- **Display:** Prikaz na lead kartici ili detaljima
+
+### Backend:
+- **Route:** Automatski se provjerava prilikom kreiranja User/Job
+- **Endpoint:** Integrirano u \`POST /api/jobs\` i verifikacijske endpointe
+- **Prisma:** Query \`Verification\` zapisa za korisnika (email, phone, dns, business)
+- **AI Score:** Verifikacije utječu na AI score leada (više verifikacija = viši score)
+
+### Baza podataka:
+- **Tablice:** \`Verification\`, \`User\`, \`Job\` (ili \`Lead\`)
+- **Relacije:** Verification → User (one-to-many ili embedded u User)
+- **Polja:** \`emailVerified\`, \`phoneVerified\`, \`dnsVerified\`, \`businessVerified\` (Boolean)
+- **AI Calculation:** Formula: \`baseScore + (emailVerified ? 10 : 0) + (phoneVerified ? 10 : 0) + ...\`
+
+### API pozivi:
+- Automatski: Verifikacije se provjeravaju prilikom kreiranja User/Job
+- \`GET /api/leads\` - Vraća leadove s \`verificationStatus\` objektom
+- Response: \`{ leads: [{ id, verificationStatus: { email: true, phone: true, ... }, aiScore: 85 }] }\`
+- Filter: \`GET /api/leads?verified=true\` - Samo verificirani leadovi
+      `
     },
     "Pretplata na leadove": {
       implemented: true,
@@ -4117,7 +5419,34 @@ Pretplata na plan omogućava vam pristup ekskluzivnim leadovima i dobivanje mjes
 - Krediti koje ste dobili ostaju na vašem računu
 
 Pretplata na leadove omogućava vam pristup ekskluzivnim leadovima i rast vašeg poslovanja!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/SubscriptionPlans.jsx\`
+- **UI:** Plan kartice s cijenama i features, "Pretplati se" gumb
+- **Payment:** Stripe Checkout redirect nakon odabira plana
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/subscriptions.js\`
+- **Endpoint:** \`POST /api/subscriptions\`, \`PUT /api/subscriptions/:id\`, \`DELETE /api/subscriptions/:id\`
+- **Stripe:** Kreiranje Subscription objekta u Stripe-u, webhook za renewals
+- **Prisma:** \`Subscription\` model s \`planType\` (BASIC, PREMIUM, PRO), \`stripeSubscriptionId\`, \`status\`
+
+### Baza podataka:
+- **Tablice:** \`Subscription\`, \`User\`
+- **Relacije:** Subscription → User (one-to-one)
+- **Polja:** \`id\`, \`userId\`, \`planType\` (Enum), \`stripeSubscriptionId\`, \`status\`, \`currentPeriodEnd\`, \`credits\` (Int)
+- **Automatski credits:** Cron job koji dodaje mjesečne kredite na \`currentPeriodEnd\`
+
+### API pozivi:
+- \`POST /api/subscriptions\` - Body: \`{ planType: "PREMIUM", paymentMethodId: "pm_..." }\`
+- Stripe: Redirect na Checkout ili kreiranje Subscription objekta
+- Webhook: \`POST /api/webhooks/stripe\` - Automatski renewal, credits dodavanje
+- \`GET /api/subscriptions/me\` - Vraća trenutnu pretplatu korisnika
+- \`PUT /api/subscriptions/:id\` - Upgrade/downgrade plana (proportionalna naplata)
+- \`DELETE /api/subscriptions/:id\` - Otkazivanje (cancel na kraju perioda)
+      `
     },
     "Statistike uspješnosti": {
       implemented: true,
@@ -4150,7 +5479,36 @@ Statistike uspješnosti pokazuju vam koliko uspješno radite s leadovima - vidit
 - Optimizirate svoju strategiju
 
 Statistike uspješnosti vam daju potpunu sliku vašeg poslovanja i pomažu vam optimizirati strategiju!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/ROIDashboard.jsx\` ili \`StatisticsDashboard.jsx\`
+- **UI:** Charts (Chart.js ili Recharts), metrike kartice, tabela s detaljima
+- **State management:** useState, useEffect hooks za dohvat podataka
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/statistics.js\` ili \`uslugar/backend/src/routes/leads.js\`
+- **Endpoint:** \`GET /api/statistics/roi\`, \`GET /api/statistics/conversion\`
+- **Prisma:** Aggregate queries na \`LeadPurchase\`, \`Transaction\`, \`Job\` tablicama:
+  - \`COUNT(*) WHERE converted = true\` / \`COUNT(*) total\` = conversion rate
+  - \`SUM(revenue)\` - \`SUM(creditsSpent * creditValue)\` = ROI
+  - Group by category za kategorijske statistike
+
+### Baza podataka:
+- **Tablice:** \`LeadPurchase\`, \`Transaction\`, \`Job\`, \`Category\`
+- **Polja:** \`converted\` (Boolean), \`revenue\` (Decimal), \`creditsSpent\` (Int), \`purchasedAt\` (DateTime)
+- **Calculation:**
+  - Conversion rate: \`(converted leads / total leads) * 100\`
+  - ROI: \`((revenue - cost) / cost) * 100\`
+  - Average lead value: \`SUM(revenue) / COUNT(converted leads)\`
+
+### API pozivi:
+- \`GET /api/statistics/roi\` - Vraća ROI metrike: \`{ roi: 150, revenue: 5000, cost: 2000, profit: 3000 }\`
+- \`GET /api/statistics/conversion\` - Vraća conversion rate: \`{ rate: 25.5, converted: 51, total: 200 }\`
+- \`GET /api/statistics/by-category\` - Kategorijske statistike: \`{ [category]: { roi, conversion, ... } }\`
+- Query params: \`?month=2024-01\`, \`?category=elektrotehnika\` za filtriranje
+      `
     },
     "Pozicija u redu čekanja": {
       implemented: true,
@@ -4180,7 +5538,29 @@ Kada ste u redu čekanja za leadove, vidite svoju poziciju - koliko vas provider
 - Mogućnost planiranja
 
 Pozicija u redu čekanja daje vam uvid u vašu poziciju i očekivanja!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/LeadQueue.jsx\` (position display)
+- **UI:** Prikaz pozicije (npr. "Pozicija 3 od 15") za svaku kategoriju
+- **State management:** useState, useEffect hooks za real-time ažuriranje pozicije
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/leads.js\`
+- **Endpoint:** \`GET /api/leads/queue/position\`
+- **Prisma:** Query \`LeadQueue\` gdje \`userId = :id\` i \`categoryId = :catId\`, dohvat \`position\`
+- **Calculation:** \`SELECT COUNT(*) FROM LeadQueue WHERE categoryId = :catId AND position < :userPosition\` za "još X ispred vas"
+
+### Baza podataka:
+- **Tablice:** \`LeadQueue\`
+- **Polja:** \`position\` (Int), \`categoryId\`, \`userId\`
+- **Calculation:** \`ROW_NUMBER() OVER (PARTITION BY categoryId ORDER BY joinedAt ASC)\` za automatski računanje pozicije
+
+### API pozivi:
+- \`GET /api/leads/queue/position\` - Vraća pozicije za sve kategorije: \`{ positions: [{ categoryId, position: 3, total: 15 }] }\`
+- Automatski update: Pozicija se ažurira kada se promijeni red (netko ode ili se pridruži)
+      `
     },
     "Statusi u redu (WAITING, OFFERED, ACCEPTED, DECLINED, EXPIRED, SKIPPED)": {
       implemented: true,
@@ -4208,7 +5588,30 @@ Svaki lead u redu čekanja ima status koji pokazuje gdje se nalazi u procesu dis
 - Realna očekivanja o vremenu
 
 Statusi u redu osiguravaju transparentnost u distribuciji leadova!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/LeadQueue.jsx\` (status badges)
+- **UI:** Badge ikone s različitim bojama za svaki status (npr. zeleno za ACCEPTED, crveno za DECLINED)
+- **Display:** Prikaz statusa na lead kartici ili u listi
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/leads.js\`
+- **Endpoint:** Automatski se ažurira kroz queue distribuciju
+- **Prisma:** Enum \`LeadQueueStatus\` s vrijednostima: \`WAITING\`, \`OFFERED\`, \`ACCEPTED\`, \`DECLINED\`, \`EXPIRED\`, \`SKIPPED\`
+- **Update:** Status se mijenja kroz lifecycle: WAITING → OFFERED → ACCEPTED/DECLINED/SKIPPED/EXPIRED
+
+### Baza podataka:
+- **Tablice:** \`LeadQueue\` ili \`LeadQueueEntry\`
+- **Polja:** \`status\` (Enum: LeadQueueStatus), \`offeredAt\` (DateTime?), \`expiresAt\` (DateTime?)
+- **Automatski:** Cron job koji mijenja EXPIRED status nakon 24h bez odgovora
+
+### API pozivi:
+- \`GET /api/leads/queue\` - Vraća leadove s statusom: \`{ leads: [{ id, status: "OFFERED", ... }] }\`
+- \`PUT /api/leads/:id/queue-response\` - Body: \`{ response: "INTERESTED" }\` - Mijenja status na ACCEPTED/DECLINED
+- Automatski: Cron job provjerava \`expiresAt < NOW()\` i mijenja status u EXPIRED ili SKIPPED
+      `
     },
     "Automatska distribucija leadova": {
       implemented: true,
@@ -4237,7 +5640,34 @@ Leadovi se automatski dijele providerima u redu čekanja prema redoslijedu - nem
 - Veća šansa za dobivanje leadova
 
 Automatska distribucija osigurava fer i efikasan sustav dijeljenja leadova!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** Nema direktnu UI (background proces)
+- **Real-time:** WebSocket ili Server-Sent Events za notifikacije o novom leadu u redu
+
+### Backend:
+- **Route:** Background job ili cron job
+- **Logic:** FIFO algoritam:
+  1. Novi lead kreiran → pronađi sve providere u redu za tu kategoriju (sorted by position)
+  2. Nudi lead prvom provideru (status: OFFERED, expiresAt: NOW() + 24h)
+  3. Ako provider ne odgovori u 24h → automatski SKIPPED, nudi sljedećem
+  4. Ponavlja dok netko ne prihvati (ACCEPTED) ili se svi preskoče
+- **Implementation:** Cron job (svakih 5 min) ili queue worker (Redis/Bull)
+
+### Baza podataka:
+- **Tablice:** \`LeadQueue\`, \`Lead\`, \`LeadQueueEntry\`
+- **Queries:**
+  - \`SELECT * FROM LeadQueue WHERE categoryId = :catId ORDER BY position ASC\`
+  - Update status za trenutnog providera
+  - Update status za sljedećeg providera ako je SKIPPED/EXPIRED
+
+### API pozivi:
+- Background: Cron job \`*/5 * * * *\` koji provjerava nove leadove i distribuira ih
+- Webhook: Nakon kreiranja leada, trigger queue distribution procesa
+- \`POST /api/leads/:id/distribute\` - Ručno trigger distribucije (admin only)
+      `
     },
     "Rok za odgovor (24h)": {
       implemented: true,
@@ -4269,7 +5699,31 @@ Kada vam se lead ponudi u redu čekanja, imate 24 sata da odgovorite - ako ne od
 - Brži proces distribucije
 
 Rok za odgovor osigurava brzu distribuciju leadova i fer pristup svim providerima!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/LeadQueue.jsx\` (countdown timer)
+- **UI:** Timer koji prikazuje preostalo vrijeme (npr. "Preostalo: 18h 23m")
+- **Warning:** Upozorenje kada je < 2h preostalo (crvena boja)
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/leads.js\`
+- **Endpoint:** Automatski se postavlja prilikom \`OFFERED\` statusa
+- **Prisma:** \`expiresAt\` (DateTime) polje u \`LeadQueueEntry\` - postavljeno na \`NOW() + 24h\`
+- **Cron job:** Provjera svakih 5 minuta, mijenja status u \`SKIPPED\` ako \`expiresAt < NOW()\`
+
+### Baza podataka:
+- **Tablice:** \`LeadQueueEntry\` ili \`LeadQueue\`
+- **Polja:** \`expiresAt\` (DateTime), \`offeredAt\` (DateTime)
+- **Calculation:** \`expiresAt = offeredAt + INTERVAL '24 hours'\`
+- **Indeksi:** \`@@index([expiresAt])\` za efikasno pronalaženje isteklih leadova
+
+### API pozivi:
+- Automatski: Prilikom \`PUT /api/leads/:id/offer-to-provider\`, postavlja se \`expiresAt\`
+- \`GET /api/leads/:id/time-remaining\` - Vraća preostalo vrijeme: \`{ hours: 18, minutes: 23, seconds: 45 }\`
+- Cron job: \`SELECT * FROM LeadQueueEntry WHERE expiresAt < NOW() AND status = 'OFFERED'\` → update na SKIPPED
+      `
     },
     "Odgovori providera (INTERESTED, NOT_INTERESTED, NO_RESPONSE)": {
       implemented: true,
@@ -4300,7 +5754,33 @@ Kada vam se lead ponudi u redu čekanja, možete odgovoriti na tri načina kako 
 - Fer sustav za sve provider
 
 Odgovori providera osiguravaju brzu i efikasnu distribuciju leadova!
-`
+`,
+      technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/LeadQueue.jsx\` (response buttons)
+- **UI:** Tri gumba: "Zainteresiran" (INTERESTED), "Nisam zainteresiran" (NOT_INTERESTED), ili ignorirati (NO_RESPONSE)
+- **State management:** useState hooks za tracking odgovora
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/leads.js\`
+- **Endpoint:** \`PUT /api/leads/:id/queue-response\`
+- **Prisma:** Enum \`ProviderResponse\` s vrijednostima: \`INTERESTED\`, \`NOT_INTERESTED\`, \`NO_RESPONSE\`
+- **Update:** Mijenja status leada u redu:
+  - INTERESTED → status = ACCEPTED, trigger kupnju leada
+  - NOT_INTERESTED → status = DECLINED, nudi sljedećem provideru
+  - NO_RESPONSE → status = SKIPPED (automatski nakon 24h)
+
+### Baza podataka:
+- **Tablice:** \`LeadQueueEntry\`
+- **Polja:** \`response\` (Enum: ProviderResponse), \`respondedAt\` (DateTime?)
+- **Status update:** Automatski update \`status\` na temelju \`response\` vrijednosti
+
+### API pozivi:
+- \`PUT /api/leads/:id/queue-response\` - Body: \`{ response: "INTERESTED" }\`
+- Response: \`{ success: true, status: "ACCEPTED", nextStep: "purchase" }\`
+- Automatski: Ako je INTERESTED, trigger kupnje leada (POST /api/leads/:id/purchase)
+      `
     },
     "Preskakanje neaktivnih providera": {
       implemented: true,
