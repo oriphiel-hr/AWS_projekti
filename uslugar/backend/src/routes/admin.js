@@ -1836,6 +1836,161 @@ r.get('/sms-logs', auth(true, ['ADMIN']), async (req, res, next) => {
 });
 
 /**
+ * POST /api/admin/sms-logs/sync-from-twilio
+ * Sinkroniziraj SMS-ove iz Twilio API-ja u bazu (admin)
+ * Query params: limit (default 100), days (default 30)
+ */
+r.post('/sms-logs/sync-from-twilio', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const { limit = 100, days = 30 } = req.query;
+    
+    // Provjeri Twilio konfiguraciju
+    const accountSid = process.env.TWILIO_ACCOUNT_SID;
+    const authToken = process.env.TWILIO_AUTH_TOKEN;
+    
+    if (!accountSid || !authToken) {
+      return res.status(400).json({
+        error: 'Twilio credentials not configured',
+        message: 'TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN must be set in environment variables'
+      });
+    }
+    
+    // Import Twilio client
+    const twilio = (await import('twilio')).default;
+    const client = twilio(accountSid, authToken);
+    
+    // Izračunaj datum (koliko dana unazad)
+    const dateLimit = new Date();
+    dateLimit.setDate(dateLimit.getDate() - parseInt(days));
+    
+    console.log(`🔄 Syncing SMS logs from Twilio (last ${days} days, limit: ${limit})...`);
+    
+    // Dohvati poruke iz Twilio
+    let twilioMessages = [];
+    let pageCount = 0;
+    const maxPages = Math.ceil(parseInt(limit) / 50); // Twilio vraća 50 po stranici
+    
+    try {
+      // Twilio messages.list() vraća iterator
+      const messages = await client.messages.list({
+        dateSentAfter: dateLimit,
+        limit: parseInt(limit)
+      });
+      
+      twilioMessages = messages;
+      console.log(`📱 Fetched ${twilioMessages.length} messages from Twilio`);
+      
+    } catch (twilioError) {
+      console.error('❌ Twilio API error:', twilioError);
+      return res.status(500).json({
+        error: 'Failed to fetch messages from Twilio',
+        message: twilioError.message,
+        code: twilioError.code
+      });
+    }
+    
+    // Sinkroniziraj poruke u bazu
+    let created = 0;
+    let skipped = 0;
+    let errors = 0;
+    
+    for (const msg of twilioMessages) {
+      try {
+        // Provjeri postoji li već u bazi (po twilioSid)
+        const existing = await prisma.smsLog.findFirst({
+          where: { twilioSid: msg.sid }
+        });
+        
+        if (existing) {
+          skipped++;
+          continue;
+        }
+        
+        // Pokušaj pronaći korisnika po broju telefona
+        let userId = null;
+        try {
+          const user = await prisma.user.findFirst({
+            where: {
+              phone: {
+                contains: msg.to.replace(/\s/g, '') // Ukloni razmake
+              }
+            }
+          });
+          if (user) userId = user.id;
+        } catch (userError) {
+          // Ignoriraj greške pri traženju korisnika
+        }
+        
+        // Mapiraj Twilio status na naš status
+        let status = 'PENDING';
+        if (msg.status === 'delivered' || msg.status === 'sent') {
+          status = 'SUCCESS';
+        } else if (msg.status === 'failed' || msg.status === 'undelivered') {
+          status = 'FAILED';
+        }
+        
+        // Pokušaj odrediti tip poruke iz sadržaja
+        let type = 'OTHER';
+        const messageBody = (msg.body || '').toLowerCase();
+        if (messageBody.includes('kod') || messageBody.includes('verifikacij')) {
+          type = 'VERIFICATION';
+        } else if (messageBody.includes('lead') || messageBody.includes('ekskluzivni')) {
+          type = 'LEAD_NOTIFICATION';
+        } else if (messageBody.includes('refund') || messageBody.includes('vraćen')) {
+          type = 'REFUND';
+        } else if (messageBody.includes('urgent') || messageBody.includes('hitno')) {
+          type = 'URGENT';
+        }
+        
+        // Kreiraj zapis u bazi
+        await prisma.smsLog.create({
+          data: {
+            phone: msg.to,
+            message: msg.body || '',
+            type,
+            status,
+            mode: 'twilio',
+            twilioSid: msg.sid,
+            error: msg.errorMessage || msg.errorCode ? `${msg.errorCode}: ${msg.errorMessage}` : null,
+            userId,
+            metadata: {
+              direction: msg.direction,
+              from: msg.from,
+              dateSent: msg.dateSent,
+              dateUpdated: msg.dateUpdated,
+              price: msg.price,
+              priceUnit: msg.priceUnit,
+              uri: msg.uri
+            },
+            createdAt: msg.dateSent || msg.dateCreated
+          }
+        });
+        
+        created++;
+        
+      } catch (dbError) {
+        console.error(`❌ Error saving SMS ${msg.sid}:`, dbError);
+        errors++;
+      }
+    }
+    
+    res.json({
+      success: true,
+      synced: {
+        total: twilioMessages.length,
+        created,
+        skipped,
+        errors
+      },
+      message: `Sinkronizirano ${created} novih SMS-ova, ${skipped} već postoje, ${errors} grešaka`
+    });
+    
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
  * GET /api/admin/sms-logs/stats
  * Statistike SMS-ova (admin)
  */

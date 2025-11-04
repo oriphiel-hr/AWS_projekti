@@ -36,6 +36,8 @@ export default function AdminSmsLogs() {
     total: 0
   });
   const [selectedLog, setSelectedLog] = useState(null);
+  const [syncing, setSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState(null);
 
   useEffect(() => {
     loadLogs();
@@ -87,6 +89,32 @@ export default function AdminSmsLogs() {
 
   const handlePageChange = (newOffset) => {
     setPagination(prev => ({ ...prev, offset: newOffset }));
+  };
+
+  const syncFromTwilio = async () => {
+    try {
+      setSyncing(true);
+      setSyncResult(null);
+      setError('');
+      
+      const response = await api.post('/admin/sms-logs/sync-from-twilio', null, {
+        params: { limit: 500, days: 90 }
+      });
+      
+      setSyncResult(response.data);
+      
+      // Osvježi podatke nakon sinkronizacije
+      await loadLogs();
+      await loadStats();
+      
+      // Sakrij poruku nakon 5 sekundi
+      setTimeout(() => setSyncResult(null), 5000);
+    } catch (err) {
+      setError(err.response?.data?.error || err.response?.data?.message || 'Greška pri sinkronizaciji');
+      console.error('Error syncing from Twilio:', err);
+    } finally {
+      setSyncing(false);
+    }
   };
 
   const formatDate = (dateString) => {
@@ -144,14 +172,53 @@ export default function AdminSmsLogs() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">📱 SMS Logs</h1>
-        <p className="text-gray-600">Pregled svih poslanih SMS-ova</p>
+      <div className="mb-6 flex justify-between items-start">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">📱 SMS Logs</h1>
+          <p className="text-gray-600">Pregled svih poslanih SMS-ova</p>
+        </div>
+        <button
+          onClick={syncFromTwilio}
+          disabled={syncing}
+          className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+        >
+          {syncing ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              <span>Sinkroniziranje...</span>
+            </>
+          ) : (
+            <>
+              <span>🔄</span>
+              <span>Sinkroniziraj iz Twilio</span>
+            </>
+          )}
+        </button>
       </div>
 
       {error && (
         <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
           {error}
+        </div>
+      )}
+
+      {syncResult && (
+        <div className={`mb-4 p-4 rounded-lg border ${
+          syncResult.success 
+            ? 'bg-green-50 border-green-200 text-green-700' 
+            : 'bg-red-50 border-red-200 text-red-700'
+        }`}>
+          <div className="font-medium mb-2">{syncResult.message}</div>
+          {syncResult.synced && (
+            <div className="text-sm">
+              <div>Ukupno: {syncResult.synced.total}</div>
+              <div>Kreirano: {syncResult.synced.created}</div>
+              <div>Preskočeno: {syncResult.synced.skipped}</div>
+              {syncResult.synced.errors > 0 && (
+                <div className="text-red-600">Greške: {syncResult.synced.errors}</div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
