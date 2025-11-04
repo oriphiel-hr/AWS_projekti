@@ -1849,9 +1849,18 @@ r.post('/sms-logs/sync-from-twilio', auth(true, ['ADMIN']), async (req, res, nex
     const authToken = process.env.TWILIO_AUTH_TOKEN;
     
     if (!accountSid || !authToken) {
+      console.error('❌ Twilio credentials missing:', {
+        hasAccountSid: !!accountSid,
+        hasAuthToken: !!authToken
+      });
       return res.status(400).json({
+        success: false,
         error: 'Twilio credentials not configured',
-        message: 'TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN must be set in environment variables'
+        message: 'TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN must be set in environment variables or AWS Secrets Manager',
+        details: {
+          hasAccountSid: !!accountSid,
+          hasAuthToken: !!authToken
+        }
       });
     }
     
@@ -1871,18 +1880,24 @@ r.post('/sms-logs/sync-from-twilio', auth(true, ['ADMIN']), async (req, res, nex
     const maxPages = Math.ceil(parseInt(limit) / 50); // Twilio vraća 50 po stranici
     
     try {
-      // Twilio messages.list() vraća iterator
+      // Twilio messages.list() vraća iterator - konvertiraj u array
       const messages = await client.messages.list({
         dateSentAfter: dateLimit,
         limit: parseInt(limit)
       });
       
-      twilioMessages = messages;
+      // Konvertiraj iterator u array
+      twilioMessages = [];
+      for await (const message of messages) {
+        twilioMessages.push(message);
+      }
+      
       console.log(`📱 Fetched ${twilioMessages.length} messages from Twilio`);
       
     } catch (twilioError) {
       console.error('❌ Twilio API error:', twilioError);
       return res.status(500).json({
+        success: false,
         error: 'Failed to fetch messages from Twilio',
         message: twilioError.message,
         code: twilioError.code

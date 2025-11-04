@@ -110,8 +110,21 @@ export default function AdminSmsLogs() {
       // Sakrij poruku nakon 5 sekundi
       setTimeout(() => setSyncResult(null), 5000);
     } catch (err) {
-      setError(err.response?.data?.error || err.response?.data?.message || 'Greška pri sinkronizaciji');
+      const errorMessage = err.response?.data?.message || 
+                           err.response?.data?.error || 
+                           err.message || 
+                           'Greška pri sinkronizaciji';
+      setError(errorMessage);
       console.error('Error syncing from Twilio:', err);
+      console.error('Error response:', err.response?.data);
+      
+      // Ako je greška zbog nedostajućih credentials, prikaži detaljniju poruku
+      if (err.response?.status === 400) {
+        const details = err.response?.data?.details;
+        if (details) {
+          setError(`${errorMessage} (Account SID: ${details.hasAccountSid ? '✅' : '❌'}, Auth Token: ${details.hasAuthToken ? '✅' : '❌'})`);
+        }
+      }
     } finally {
       setSyncing(false);
     }
