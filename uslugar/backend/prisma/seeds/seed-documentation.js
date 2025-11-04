@@ -11846,7 +11846,8 @@ async function seedDocumentation() {
           { name: "Admin upravljanje recenzijama", implemented: true, isAdminOnly: true },
           { name: "Upravljanje notifikacijama", implemented: true, isAdminOnly: true },
           { name: "Upravljanje chat sobama", implemented: true, isAdminOnly: true },
-          { name: "Moderacija sadržaja", implemented: true, isAdminOnly: true }
+          { name: "Moderacija sadržaja", implemented: true, isAdminOnly: true },
+          { name: "Pregled SMS logova", implemented: true, isAdminOnly: true }
         ]
       },
       {
@@ -12495,6 +12496,98 @@ async function seedDocumentation() {
 - \`GET /api/admin/chat-rooms/:id/messages\` - Poruke u chat sobi
 - \`DELETE /api/admin/chat-rooms/:id\` - Arhiviranje chat sobe
 - \`DELETE /api/admin/messages/:id\` - Brisanje poruke
+      `
+      },
+      "Pregled SMS logova": {
+        summary: "Pregled svih poslanih SMS-ova kroz platformu s detaljnim informacijama",
+        details: `## Implementirano:
+
+### 1. **SMS Logging**
+   - Automatsko logiranje svih SMS-ova u bazu podataka
+   - Pohrana detalja: telefon, poruka, tip, status, mode, Twilio SID
+   - Povezivanje SMS-ova s korisnicima (opcionalno)
+   - Metadata za dodatne informacije (leadId, transactionId, itd.)
+
+### 2. **Admin Pregled**
+   - Tablica svih SMS logova s filtriranjem
+   - Filteri: telefon, tip (VERIFICATION, LEAD_NOTIFICATION, REFUND, URGENT, OTHER), status (SUCCESS, FAILED, PENDING)
+   - Filteri po datumu (od-do)
+   - Paginacija za velike količine podataka
+   - Sortiranje po datumu (najnoviji prvo)
+
+### 3. **Detalji SMS-a**
+   - Modal s detaljnim prikazom SMS-a
+   - Prikaz korisnika (ako je povezan)
+   - Twilio SID (ako je poslano preko Twilio)
+   - Error poruke (ako je neuspješno)
+   - Metadata u JSON formatu
+
+### 4. **Statistike**
+   - Ukupan broj SMS-ova
+   - Statistike po statusu (SUCCESS, FAILED, PENDING)
+   - Statistike po tipu (VERIFICATION, LEAD_NOTIFICATION, itd.)
+   - Statistike po modu (twilio, simulation, twilio_error)
+   - Recent activity (zadnjih 10 SMS-ova)
+
+### 5. **Tipovi SMS-ova**
+   - **VERIFICATION**: SMS kodovi za verifikaciju telefona
+   - **LEAD_NOTIFICATION**: Obavijesti o novim leadovima i kupnjama
+   - **REFUND**: Obavijesti o refundacijama kredita
+   - **URGENT**: Urgentne obavijesti (VIP podrška)
+   - **OTHER**: Ostali SMS-ovi
+
+### 6. **Statusi**
+   - **SUCCESS**: SMS uspješno poslan
+   - **FAILED**: SMS nije poslan (greška)
+   - **PENDING**: SMS čeka na slanje (budućnost)
+
+### 7. **Mode-ovi**
+   - **twilio**: Poslano preko Twilio API-ja
+   - **simulation**: Simulacija (development mode)
+   - **twilio_error**: Greška pri slanju preko Twilio
+`,
+        technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- **Komponenta:** \`uslugar/frontend/src/pages/AdminSmsLogs.jsx\`
+- **Route:** \`/admin/sms-logs\`
+- **State management:** useState, useEffect hooks
+- **Filteri:** React controlled inputs s real-time filtriranjem
+- **Modal:** Detaljni prikaz SMS-a s klikom na red
+
+### Backend:
+- **Route:** \`uslugar/backend/src/routes/admin.js\`
+- **Endpoint:** \`GET /api/admin/sms-logs\`
+- **Middleware:** \`auth(true, ['ADMIN'])\`
+- **Query params:** phone, type, status, limit, offset, startDate, endDate
+
+### Baza podataka:
+- **Tabela:** \`SmsLog\`
+- **Model:** \`uslugar/backend/prisma/schema.prisma\`
+- **Relacije:** \`User\` (opcionalno, userId)
+- **Indexi:** phone, status, type, userId, createdAt
+
+### SMS Service:
+- **Servis:** \`uslugar/backend/src/services/sms-service.js\`
+- **Logiranje:** Funkcija \`logSMS()\` automatski logira svaki SMS
+- **Twilio integracija:** Ako je konfigurirano, koristi Twilio API
+- **Simulation mode:** Za development bez Twilio konfiguracije
+
+### API pozivi:
+- \`GET /api/admin/sms-logs\` - Pregled SMS logova s filtrima
+- \`GET /api/admin/sms-logs/stats\` - Statistike SMS-ova
+- Query params: phone, type, status, limit, offset, startDate, endDate
+
+### Podaci u SmsLog:
+- \`phone\`: Broj telefona (format: +385XXXXXXXXX)
+- \`message\`: Sadržaj poruke
+- \`type\`: Tip poruke (VERIFICATION, LEAD_NOTIFICATION, REFUND, URGENT, OTHER)
+- \`status\`: Status (SUCCESS, FAILED, PENDING)
+- \`mode\`: Mode (twilio, simulation, twilio_error)
+- \`twilioSid\`: Twilio SID (ako je poslano preko Twilio)
+- \`error\`: Error poruka (ako je neuspješno)
+- \`userId\`: ID korisnika (opcionalno)
+- \`metadata\`: Dodatni podaci u JSON formatu
       `
       },
       "Moderacija sadržaja": {

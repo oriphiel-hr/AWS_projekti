@@ -126,6 +126,7 @@ model User {
   invoices           Invoice[]
   supportTickets     SupportTicket[]     @relation("UserSupportTickets")
   whiteLabel         WhiteLabel?         @relation("UserWhiteLabel")
+  smsLogs            SmsLog[]            @relation("UserSmsLogs")
 
   // Testing runs authored by this user (admin)
   testRuns TestRun[] @relation("TestRunAuthor")
@@ -908,4 +909,27 @@ model DocumentationFeature {
   @@index([implemented])
   @@index([isAdminOnly])
   @@index([order])
+}
+
+// SMS Log - Pregled svih poslanih SMS-ova (admin)
+model SmsLog {
+  id          String   @id @default(cuid())
+  phone       String   // Broj telefona (format: +385XXXXXXXXX)
+  message     String   // Sadržaj poruke
+  type        String   // Tip poruke: VERIFICATION, LEAD_NOTIFICATION, REFUND, URGENT, OTHER
+  status      String   // Status: SUCCESS, FAILED, PENDING
+  mode        String   // Mode: twilio, simulation, twilio_error
+  twilioSid   String?  // Twilio SID (ako je poslano preko Twilio)
+  error       String?  // Error poruka (ako je neuspješno)
+  userId      String?  // ID korisnika (ako je vezano za korisnika)
+  metadata    Json?    // Dodatni podaci (npr. leadId, jobId, itd.)
+  createdAt   DateTime @default(now())
+
+  user User? @relation("UserSmsLogs", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([phone])
+  @@index([status])
+  @@index([type])
+  @@index([userId])
+  @@index([createdAt])
 }

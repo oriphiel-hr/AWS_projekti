@@ -13,6 +13,9 @@ on:
       - "uslugar/backend/src/routes/documentation.js"
       - "uslugar/frontend/src/pages/Documentation.jsx"
       - "uslugar/backend/scripts/extract-documentation.js"
+      - "uslugar/backend/src/routes/admin.js"
+      - "uslugar/backend/src/services/sms-service.js"
+      - "uslugar/frontend/src/pages/AdminSmsLogs.jsx"
 
 env:
   AWS_REGION: eu-north-1

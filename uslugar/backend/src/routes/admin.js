@@ -1750,4 +1750,158 @@ r.get('/verification-documents', auth(true, ['ADMIN']), async (req, res, next) =
   }
 });
 
+/**
+ * GET /api/admin/sms-logs
+ * Pregled svih SMS-ova (admin)
+ * Query params: phone, type, status, limit, offset, startDate, endDate
+ */
+r.get('/sms-logs', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const { phone, type, status, limit = 50, offset = 0, startDate, endDate } = req.query;
+    
+    const where = {};
+    
+    if (phone) {
+      where.phone = { contains: phone };
+    }
+    
+    if (type) {
+      where.type = type;
+    }
+    
+    if (status) {
+      where.status = status;
+    }
+    
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) {
+        where.createdAt.gte = new Date(startDate);
+      }
+      if (endDate) {
+        where.createdAt.lte = new Date(endDate);
+      }
+    }
+    
+    const [logs, total] = await Promise.all([
+      prisma.smsLog.findMany({
+        where,
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              fullName: true,
+              role: true
+            }
+          }
+        },
+        orderBy: {
+          createdAt: 'desc'
+        },
+        take: parseInt(limit),
+        skip: parseInt(offset)
+      }),
+      prisma.smsLog.count({ where })
+    ]);
+    
+    // Statistike
+    const stats = await prisma.smsLog.groupBy({
+      by: ['status', 'type'],
+      where,
+      _count: {
+        id: true
+      }
+    });
+    
+    res.json({
+      logs,
+      total,
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+      stats: {
+        byStatus: stats.reduce((acc, s) => {
+          acc[s.status] = (acc[s.status] || 0) + s._count.id;
+          return acc;
+        }, {}),
+        byType: stats.reduce((acc, s) => {
+          acc[s.type] = (acc[s.type] || 0) + s._count.id;
+          return acc;
+        }, {})
+      }
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * GET /api/admin/sms-logs/stats
+ * Statistike SMS-ova (admin)
+ */
+r.get('/sms-logs/stats', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const { startDate, endDate } = req.query;
+    
+    const where = {};
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) {
+        where.createdAt.gte = new Date(startDate);
+      }
+      if (endDate) {
+        where.createdAt.lte = new Date(endDate);
+      }
+    }
+    
+    const [total, byStatus, byType, byMode, recent] = await Promise.all([
+      prisma.smsLog.count({ where }),
+      prisma.smsLog.groupBy({
+        by: ['status'],
+        where,
+        _count: { id: true }
+      }),
+      prisma.smsLog.groupBy({
+        by: ['type'],
+        where,
+        _count: { id: true }
+      }),
+      prisma.smsLog.groupBy({
+        by: ['mode'],
+        where,
+        _count: { id: true }
+      }),
+      prisma.smsLog.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+        select: {
+          createdAt: true,
+          status: true,
+          type: true
+        }
+      })
+    ]);
+    
+    res.json({
+      total,
+      byStatus: byStatus.reduce((acc, s) => {
+        acc[s.status] = s._count.id;
+        return acc;
+      }, {}),
+      byType: byType.reduce((acc, t) => {
+        acc[t.type] = t._count.id;
+        return acc;
+      }, {}),
+      byMode: byMode.reduce((acc, m) => {
+        acc[m.mode] = m._count.id;
+        return acc;
+      }, {}),
+      recentActivity: recent
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
 export default r;

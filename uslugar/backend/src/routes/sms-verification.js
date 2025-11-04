@@ -99,7 +99,7 @@ r.post('/send', auth(true), async (req, res, next) => {
     // Pošalji SMS
     let smsResult = null;
     try {
-      smsResult = await sendVerificationCode(phone, code);
+      smsResult = await sendVerificationCode(phone, code, userId);
       
       if (smsResult.mode === 'twilio_error') {
         console.error(`[SMS Verification] Twilio API error:`, smsResult.error);

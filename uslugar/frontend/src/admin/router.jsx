@@ -13,6 +13,7 @@ import AdminVerificationDocuments from '../pages/AdminVerificationDocuments'
 import AdminPlatformStats from '../pages/AdminPlatformStats'
 import AdminModeration from '../pages/AdminModeration'
 import AdminDocumentation from '../pages/AdminDocumentation'
+import AdminSmsLogs from '../pages/AdminSmsLogs'
 import api from '../api'
 
 // Model nazivi u PascalCase kako backend očekuje
@@ -103,6 +104,7 @@ export default function AdminRouter(){
           <Route path="/admin/platform-stats" element={<AdminPlatformStats />} />
           <Route path="/admin/moderation" element={<AdminModeration />} />
           <Route path="/admin/documentation" element={<AdminDocumentation />} />
+          <Route path="/admin/sms-logs" element={<AdminSmsLogs />} />
           <Route path="/admin/cleanup" element={<AdminDataCleanup />} />
           <Route path="/admin/testing" element={<AdminTesting />} />
         </Route>
