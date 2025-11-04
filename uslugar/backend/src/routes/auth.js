@@ -229,69 +229,111 @@ r.post('/login', async (req, res, next) => {
     const { email, password, role } = req.body; // Optional role parameter
     console.log('[LOGIN] Attempting login for email:', email, 'role:', role || 'any');
     
-    // Find user(s) with this email
-    // If role is specified, try to find that specific user first
-    let user = null;
+    // Find all users with this email
+    const users = await prisma.user.findMany({ 
+      where: { email },
+      include: {
+        providerProfile: true // Include provider profile to check taxId
+      }
+    });
     
-    if (role) {
-      // Try to find user with specific role
-      user = await prisma.user.findUnique({ 
-        where: { 
-          email_role: {
-            email: email,
-            role: role
-          }
-        } 
-      });
+    if (users.length === 0) {
+      console.log('[LOGIN] User not found:', email);
+      return res.status(401).json({ error: 'Invalid credentials' });
     }
     
-    // If not found or role not specified, find any user with this email
-    if (!user) {
-      const users = await prisma.user.findMany({ where: { email } });
-      if (users.length === 0) {
-        console.log('[LOGIN] User not found:', email);
-        return res.status(401).json({ error: 'Invalid credentials' });
-      }
-      
-      // If multiple users with same email, try to verify password for each
-      // This allows same email with different roles to have different passwords
-      if (users.length > 1) {
-        // If role specified but not found, return error
-        if (role) {
-          return res.status(401).json({ 
-            error: 'Invalid credentials',
-            message: `Korisnik s emailom ${email} i ulogom ${role} nije pronađen. Molimo provjerite ulogu.`
-          });
-        }
-        
-        // Try to find user with matching password
-        for (const u of users) {
-          const ok = await verifyPassword(password, u.passwordHash);
-          if (ok) {
-            user = u;
-            break;
-          }
-        }
-      } else {
-        // Single user, verify password
-        const ok = await verifyPassword(password, users[0].passwordHash);
-        if (ok) {
-          user = users[0];
-        }
-      }
-    } else {
-      // User found with specific role, verify password
-      const ok = await verifyPassword(password, user.passwordHash);
-      if (!ok) {
-        user = null;
+    // Verify password - try each user
+    let validUsers = [];
+    for (const u of users) {
+      const ok = await verifyPassword(password, u.passwordHash);
+      if (ok) {
+        validUsers.push(u);
       }
     }
     
-    if (!user) {
+    if (validUsers.length === 0) {
       console.log('[LOGIN] Password mismatch for:', email);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
     
+    // If role is specified, try to find that specific user
+    if (role) {
+      const userWithRole = validUsers.find(u => u.role === role);
+      if (!userWithRole) {
+        return res.status(401).json({ 
+          error: 'Invalid credentials',
+          message: `Korisnik s emailom ${email} i ulogom ${role} nije pronađen. Molimo provjerite ulogu.`
+        });
+      }
+      
+      console.log('[LOGIN] Successful login for:', email, 'role:', userWithRole.role);
+      const token = signToken({ id: userWithRole.id, email: userWithRole.email, role: userWithRole.role, name: userWithRole.fullName });
+      return res.json({ 
+        token, 
+        user: { 
+          id: userWithRole.id, 
+          email: userWithRole.email, 
+          role: userWithRole.role, 
+          fullName: userWithRole.fullName, 
+          isVerified: userWithRole.isVerified 
+        } 
+      });
+    }
+    
+    // If multiple users with same email and password, check if they're same company
+    if (validUsers.length > 1) {
+      // Check if any user is USER and any is PROVIDER with same taxId
+      const userRole = validUsers.find(u => u.role === 'USER');
+      const providerRole = validUsers.find(u => u.role === 'PROVIDER');
+      
+      if (userRole && providerRole) {
+        // Check if they have same taxId (same company)
+        // taxId can be in User model or ProviderProfile model
+        const userTaxId = userRole.taxId;
+        const providerTaxId = providerRole.taxId || providerRole.providerProfile?.taxId;
+        
+        // Both must have taxId and they must match
+        if (userTaxId && providerTaxId && userTaxId.trim() === providerTaxId.trim()) {
+          // Same company - ask user to choose role
+          console.log('[LOGIN] Same company found for:', email, 'taxId:', userTaxId);
+          return res.status(200).json({
+            requiresRoleSelection: true,
+            availableRoles: [
+              {
+                role: 'USER',
+                label: 'Korisnik usluge',
+                description: 'Prijavite se kao korisnik koji traži usluge'
+              },
+              {
+                role: 'PROVIDER',
+                label: 'Pružatelj usluga',
+                description: 'Prijavite se kao pružatelj koji nudi usluge'
+              }
+            ],
+            message: 'Odaberite ulogu za prijavu'
+          });
+        }
+      }
+      
+      // If not same company, just use first valid user (or could return selection)
+      // For now, we'll default to first user
+      const user = validUsers[0];
+      console.log('[LOGIN] Multiple users found, using first:', email, 'role:', user.role);
+      const token = signToken({ id: user.id, email: user.email, role: user.role, name: user.fullName });
+      return res.json({ 
+        token, 
+        user: { 
+          id: user.id, 
+          email: user.email, 
+          role: user.role, 
+          fullName: user.fullName, 
+          isVerified: user.isVerified 
+        } 
+      });
+    }
+    
+    // Single user, proceed with login
+    const user = validUsers[0];
     console.log('[LOGIN] Successful login for:', email, 'role:', user.role);
     const token = signToken({ id: user.id, email: user.email, role: user.role, name: user.fullName });
     res.json({ 

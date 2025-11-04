@@ -8,6 +8,8 @@ export default function Login({ onSuccess }) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [emailError, setEmailError] = useState('');
+  const [requiresRoleSelection, setRequiresRoleSelection] = useState(false);
+  const [availableRoles, setAvailableRoles] = useState([]);
 
   const handleEmailChange = (e) => {
     const value = e.target.value;
@@ -25,6 +27,7 @@ export default function Login({ onSuccess }) {
     e.preventDefault();
     setError('');
     setLoading(true);
+    setRequiresRoleSelection(false);
 
     // Validacija emaila prije slanja
     if (!validateEmail(email)) {
@@ -38,6 +41,43 @@ export default function Login({ onSuccess }) {
       const response = await api.post('/auth/login', {
         email,
         password
+      });
+
+      // Check if role selection is required
+      if (response.data.requiresRoleSelection) {
+        setRequiresRoleSelection(true);
+        setAvailableRoles(response.data.availableRoles || []);
+        setLoading(false);
+        return;
+      }
+
+      if (response.data.token) {
+        // Save token and user info
+        localStorage.setItem('token', response.data.token);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+        
+        // Call success callback
+        if (onSuccess) {
+          onSuccess(response.data.token, response.data.user);
+        }
+      }
+    } catch (err) {
+      console.error('Login error:', err);
+      setError(err.response?.data?.message || 'Greška pri prijavi. Provjerite email i lozinku.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRoleSelection = async (selectedRole) => {
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await api.post('/auth/login', {
+        email,
+        password,
+        role: selectedRole
       });
 
       if (response.data.token) {
@@ -57,6 +97,71 @@ export default function Login({ onSuccess }) {
       setLoading(false);
     }
   };
+
+  // If role selection is required, show role selection UI
+  if (requiresRoleSelection) {
+    return (
+      <div className="max-w-md mx-auto mt-8">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Odaberite ulogu</h1>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            Vaša tvrtka ima registriranu i korisničku i pružateljsku ulogu. Odaberite kako želite pristupiti platformi.
+          </p>
+
+          {error && (
+            <div 
+              className="mb-4 p-3 bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-300 rounded"
+              role="alert"
+              aria-live="assertive"
+            >
+              {error}
+            </div>
+          )}
+
+          <div className="space-y-3">
+            {availableRoles.map((roleOption) => (
+              <button
+                key={roleOption.role}
+                onClick={() => handleRoleSelection(roleOption.role)}
+                disabled={loading}
+                className={`w-full p-4 border-2 rounded-lg text-left transition-all bg-white dark:bg-gray-700 ${
+                  roleOption.role === 'USER'
+                    ? 'border-blue-500 hover:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 dark:border-blue-400'
+                    : 'border-green-500 hover:border-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 dark:border-green-400'
+                } disabled:opacity-50 disabled:cursor-not-allowed`}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
+                      {roleOption.label}
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      {roleOption.description}
+                    </p>
+                  </div>
+                  <div className={`ml-4 text-2xl ${
+                    roleOption.role === 'USER' ? 'text-blue-500 dark:text-blue-400' : 'text-green-500 dark:text-green-400'
+                  }`}>
+                    {roleOption.role === 'USER' ? '👤' : '🏢'}
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+
+          <button
+            onClick={() => {
+              setRequiresRoleSelection(false);
+              setAvailableRoles([]);
+            }}
+            className="mt-4 w-full text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 underline"
+          >
+            ← Povratak na prijavu
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-md mx-auto mt-8">
