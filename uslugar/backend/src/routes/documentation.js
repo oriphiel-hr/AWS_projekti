@@ -213,17 +213,16 @@ r.post('/migrate', async (req, res, next) => {
 r.get('/admin', async (req, res, next) => {
   try {
     // Provjeri da li tablice postoje - ako ne, vrati prazan array
-    let categories;
+    let allCategories;
     try {
-      categories = await prisma.documentationCategory.findMany({
+      allCategories = await prisma.documentationCategory.findMany({
         where: {
           isActive: true
         },
         include: {
           features: {
             where: {
-              deprecated: false,
-              isAdminOnly: true // Samo admin-only funkcionalnosti
+              deprecated: false
             },
             orderBy: {
               order: 'asc'
@@ -239,18 +238,31 @@ r.get('/admin', async (req, res, next) => {
       if (error.message.includes('does not exist') || error.message.includes('Unknown table')) {
         console.warn('⚠️  DocumentationCategory table does not exist - migrations may not be applied');
         return res.json({
-          features: [],
+          adminFeatures: [],
+          publicFeatures: [],
           featureDescriptions: {}
         });
       }
       throw error; // Re-throw other errors
     }
 
-    // Filtriraj kategorije koje imaju admin-only features
-    const adminCategories = categories.filter(cat => cat.features.length > 0);
+    // Razdvoji admin-only i javne kategorije
+    const adminCategories = allCategories
+      .map(cat => ({
+        ...cat,
+        features: cat.features.filter(f => f.isAdminOnly === true)
+      }))
+      .filter(cat => cat.features.length > 0 && cat.name !== 'Statistike Implementacije');
 
-    // Transformiraj podatke u format koji komponenta očekuje
-    const features = adminCategories.map(cat => ({
+    const publicCategories = allCategories
+      .map(cat => ({
+        ...cat,
+        features: cat.features.filter(f => f.isAdminOnly === false)
+      }))
+      .filter(cat => cat.features.length > 0 && cat.name !== 'Statistike Implementacije');
+
+    // Transformiraj admin features
+    const adminFeatures = adminCategories.map(cat => ({
       category: cat.name,
       items: cat.features.map(f => ({
         name: f.name,
@@ -259,8 +271,20 @@ r.get('/admin', async (req, res, next) => {
       }))
     }));
 
-    // Kreiraj featureDescriptions objekt (uključujući technicalDetails)
+    // Transformiraj javne features
+    const publicFeatures = publicCategories.map(cat => ({
+      category: cat.name,
+      items: cat.features.map(f => ({
+        name: f.name,
+        implemented: f.implemented,
+        deprecated: f.deprecated
+      }))
+    }));
+
+    // Kreiraj featureDescriptions objekt za SVE funkcionalnosti (admin + javne, s technicalDetails)
     const featureDescriptions = {};
+    
+    // Admin features s technicalDetails
     adminCategories.forEach(cat => {
       cat.features.forEach(f => {
         if (f.summary || f.details || f.technicalDetails) {
@@ -274,8 +298,23 @@ r.get('/admin', async (req, res, next) => {
       });
     });
 
+    // Javne features s technicalDetails (za admin prikaz)
+    publicCategories.forEach(cat => {
+      cat.features.forEach(f => {
+        if (f.summary || f.details || f.technicalDetails) {
+          featureDescriptions[f.name] = {
+            implemented: f.implemented,
+            summary: f.summary || '',
+            details: f.details || '',
+            technicalDetails: f.technicalDetails || '' // Tehnički opis za admin prikaz
+          };
+        }
+      });
+    });
+
     res.json({
-      features,
+      adminFeatures,
+      publicFeatures,
       featureDescriptions
     });
   } catch (e) {

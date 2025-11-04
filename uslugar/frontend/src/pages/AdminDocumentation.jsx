@@ -6,25 +6,28 @@ import api from '../api.js';
 const AdminDocumentation = () => {
   const { isDarkMode } = useDarkMode();
   const [expandedItem, setExpandedItem] = useState(null); // Track which item is expanded
-  const [features, setFeatures] = useState([]);
+  const [adminFeatures, setAdminFeatures] = useState([]);
+  const [publicFeatures, setPublicFeatures] = useState([]);
   const [featureDescriptions, setFeatureDescriptions] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Učitaj podatke iz baze
+  // Učitaj podatke iz baze - i admin i javne funkcionalnosti
   useEffect(() => {
     const loadAdminDocumentation = async () => {
       try {
         setLoading(true);
         const response = await api.get('/documentation/admin');
-        setFeatures(response.data.features);
-        setFeatureDescriptions(response.data.featureDescriptions);
+        setAdminFeatures(response.data.adminFeatures || []);
+        setPublicFeatures(response.data.publicFeatures || []);
+        setFeatureDescriptions(response.data.featureDescriptions || {});
         setError(null);
       } catch (err) {
         console.error('Error loading admin documentation:', err);
         setError('Greška pri učitavanju admin dokumentacije. Molimo pokušajte ponovo.');
         // Fallback na prazne podatke
-        setFeatures([]);
+        setAdminFeatures([]);
+        setPublicFeatures([]);
         setFeatureDescriptions({});
       } finally {
         setLoading(false);
@@ -291,13 +294,14 @@ Sve promjene su commitane i pushane. Pružatelji usluga sada imaju grafički pri
   };
 
   const getImplementationStats = () => {
-    if (!features || features.length === 0) {
+    const allFeatures = [...adminFeatures, ...publicFeatures];
+    if (!allFeatures || allFeatures.length === 0) {
       return { totalItems: 0, implementedItems: 0, percentage: 0 };
     }
-    const totalItems = features.reduce(
+    const totalItems = allFeatures.reduce(
       (sum, category) => sum + category.items.length, 0
     );
-    const implementedItems = features.reduce(
+    const implementedItems = allFeatures.reduce(
       (sum, category) => sum + category.items.filter(item => item.implemented).length, 0
     );
     const percentage = totalItems > 0 ? Math.round((implementedItems / totalItems) * 100) : 0;
@@ -337,13 +341,13 @@ Sve promjene su commitane i pushane. Pružatelji usluga sada imaju grafički pri
   }
 
   // No data state
-  if (!features || features.length === 0) {
+  if ((!adminFeatures || adminFeatures.length === 0) && (!publicFeatures || publicFeatures.length === 0)) {
     return (
       <div className={`max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 ${isDarkMode ? 'dark' : ''}`}>
         <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-6 text-center">
           <h2 className="text-xl font-semibold text-yellow-800 dark:text-yellow-400 mb-2">Nema dostupnih podataka</h2>
           <p className="text-yellow-600 dark:text-yellow-300 mb-4">
-            Admin dokumentacija još nije dodana u bazu podataka.
+            Dokumentacija još nije dodana u bazu podataka.
           </p>
           <p className="text-sm text-yellow-500 dark:text-yellow-400">
             Pokreni seed dokumentacije: <code className="bg-yellow-100 dark:bg-yellow-900 px-2 py-1 rounded">npm run seed:documentation</code>
@@ -391,20 +395,227 @@ Sve promjene su commitane i pushane. Pružatelji usluga sada imaju grafički pri
         </div>
       </div>
 
-      {/* Kategorije funkcionalnosti */}
-      <div className="space-y-8">
-        {features.map((category, categoryIndex) => (
-          <div 
-            key={categoryIndex}
-            className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 border-indigo-500"
-          >
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-              {category.category}
+      {/* Admin funkcionalnosti - PRVO */}
+      {adminFeatures && adminFeatures.length > 0 && (
+        <div className="mb-12">
+          <div className="mb-6 pb-4 border-b-4 border-red-500 dark:border-red-600">
+            <h2 className="text-3xl font-bold text-red-600 dark:text-red-400 flex items-center gap-3">
+              <span className="bg-red-100 dark:bg-red-900/30 px-3 py-1 rounded-lg">🔐 ADMIN</span>
+              <span className="text-gray-600 dark:text-gray-400 text-xl">Funkcionalnosti</span>
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {category.items.map((item, itemIndex) => {
-                const itemKey = `${categoryIndex}-${itemIndex}`;
-                const isExpanded = expandedItem === itemKey;
+            <p className="text-gray-600 dark:text-gray-400 mt-2">
+              Admin-only funkcionalnosti - dostupne samo administratorima platforme
+            </p>
+          </div>
+          <div className="space-y-8">
+            {adminFeatures.map((category, categoryIndex) => (
+              <div 
+                key={`admin-${categoryIndex}`}
+                className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 border-red-500"
+              >
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+                  {category.category}
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {category.items.map((item, itemIndex) => {
+                    const itemKey = `admin-${categoryIndex}-${itemIndex}`;
+                    const isExpanded = expandedItem === itemKey;
+                    const description = featureDescriptions[item.name] || {
+                      implemented: item.implemented,
+                      summary: item.implemented ? `${item.name} je implementirano.` : `${item.name} nije implementirano.`,
+                      details: item.implemented 
+                        ? `## Implementirano:\n\n${item.name} je funkcionalnost koja je implementirana i dostupna u admin panelu.` 
+                        : `## Nije implementirano:\n\n${item.name} je funkcionalnost koja trenutno nije implementirana.`
+                    };
+
+                    return (
+                      <div
+                        key={itemIndex}
+                        className={`p-4 rounded-lg border-2 ${getStatusColor(item.implemented, item.deprecated)} transition-all`}
+                      >
+                        <div 
+                          className="flex items-start justify-between cursor-pointer"
+                          onClick={() => setExpandedItem(isExpanded ? null : itemKey)}
+                        >
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <h3 className={`font-semibold mb-1 ${item.deprecated ? 'line-through' : ''}`}>
+                                {item.name}
+                              </h3>
+                              <span className="text-xs text-gray-500 dark:text-gray-400">
+                                {isExpanded ? '▼' : '▶'}
+                              </span>
+                            </div>
+                            {description.summary && !isExpanded && (
+                              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                {description.summary}
+                              </p>
+                            )}
+                          </div>
+                          <span className="ml-2 text-sm font-medium">
+                            {getStatusText(item.implemented, item.deprecated)}
+                          </span>
+                        </div>
+
+                        {/* Expanded details */}
+                        {isExpanded && (
+                          <div className="mt-4 pt-4 border-t border-gray-300 dark:border-gray-600 space-y-6">
+                            {/* Regular details */}
+                            {description.details && (
+                              <div className="prose dark:prose-invert max-w-none text-sm">
+                                <div className="whitespace-pre-line text-gray-700 dark:text-gray-300">
+                                  {description.details.split('\n').map((line, idx) => {
+                                    // Format markdown-style headers
+                                    if (line.startsWith('## ')) {
+                                      return (
+                                        <h4 key={idx} className="text-lg font-bold mt-4 mb-2 text-gray-900 dark:text-white">
+                                          {line.replace('## ', '')}
+                                        </h4>
+                                      );
+                                    }
+                                    if (line.startsWith('### ')) {
+                                      return (
+                                        <h5 key={idx} className="text-base font-semibold mt-3 mb-2 text-gray-800 dark:text-gray-200">
+                                          {line.replace('### ', '')}
+                                        </h5>
+                                      );
+                                    }
+                                    // Format bullet points
+                                    if (line.trim().startsWith('- ')) {
+                                      return (
+                                        <div key={idx} className="ml-4 mb-1 text-gray-700 dark:text-gray-300">
+                                          • {line.trim().substring(2)}
+                                        </div>
+                                      );
+                                    }
+                                    // Format code blocks (inline)
+                                    if (line.includes('`')) {
+                                      const parts = line.split('`');
+                                      return (
+                                        <div key={idx} className="mb-2">
+                                          {parts.map((part, partIdx) => 
+                                            partIdx % 2 === 0 ? (
+                                              <span key={partIdx}>{part}</span>
+                                            ) : (
+                                              <code key={partIdx} className="bg-gray-200 dark:bg-gray-700 px-1 rounded text-xs">
+                                                {part}
+                                              </code>
+                                            )
+                                          )}
+                                        </div>
+                                      );
+                                    }
+                                    // Regular paragraphs
+                                    if (line.trim()) {
+                                      return (
+                                        <p key={idx} className="mb-2 text-gray-700 dark:text-gray-300">
+                                          {line}
+                                        </p>
+                                      );
+                                    }
+                                    return <br key={idx} />;
+                                  })}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Technical Details - Only for admin */}
+                            {description.technicalDetails && (
+                              <div className="mt-6 pt-6 border-t-2 border-indigo-300 dark:border-indigo-700">
+                                <h4 className="text-lg font-bold mb-3 text-indigo-700 dark:text-indigo-400 flex items-center gap-2">
+                                  🔧 Tehnički Detalji
+                                  <span className="text-xs font-normal bg-indigo-100 dark:bg-indigo-900 px-2 py-1 rounded">
+                                    ADMIN ONLY
+                                  </span>
+                                </h4>
+                                <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-4">
+                                  <div className="prose dark:prose-invert max-w-none text-sm">
+                                    <div className="whitespace-pre-line text-gray-700 dark:text-gray-300">
+                                      {description.technicalDetails.split('\n').map((line, idx) => {
+                                        // Format markdown-style headers
+                                        if (line.startsWith('## ')) {
+                                          return (
+                                            <h5 key={idx} className="text-base font-bold mt-3 mb-2 text-gray-900 dark:text-white">
+                                              {line.replace('## ', '')}
+                                            </h5>
+                                          );
+                                        }
+                                        // Format markdown-style subheaders
+                                        if (line.startsWith('### ')) {
+                                          return (
+                                            <h6 key={idx} className="text-sm font-semibold mt-2 mb-1 text-gray-800 dark:text-gray-200">
+                                              {line.replace('### ', '')}
+                                            </h6>
+                                          );
+                                        }
+                                        // Format code blocks
+                                        if (line.trim().startsWith('`') && line.trim().endsWith('`')) {
+                                          return (
+                                            <code key={idx} className="bg-indigo-100 dark:bg-indigo-900 px-2 py-1 rounded text-xs font-mono text-indigo-800 dark:text-indigo-200 block my-1">
+                                              {line.replace(/`/g, '')}
+                                            </code>
+                                          );
+                                        }
+                                        // Format lists
+                                        if (line.trim().startsWith('- ')) {
+                                          return (
+                                            <div key={idx} className="ml-4 mb-1 text-gray-700 dark:text-gray-300">
+                                              • {line.trim().substring(2)}
+                                            </div>
+                                          );
+                                        }
+                                        // Regular paragraphs
+                                        if (line.trim()) {
+                                          return (
+                                            <p key={idx} className="mb-2 text-gray-700 dark:text-gray-300">
+                                              {line}
+                                            </p>
+                                          );
+                                        }
+                                        return <br key={idx} />;
+                                      })}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Javne funkcionalnosti - DRUGO */}
+      {publicFeatures && publicFeatures.length > 0 && (
+        <div className="mt-16">
+          <div className="mb-6 pb-4 border-b-4 border-blue-500 dark:border-blue-600">
+            <h2 className="text-3xl font-bold text-blue-600 dark:text-blue-400 flex items-center gap-3">
+              <span className="bg-blue-100 dark:bg-blue-900/30 px-3 py-1 rounded-lg">🌐 OPĆE</span>
+              <span className="text-gray-600 dark:text-gray-400 text-xl">Funkcionalnosti</span>
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400 mt-2">
+              Javne funkcionalnosti - dostupne svim korisnicima platforme (s prikazom tehničkih detalja za admin)
+            </p>
+          </div>
+          <div className="space-y-8">
+            {publicFeatures.map((category, categoryIndex) => (
+              <div 
+                key={`public-${categoryIndex}`}
+                className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 border-blue-500"
+              >
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+                  {category.category}
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {category.items.map((item, itemIndex) => {
+                    const itemKey = `public-${categoryIndex}-${itemIndex}`;
+                    const isExpanded = expandedItem === itemKey;
                 const description = featureDescriptions[item.name] || {
                   implemented: item.implemented,
                   summary: item.implemented ? `${item.name} je implementirano.` : `${item.name} nije implementirano.`,
@@ -568,11 +779,13 @@ Sve promjene su commitane i pushane. Pružatelji usluga sada imaju grafički pri
                     )}
                   </div>
                 );
-              })}
-            </div>
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </div>
+      )}
 
       {/* Napomena */}
       <div className="mt-12 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
@@ -582,6 +795,8 @@ Sve promjene su commitane i pushane. Pružatelji usluga sada imaju grafički pri
         <p className="text-blue-800 dark:text-blue-300 text-sm">
           Ova dokumentacija je dostupna samo administratorima platforme. 
           Funkcionalnosti su organizirane po kategorijama radi lakšeg pronalaska.
+          <br />
+          <strong>Admin funkcionalnosti</strong> su prikazane prvo, zatim <strong>Opće (javne) funkcionalnosti</strong> s prikazom tehničkih detalja za admin.
         </p>
       </div>
     </div>
