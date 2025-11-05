@@ -97,7 +97,7 @@ export default function AdminSmsLogs() {
       setSyncResult(null);
       setError('');
       
-      const response = await api.post('/admin/sms-logs/sync-from-twilio', null, {
+      const response = await api.post('/admin/sms-logs/sync-from-twilio', {}, {
         params: { limit: 500, days: 90 }
       });
       

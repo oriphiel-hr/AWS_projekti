@@ -1842,6 +1842,7 @@ r.get('/sms-logs', auth(true, ['ADMIN']), async (req, res, next) => {
  */
 r.post('/sms-logs/sync-from-twilio', auth(true, ['ADMIN']), async (req, res, next) => {
   try {
+    // Query params, ne body
     const { limit = 100, days = 30 } = req.query;
     
     // Provjeri Twilio konfiguraciju
