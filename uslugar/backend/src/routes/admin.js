@@ -2007,6 +2007,116 @@ r.post('/sms-logs/sync-from-twilio', auth(true, ['ADMIN']), async (req, res, nex
 });
 
 /**
+ * GET /api/admin/invoices
+ * Pregled svih faktura (admin)
+ * Query params: status, type, userId, limit, offset, startDate, endDate
+ */
+r.get('/invoices', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const { status, type, userId, limit = 50, offset = 0, startDate, endDate } = req.query;
+    
+    const where = {};
+    
+    if (status) {
+      where.status = status;
+    }
+    
+    if (type) {
+      where.type = type;
+    }
+    
+    if (userId) {
+      where.userId = userId;
+    }
+    
+    if (startDate || endDate) {
+      where.issueDate = {};
+      if (startDate) {
+        where.issueDate.gte = new Date(startDate);
+      }
+      if (endDate) {
+        where.issueDate.lte = new Date(endDate);
+      }
+    }
+    
+    const [invoices, total] = await Promise.all([
+      prisma.invoice.findMany({
+        where,
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              fullName: true,
+              companyName: true,
+              taxId: true
+            }
+          },
+          subscription: {
+            select: {
+              plan: true
+            }
+          },
+          leadPurchase: {
+            include: {
+              job: {
+                select: {
+                  title: true,
+                  city: true
+                }
+              }
+            }
+          }
+        },
+        orderBy: {
+          issueDate: 'desc'
+        },
+        take: parseInt(limit),
+        skip: parseInt(offset)
+      }),
+      prisma.invoice.count({ where })
+    ]);
+    
+    // Statistike
+    const stats = await prisma.invoice.groupBy({
+      by: ['status', 'type'],
+      where,
+      _count: {
+        id: true
+      },
+      _sum: {
+        totalAmount: true
+      }
+    });
+    
+    res.json({
+      invoices,
+      total,
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+      stats: {
+        byStatus: stats.reduce((acc, s) => {
+          acc[s.status] = {
+            count: (acc[s.status]?.count || 0) + s._count.id,
+            total: (acc[s.status]?.total || 0) + (s._sum.totalAmount || 0)
+          };
+          return acc;
+        }, {}),
+        byType: stats.reduce((acc, s) => {
+          acc[s.type] = {
+            count: (acc[s.type]?.count || 0) + s._count.id,
+            total: (acc[s.type]?.total || 0) + (s._sum.totalAmount || 0)
+          };
+          return acc;
+        }, {})
+      }
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
  * GET /api/admin/sms-logs/stats
  * Statistike SMS-ova (admin)
  */
