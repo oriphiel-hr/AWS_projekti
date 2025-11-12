@@ -122,7 +122,9 @@ const features = [
         { name: "Notifikacije za nove poruke", implemented: true },
         { name: "Notifikacije za nove poslove (providere)", implemented: true },
         { name: "Email notifikacije", implemented: true },
+        { name: "SMS notifikacije (Twilio)", implemented: true },
         { name: "In-app notifikacije", implemented: true },
+        { name: "Push notifikacije (browser notifications)", implemented: false },
         { name: "Brojač nepročitanih notifikacija", implemented: true }
       ]
     },
@@ -140,7 +142,9 @@ const features = [
         { name: "AI score kvalitete leadova", implemented: true },
         { name: "Verifikacija klijenata", implemented: true },
         { name: "Pretplata na leadove", implemented: true },
-        { name: "Statistike uspješnosti", implemented: true }
+        { name: "Statistike uspješnosti", implemented: true },
+        { name: "VIP podrška 24/7 (Support tickets)", implemented: true },
+        { name: "White-label opcija (PRO plan)", implemented: true }
       ]
     },
     {
