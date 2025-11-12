@@ -15,6 +15,7 @@ import reviewsRouter from './routes/reviews.js'
 import adminRouter from './routes/admin.js'
 import uploadRouter from './routes/upload.js'
 import notificationsRouter from './routes/notifications.js'
+import pushNotificationsRouter from './routes/push-notifications.js'
 import chatRouter from './routes/chat.js'
 import subscriptionsRouter from './routes/subscriptions.js'
 import testingRouter from './routes/testing.js'
@@ -268,6 +269,7 @@ app.use('/api/categories', categoriesRouter)
 app.use('/api/legal-statuses', legalStatusesRouter)
 app.use('/api/upload', uploadRouter)
 app.use('/api/notifications', notificationsRouter)
+app.use('/api/push-notifications', pushNotificationsRouter)
 app.use('/api/chat', chatRouter)
 app.use('/api/subscriptions', subscriptionsRouter)
 app.use('/api/testing', testingRouter)

@@ -1,5 +1,6 @@
 import { prisma } from './prisma.js';
 import { sendJobNotification, sendOfferNotification, sendOfferAcceptedNotification } from './email.js';
+import { sendPushNotification } from '../services/push-notification-service.js';
 
 // Notify providers about new job
 export const notifyNewJob = async (job, categoryId) => {
@@ -34,7 +35,7 @@ export const notifyNewJob = async (job, categoryId) => {
     // Create notifications and send emails
     for (const provider of providers) {
       // Create in-app notification
-      await prisma.notification.create({
+      const notification = await prisma.notification.create({
         data: {
           title: 'Novi posao u vašoj kategoriji',
           message: `Novi posao: ${job.title}`,
@@ -47,6 +48,15 @@ export const notifyNewJob = async (job, categoryId) => {
       // Send email notification
       const jobUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/jobs/${job.id}`;
       await sendJobNotification(provider.user.email, job.title, jobUrl);
+
+      // Send push notification
+      await sendPushNotification(provider.user.id, {
+        id: notification.id,
+        title: notification.title,
+        message: notification.message,
+        type: notification.type,
+        url: jobUrl
+      });
     }
 
     console.log(`Notified ${providers.length} providers about new job: ${job.title}`);
@@ -69,7 +79,7 @@ export const notifyNewOffer = async (offer, job) => {
     if (!user || !provider) return;
 
     // Create in-app notification
-    await prisma.notification.create({
+    const notification = await prisma.notification.create({
       data: {
         title: 'Nova ponuda',
         message: `${provider.fullName} je poslao ponudu za: ${job.title}`,
@@ -82,6 +92,16 @@ export const notifyNewOffer = async (offer, job) => {
 
     // Send email notification
     await sendOfferNotification(user.email, job.title, provider.fullName, offer.amount);
+
+    // Send push notification
+    const jobUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/jobs/${job.id}`;
+    await sendPushNotification(user.id, {
+      id: notification.id,
+      title: notification.title,
+      message: notification.message,
+      type: notification.type,
+      url: jobUrl
+    });
 
     console.log(`Notified user ${user.email} about new offer`);
   } catch (error) {
@@ -103,7 +123,7 @@ export const notifyAcceptedOffer = async (offer, job) => {
     if (!provider || !customer) return;
 
     // Create in-app notification
-    await prisma.notification.create({
+    const notification = await prisma.notification.create({
       data: {
         title: 'Ponuda prihvaćena',
         message: `${customer.fullName} je prihvatio vašu ponudu za: ${job.title}`,
@@ -116,6 +136,16 @@ export const notifyAcceptedOffer = async (offer, job) => {
 
     // Send email notification
     await sendOfferAcceptedNotification(provider.email, job.title, customer.fullName);
+
+    // Send push notification
+    const jobUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/jobs/${job.id}`;
+    await sendPushNotification(provider.id, {
+      id: notification.id,
+      title: notification.title,
+      message: notification.message,
+      type: notification.type,
+      url: jobUrl
+    });
 
     console.log(`Notified provider ${provider.email} about accepted offer`);
   } catch (error) {
@@ -171,12 +201,25 @@ export const notifyJobCompleted = async (jobId) => {
 // Generic notification helper - USLUGAR EXCLUSIVE
 export const notifyClient = async (userId, notification) => {
   try {
-    await prisma.notification.create({
+    const savedNotification = await prisma.notification.create({
       data: {
         userId,
         ...notification
       }
     });
+    
+    // Send push notification
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const url = notification.jobId ? `${frontendUrl}/jobs/${notification.jobId}` : frontendUrl;
+    
+    await sendPushNotification(userId, {
+      id: savedNotification.id,
+      title: savedNotification.title,
+      message: savedNotification.message,
+      type: savedNotification.type,
+      url
+    });
+    
     console.log(`Notified user ${userId}: ${notification.title}`);
   } catch (error) {
     console.error('Error sending notification:', error);

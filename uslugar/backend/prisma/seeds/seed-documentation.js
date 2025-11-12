@@ -124,7 +124,7 @@ const features = [
         { name: "Email notifikacije", implemented: true },
         { name: "SMS notifikacije (Twilio)", implemented: true },
         { name: "In-app notifikacije", implemented: true },
-        { name: "Push notifikacije (browser notifications)", implemented: false },
+        { name: "Push notifikacije (browser notifications)", implemented: true },
         { name: "Brojač nepročitanih notifikacija", implemented: true }
       ]
     },

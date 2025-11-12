@@ -127,6 +127,7 @@ model User {
   supportTickets     SupportTicket[]     @relation("UserSupportTickets")
   whiteLabel         WhiteLabel?         @relation("UserWhiteLabel")
   smsLogs            SmsLog[]            @relation("UserSmsLogs")
+  pushSubscriptions  PushSubscription[]  @relation("UserPushSubscriptions")
 
   // Testing runs authored by this user (admin)
   testRuns TestRun[] @relation("TestRunAuthor")
@@ -932,4 +933,29 @@ model SmsLog {
   @@index([type])
   @@index([userId])
   @@index([createdAt])
+}
+
+// Push Notification Subscription - Browser push notifications
+model PushSubscription {
+  id          String   @id @default(cuid())
+  user        User     @relation("UserPushSubscriptions", fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  
+  // Web Push API subscription data
+  endpoint    String   // Push service endpoint URL
+  p256dh      String   // User public key (base64)
+  auth        String   // Authentication secret (base64)
+  
+  // Metadata
+  userAgent   String?  // Browser user agent
+  isActive    Boolean  @default(true) // Subscription aktivna
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  lastUsedAt  DateTime? // Kada je zadnji put korištena za slanje
+  
+  @@unique([userId, endpoint]) // Jedan korisnik može imati više uređaja
+  @@index([userId])
+  @@index([isActive])
+  @@index([endpoint])
 }
