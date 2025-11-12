@@ -21,6 +21,14 @@
                 {
                     "name": "PORT",
                     "value": "8080"
+                },
+                {
+                    "name": "VAPID_PUBLIC_KEY",
+                    "value": "BDG4-j--YWXbakF85YGca1YvaghsIlnsxDIT9RnK1Obiga15pMgNbl2i-HVcoDgrZvZyPMlJMQrabWGa1-7xr30"
+                },
+                {
+                    "name": "VAPID_SUBJECT",
+                    "value": "mailto:admin@uslugar.hr"
                 }
             ],
             "mountPoints": [],
@@ -49,6 +57,10 @@
                 {
                     "name": "FRONTEND_URL",
                     "valueFrom": "arn:aws:secretsmanager:eu-north-1:666203386231:secret:uslugar-smtp-config-5xXBg5:FRONTEND_URL::"
+                },
+                {
+                    "name": "VAPID_PRIVATE_KEY",
+                    "valueFrom": "arn:aws:secretsmanager:eu-north-1:666203386231:secret:uslugar-vapid-keys:VAPID_PRIVATE_KEY::"
                 }
             ],
             "logConfiguration": {
