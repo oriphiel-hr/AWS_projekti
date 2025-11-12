@@ -78,6 +78,6 @@ BDG4-j--YWXbakF85YGca1YvaghsIlnsxDIT9RnK1Obiga15pMgNbl2i-HVcoDgrZvZyPMlJMQrabWGa
 
 **Subject:**
 ```
-mailto:admin@uslugar.hr
+mailto:admin@uslugar.oriph.io
 ```
 

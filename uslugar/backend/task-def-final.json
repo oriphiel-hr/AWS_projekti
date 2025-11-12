@@ -28,7 +28,7 @@
                 },
                 {
                     "name": "VAPID_SUBJECT",
-                    "value": "mailto:admin@uslugar.hr"
+                    "value": "mailto:admin@uslugar.oriph.io"
                 }
             ],
             "mountPoints": [],

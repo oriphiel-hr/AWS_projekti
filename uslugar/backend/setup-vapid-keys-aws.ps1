@@ -11,7 +11,7 @@ $SECRET_NAME = "uslugar-vapid-keys"
 # VAPID Keys
 $VAPID_PRIVATE_KEY = "2IXc0O30gh9A182x2AaJvW2SMqr-lEHvGBuBkPz5u24"
 $VAPID_PUBLIC_KEY = "BDG4-j--YWXbakF85YGca1YvaghsIlnsxDIT9RnK1Obiga15pMgNbl2i-HVcoDgrZvZyPMlJMQrabWGa1-7xr30"
-$VAPID_SUBJECT = "mailto:admin@uslugar.hr"
+$VAPID_SUBJECT = "mailto:admin@uslugar.oriph.io"
 
 Write-Host "1. Checking if secret already exists..." -ForegroundColor Yellow
 
