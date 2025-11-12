@@ -3664,7 +3664,7 @@ const featureDescriptions = {
 **API**
 - \`PATCH /api/providers/:id/bio\` – ažurira biografiju.
 - \`GET /api/providers/:id\` – vraća bio + meta podatke.
-- \`GET /api/providers\` – filtriranje `hasBio=true` za kvalitetne profile.
+- \`GET /api/providers\` – filtriranje \`hasBio=true\` za kvalitetne profile.
 `
     },
     "Specijalizacije": {
@@ -3953,7 +3953,7 @@ const featureDescriptions = {
 - Saved filter modal omogućuje spremanje kombinacija (local storage + backend).
 
 **Backend**
-- \`leadController.list\` prihvaća `categoryIds[]` i kombinira ih AND logikom.
+- \`leadController.list\` prihvaća \`categoryIds[]\` i kombinira ih AND logikom.
 - Query koristi materializirani view \`LeadSearchView\` za brze odgovore.
 
 **Baza**
@@ -5850,7 +5850,7 @@ const featureDescriptions = {
 
 **Kada koristiti**
 - Tijekom konfiguracije kategorija i onboarding-a pružatelja.
-- Kod filtriranja i matchmakinga (samo licencirani).`
+- Kod filtriranja i matchmakinga (samo licencirani).`,
       technicalDetails: `**Frontend**
 - \`CategoryLicenseSelector\` prikazuje zahtjevane licence i status.
 - Badge “Requires license” u marketplaceu.
@@ -10874,7 +10874,7 @@ SMS verifikacija osigurava da vaš telefonski broj pripada vama i povećava povj
 
 **Baza**
 - \`LeadAssignment\` bilježi \`assignedBy=directorId\`, \`teamId\`/\`memberId\` i \`assignedAt\`.
-- \`LeadTimeline\` dodaje događaj `LEAD_MANUALLY_ASSIGNED`; SLA watcher prati potvrdu.
+- \`LeadTimeline\` dodaje događaj \`LEAD_MANUALLY_ASSIGNED\`; SLA watcher prati potvrdu.
 
 **Integracije**
 - Notification servis, internal chat (otvara thread ako ne postoji), analytics za praćenje ručnih dodjela.
