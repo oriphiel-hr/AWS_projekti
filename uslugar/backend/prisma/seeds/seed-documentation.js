@@ -367,30 +367,30 @@ const features = [
       category: "Upravljanje Tvrtkama i Timovima",
       items: [
         { name: "Tvrtka kao pravni entitet", implemented: true },
-        { name: "Direktor kao administrator profila", implemented: true },
-        { name: "Team članovi (operativci)", implemented: true },
-        { name: "Dodavanje članova tima", implemented: true },
-        { name: "Upravljanje pravima tima", implemented: true },
-        { name: "Interna distribucija leadova unutar tvrtke", implemented: true },
+        { name: "Direktor kao administrator profila", implemented: false },
+        { name: "Team članovi (operativci)", implemented: false },
+        { name: "Dodavanje članova tima", implemented: false },
+        { name: "Upravljanje pravima tima", implemented: false },
+        { name: "Interna distribucija leadova unutar tvrtke", implemented: false },
         { name: "Tvrtka bez tima (solo firma)", implemented: true },
-        { name: "Auto-assign leadova timu", implemented: true },
-        { name: "Ručna dodjela leadova od strane direktora", implemented: true },
-        { name: "Pregled aktivnosti tima", implemented: true }
+        { name: "Auto-assign leadova timu", implemented: false },
+        { name: "Ručna dodjela leadova od strane direktora", implemented: false },
+        { name: "Pregled aktivnosti tima", implemented: false }
       ]
     },
     {
       category: "Chat Sustav (PUBLIC i INTERNAL)",
       items: [
-        { name: "PUBLIC chat (Klijent ↔ Tvrtka)", implemented: true },
-        { name: "INTERNAL chat (Direktor ↔ Team)", implemented: true },
-        { name: "Maskirani kontakti do prihvata ponude", implemented: true },
+        { name: "PUBLIC chat (Klijent ↔ Tvrtka)", implemented: false },
+        { name: "INTERNAL chat (Direktor ↔ Team)", implemented: false },
+        { name: "Maskirani kontakti do prihvata ponude", implemented: false },
         { name: "Chat thread vezan uz upit/ponudu", implemented: true },
         { name: "Privici u chatu (fotke, PDF ponude)", implemented: true },
-        { name: "Verzioniranje poruka", implemented: true },
-        { name: "Audit log svih poruka", implemented: true },
-        { name: "Zaključavanje threada nakon završetka", implemented: true },
-        { name: "SLA podsjetnici za odgovor", implemented: true },
-        { name: "Moderacija chat poruka", implemented: true }
+        { name: "Verzioniranje poruka", implemented: false },
+        { name: "Audit log svih poruka", implemented: false },
+        { name: "Zaključavanje threada nakon završetka", implemented: false },
+        { name: "SLA podsjetnici za odgovor", implemented: false },
+        { name: "Moderacija chat poruka", implemented: false }
       ]
     },
     {
@@ -413,69 +413,69 @@ const features = [
       category: "Matchmaking Kategorija",
       items: [
         { name: "Usporedba kategorija korisnika i tvrtke", implemented: true },
-        { name: "Usporedba kategorija korisnika i tima", implemented: true },
-        { name: "Kombinirani match score (Tvrtka + Tim)", implemented: true },
+        { name: "Usporedba kategorija korisnika i tima", implemented: false },
+        { name: "Kombinirani match score (Tvrtka + Tim)", implemented: false },
         { name: "Eligibility filter po kategoriji", implemented: true },
         { name: "Eligibility filter po regiji", implemented: true },
-        { name: "Prioritet timu s boljim matchom", implemented: true },
-        { name: "Fallback na direktora ako nema tima", implemented: true }
+        { name: "Prioritet timu s boljim matchom", implemented: false },
+        { name: "Fallback na direktora ako nema tima", implemented: false }
       ]
     },
     {
       category: "Fer Billing Model",
       items: [
-        { name: "Dinamički billing po volumenu leadova", implemented: true },
-        { name: "Garancija minimalnog broja leadova", implemented: true },
-        { name: "Automatsko snižavanje cijene ako nema leadova", implemented: true },
-        { name: "Credit refund ako tržište miruje", implemented: true },
-        { name: "Proporcionalna naplata (REAL_VALUE)", implemented: true },
+        { name: "Dinamički billing po volumenu leadova", implemented: false },
+        { name: "Garancija minimalnog broja leadova", implemented: false },
+        { name: "Automatsko snižavanje cijene ako nema leadova", implemented: false },
+        { name: "Credit refund ako tržište miruje", implemented: false },
+        { name: "Proporcionalna naplata (REAL_VALUE)", implemented: false },
         { name: "Mjesečni izvještaj o isporučenim leadovima", implemented: true },
-        { name: "Carryover neiskorištenih leadova", implemented: true },
-        { name: "Pauziranje kategorije bez naplate", implemented: true }
+        { name: "Carryover neiskorištenih leadova", implemented: false },
+        { name: "Pauziranje kategorije bez naplate", implemented: false }
       ]
     },
     {
       category: "Paketi i Add-on Model",
       items: [
         { name: "Hijerarhijski model paketa (Basic → Pro → Premium)", implemented: true },
-        { name: "Segmentni model paketa (po regiji/kategoriji)", implemented: true },
-        { name: "Feature ownership (funkcionalnosti ne nestaju)", implemented: true },
-        { name: "Add-on paketi (regija, kategorija, krediti)", implemented: true },
-        { name: "Automatska provjera postojećih funkcionalnosti", implemented: true },
-        { name: "Smanjena cijena za nove pakete (bez duplikata)", implemented: true },
-        { name: "Grace period za Add-on (7 dana)", implemented: true },
-        { name: "Auto-renew opcija za Add-on", implemented: true },
-        { name: "Upozorenja pri 80%, 50%, 20% iskorištenosti", implemented: true },
-        { name: "Upsell mehanizam pri isteku Add-on", implemented: true }
+        { name: "Segmentni model paketa (po regiji/kategoriji)", implemented: false },
+        { name: "Feature ownership (funkcionalnosti ne nestaju)", implemented: false },
+        { name: "Add-on paketi (regija, kategorija, krediti)", implemented: false },
+        { name: "Automatska provjera postojećih funkcionalnosti", implemented: false },
+        { name: "Smanjena cijena za nove pakete (bez duplikata)", implemented: false },
+        { name: "Grace period za Add-on (7 dana)", implemented: false },
+        { name: "Auto-renew opcija za Add-on", implemented: false },
+        { name: "Upozorenja pri 80%, 50%, 20% iskorištenosti", implemented: false },
+        { name: "Upsell mehanizam pri isteku Add-on", implemented: false }
       ]
     },
     {
       category: "TRIAL Paket",
       items: [
-        { name: "TRIAL = maksimalni paket funkcionalnosti", implemented: true },
-        { name: "14-dnevni probni period", implemented: true },
+        { name: "TRIAL = maksimalni paket funkcionalnosti", implemented: false },
+        { name: "14-dnevni probni period", implemented: false },
         { name: "Ograničen broj leadova (5-10)", implemented: true },
         { name: "Ograničen broj kategorija/regija", implemented: true },
-        { name: "Sve Premium funkcionalnosti otključane", implemented: true },
-        { name: "Engagement tracking tijekom TRIAL-a", implemented: true },
-        { name: "Podsjetnici 3 dana prije isteka", implemented: true },
+        { name: "Sve Premium funkcionalnosti otključane", implemented: false },
+        { name: "Engagement tracking tijekom TRIAL-a", implemented: false },
+        { name: "Podsjetnici 3 dana prije isteka", implemented: false },
         { name: "Automatski downgrade na BASIC nakon isteka", implemented: true },
-        { name: "Popust za upgrade iz TRIAL-a", implemented: true }
+        { name: "Popust za upgrade iz TRIAL-a", implemented: false }
       ]
     },
     {
       category: "Obostrano Ocjenjivanje (Detaljno)",
       items: [
         { name: "Korisnik ocjenjuje izvođača (kvaliteta, pouzdanost, cijena)", implemented: true },
-        { name: "Izvođač ocjenjuje korisnika (komunikacija, pouzdanost)", implemented: true },
-        { name: "Simultana objava ocjena (reciprocal delay)", implemented: true },
-        { name: "Rok za ocjenjivanje (7-10 dana)", implemented: true },
-        { name: "Ocjene vidljive tek nakon obje strane ocijene", implemented: true },
-        { name: "Odgovor na recenziju (1x dozvoljen)", implemented: true },
+        { name: "Izvođač ocjenjuje korisnika (komunikacija, pouzdanost)", implemented: false },
+        { name: "Simultana objava ocjena (reciprocal delay)", implemented: false },
+        { name: "Rok za ocjenjivanje (7-10 dana)", implemented: false },
+        { name: "Ocjene vidljive tek nakon obje strane ocijene", implemented: false },
+        { name: "Odgovor na recenziju (1x dozvoljen)", implemented: false },
         { name: "Reputation Score izračun (ponderirane komponente)", implemented: true },
         { name: "Utjecaj ocjena na dodjelu leadova", implemented: true },
-        { name: "Moderacija ocjena (AI + ljudska)", implemented: true },
-        { name: "Prijava lažnih ocjena", implemented: true }
+        { name: "Moderacija ocjena (AI + ljudska)", implemented: false },
+        { name: "Prijava lažnih ocjena", implemented: false }
       ]
     },
     {
@@ -492,12 +492,12 @@ const features = [
     {
       category: "Onboarding i Automatizacija",
       items: [
-        { name: "Wizard registracije (odabir kategorija i regija)", implemented: true },
+        { name: "Wizard registracije (odabir kategorija i regija)", implemented: false },
         { name: "Automatska aktivacija TRIAL-a", implemented: true },
-        { name: "Chat-bot vodi za prvi lead", implemented: true },
-        { name: "Automatski email + popust link pri isteku TRIAL-a", implemented: true },
-        { name: "Podsjetnici za neaktivnost (>14 dana)", implemented: true },
-        { name: "Edukacijski materijali i vodiči", implemented: true }
+        { name: "Chat-bot vodi za prvi lead", implemented: false },
+        { name: "Automatski email + popust link pri isteku TRIAL-a", implemented: false },
+        { name: "Podsjetnici za neaktivnost (>14 dana)", implemented: false },
+        { name: "Edukacijski materijali i vodiči", implemented: false }
       ]
     }
   ];
