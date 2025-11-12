@@ -7,6 +7,9 @@ on:
     paths:
       - "uslugar/backend/prisma/**"
       - "uslugar/backend/Dockerfile.prisma"
+      - "uslugar/backend/Dockerfile.prod"
+      - "uslugar/backend/package.json"
+      - "uslugar/backend/package-lock.json"
       - ".github/workflows/prisma-uslugar.yml"
       - "uslugar/backend/src/services/invoice-service.js"
       - "uslugar/backend/src/routes/invoices.js"
