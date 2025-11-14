@@ -2185,4 +2185,147 @@ r.get('/sms-logs/stats', auth(true, ['ADMIN']), async (req, res, next) => {
   }
 });
 
+/**
+ * GET /api/admin/users-overview
+ * Pregled svih korisnika s detaljnim informacijama o pravnom statusu, verifikaciji, licencama i pretplati
+ */
+r.get('/users-overview', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const users = await prisma.user.findMany({
+      include: {
+        legalStatus: true,
+        providerProfile: {
+          include: {
+            legalStatus: true,
+            licenses: true, // Sve licence (ne samo verificirane) za provjeru
+            categories: {
+              select: {
+                id: true,
+                name: true,
+                requiresLicense: true
+              }
+            }
+          }
+        },
+        clientVerification: true,
+        subscriptions: {
+          where: {
+            status: 'ACTIVE'
+          },
+          orderBy: {
+            createdAt: 'desc'
+          },
+          take: 1
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    // Transformiraj podatke u format pogodan za prikaz
+    const usersOverview = users.map(user => {
+      const providerProfile = user.providerProfile;
+      const subscription = user.subscriptions[0] || null;
+      const clientVerification = user.clientVerification;
+      
+      // Odredi tip korisnika
+      let userType = 'Korisnik';
+      let userRoleDetail = '';
+      if (user.role === 'PROVIDER') {
+        userType = 'Pružatelj usluga';
+        // Može biti direktor ako ima ProviderProfile s companyName
+        if (providerProfile?.companyName) {
+          userRoleDetail = 'Direktor/Predstavnik tvrtke';
+        }
+      } else if (user.role === 'ADMIN') {
+        userType = 'Administrator';
+      } else if (user.role === 'USER' && user.legalStatusId) {
+        userType = 'Poslovni korisnik';
+        if (user.companyName) {
+          userRoleDetail = 'Predstavnik tvrtke';
+        }
+      }
+
+      // Provjeri da li ima licence za kategorije koje zahtijevaju dopuštenje
+      const categoriesRequiringLicense = providerProfile?.categories.filter(cat => cat.requiresLicense) || [];
+      const hasRequiredLicenses = categoriesRequiringLicense.length > 0 
+        ? categoriesRequiringLicense.every(cat => {
+            // Provjeri da li postoji verificirana licenca za ovu kategoriju
+            return providerProfile?.licenses.some(license => 
+              license.licenseType && cat.name.includes(license.licenseType.split(' ')[0])
+            );
+          })
+        : true; // Ako nema kategorija koje zahtijevaju licencu, smatra se da ima
+
+      // Status verifikacije tvrtke
+      const companyVerified = clientVerification?.companyVerified || false;
+      const verificationStatus = user.role === 'PROVIDER' 
+        ? (companyVerified ? 'Verificirano' : 'Nije verificirano')
+        : (user.legalStatusId ? (companyVerified ? 'Verificirano' : 'Nije verificirano') : 'N/A');
+
+      // Status licence
+      const licenseStatus = providerProfile?.licenses.length > 0
+        ? providerProfile.licenses.some(l => l.isVerified)
+          ? (hasRequiredLicenses ? 'Sve licence OK' : 'Nedostaju licence')
+          : 'Čeka verifikaciju'
+        : (categoriesRequiringLicense.length > 0 ? 'Nema licence' : 'Nije potrebno');
+
+      // Subscription status
+      let subscriptionStatus = 'Nema pretplate';
+      if (subscription) {
+        if (subscription.plan === 'TRIAL') {
+          subscriptionStatus = `TRIAL (istječe: ${new Date(subscription.expiresAt).toLocaleDateString('hr-HR')})`;
+        } else {
+          subscriptionStatus = `${subscription.plan} (${subscription.status})`;
+          if (subscription.expiresAt) {
+            subscriptionStatus += ` - istječe: ${new Date(subscription.expiresAt).toLocaleDateString('hr-HR')}`;
+          }
+        }
+      }
+
+      return {
+        id: user.id,
+        email: user.email,
+        fullName: user.fullName,
+        role: user.role,
+        userType,
+        userRoleDetail,
+        legalStatus: user.legalStatus?.name || providerProfile?.legalStatus?.name || 'N/A',
+        companyName: user.companyName || providerProfile?.companyName || 'N/A',
+        taxId: user.taxId || providerProfile?.taxId || 'N/A',
+        verificationStatus,
+        companyVerified,
+        licenseStatus,
+        hasRequiredLicenses,
+        licensesCount: providerProfile?.licenses.length || 0,
+        verifiedLicensesCount: providerProfile?.licenses.filter(l => l.isVerified).length || 0,
+        categoriesRequiringLicense: categoriesRequiringLicense.length,
+        subscriptionStatus,
+        subscriptionPlan: subscription?.plan || null,
+        subscriptionExpiresAt: subscription?.expiresAt || null,
+        createdAt: user.createdAt,
+        isVerified: user.isVerified,
+        phoneVerified: user.phoneVerified
+      };
+    });
+
+    res.json({
+      users: usersOverview,
+      total: usersOverview.length,
+      stats: {
+        totalUsers: usersOverview.length,
+        providers: usersOverview.filter(u => u.role === 'PROVIDER').length,
+        businessUsers: usersOverview.filter(u => u.role === 'USER' && u.legalStatus).length,
+        verified: usersOverview.filter(u => u.companyVerified).length,
+        withLicenses: usersOverview.filter(u => u.licensesCount > 0).length,
+        withSubscription: usersOverview.filter(u => u.subscriptionPlan).length,
+        trial: usersOverview.filter(u => u.subscriptionPlan === 'TRIAL').length
+      }
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
 export default r;

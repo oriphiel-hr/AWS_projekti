@@ -155,6 +155,18 @@ export default function Layout({ user, onLogout }){
                 📄 Fakture
               </NavLink>
               <NavLink
+                to="/admin/users-overview"
+                className={({isActive}) =>
+                  `block px-4 py-2 rounded-lg text-sm font-medium transition ${
+                    isActive 
+                      ? 'bg-indigo-600 text-white shadow-sm' 
+                      : 'text-gray-700 hover:bg-gray-200'
+                  }`
+                }
+              >
+                👥 Pregled Korisnika
+              </NavLink>
+              <NavLink
                 to="/admin/documentation"
                 className={({isActive}) =>
                   `block px-4 py-2 rounded-lg text-sm font-medium transition ${
