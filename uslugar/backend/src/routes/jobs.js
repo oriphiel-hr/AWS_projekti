@@ -30,11 +30,7 @@ r.get('/', auth(false), async (req, res, next) => {
       include: { 
         category: true, 
         offers: {
-          include: {
-            user: {
-              select: { id: true, fullName: true, email: true }
-            }
-          }
+          select: { id: true, userId: true, status: true }
         },
         user: {
           select: { id: true, fullName: true, email: true, phone: true }
@@ -67,7 +63,14 @@ r.get('/', auth(false), async (req, res, next) => {
       }).sort((a, b) => a.distance - b.distance);
     }
     
-    res.json(jobs);
+    // Maskiraj kontakte dok ponuda nije prihvaćena
+    const { maskUserContacts } = await import('../lib/contact-masking.js');
+    const maskedJobs = jobs.map(job => ({
+      ...job,
+      user: maskUserContacts(job.user, job, req.user?.id)
+    }));
+    
+    res.json(maskedJobs);
   } catch (e) { next(e); }
 });
 
@@ -115,11 +118,7 @@ r.get('/for-provider', auth(true, ['PROVIDER']), async (req, res, next) => {
       include: { 
         category: true, 
         offers: {
-          include: {
-            user: {
-              select: { id: true, fullName: true, email: true }
-            }
-          }
+          select: { id: true, userId: true, status: true }
         },
         user: {
           select: { id: true, fullName: true, email: true, phone: true }
@@ -149,7 +148,14 @@ r.get('/for-provider', auth(true, ['PROVIDER']), async (req, res, next) => {
       }).sort((a, b) => a.distance - b.distance);
     }
     
-    res.json(jobs);
+    // Maskiraj kontakte dok ponuda nije prihvaćena
+    const { maskUserContacts } = await import('../lib/contact-masking.js');
+    const maskedJobs = jobs.map(job => ({
+      ...job,
+      user: maskUserContacts(job.user, job, req.user.id)
+    }));
+    
+    res.json(maskedJobs);
   } catch (e) { next(e); }
 });
 

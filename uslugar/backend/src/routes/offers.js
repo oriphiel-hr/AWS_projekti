@@ -191,10 +191,14 @@ r.patch('/:offerId/accept', auth(true), async (req, res, next) => {
     // Send notification to provider
     await notifyAcceptedOffer(offer, offer.job);
     
+    // Kontakti su sada automatski otključani jer je ponuda prihvaćena
+    // (maskUserContacts funkcija će automatski prikazati kontakte za providera s prihvaćenom ponudom)
+    
     res.json({
       success: true,
       offer: result.updatedOffer,
-      job: result.updatedJob
+      job: result.updatedJob,
+      message: 'Ponuda prihvaćena! Kontakt informacije su sada dostupne.'
     });
   } catch (e) { next(e); }
 });

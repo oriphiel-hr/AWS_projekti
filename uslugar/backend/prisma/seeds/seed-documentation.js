@@ -389,7 +389,7 @@ const features = [
       items: [
         { name: "PUBLIC chat (Klijent ↔ Tvrtka)", implemented: true },
         { name: "INTERNAL chat (Direktor ↔ Team)", implemented: true },
-        { name: "Maskirani kontakti do prihvata ponude", implemented: false },
+        { name: "Maskirani kontakti do prihvata ponude", implemented: true },
         { name: "Chat thread vezan uz upit/ponudu", implemented: true },
         { name: "Privici u chatu (fotke, PDF ponude)", implemented: true },
         { name: "Verzioniranje poruka", implemented: false },
@@ -11107,38 +11107,47 @@ SMS verifikacija osigurava da vaš telefonski broj pripada vama i povećava povj
       implemented: true,
       summary: "Email i telefon klijenta ostaju skriveni dok ponuda nije prihvaćena, čime se štiti privatnost i marketplace ekonomija.",
       details: `**Kako funkcionira**
-- Dok lead nema status ACCEPTED, kontakt podatci se prikazuju maskirano (npr. 09X *** ****).
-- Pokušaj otkrivanja otvara modal s objašnjenjem; direktor može zatražiti otkrivanje uz razlog i (po potrebi) 2FA potvrdu.
-- Svi pokušaji i otkrivanja logiraju se za audit i nadzor.
+- Email i telefon klijenta se maskiraju dok ponuda nije prihvaćena (status ≠ ACCEPTED).
+- Email se maskira kao "j***@example.com" (prvo slovo, maskirani dio, zadnje slovo, domena).
+- Telefon se maskira kao "+385 *** *** 123" (maskirani dio, zadnje 3-4 znamenke).
+- Vlasnik posla uvijek vidi svoje kontakte.
+- Provider s prihvaćenom ponudom automatski vidi kontakte klijenta.
+- Kada se ponuda prihvati (ACCEPTED), kontakti se automatski otključavaju za providera koji je poslao ponudu.
 
 **Prednosti**
-- Štiti privatnost klijenata i sprječava off-platform dogovore.
-- Omogućuje iznimke za premium partnere uz potpunu reviziju.
+- Štiti privatnost klijenata dok ponuda nije prihvaćena.
+- Sprječava off-platform dogovore prije formalnog prihvaćanja ponude.
+- Automatsko otključavanje kontakata kada se ponuda prihvati.
 
 **Kada koristiti**
 - Standardni tok rada dok se ponuda ne prihvati.
-- Eskalacije kada je potreban rani kontakt uz odobrenje direktora/moderatora.
+- Svi API endpointovi koji vraćaju job podatke automatski maskiraju kontakte.
 `,
       technicalDetails: `**Frontend**
-- Helper \`maskContact\` formatira prikaz; tooltip objašnjava uvjete otkrivanja.
-- Badge “Kontakt otkriven” prikazuje vrijeme i korisnika nakon uspješnog otkazivanja maskiranja.
+- Helper funkcije \`maskEmail\` i \`maskPhone\` formatiraju maskirane kontakte.
+- UI prikazuje maskirane kontakte s indikatorom da su maskirani.
+- Kada se ponuda prihvati, kontakti se automatski prikazuju u punom obliku.
 
 **Backend**
-- Middleware \`contactMasker\` zamjenjuje podatke u API responseima dok status ≠ ACCEPTED.
-- \`contactRevealService.reveal\` validira zahtjev, traži razlog i po potrebi 2FA.
+- \`contact-masking.js\` utility modul sadrži funkcije za maskiranje kontakata:
+  - \`maskEmail\` - maskira email adresu
+  - \`maskPhone\` - maskira telefonski broj
+  - \`maskUserContacts\` - maskira kontakte korisnika ako ponuda nije prihvaćena
+  - \`hasAcceptedOffer\` - provjerava da li postoji prihvaćena ponuda
+  - \`isJobOwner\` - provjerava da li je korisnik vlasnik posla
+  - \`isAcceptedProvider\` - provjerava da li je korisnik provider s prihvaćenom ponudom
+- API endpointovi automatski maskiraju kontakte u responseima:
+  - \`GET /api/jobs\` - lista poslova
+  - \`GET /api/jobs/for-provider\` - poslovi za providere
+- Kada se ponuda prihvati (\`POST /api/offers/:offerId/accept\`), kontakti se automatski otključavaju.
 
 **Baza**
-- \`ContactRevealLog\` (leadId, userId, reason, revealedAt).
-- \`Lead\` polja \`allowContactReveal\` i audit trail za otkrivanja.
+- Nema dodatnih modela - maskiranje se radi na aplikacijskoj razini.
+- \`Offer\` model s \`status\` poljem (PENDING, ACCEPTED, REJECTED).
+- Provjera pristupa: vlasnik posla i provider s prihvaćenom ponudom vide kontakte.
 
 **Integracije**
-- Notification servis obavještava administratore o iznimnim otkrivanjima.
-- Compliance/analytics izvještaji koriste logove za kontrolu zlouporabe.
-
-**API**
-- \`GET /api/leads/:leadId/contact\` – maskirani podatci.
-- \`POST /api/leads/:leadId/reveal-contact\` – zahtjev za otkrivanje.
-- \`GET /api/admin/contact-reveals\` – pregled svih otkrivanja.
+- Nema dodatnih integracija - maskiranje je čisto aplikacijska logika.
 `
     },
     "Chat thread vezan uz upit/ponudu": {
