@@ -23,6 +23,7 @@ import FAQ from './pages/FAQ';
 import About from './pages/About';
 import Contact from './pages/Contact';
 import PaymentSuccess from './pages/PaymentSuccess';
+import UserTypesOverview from './pages/UserTypesOverview';
 // USLUGAR EXCLUSIVE components
 import LeadMarketplace from './pages/LeadMarketplace';
 import ROIDashboard from './pages/ROIDashboard';
@@ -64,7 +65,7 @@ export default function App(){
   // TAB: 'user' | 'admin' | 'login' | 'register-user' | 'register-provider' | 'upgrade-to-provider' | 'verify' | 'forgot-password' | 'reset-password' | 'leads' | 'my-leads' | 'roi' | 'subscription' | 'pricing' | 'providers' | 'documentation' | 'faq'
   const [tab, setTab] = useState(() => {
     const hash = window.location.hash?.slice(1).split('?')[0];
-    const validTabs = ['admin', 'login', 'register-user', 'register-provider', 'provider-profile', 'user-profile', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'leads', 'my-leads', 'my-jobs', 'roi', 'subscription', 'subscription-success', 'pricing', 'providers', 'documentation', 'faq', 'about', 'contact', 'time-landing', 'team-locations', 'invoices', 'user'];
+    const validTabs = ['admin', 'login', 'register-user', 'register-provider', 'provider-profile', 'user-profile', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'leads', 'my-leads', 'my-jobs', 'roi', 'subscription', 'subscription-success', 'pricing', 'providers', 'documentation', 'faq', 'about', 'contact', 'time-landing', 'team-locations', 'invoices', 'user', 'user-types'];
     return validTabs.includes(hash) ? hash : 'time-landing';
   });
 
@@ -187,7 +188,7 @@ export default function App(){
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash?.slice(1).split('?')[0];
-      const validTabs = ['admin', 'login', 'register-user', 'register-provider', 'provider-profile', 'user-profile', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'leads', 'my-leads', 'my-jobs', 'roi', 'subscription', 'subscription-success', 'pricing', 'providers', 'documentation', 'faq', 'about', 'contact', 'time-landing', 'team-locations', 'invoices', 'user'];
+      const validTabs = ['admin', 'login', 'register-user', 'register-provider', 'provider-profile', 'user-profile', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'leads', 'my-leads', 'my-jobs', 'roi', 'subscription', 'subscription-success', 'pricing', 'providers', 'documentation', 'faq', 'about', 'contact', 'time-landing', 'team-locations', 'invoices', 'user', 'user-types'];
       
       // Check for provider direct link: #provider/{providerId}
       const providerMatch = hash.match(/^provider\/(.+)$/);
@@ -332,6 +333,14 @@ export default function App(){
             aria-current={tab === 'contact' ? 'page' : undefined}
           >
             📞 Kontakt
+          </button>
+          <button
+            className={'px-3 py-2 border rounded transition-colors ' + (tab==='user-types' ? 'bg-teal-600 text-white' : 'border-teal-600 text-teal-600 hover:bg-teal-50 dark:border-teal-500 dark:text-teal-400 dark:hover:bg-teal-900/20')}
+            onClick={() => setTab('user-types')}
+            aria-label="Tipovi korisnika"
+            aria-current={tab === 'user-types' ? 'page' : undefined}
+          >
+            👥 Tipovi Korisnika
           </button>
 
           {/* Direct Registration Links */}
@@ -1313,6 +1322,12 @@ export default function App(){
       {tab === 'contact' && (
         <section id="contact" className="tab-section" aria-labelledby="contact-heading">
           <Contact />
+        </section>
+      )}
+
+      {tab === 'user-types' && (
+        <section id="user-types" className="tab-section">
+          <UserTypesOverview />
         </section>
       )}
       </main>
