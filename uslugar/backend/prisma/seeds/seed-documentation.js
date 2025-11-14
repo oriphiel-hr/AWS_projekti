@@ -2,6 +2,9 @@
 // Automatski generirano iz Documentation.jsx
 
 import { PrismaClient } from '@prisma/client';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
 const prisma = new PrismaClient();
 
 // Features struktura - ekstraktirano iz Documentation.jsx
@@ -4275,6 +4278,60 @@ const featureDescriptions = {
 - \`GET /api/notifications\` – lista i filteri.
 - \`PATCH /api/notifications/:id/read\` i \`POST /api/notifications/read-all\` – označavanje kao pročitano.
 - WebSocket event \`notification:new\` s payloadom (type, title, link).
+`
+    },
+    "Push notifikacije (browser notifications)": {
+      implemented: true,
+      summary: "Primajte browser push notifikacije direktno na vašem uređaju čak i kada niste na platformi - ne propustite važne obavijesti.",
+      details: `**Kako funkcionira**
+- Korisnik klikne gumb "Uključi push notifikacije" i dozvoljava browseru da prikazuje notifikacije.
+- Sustav registrira service worker i pohranjuje push subscription u bazu podataka.
+- Kada se dogodi važan događaj (novi posao, ponuda, poruka), backend šalje push notifikaciju kroz web-push protokol.
+- Browser prikazuje notifikaciju čak i kada korisnik nije na stranici; klik na notifikaciju otvara relevantnu stranicu.
+
+**Prednosti**
+- Ne propustite važne obavijesti čak i kada niste aktivno na platformi.
+- Brza reakcija na nove poslove i ponude povećava šanse za uspješan posao.
+- Notifikacije rade u pozadini bez potrebe za otvorenom karticom.
+
+**Kada koristiti**
+- Aktivirajte ako želite biti obaviješteni o novim poslovima u stvarnom vremenu.
+- Korisno za providere koji žele brzo reagirati na nove prilike.
+- Onemogućite ako preferirate samo email ili in-app notifikacije.
+`,
+      technicalDetails: `**Frontend**
+- Hook \`usePushNotifications\` upravlja subscription statusom i komunikacijom s backendom.
+- Komponenta \`PushNotificationButton\` omogućava korisnicima da uključe/isključe push notifikacije.
+- Service worker (\`sw.js\`) prima push evente i prikazuje notifikacije s akcijskim gumbovima.
+- Notifikacije podržavaju klik akcije koje otvaraju relevantnu stranicu na platformi.
+
+**Backend**
+- Servis \`push-notification-service.js\` koristi \`web-push\` biblioteku za slanje notifikacija.
+- VAPID ključevi (public/private) konfigurirani su kroz environment varijable.
+- Endpointi \`/api/push-notifications/subscribe\` i \`/unsubscribe\` upravljaju subscriptionima.
+- Funkcija \`sendPushNotification\` šalje notifikacije svim aktivnim uređajima korisnika.
+- Automatski cleanup neaktivnih subscriptiona (410 Gone status).
+
+**Baza**
+- Tablica \`PushSubscription\` čuva endpoint, p256dh i auth ključeve za svaki uređaj.
+- Polja \`isActive\`, \`lastUsedAt\` i \`userAgent\` omogućavaju praćenje i cleanup.
+- Unique constraint na \`userId_endpoint\` sprječava duplikate.
+
+**Integracije**
+- Web Push API (standardni browser API za push notifikacije).
+- VAPID protokol za autentifikaciju push servisa.
+- Service Worker API za prihvat notifikacija u pozadini.
+
+**API**
+- \`GET /api/push-notifications/vapid-public-key\` – javni ključ za frontend subscription.
+- \`POST /api/push-notifications/subscribe\` – registracija novog subscriptiona (zahtijeva auth).
+- \`POST /api/push-notifications/unsubscribe\` – uklanjanje subscriptiona (zahtijeva auth).
+- \`GET /api/push-notifications/subscriptions\` – lista aktivnih subscriptiona korisnika (zahtijeva auth).
+
+**Konfiguracija**
+- VAPID ključevi se generiraju naredbom: \`npx web-push generate-vapid-keys\`
+- Postavite \`VAPID_PUBLIC_KEY\`, \`VAPID_PRIVATE_KEY\` i \`VAPID_SUBJECT\` u environment varijablama.
+- VAPID_SUBJECT mora biti email adresa (npr. \`mailto:admin@uslugar.oriph.io\`).
 `
     },
     "Brojač nepročitanih notifikacija": {
@@ -13240,18 +13297,18 @@ async function seedDocumentation() {
 }
 
 // Pokreni seed ako se pozove direktno
-if (import.meta.url === `file://${process.argv[1]}`) {
-  seedDocumentation()
-    .then(async () => {
-      await prisma.$disconnect();
-      process.exit(0);
-    })
-    .catch(async (error) => {
-      console.error('❌ Seed neuspješan:', error);
-      await prisma.$disconnect();
-      process.exit(1);
-    });
-}
+seedDocumentation()
+  .then(async () => {
+    console.log('✅ Seed dokumentacije uspješno završen!');
+    await prisma.$disconnect();
+    process.exit(0);
+  })
+  .catch(async (error) => {
+    console.error('❌ Seed neuspješan:', error);
+    console.error(error.stack);
+    await prisma.$disconnect();
+    process.exit(1);
+  });
 
 export default seedDocumentation;
 
