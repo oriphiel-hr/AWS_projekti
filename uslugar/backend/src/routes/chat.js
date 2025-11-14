@@ -5,7 +5,116 @@ import { upload, getImageUrl } from '../lib/upload.js';
 
 const r = Router();
 
-// Get user's chat rooms
+// ============================================================
+// INTERNAL CHAT ROUTES (Direktor ↔ Team)
+// ============================================================
+
+/**
+ * GET /api/chat/internal/rooms
+ * Dohvaća sve INTERNAL chat roomove za korisnika
+ */
+r.get('/internal/rooms', auth(true, ['PROVIDER']), async (req, res, next) => {
+  try {
+    const { getInternalChatRooms } = await import('../services/internal-chat-service.js');
+    const rooms = await getInternalChatRooms(req.user.id);
+    res.json(rooms);
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * POST /api/chat/internal/rooms
+ * Kreira novi INTERNAL chat room između direktora i tim člana
+ */
+r.post('/internal/rooms', auth(true, ['PROVIDER']), async (req, res, next) => {
+  try {
+    const { teamMemberId, roomName } = req.body;
+
+    if (!teamMemberId) {
+      return res.status(400).json({ error: 'Missing teamMemberId' });
+    }
+
+    // Provjeri da li je korisnik direktor
+    const directorProfile = await prisma.providerProfile.findFirst({
+      where: {
+        userId: req.user.id,
+        isDirector: true
+      }
+    });
+
+    if (!directorProfile) {
+      return res.status(403).json({ error: 'Samo direktor može kreirati INTERNAL chat room' });
+    }
+
+    const { createOrGetInternalChatRoom } = await import('../services/internal-chat-service.js');
+    const room = await createOrGetInternalChatRoom(directorProfile.id, teamMemberId, roomName);
+
+    res.status(201).json(room);
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * POST /api/chat/internal/rooms/group
+ * Kreira grupni INTERNAL chat room za direktor i više tim članova
+ */
+r.post('/internal/rooms/group', auth(true, ['PROVIDER']), async (req, res, next) => {
+  try {
+    const { teamMemberIds, roomName } = req.body;
+
+    if (!teamMemberIds || !Array.isArray(teamMemberIds) || teamMemberIds.length === 0) {
+      return res.status(400).json({ error: 'Missing or invalid teamMemberIds' });
+    }
+
+    if (!roomName) {
+      return res.status(400).json({ error: 'Missing roomName' });
+    }
+
+    // Provjeri da li je korisnik direktor
+    const directorProfile = await prisma.providerProfile.findFirst({
+      where: {
+        userId: req.user.id,
+        isDirector: true
+      }
+    });
+
+    if (!directorProfile) {
+      return res.status(403).json({ error: 'Samo direktor može kreirati grupni INTERNAL chat room' });
+    }
+
+    const { createGroupInternalChatRoom } = await import('../services/internal-chat-service.js');
+    const room = await createGroupInternalChatRoom(directorProfile.id, teamMemberIds, roomName);
+
+    res.status(201).json(room);
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * GET /api/chat/internal/rooms/:roomId/check
+ * Provjerava pristup INTERNAL chatu
+ */
+r.get('/internal/rooms/:roomId/check', auth(true, ['PROVIDER']), async (req, res, next) => {
+  try {
+    const { roomId } = req.params;
+
+    const { checkInternalChatAccess } = await import('../services/internal-chat-service.js');
+    const access = await checkInternalChatAccess(roomId, req.user.id);
+
+    res.json(access);
+  } catch (e) {
+    next(e);
+  }
+});
+
+// ============================================================
+// PUBLIC CHAT ROUTES (Klijent ↔ Tvrtka)
+// ============================================================
+
+// Get user's chat rooms (PUBLIC, OFFER_BASED, i INTERNAL)
 r.get('/rooms', auth(true), async (req, res, next) => {
   try {
     // Dohvati PUBLIC chat roomove
@@ -61,8 +170,19 @@ r.get('/rooms', auth(true), async (req, res, next) => {
       orderBy: { updatedAt: 'desc' }
     });
 
+    // Dohvati INTERNAL chat roomove (samo za PROVIDER role)
+    let internalRooms = [];
+    if (req.user.role === 'PROVIDER') {
+      try {
+        const { getInternalChatRooms } = await import('../services/internal-chat-service.js');
+        internalRooms = await getInternalChatRooms(req.user.id);
+      } catch (e) {
+        console.warn('Greška pri dohvaćanju INTERNAL chat roomova:', e.message);
+      }
+    }
+
     // Kombiniraj i ukloni duplikate
-    const allRooms = [...publicRooms, ...offerBasedRooms];
+    const allRooms = [...publicRooms, ...offerBasedRooms, ...internalRooms];
     const uniqueRooms = Array.from(
       new Map(allRooms.map(room => [room.id, room])).values()
     );
@@ -313,12 +433,23 @@ r.get('/rooms/:roomId/messages', auth(true), async (req, res, next) => {
       return res.status(403).json({ error: 'Access denied' });
     }
 
-    // Provjeri pristup: PUBLIC chat (lead purchase) ili OFFER_BASED chat (accepted offer)
-    const hasLeadPurchase = room.job.leadPurchases && room.job.leadPurchases.length > 0;
-    const hasAcceptedOffer = room.job.offers && room.job.offers.length > 0;
+    // Provjeri tip chata: INTERNAL (jobId = null), PUBLIC (lead purchase), ili OFFER_BASED (accepted offer)
+    if (room.jobId === null) {
+      // INTERNAL chat - provjeri pristup
+      const { checkInternalChatAccess } = await import('../services/internal-chat-service.js');
+      const access = await checkInternalChatAccess(roomId, req.user.id);
+      
+      if (!access.hasAccess) {
+        return res.status(403).json({ error: access.message || 'Nemate pristup ovom INTERNAL chatu' });
+      }
+    } else {
+      // PUBLIC ili OFFER_BASED chat
+      const hasLeadPurchase = room.job.leadPurchases && room.job.leadPurchases.length > 0;
+      const hasAcceptedOffer = room.job.offers && room.job.offers.length > 0;
 
-    if (!hasLeadPurchase && !hasAcceptedOffer) {
-      return res.status(403).json({ error: 'Chat is only available after lead unlock or job acceptance' });
+      if (!hasLeadPurchase && !hasAcceptedOffer) {
+        return res.status(403).json({ error: 'Chat is only available after lead unlock or job acceptance' });
+      }
     }
 
     const messages = await prisma.chatMessage.findMany({
@@ -452,12 +583,23 @@ r.post('/rooms/:roomId/upload-image', auth(true), upload.single('image'), async 
       return res.status(403).json({ error: 'Access denied' });
     }
 
-    // Provjeri pristup: PUBLIC chat (lead purchase) ili OFFER_BASED chat (accepted offer)
-    const hasLeadPurchase = room.job.leadPurchases && room.job.leadPurchases.length > 0;
-    const hasAcceptedOffer = room.job.offers && room.job.offers.length > 0;
+    // Provjeri tip chata: INTERNAL (jobId = null), PUBLIC (lead purchase), ili OFFER_BASED (accepted offer)
+    if (room.jobId === null) {
+      // INTERNAL chat - provjeri pristup
+      const { checkInternalChatAccess } = await import('../services/internal-chat-service.js');
+      const access = await checkInternalChatAccess(roomId, req.user.id);
+      
+      if (!access.hasAccess) {
+        return res.status(403).json({ error: access.message || 'Nemate pristup ovom INTERNAL chatu' });
+      }
+    } else {
+      // PUBLIC ili OFFER_BASED chat
+      const hasLeadPurchase = room.job.leadPurchases && room.job.leadPurchases.length > 0;
+      const hasAcceptedOffer = room.job.offers && room.job.offers.length > 0;
 
-    if (!hasLeadPurchase && !hasAcceptedOffer) {
-      return res.status(403).json({ error: 'Chat is only available after lead unlock or job acceptance' });
+      if (!hasLeadPurchase && !hasAcceptedOffer) {
+        return res.status(403).json({ error: 'Chat is only available after lead unlock or job acceptance' });
+      }
     }
 
     // Get image URL
@@ -519,12 +661,23 @@ r.post('/rooms/:roomId/messages', auth(true), async (req, res, next) => {
       return res.status(403).json({ error: 'Access denied' });
     }
 
-    // Provjeri pristup: PUBLIC chat (lead purchase) ili OFFER_BASED chat (accepted offer)
-    const hasLeadPurchase = room.job.leadPurchases && room.job.leadPurchases.length > 0;
-    const hasAcceptedOffer = room.job.offers && room.job.offers.length > 0;
+    // Provjeri tip chata: INTERNAL (jobId = null), PUBLIC (lead purchase), ili OFFER_BASED (accepted offer)
+    if (room.jobId === null) {
+      // INTERNAL chat - provjeri pristup
+      const { checkInternalChatAccess } = await import('../services/internal-chat-service.js');
+      const access = await checkInternalChatAccess(roomId, req.user.id);
+      
+      if (!access.hasAccess) {
+        return res.status(403).json({ error: access.message || 'Nemate pristup ovom INTERNAL chatu' });
+      }
+    } else {
+      // PUBLIC ili OFFER_BASED chat
+      const hasLeadPurchase = room.job.leadPurchases && room.job.leadPurchases.length > 0;
+      const hasAcceptedOffer = room.job.offers && room.job.offers.length > 0;
 
-    if (!hasLeadPurchase && !hasAcceptedOffer) {
-      return res.status(403).json({ error: 'Chat is only available after lead unlock or job acceptance' });
+      if (!hasLeadPurchase && !hasAcceptedOffer) {
+        return res.status(403).json({ error: 'Chat is only available after lead unlock or job acceptance' });
+      }
     }
 
     // Create message

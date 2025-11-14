@@ -388,7 +388,7 @@ const features = [
       category: "Chat Sustav (PUBLIC i INTERNAL)",
       items: [
         { name: "PUBLIC chat (Klijent ↔ Tvrtka)", implemented: true },
-        { name: "INTERNAL chat (Direktor ↔ Team)", implemented: false },
+        { name: "INTERNAL chat (Direktor ↔ Team)", implemented: true },
         { name: "Maskirani kontakti do prihvata ponude", implemented: false },
         { name: "Chat thread vezan uz upit/ponudu", implemented: true },
         { name: "Privici u chatu (fotke, PDF ponude)", implemented: true },
@@ -11407,38 +11407,57 @@ SMS verifikacija osigurava da vaš telefonski broj pripada vama i povećava povj
       implemented: true,
       summary: "Privatni interni chat između direktora i timova za operativnu koordinaciju, nevidljiv klijentu.",
       details: `**Kako funkcionira**
-- Thread se otvara kada direktor dodijeli lead timu; pristup imaju samo direktor i članovi koji rade na slučaju.
-- Koristi se za interne napomene, troškove, dogovore i odobrenja – odvojeno od komunikacije s klijentom.
-- Sve poruke i privici auditiraju se, ali nisu vidljivi klijentu.
+- INTERNAL chat je privatni chat između direktora i tim članova za operativnu koordinaciju.
+- Chat nije vezan uz posao (jobId = null) - razlikuje se od PUBLIC chata koji je vezan uz posao.
+- Direktor može kreirati 1-on-1 chat s tim članom ili grupni chat s više tim članova.
+- Chat je nevidljiv klijentima - samo direktor i tim članovi iste tvrtke imaju pristup.
 
 **Prednosti**
 - Omogućuje strukturiranu internu komunikaciju bez korištenja vanjskih kanala.
 - Čuva povijest odluka i dogovora unutar platforme.
+- Potpuno odvojen od PUBLIC chata s klijentom - nema rizika od slučajnog dijeljenja internih informacija.
 
 **Kada koristiti**
-- Svaki put kada više članova radi na istom leadu.
-- Kod eskalacija ili složenih poslova koji zahtijevaju internu koordinaciju.
+- Operativna koordinacija između direktora i tim članova.
+- Interni dogovori o poslovima, troškovima, i odobrenjima.
+- Komunikacija koja ne treba biti vidljiva klijentu.
+
+**Sigurnost**
+- Samo direktor može kreirati INTERNAL chat roomove.
+- Pristup imaju samo direktor i tim članovi iste tvrtke.
+- Klijenti nemaju pristup INTERNAL chat roomovima.
 `,
       technicalDetails: `**Frontend**
-- Route \`/chat/:leadId/internal\` prikazuje interni thread s oznakom “Internal only”.
-- UI jasno razlikuje internal/public poruke kako bi se izbjegle greške.
+- Chat komponenta prikazuje INTERNAL chat roomove odvojeno od PUBLIC chat roomova.
+- UI jasno označava INTERNAL chat roomove kako bi se izbjegle greške.
+- Direktor može kreirati novi INTERNAL chat room s tim članom ili grupni chat.
 
 **Backend**
-- \`chatService.ensureInternalThread\` kreira thread pri dodjeli tima.
-- Event \`chat.internal.message\` informira direktora o novim internim porukama.
+- \`internal-chat-service.js\` upravlja INTERNAL chat funkcionalnostima:
+  - \`createOrGetInternalChatRoom\` - kreira ili dohvaća 1-on-1 chat između direktora i tim člana
+  - \`createGroupInternalChatRoom\` - kreira grupni chat za direktor i više tim članova
+  - \`checkInternalChatAccess\` - provjerava pristup INTERNAL chatu
+  - \`getInternalChatRooms\` - dohvaća sve INTERNAL chat roomove korisnika
+- INTERNAL chat roomovi imaju \`jobId = null\` (razlika od PUBLIC chata koji ima jobId).
 
 **Baza**
-- \`ChatThread\` (type='INTERNAL') povezano s leadId i teamId.
-- \`InternalChatParticipant\` definira tko ima pristup threadu.
+- \`ChatRoom\` model s \`jobId = null\` za INTERNAL chat roomove.
+- \`ChatMessage\` model čuva poruke s \`senderId\`, \`roomId\`, \`content\`, \`attachments\`.
+- Sudionici chata su povezani preko \`participants\` relacije u \`ChatRoom\`.
+- Provjera pristupa: svi sudionici moraju biti direktor ili tim članovi iste tvrtke.
 
 **Integracije**
-- Notification servis šalje push/email direktorima i članovima u threadu.
-- Analytics prati korištenje internog chata po timovima.
+- Notification servis šalje obavijesti o novim INTERNAL porukama.
+- Chat rute provjeravaju pristup prije dohvaćanja poruka.
 
 **API**
-- \`GET /api/chat/internal/:leadId\` – dohvat internog threada.
-- \`POST /api/chat/internal/:leadId/message\` – slanje interne poruke.
-- \`POST /api/chat/internal/:leadId/add-participant\` – dodavanje člana.
+- \`GET /api/chat/internal/rooms\` - dohvaća sve INTERNAL chat roomove korisnika
+- \`POST /api/chat/internal/rooms\` - kreira novi INTERNAL chat room između direktora i tim člana
+- \`POST /api/chat/internal/rooms/group\` - kreira grupni INTERNAL chat room
+- \`GET /api/chat/internal/rooms/:roomId/check\` - provjerava pristup INTERNAL chatu
+- \`GET /api/chat/rooms\` - dohvaća sve chat roomove (uključuje INTERNAL za PROVIDER role)
+- \`GET /api/chat/rooms/:roomId/messages\` - dohvaća poruke (podržava INTERNAL chat)
+- \`POST /api/chat/rooms/:roomId/messages\` - šalje poruku (podržava INTERNAL chat)
 `
     },
     "Weighted Queue algoritam": {
