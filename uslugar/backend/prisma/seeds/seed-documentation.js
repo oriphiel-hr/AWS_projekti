@@ -370,15 +370,18 @@ const features = [
       category: "Upravljanje Tvrtkama i Timovima",
       items: [
         { name: "Tvrtka kao pravni entitet", implemented: true },
-        { name: "Direktor kao administrator profila", implemented: false },
-        { name: "Team članovi (operativci)", implemented: false },
-        { name: "Dodavanje članova tima", implemented: false },
-        { name: "Upravljanje pravima tima", implemented: false },
+        { name: "Direktor kao administrator profila", implemented: true },
+        { name: "Team članovi (operativci)", implemented: true },
+        { name: "Dodavanje članova tima", implemented: true },
+        { name: "Upravljanje pravima tima", implemented: true },
         { name: "Interna distribucija leadova unutar tvrtke", implemented: false },
         { name: "Tvrtka bez tima (solo firma)", implemented: true },
         { name: "Auto-assign leadova timu", implemented: false },
         { name: "Ručna dodjela leadova od strane direktora", implemented: false },
-        { name: "Pregled aktivnosti tima", implemented: false }
+        { name: "Pregled aktivnosti tima", implemented: true },
+        { name: "Direktor Dashboard - upravljanje timovima", implemented: true },
+        { name: "Direktor Dashboard - pristup financijama", implemented: true },
+        { name: "Direktor Dashboard - ključne odluke", implemented: true }
       ]
     },
     {
@@ -10655,139 +10658,163 @@ SMS verifikacija osigurava da vaš telefonski broj pripada vama i povećava povj
       implemented: true,
       summary: "Direktor je primarni administrator koji upravlja timovima, financijama i ključnim odlukama tvrtke.",
       details: `**Kako funkcionira**
-- Direktor ima puni pristup profilu tvrtke, leadovima, ponudama i financijskim izvještajima.
+- Direktor ima puni pristup profilu tvrtke, leadovima, ponudama i financijskim izvještajima kroz Direktor Dashboard.
 - Potvrđuje kritične akcije (npr. slanje ponude, dodjela leadova, upravljanje licencama).
-- Administrira timove: dodaje članove, definira njihove role i nadzire rad.
+- Administrira timove: dodaje članove preko email adrese, uklanja članove i nadzire njihov rad.
+- Pristupa financijskim podacima: pregled pretplata, faktura direktora i tim članova, lead purchases.
+- Pregledava ključne odluke: ponude koje čekaju na odobrenje, leadove koje tim članovi trebaju odobriti.
 
 **Prednosti**
 - Jasna kontrola nad poslovanjem i pravnom odgovornošću.
 - Osigurava da komunikacija prema klijentima ide kroz ovlaštenu osobu.
+- Centralizirano upravljanje timovima i financijama na jednom mjestu.
 
 **Kada koristiti**
 - Svakodnevno upravljanje operacijama tvrtke.
 - Kod eskalacija (npr. refund zahtjevi, sporovi) gdje je potreban ovlašteni potpisnik.
+- Planiranje budžeta i analiza troškova tvrtke.
 `,
       technicalDetails: `**Frontend**
-- \`DirectorDashboard\` prikazuje ključne metrike (pending leadovi, financije, licencije).
-- Akcije koriste optimističke updateove i potvrđuju se kroz modal s audit informacijama.
+- \`DirectorDashboard\` komponenta prikazuje tri taba: Tim, Financije i Odluke.
+- Tab "Tim" omogućava dodavanje/uklanjanje članova tima preko email adrese.
+- Tab "Financije" prikazuje pretplate, fakture i lead purchases direktora i tim članova.
+- Tab "Odluke" prikazuje ponude i leadove koji čekaju na odobrenje.
+- Automatska provjera da li je korisnik direktor; ako nije, prikazuje se opcija "Postani Direktor".
 
 **Backend**
 - \`directorService\` validira da postoji jedna aktivna direktorska rola i da je identitet verificiran.
+- Helper funkcije \`isDirector\` i \`getDirectorWithTeam\` provjeravaju i dohvaćaju direktora s timom.
 - Audit događaji (npr. \`director.offerApproved\`) pohranjuju se radi traga.
 
 **Baza**
-- \`User\` polja \`role\`, \`companyId\`, \`isPrimaryContact\`.
-- \`DirectorDelegation\` prati povijest direktora i vremenske oznake preuzimanja/primopredaje.
+- \`ProviderProfile\` polja \`isDirector\` (Boolean) i \`companyId\` (String?) za povezivanje tim članova s direktorom.
+- Self-referencing relation: \`company\` (direktor) i \`teamMembers\` (članovi tima).
+- Tim članovi imaju \`companyId\` koji pokazuje na direktora.
 
 **Integracije**
 - Notification servis šalje direktorima ključne alertove (novi lead, istek licence, financijski događaji).
 
 **API**
-- \`GET /api/director/dashboard\` – agregirani podaci.
-- \`POST /api/director/offers/:id/approve\`, \`POST /api/director/lead/:id/assign-team\` – autorizirane akcije.
+- \`POST /api/director/become-director\` – postavlja korisnika kao direktora (zahtijeva companyName).
+- \`GET /api/director/team\` – dohvaća tim i članove.
+- \`POST /api/director/team/add\` – dodaje člana tima (zahtijeva userId).
+- \`DELETE /api/director/team/:memberId\` – uklanja člana iz tima.
+- \`GET /api/director/finances\` – financijski pregled (pretplate, fakture, leadovi).
+- \`GET /api/director/decisions\` – odluke koje čekaju (ponude, leadovi).
 `
     },
     "Team članovi (operativci)": {
       implemented: true,
       summary: "Operativci vode komunikaciju i ponude za dodijeljene leadove, ali bez administratorskih ovlasti.",
       details: `**Kako funkcionira**
-- Direktor dodjeljuje leadovima tim člana; član preuzima slučaj i vodi komunikaciju u ime tvrtke.
-- Komuniciraju kroz in-app chat (public/internal) i pripremaju ponude koje direktor može pregledati.
-- Nemaju pristup financijama ni postavkama tvrtke, čime se štiti governance.
+- Direktor dodaje tim članove preko email adrese PROVIDER korisnika; član se automatski povezuje s tvrtkom.
+- Tim članovi rade u ime tvrtke, ali nemaju pristup financijama ni postavkama tvrtke.
+- Direktor vidi sve aktivnosti tim članova kroz Direktor Dashboard.
+- Tim članovi mogu raditi na leadovima i pripremati ponude koje direktor može pregledati.
 
 **Prednosti**
 - Omogućuje paralelan rad više operativaca uz centralni nadzor.
 - Jasno razdvajanje odgovornosti između strategije (direktor) i operativnog rada (tim).
+- Jednostavno dodavanje/uklanjanje članova tima.
 
 **Kada koristiti**
 - Svakodnevno praćenje i obrada leadova.
 - Kod većih tvrtki koje žele specijalizirati timove po kategorijama/uslugama.
+- Kada direktor želi delegirati operativne zadatke tim članovima.
 `,
       technicalDetails: `**Frontend**
-- \`TeamWorkspace\` prikazuje dodijeljene leadove, chat i zadatke u jednom sučelju.
-- Permission hookovi skrivaju administratorske kontrole.
+- Direktor Dashboard tab "Tim" prikazuje sve članove tima s njihovim informacijama (ime, email, telefon, kategorije).
+- Direktor može dodati novog člana unoseći email adresu PROVIDER korisnika.
+- Direktor može ukloniti člana iz tima jednim klikom.
 
 **Backend**
-- \`leadAssignmentService.assignToTeamMember\` provodi dodjelu i bilježi odgovornog operativca.
-- Interni chat servis segmentira poruke (public/internal) i auditira komunikaciju.
+- \`POST /api/director/team/add\` provjerava da korisnik postoji i ima PROVIDER profil, zatim ga povezuje s direktorom.
+- \`DELETE /api/director/team/:memberId\` uklanja vezu između tim člana i direktora (postavlja companyId na null).
+- Helper funkcija \`getDirectorWithTeam\` dohvaća direktora s njegovim tim članovima.
 
 **Baza**
-- \`LeadAssignment\` povezuje lead, teamMemberId i direktora koji je odobrio.
-- \`TeamMemberRole\` definira dopuštene akcije po kategoriji usluga.
+- \`ProviderProfile\` polje \`companyId\` povezuje tim člana s direktorom (self-referencing relation).
+- Direktor ima \`isDirector: true\` i \`companyId: null\`.
+- Tim članovi imaju \`isDirector: false\` i \`companyId\` koji pokazuje na direktora.
 
 **Integracije**
 - Notification servis (email/push) obavještava članove o novim zadacima.
 - Analytics prati performanse po timu (response time, conversion rate).
 
 **API**
-- \`GET /api/team/leads\` – lista leadova za prijavljenog člana.
-- \`POST /api/team/leads/:id/update\` – ažuriranje statusa i priprema ponude.
+- \`GET /api/director/team\` – dohvaća direktora i sve članove tima.
+- \`POST /api/director/team/add\` – dodaje člana tima (zahtijeva userId).
+- \`DELETE /api/director/team/:memberId\` – uklanja člana iz tima.
 `
     },
     "Dodavanje članova tima": {
       implemented: true,
-      summary: "Direktor poziva nove članove, definira im uloge te prati prihvat pozivnice kroz automatizirani workflow.",
+      summary: "Direktor dodaje nove članove tima preko email adrese PROVIDER korisnika kroz Direktor Dashboard.",
       details: `**Kako funkcionira**
-- Direktor u modalu unosi ime, email i željenu rolu; sustav validira da email nije već vezan uz drugu tvrtku.
-- Pozivnica se šalje emailom/SMS-om, token vrijedi 7 dana i podsjetnici se šalju automatski.
-- Nakon prihvaćanja, član dobiva ovlasti i pojavljuje se u listi tima; odbijene ili istekle pozivnice može se ponovno poslati.
+- Direktor u Direktor Dashboard tabu "Tim" unosi email adresu PROVIDER korisnika.
+- Sustav provjerava da korisnik postoji i ima PROVIDER profil.
+- Ako korisnik već postoji u timu, prikazuje se greška.
+- Nakon dodavanja, član se automatski povezuje s tvrtkom i pojavljuje se u listi tima.
 
 **Prednosti**
 - Brzo širenje tima bez napuštanja platforme.
-- Evidencija svih poslanih pozivnica i statusa sprječava kaos u administraciji.
+- Jednostavno dodavanje novih članova preko email adrese.
+- Automatsko povezivanje člana s tvrtkom.
 
 **Kada koristiti**
-- Formiranje novog tima ili dodavanje sezonskih/vanjskih suradnika.
+- Formiranje novog tima ili dodavanje novih članova.
 - Zamjena članova koji su napustili tvrtku.
 `,
       technicalDetails: `**Frontend**
-- \`TeamMemberModal\` koristi React Hook Form za validaciju emaila i prikaz statusa pozivnice.
-- Lista članova označava pozvane korisnike badgeom “Čeka prihvat” uz CTA za resend.
+- Direktor Dashboard tab "Tim" s formom za dodavanje člana (email input).
+- Lista članova tima s informacijama i gumbom za uklanjanje.
 
 **Backend**
-- \`teamInviteService.create\` generira JWT token, sprema hash i šalje notifikaciju.
-- Audit log bilježi tko je poslao pozivnicu, kada i s koje IP adrese.
+- \`POST /api/director/team/add\` provjerava da korisnik postoji i ima PROVIDER profil, zatim ga povezuje s direktorom.
+- Validacija da korisnik već nije u timu.
 
 **Baza**
-- \`TeamMember\` (status, inviteTokenHash, invitedBy, roleKey).
-- \`TeamInvite\` čuva povijest pozivnica (email, expiresAt, acceptedAt).
+- \`ProviderProfile\` polje \`companyId\` povezuje tim člana s direktorom.
 
 **Integracije**
-- Email/SMS provider (SES, Twilio) za slanje pozivnica i podsjetnika.
-- Notification servis za in-app podsjetnike prije isteka tokena.
+- Notification servis obavještava člana o dodavanju u tim.
 
 **API**
-- \`POST /api/company/:companyId/team-members\` – kreira pozivnicu.
-- \`GET /api/team/invite/:token\` i \`POST /api/team/invite/:token/accept\` – prihvat pozivnice.
+- \`POST /api/director/team/add\` – dodaje člana tima (zahtijeva userId).
+- \`GET /api/director/team\` – dohvaća tim i članove.
+- \`DELETE /api/director/team/:memberId\` – uklanja člana iz tima.
 `
     },
     "Upravljanje pravima tima": {
       implemented: true,
-      summary: "Direktor granularno dodjeljuje ovlasti članovima (chat, ponude, financije, administracija) kroz permission matricu.",
+      summary: "Direktor upravlja tim članovima kroz Direktor Dashboard - dodavanje i uklanjanje članova.",
       details: `**Kako funkcionira**
-- Permission matrix prikazuje dozvole po članu (chat, ponude, financije, dodjela leadova, administracija).
-- Direktor uključuje/isključuje ovlasti; promjene se primjenjuju odmah i auditira se svaka izmjena.
-- Sustav sprječava nesigurne kombinacije (npr. financijski pristup bez 2FA) i upozorava na kritične promjene.
+- Direktor Dashboard tab "Tim" prikazuje sve članove tima s njihovim informacijama.
+- Direktor može dodati novog člana unoseći email adresu PROVIDER korisnika.
+- Direktor može ukloniti člana iz tima jednim klikom.
+- Tim članovi nemaju pristup financijama ni postavkama tvrtke - samo direktor ima puni pristup.
 
 **Prednosti**
 - Jasna kontrola pristupa smanjuje sigurnosne rizike.
-- Moguće je diferencirati juniore, seniore i financijske operativce bez zasebnih računa.
+- Jednostavno upravljanje timom kroz Direktor Dashboard.
 
 **Kada koristiti**
-- Kad novi član stupa u tim i treba definirati ovlasti.
-- Periodična revizija prava radi sigurnosti ili promjene uloga.
+- Kada trebate dodati novog člana tima.
+- Kada član tima više ne radi za tvrtku.
+- Za pregled svih aktivnih članova tima.
 `,
       technicalDetails: `**Frontend**
-- \`PermissionMatrix\` prikazuje dozvole u tablici i koristi hook \`usePermissionPreview\` za simulaciju UI-ja.
-- Blokira promjene kojima bi direktor sam sebi uklonio kritična prava.
+- Direktor Dashboard tab "Tim" prikazuje sve članove tima s njihovim informacijama.
+- Direktor može dodati novog člana unoseći email adresu PROVIDER korisnika.
+- Direktor može ukloniti člana iz tima jednim klikom.
 
 **Backend**
-- \`permissionService.updateMemberPermissions\` validira zahtjev, računa efektivna prava i emitira \`permission.updated\` event.
-- Rule engine provjerava compliance (npr. financije zahtijevaju 2FA flag).
+- \`GET /api/director/team\` dohvaća direktora i sve članove tima.
+- \`POST /api/director/team/add\` dodaje člana tima.
+- \`DELETE /api/director/team/:memberId\` uklanja člana iz tima.
 
 **Baza**
-- \`TeamMemberPermission\` (memberId, permissionKey).
-- Materialized view \`EffectivePermissions\` spaja naslijeđene i individualne dozvole; \`PermissionChangeLog\` auditira promjene.
+- \`ProviderProfile\` polje \`companyId\` povezuje tim člana s direktorom.
 
 **Integracije**
 - Notification servis obavještava člana o promijenjenim ovlastima.
@@ -10948,31 +10975,33 @@ SMS verifikacija osigurava da vaš telefonski broj pripada vama i povećava povj
     },
     "Pregled aktivnosti tima": {
       implemented: true,
-      summary: "Direktor prati sve aktivnosti tima kroz feed događaja i KPI metrike (leadovi, ponude, odgovori, realizacija).",
+      summary: "Direktor prati aktivnosti tima kroz Direktor Dashboard - pregled ponuda i leadova koji čekaju na odobrenje.",
       details: `**Kako funkcionira**
-- Feed kombinira događaje iz leadova, chata, ponuda i billing modula, uz filtre po timu/članu i rasponu datuma.
-- KPI kartice prikazuju ključne metrike: vrijeme odgovora, broj aktivnih leadova, stopu konverzije, realizirane poslove.
-- Alerti označavaju leadove bez odgovora i ponude koje čekaju odobrenje.
+- Direktor Dashboard tab "Odluke" prikazuje ponude koje čekaju na odobrenje (od tim članova).
+- Prikazuju se leadovi koje tim članovi trebaju odobriti.
+- Direktor vidi sve relevantne informacije za donošenje odluke (naslov posla, iznos ponude, kontakt informacije).
 
 **Prednosti**
-- Direktor brzo identificira uska grla i optimizira raspodjelu posla.
-- Dokazi o aktivnostima dostupni su za audit i performance review.
+- Centralizirani pregled svih odluka koje čekaju na odobrenje.
+- Brzo donošenje odluka na jednom mjestu.
+- Pregled aktivnosti tim članova.
 
 **Kada koristiti**
-- Dnevni pregled stanja tima i eskalacija.
-- Periodične evaluacije (npr. tjedni sastanci, bonusi na temelju KPI-ja).
+- Za pregled ponuda koje čekaju na odobrenje.
+- Za pregled leadova koje tim članovi trebaju odobriti.
+- Za donošenje ključnih odluka tvrtke.
 `,
       technicalDetails: `**Frontend**
-- Stranica \`TeamActivity\` kombinira timeline komponentu i grafove (Recharts) s real-time SSE feedom.
-- "Export" gumb generira CSV/Excel kroz klijentski alat (PapaParse/FileSaver).
+- Direktor Dashboard tab "Odluke" prikazuje dvije sekcije: "Ponude koje čekaju" i "Leadovi koje čekaju".
+- Prikaz relevantnih informacija za svaku odluku (naslov posla, iznos, kontakt informacije).
 
 **Backend**
-- \`activityFeedService.getEvents\` agregira događaje iz lead, chat, offer i invoice servisa.
-- Event store (Kafka topic \`team.activity\`) omogućuje reprocessing i dugoročno skladištenje.
+- \`GET /api/director/decisions\` dohvaća odluke koje čekaju.
+- Filtrira ponude i leadove tim članova koji čekaju na odobrenje.
 
 **Baza**
-- \`TeamActivityEvent\` (type, actorId, targetId, payload JSONB).
-- Materializirani pogled \`ActivitySummary\` agregira KPI-jeve po danu i članu; retention arhivira stare događaje.
+- \`Offer\` – ponude tim članova sa statusom PENDING.
+- \`LeadPurchase\` – leadovi tim članova sa statusom ACTIVE.
 
 **Integracije**
 - Notification servis generira alert-e (npr. lead bez odgovora > SLA).
@@ -13143,6 +13172,119 @@ async function seedDocumentation() {
 - GET /api/admin/kyc-metrics?period=monthly|weekly&breakdown=category|region
 - GET /api/admin/kyc-metrics/reasons?top=5
 - POST /api/admin/kyc-metrics/recalculate (ručno osvježavanje cachea)
+      `
+      },
+      "Direktor Dashboard - upravljanje timovima": {
+        implemented: true,
+        summary: "Direktor Dashboard omogućava upravljanje timovima - dodavanje i uklanjanje članova tima.",
+        details: `**Kako funkcionira**
+- Direktor Dashboard ima tab "Tim" koji prikazuje sve članove tima.
+- Direktor može dodati novog člana unoseći email adresu PROVIDER korisnika.
+- Direktor može ukloniti člana iz tima jednim klikom.
+- Prikazuje se status dostupnosti, kategorije i kontakt informacije svakog člana.
+
+**Prednosti**
+- Jednostavno upravljanje timom na jednom mjestu.
+- Brzo dodavanje novih članova i uklanjanje onih koji više ne rade za tvrtku.
+- Pregled svih aktivnih članova tima s njihovim informacijama.
+
+**Kada koristiti**
+- Kada trebate dodati novog člana tima.
+- Kada član tima više ne radi za tvrtku.
+- Za pregled svih aktivnih članova tima.
+`,
+        technicalDetails: `**Frontend**
+- Komponenta \`DirectorDashboard\` s tabom "Tim".
+- Forma za dodavanje člana tima (email input).
+- Lista članova tima s informacijama i gumbom za uklanjanje.
+
+**Backend**
+- \`GET /api/director/team\` – dohvaća direktora i sve članove tima.
+- \`POST /api/director/team/add\` – dodaje člana tima (zahtijeva userId).
+- \`DELETE /api/director/team/:memberId\` – uklanja člana iz tima.
+
+**Baza**
+- \`ProviderProfile\` polje \`companyId\` povezuje tim člana s direktorom.
+
+**API**
+- \`GET /api/director/team\` – dohvaća tim i članove.
+- \`POST /api/director/team/add\` – dodaje člana.
+- \`DELETE /api/director/team/:memberId\` – uklanja člana.
+      `
+      },
+      "Direktor Dashboard - pristup financijama": {
+        implemented: true,
+        summary: "Direktor Dashboard omogućava pristup financijskim podacima tvrtke - pretplate, fakture i leadovi.",
+        details: `**Kako funkcionira**
+- Direktor Dashboard ima tab "Financije" koji prikazuje financijske podatke.
+- Prikazuje se pretplata direktora (plan, status, krediti, datum isteka).
+- Prikazuju se fakture direktora i tim članova (ukupno potrošeno, status).
+- Prikazuju se lead purchases direktora i tim članova.
+- Sažetak: ukupno potrošeno, ukupno leadova, veličina tima.
+
+**Prednosti**
+- Centralizirani pregled svih financijskih podataka tvrtke.
+- Lako praćenje troškova i ROI-ja.
+- Pregled pretplata i faktura na jednom mjestu.
+
+**Kada koristiti**
+- Za planiranje budžeta i analizu troškova.
+- Za pregled pretplata i faktura.
+- Za analizu ROI-ja i učinkovitosti leadova.
+`,
+        technicalDetails: `**Frontend**
+- Komponenta \`DirectorDashboard\` s tabom "Financije".
+- KPI kartice: ukupno potrošeno, ukupno leadova, veličina tima.
+- Sekcija pretplate s detaljima.
+- Lista nedavnih faktura direktora i tim članova.
+
+**Backend**
+- \`GET /api/director/finances\` – dohvaća financijske podatke.
+- Agregira podatke direktora i svih tim članova.
+
+**Baza**
+- \`Subscription\` – pretplate direktora.
+- \`Invoice\` – fakture direktora i tim članova.
+- \`LeadPurchase\` – lead purchases direktora i tim članova.
+
+**API**
+- \`GET /api/director/finances\` – dohvaća financijske podatke.
+      `
+      },
+      "Direktor Dashboard - ključne odluke": {
+        implemented: true,
+        summary: "Direktor Dashboard omogućava pregled ključnih odluka koje čekaju na odobrenje - ponude i leadovi.",
+        details: `**Kako funkcionira**
+- Direktor Dashboard ima tab "Odluke" koji prikazuje odluke koje čekaju na odobrenje.
+- Prikazuju se ponude koje čekaju na odobrenje (od tim članova).
+- Prikazuju se leadovi koje tim članovi trebaju odobriti.
+- Direktor vidi sve relevantne informacije za donošenje odluke.
+
+**Prednosti**
+- Centralizirani pregled svih odluka koje čekaju na odobrenje.
+- Brzo donošenje odluka na jednom mjestu.
+- Pregled aktivnosti tim članova.
+
+**Kada koristiti**
+- Za pregled ponuda koje čekaju na odobrenje.
+- Za pregled leadova koje tim članovi trebaju odobriti.
+- Za donošenje ključnih odluka tvrtke.
+`,
+        technicalDetails: `**Frontend**
+- Komponenta \`DirectorDashboard\` s tabom "Odluke".
+- Dvije sekcije: "Ponude koje čekaju" i "Leadovi koje čekaju".
+- Prikaz relevantnih informacija za svaku odluku.
+
+**Backend**
+- \`GET /api/director/decisions\` – dohvaća odluke koje čekaju.
+- Filtrira ponude i leadove tim članova koji čekaju na odobrenje.
+
+**Baza**
+- \`Offer\` – ponude tim članova sa statusom PENDING.
+- \`LeadPurchase\` – leadovi tim članova sa statusom ACTIVE.
+
+**API**
+- \`GET /api/director/decisions\` – dohvaća odluke koje čekaju.
       `
       },
       "Provider Approvals": {
