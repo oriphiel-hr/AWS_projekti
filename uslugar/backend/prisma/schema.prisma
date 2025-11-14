@@ -211,6 +211,10 @@ model ProviderProfile {
   companyId  String? // ID tvrtke (ako je član tima, povezuje se s direktorom)
   company    ProviderProfile? @relation("CompanyMembers", fields: [companyId], references: [id], onDelete: SetNull)
   teamMembers ProviderProfile[] @relation("CompanyMembers") // Članovi tima (ako je direktor)
+  
+  // INTERNA DISTRIBUCIJA LEADOVA
+  directorLeads CompanyLeadQueue[] @relation("DirectorLeads") // Leadovi koje je direktor primio
+  teamMemberLeads CompanyLeadQueue[] @relation("TeamMemberLeads") // Leadovi dodijeljeni tim članu
 }
 
 // Geo-dynamic team locations (mobilni timovi, više lokacija)
@@ -311,6 +315,7 @@ model Job {
   leadPurchases         LeadPurchase[]
   creditTransactions    CreditTransaction[] @relation("JobTransactions")
   leadQueue             LeadQueue[]         @relation("JobQueue")
+  companyLeadQueue      CompanyLeadQueue[]  @relation("CompanyJobQueue")
   notifications         Notification[]
   reviews               Review[] // Recenzije ostavljene na ovom job-u
 
@@ -704,6 +709,45 @@ model LeadQueue {
   @@index([jobId, position])
   @@index([providerId, status])
   @@index([status])
+}
+
+// Interni queue leadova unutar tvrtke (direktor → tim članovi)
+model CompanyLeadQueue {
+  id          String                @id @default(cuid())
+  job         Job                   @relation("CompanyJobQueue", fields: [jobId], references: [id], onDelete: Cascade)
+  jobId       String
+  director    ProviderProfile       @relation("DirectorLeads", fields: [directorId], references: [id], onDelete: Cascade)
+  directorId  String // Direktor tvrtke koji je primio lead
+  assignedTo  ProviderProfile?      @relation("TeamMemberLeads", fields: [assignedToId], references: [id], onDelete: SetNull)
+  assignedToId String? // Tim član kojem je dodijeljen (null = čeka dodjelu)
+  position    Int // Pozicija u internom queueu (1, 2, 3...)
+  status      CompanyLeadQueueStatus @default(PENDING) // PENDING, ASSIGNED, IN_PROGRESS, COMPLETED, DECLINED
+  assignmentType CompanyLeadAssignmentType? // MANUAL, AUTO
+  assignedAt  DateTime? // Kada je dodijeljen
+  startedAt   DateTime? // Kada je tim član počeo raditi
+  completedAt DateTime? // Kada je završen
+  notes       String? // Bilješke direktora
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+
+  @@unique([jobId, directorId]) // Jedan lead može biti samo jednom u queue tvrtke
+  @@index([directorId, status])
+  @@index([assignedToId, status])
+  @@index([status])
+  @@index([jobId])
+}
+
+enum CompanyLeadQueueStatus {
+  PENDING // Čeka dodjelu
+  ASSIGNED // Dodijeljen tim članu
+  IN_PROGRESS // Tim član radi na leadu
+  COMPLETED // Završen
+  DECLINED // Direktor odbio lead
+}
+
+enum CompanyLeadAssignmentType {
+  MANUAL // Ručna dodjela od strane direktora
+  AUTO // Automatska dodjela od strane enginea
 }
 
 // Pravni statusi pružatelja usluga

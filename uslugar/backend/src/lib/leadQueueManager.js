@@ -8,6 +8,28 @@
 import { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
 
+// Helper funkcija za dodavanje leada u interni queue tvrtke (ako je provider direktor)
+async function addToCompanyQueueIfDirector(jobId, providerId) {
+  try {
+    // Provjeri da li je provider direktor
+    const providerProfile = await prisma.providerProfile.findFirst({
+      where: {
+        userId: providerId,
+        isDirector: true
+      }
+    });
+
+    if (providerProfile) {
+      // Dinamički import
+      const companyLeadDist = await import('../services/company-lead-distribution.js');
+      await companyLeadDist.addLeadToCompanyQueue(jobId, providerProfile.id);
+      console.log(`   ✅ Lead automatski dodan u interni queue tvrtke (direktor: ${providerProfile.id})`);
+    }
+  } catch (e) {
+    console.warn('Greška pri dodavanju leada u interni queue:', e.message);
+  }
+}
+
 /**
  * Pronalazi najbolje matchane providere za posao
  * @param {Object} job - Job objekat
@@ -344,6 +366,13 @@ export async function respondToLeadOffer(queueId, response, userId) {
       
       return { leadPurchase, transaction }
     })
+    
+    // Ako je provider direktor, dodaj lead u interni queue tvrtke (nakon što se transakcija završi)
+    try {
+      await addToCompanyQueueIfDirector(queueItem.jobId, userId);
+    } catch (e) {
+      console.warn('Greška pri dodavanju leada u interni queue:', e.message);
+    }
     
     // Kreiraj notifikaciju o transakciji nakon što je transakcija commitana
     if (result.transaction) {

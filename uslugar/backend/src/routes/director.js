@@ -1,6 +1,13 @@
 import { Router } from 'express';
 import { prisma } from '../lib/prisma.js';
 import { auth } from '../lib/auth.js';
+import {
+  addLeadToCompanyQueue,
+  assignLeadToTeamMember,
+  autoAssignLead,
+  getCompanyLeadQueue,
+  declineCompanyLead
+} from '../services/company-lead-distribution.js';
 
 const r = Router();
 
@@ -424,6 +431,167 @@ r.post('/become-director', auth(true, ['PROVIDER']), async (req, res, next) => {
     res.json({
       success: true,
       message: 'Sada ste direktor tvrtke'
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * GET /api/director/lead-queue
+ * Dohvati sve leadove u internom queueu tvrtke (samo za direktora)
+ */
+r.get('/lead-queue', auth(true, ['PROVIDER']), async (req, res, next) => {
+  try {
+    const director = await getDirectorWithTeam(req.user.id);
+    
+    if (!director) {
+      return res.status(403).json({
+        error: 'Nemate pristup',
+        message: 'Samo direktor može pristupiti internom queueu.'
+      });
+    }
+
+    const queue = await getCompanyLeadQueue(director.id);
+
+    res.json({
+      queue,
+      stats: {
+        pending: queue.filter(q => q.status === 'PENDING').length,
+        assigned: queue.filter(q => q.status === 'ASSIGNED').length,
+        inProgress: queue.filter(q => q.status === 'IN_PROGRESS').length,
+        completed: queue.filter(q => q.status === 'COMPLETED').length
+      }
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * POST /api/director/lead-queue/:queueId/assign
+ * Ručna dodjela leada tim članu (samo za direktora)
+ */
+r.post('/lead-queue/:queueId/assign', auth(true, ['PROVIDER']), async (req, res, next) => {
+  try {
+    const director = await getDirectorWithTeam(req.user.id);
+    
+    if (!director) {
+      return res.status(403).json({
+        error: 'Nemate pristup',
+        message: 'Samo direktor može dodijeliti lead.'
+      });
+    }
+
+    const { queueId } = req.params;
+    const { teamMemberId } = req.body;
+
+    if (!teamMemberId) {
+      return res.status(400).json({
+        error: 'teamMemberId je obavezan'
+      });
+    }
+
+    const result = await assignLeadToTeamMember(queueId, teamMemberId, director.id);
+
+    res.json({
+      success: true,
+      message: 'Lead uspješno dodijeljen tim članu',
+      queueEntry: result
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * POST /api/director/lead-queue/:queueId/auto-assign
+ * Automatska dodjela leada najboljem tim članu (samo za direktora)
+ */
+r.post('/lead-queue/:queueId/auto-assign', auth(true, ['PROVIDER']), async (req, res, next) => {
+  try {
+    const director = await getDirectorWithTeam(req.user.id);
+    
+    if (!director) {
+      return res.status(403).json({
+        error: 'Nemate pristup',
+        message: 'Samo direktor može koristiti auto-assign.'
+      });
+    }
+
+    const { queueId } = req.params;
+
+    const result = await autoAssignLead(queueId, director.id);
+
+    res.json({
+      success: true,
+      message: 'Lead automatski dodijeljen najboljem tim članu',
+      queueEntry: result
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * POST /api/director/lead-queue/:queueId/decline
+ * Odbij lead (samo za direktora)
+ */
+r.post('/lead-queue/:queueId/decline', auth(true, ['PROVIDER']), async (req, res, next) => {
+  try {
+    const director = await getDirectorWithTeam(req.user.id);
+    
+    if (!director) {
+      return res.status(403).json({
+        error: 'Nemate pristup',
+        message: 'Samo direktor može odbiti lead.'
+      });
+    }
+
+    const { queueId } = req.params;
+    const { reason } = req.body;
+
+    const result = await declineCompanyLead(queueId, director.id, reason);
+
+    res.json({
+      success: true,
+      message: 'Lead odbijen',
+      queueEntry: result
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * POST /api/director/lead-queue/add
+ * Dodaj lead u interni queue tvrtke (samo za direktora)
+ */
+r.post('/lead-queue/add', auth(true, ['PROVIDER']), async (req, res, next) => {
+  try {
+    const director = await getDirectorWithTeam(req.user.id);
+    
+    if (!director) {
+      return res.status(403).json({
+        error: 'Nemate pristup',
+        message: 'Samo direktor može dodati lead u interni queue.'
+      });
+    }
+
+    const { jobId } = req.body;
+
+    if (!jobId) {
+      return res.status(400).json({
+        error: 'jobId je obavezan'
+      });
+    }
+
+    const result = await addLeadToCompanyQueue(jobId, director.id);
+
+    res.json({
+      success: true,
+      message: 'Lead dodan u interni queue',
+      queueEntry: result
     });
   } catch (e) {
     next(e);

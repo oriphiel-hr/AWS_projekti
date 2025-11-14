@@ -8,8 +8,11 @@ export default function DirectorDashboard() {
   const [isDirector, setIsDirector] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState('team'); // 'team', 'finances', 'decisions'
+  const [activeTab, setActiveTab] = useState('team'); // 'team', 'finances', 'decisions', 'lead-queue'
   const [newMemberEmail, setNewMemberEmail] = useState('');
+  const [leadQueue, setLeadQueue] = useState(null);
+  const [selectedQueueId, setSelectedQueueId] = useState(null);
+  const [assignToMemberId, setAssignToMemberId] = useState('');
 
   useEffect(() => {
     checkDirectorStatus();
@@ -20,6 +23,15 @@ export default function DirectorDashboard() {
       loadData();
     }
   }, [isDirector, activeTab]);
+
+  const loadLeadQueue = async () => {
+    try {
+      const response = await api.get('/director/lead-queue');
+      setLeadQueue(response.data);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Greška pri učitavanju lead queuea');
+    }
+  };
 
   const checkDirectorStatus = async () => {
     try {
@@ -56,9 +68,11 @@ export default function DirectorDashboard() {
       } else if (activeTab === 'finances') {
         const response = await api.get('/director/finances');
         setFinances(response.data);
-      } else if (activeTab === 'decisions') {
+      } else       if (activeTab === 'decisions') {
         const response = await api.get('/director/decisions');
         setDecisions(response.data);
+      } else if (activeTab === 'lead-queue') {
+        await loadLeadQueue();
       }
       setError(null);
     } catch (err) {
@@ -105,6 +119,40 @@ export default function DirectorDashboard() {
       loadData();
     } catch (err) {
       setError(err.response?.data?.error || 'Greška pri uklanjanju člana tima');
+    }
+  };
+
+  const handleManualAssign = async (queueId, teamMemberId) => {
+    try {
+      await api.post(`/director/lead-queue/${queueId}/assign`, { teamMemberId });
+      await loadLeadQueue();
+      setError(null);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Greška pri dodjeli leada');
+    }
+  };
+
+  const handleAutoAssign = async (queueId) => {
+    try {
+      await api.post(`/director/lead-queue/${queueId}/auto-assign`);
+      await loadLeadQueue();
+      setError(null);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Greška pri automatskoj dodjeli leada');
+    }
+  };
+
+  const handleDeclineLead = async (queueId, reason) => {
+    if (!confirm('Jeste li sigurni da želite odbiti ovaj lead?')) {
+      return;
+    }
+
+    try {
+      await api.post(`/director/lead-queue/${queueId}/decline`, { reason });
+      await loadLeadQueue();
+      setError(null);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Greška pri odbijanju leada');
     }
   };
 
@@ -183,6 +231,16 @@ export default function DirectorDashboard() {
             }`}
           >
             ⚖️ Odluke
+          </button>
+          <button
+            onClick={() => setActiveTab('lead-queue')}
+            className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'lead-queue'
+                ? 'border-indigo-500 text-indigo-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            📋 Interni Lead Queue
           </button>
         </nav>
       </div>
@@ -390,6 +448,141 @@ export default function DirectorDashboard() {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Lead Queue Tab */}
+      {activeTab === 'lead-queue' && leadQueue && (
+        <div className="space-y-6">
+          {/* Statistike */}
+          {leadQueue.stats && (
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <div className="text-2xl font-bold text-yellow-600">{leadQueue.stats.pending}</div>
+                <div className="text-sm text-gray-600">Čeka dodjelu</div>
+              </div>
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <div className="text-2xl font-bold text-blue-600">{leadQueue.stats.assigned}</div>
+                <div className="text-sm text-gray-600">Dodijeljeno</div>
+              </div>
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <div className="text-2xl font-bold text-indigo-600">{leadQueue.stats.inProgress}</div>
+                <div className="text-sm text-gray-600">U tijeku</div>
+              </div>
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <div className="text-2xl font-bold text-green-600">{leadQueue.stats.completed}</div>
+                <div className="text-sm text-gray-600">Završeno</div>
+              </div>
+            </div>
+          )}
+
+          {/* Lista leadova */}
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Leadovi u Queueu</h2>
+            {leadQueue.queue.length === 0 ? (
+              <p className="text-gray-500">Nema leadova u queueu</p>
+            ) : (
+              <div className="space-y-4">
+                {leadQueue.queue.map((entry) => (
+                  <div
+                    key={entry.id}
+                    className="border border-gray-200 rounded-lg p-4"
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-900">{entry.job.title}</h3>
+                        <p className="text-sm text-gray-600 mt-1">{entry.job.description}</p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">
+                            {entry.job.category.name}
+                          </span>
+                          <span className="px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded">
+                            {entry.job.user.city}
+                          </span>
+                          {entry.job.budgetMax && (
+                            <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded">
+                              Do {entry.job.budgetMax} €
+                            </span>
+                          )}
+                        </div>
+                        <div className="mt-2 text-sm text-gray-600">
+                          <p>Klijent: {entry.job.user.fullName} ({entry.job.user.email})</p>
+                          <p>Pozicija u queueu: {entry.position}</p>
+                          {entry.assignedTo && (
+                            <p className="text-indigo-600">
+                              Dodijeljeno: {entry.assignedTo.user.fullName} ({entry.assignedTo.user.email})
+                            </p>
+                          )}
+                          {entry.assignmentType && (
+                            <p className="text-xs text-gray-500">
+                              Tip dodjele: {entry.assignmentType === 'MANUAL' ? 'Ručna' : 'Automatska'}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="ml-4">
+                        <span className={`px-3 py-1 text-xs font-semibold rounded-full ${
+                          entry.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                          entry.status === 'ASSIGNED' ? 'bg-blue-100 text-blue-800' :
+                          entry.status === 'IN_PROGRESS' ? 'bg-indigo-100 text-indigo-800' :
+                          entry.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
+                          'bg-red-100 text-red-800'
+                        }`}>
+                          {entry.status === 'PENDING' ? 'Čeka dodjelu' :
+                           entry.status === 'ASSIGNED' ? 'Dodijeljeno' :
+                           entry.status === 'IN_PROGRESS' ? 'U tijeku' :
+                           entry.status === 'COMPLETED' ? 'Završeno' :
+                           'Odbijeno'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {entry.status === 'PENDING' && team && team.teamMembers.length > 0 && (
+                      <div className="mt-4 pt-4 border-t border-gray-200">
+                        <div className="flex gap-2 flex-wrap">
+                          <button
+                            onClick={() => handleAutoAssign(entry.id)}
+                            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition text-sm"
+                          >
+                            🤖 Auto-assign
+                          </button>
+                          <select
+                            value={assignToMemberId}
+                            onChange={(e) => {
+                              setAssignToMemberId(e.target.value);
+                              if (e.target.value) {
+                                handleManualAssign(entry.id, e.target.value);
+                                setAssignToMemberId('');
+                              }
+                            }}
+                            className="px-4 py-2 border border-gray-300 rounded-lg text-sm"
+                          >
+                            <option value="">Odaberi tim člana...</option>
+                            {team.teamMembers.map((member) => (
+                              <option key={member.id} value={member.id}>
+                                {member.fullName} ({member.email})
+                              </option>
+                            ))}
+                          </select>
+                          <button
+                            onClick={() => {
+                              const reason = prompt('Razlog odbijanja:');
+                              if (reason) {
+                                handleDeclineLead(entry.id, reason);
+                              }
+                            }}
+                            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm"
+                          >
+                            ❌ Odbij
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}

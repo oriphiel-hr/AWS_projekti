@@ -374,10 +374,10 @@ const features = [
         { name: "Team članovi (operativci)", implemented: true },
         { name: "Dodavanje članova tima", implemented: true },
         { name: "Upravljanje pravima tima", implemented: true },
-        { name: "Interna distribucija leadova unutar tvrtke", implemented: false },
+        { name: "Interna distribucija leadova unutar tvrtke", implemented: true },
         { name: "Tvrtka bez tima (solo firma)", implemented: true },
-        { name: "Auto-assign leadova timu", implemented: false },
-        { name: "Ručna dodjela leadova od strane direktora", implemented: false },
+        { name: "Auto-assign leadova timu", implemented: true },
+        { name: "Ručna dodjela leadova od strane direktora", implemented: true },
         { name: "Pregled aktivnosti tima", implemented: true },
         { name: "Direktor Dashboard - upravljanje timovima", implemented: true },
         { name: "Direktor Dashboard - pristup financijama", implemented: true },
@@ -10829,38 +10829,62 @@ SMS verifikacija osigurava da vaš telefonski broj pripada vama i povećava povj
       implemented: true,
       summary: "Leadovi pristigli tvrtki idu u interni queue; direktor ih može ručno dodijeliti ili prepustiti auto-engineu.",
       details: `**Kako funkcionira**
-- Lead dobiva status ASSIGNED_TO_COMPANY i pojavljuje se u internom Kanban prikazu.
-- Direktor ga ručno dodjeljuje timu ili pokreće auto-engine koji procjenjuje kategoriju, dostupnost, lokaciju i KPI-jeve.
-- Tim mora potvrditi preuzimanje unutar SLA-a; ako istekne, lead se vraća direktoru ili u globalni queue.
+- Kada lead stigne tvrtki (direktoru), automatski se dodaje u interni queue tvrtke (CompanyLeadQueue).
+- Direktor vidi sve leadove u queueu kroz Direktor Dashboard tab "Interni Lead Queue".
+- Direktor može ručno dodijeliti lead odabranom tim članu ili koristiti auto-assign za automatsku dodjelu najboljem tim članu.
+- Auto-assign algoritam procjenjuje kategoriju, dostupnost, lokaciju i KPI-jeve (rating, response time, conversion rate).
+- Tim član dobiva notifikaciju kada mu je lead dodijeljen.
+- Direktor može odbiti lead ako tvrtka ne može obraditi zahtjev.
 
 **Prednosti**
 - Brza reakcija najspremnijeg tima i manje leadova koji stoje neobrađeni.
-- Transparentan audit trail dodjela i SLA nadzor.
+- Transparentan audit trail dodjela (ručna vs. automatska).
+- Centralizirano upravljanje leadovima unutar tvrtke.
 
 **Kada koristiti**
-- Tvrtke s više timova koje trebaju orkestrirati leadove.
+- Tvrtke s više tim članova koje trebaju orkestrirati leadove.
 - Situacije kad je potrebno ručno intervenirati (npr. VIP leadovi).
+- Kada direktor želi optimizirati distribuciju leadova na temelju performansi tim članova.
 `,
       technicalDetails: `**Frontend**
-- \`CompanyLeadQueue\` (Kanban) s drag&drop funkcionalnošću i SLA indikatorima.
-- Timeline prikazuje povijest dodjela i potvrda.
+- Direktor Dashboard tab "Interni Lead Queue" prikazuje sve leadove u queueu s statusima (PENDING, ASSIGNED, IN_PROGRESS, COMPLETED, DECLINED).
+- Statistike: broj leadova koji čekaju dodjelu, dodijeljenih, u tijeku i završenih.
+- Za svaki PENDING lead, direktor može:
+  - Kliknuti "Auto-assign" za automatsku dodjelu najboljem tim članu
+  - Odabrati tim člana iz dropdowna za ručnu dodjelu
+  - Odbijati lead s razlogom
 
 **Backend**
-- \`internalQueueService.assign\` zaključava lead i dodjeljuje tim u transakciji.
-- Cron \`internalAssignmentWatcher\` prati SLA i vraća lead ako nije potvrđen.
+- \`company-lead-distribution.js\` servis upravlja internom distribucijom:
+  - \`addLeadToCompanyQueue\` - dodaje lead u interni queue
+  - \`assignLeadToTeamMember\` - ručna dodjela tim članu
+  - \`autoAssignLead\` - automatska dodjela najboljem tim članu
+  - \`getCompanyLeadQueue\` - dohvaća sve leadove u queueu
+  - \`declineCompanyLead\` - odbija lead
+- Auto-assign algoritam koristi:
+  - Match po kategoriji (tim član mora imati kategoriju leada)
+  - Dostupnost (isAvailable)
+  - Reputation score (rating, response time, conversion rate)
 
 **Baza**
-- \`LeadAssignment\` (teamId, assignedBy, status, expiresAt).
-- Redis sorted set \`company:{id}:leadQueue\` za prioritetno dohvaćanje; \`LeadAssignmentHistory\` za audit.
+- \`CompanyLeadQueue\` model čuva:
+  - \`directorId\` - direktor koji je primio lead
+  - \`assignedToId\` - tim član kojem je dodijeljen (null = čeka dodjelu)
+  - \`status\` - PENDING, ASSIGNED, IN_PROGRESS, COMPLETED, DECLINED
+  - \`assignmentType\` - MANUAL (ručna) ili AUTO (automatska)
+  - \`position\` - pozicija u queueu
+- Indeksi za brzo pretraživanje po direktoru, tim članu i statusu.
 
 **Integracije**
-- Notification servis šalje obavijesti timu/direktoru.
-- Analytics izvještava o brzini interne dodjele i konverziji po timu.
+- Notification servis šalje obavijesti tim članu kada mu je lead dodijeljen.
+- Analytics može pratiti brzinu interne dodjele i konverziju po tim članu.
 
 **API**
-- \`POST /api/internal/leads/:leadId/assign-team\` – ručna dodjela.
-- \`POST /api/internal/leads/:leadId/auto-assign\` – pokretanje enginea.
-- \`GET /api/internal/leads/:leadId/assignment-history\` – audit trail.
+- \`GET /api/director/lead-queue\` - dohvaća sve leadove u queueu s statistikama
+- \`POST /api/director/lead-queue/:queueId/assign\` - ručna dodjela tim članu
+- \`POST /api/director/lead-queue/:queueId/auto-assign\` - automatska dodjela
+- \`POST /api/director/lead-queue/:queueId/decline\` - odbijanje leada
+- \`POST /api/director/lead-queue/add\` - dodavanje leada u interni queue
 `
     },
     "Tvrtka bez tima (solo firma)": {
@@ -10901,76 +10925,92 @@ SMS verifikacija osigurava da vaš telefonski broj pripada vama i povećava povj
     },
     "Auto-assign leadova timu": {
       implemented: true,
-      summary: "Direktor definira pravila koja automatski dodjeljuju leadove timovima prema kategoriji, lokaciji, dostupnosti i KPI-jevima.",
+      summary: "Direktor može koristiti auto-assign za automatsku dodjelu leada najboljem tim članu na temelju kategorije, dostupnosti i KPI-jeva.",
       details: `**Kako funkcionira**
-- Rule builder omogućuje IF/THEN definicije (npr. kategorija=Električar → Tim Zagreb, prosječni odaziv < 30min).
-- Novi lead pokreće engine; prvo pravilo koje zadovolji uvjete dodjeljuje lead i postavlja SLA za potvrdu.
-- Tim potvrđuje preuzimanje; u suprotnom se lead vraća direktoru ili sljedećem pravilu.
+- Direktor klikne "Auto-assign" na PENDING leadu u Direktor Dashboard tabu "Interni Lead Queue".
+- Algoritam procjenjuje sve dostupne tim članove i odabire najboljeg na temelju:
+  - Match po kategoriji (tim član mora imati kategoriju leada)
+  - Dostupnost (isAvailable)
+  - Reputation score (rating 40%, response time 30%, conversion rate 30%)
+- Najbolji tim član automatski dobiva lead i notifikaciju.
+- Tip dodjele se označava kao AUTO za audit trail.
 
 **Prednosti**
-- Najspremniji tim reagira instantno bez ručne koordinacije.
-- Transparentno je zašto je lead dodijeljen baš određenom timu (explain log).
+- Najspremniji tim član reagira instantno bez ručne koordinacije.
+- Optimizirana distribucija na temelju performansi tim članova.
+- Transparentan audit trail (assignmentType: AUTO).
 
 **Kada koristiti**
-- Tvrtke s više timova/regija koje žele automatizirati distribuciju.
+- Kada direktor želi brzo dodijeliti lead bez ručnog odabira.
 - Peak periodi kada ručna dodjela ne prati tempo.
+- Kada direktor želi optimizirati distribuciju na temelju performansi.
 `,
       technicalDetails: `**Frontend**
-- Vizualni rule builder s drag-and-drop blokovima i previewom zadnjih odluka.
-- Real-time badge prikazuje broj auto-dodjela u tekućem danu.
+- Direktor Dashboard tab "Interni Lead Queue" prikazuje gumb "🤖 Auto-assign" za svaki PENDING lead.
+- Klik na gumb automatski dodjeljuje lead najboljem tim članu.
 
 **Backend**
-- \`internalAssignmentRuleEngine.evaluate\` čita pravila iz \`CompanySettings.autoAssignRules\` i zapisuje odluku.
-- Worker \`autoAssignJob\` se izvršava nakon kreiranja leada i emitira \`lead.auto-assigned\` event.
+- \`autoAssignLead\` funkcija u \`company-lead-distribution.js\`:
+  - Dohvaća sve dostupne tim članove direktora
+  - Filtrira po kategoriji leada
+  - Sortira po reputation scoreu
+  - Dodjeljuje najboljem tim članu
+- Algoritam koristi \`findBestTeamMemberForLead\` i \`calculateMemberScore\` funkcije.
 
 **Baza**
-- JSONB \`CompanySettings.autoAssignRules\` s prioritetima, uvjetima i SLA parametrima.
-- \`AutoAssignExecution\` i \`AutoAssignStats\` čuvaju audit i metrike po timu/danu.
+- \`CompanyLeadQueue\` model čuva \`assignmentType: AUTO\` za audit trail.
+- \`assignedAt\` timestamp bilježi kada je lead dodijeljen.
 
 **Integracije**
-- Notification servis obavještava tim o auto-dodjeli.
-- Analytics koristi logove za optimizaciju pravila.
+- Notification servis šalje obavijest tim članu o auto-dodjeli.
+- Analytics može pratiti učinkovitost auto-assign algoritma.
 
 **API**
-- \`GET /api/internal/auto-assign/rules\` – dohvat i uređivanje pravila.
-- \`POST /api/internal/auto-assign/test\` – testiranje pravila na primjeru leada.
+- \`POST /api/director/lead-queue/:queueId/auto-assign\` - automatska dodjela najboljem tim članu
 `
     },
     "Ručna dodjela leadova od strane direktora": {
       implemented: true,
-      summary: "Direktor ručno odabire tim ili člana koji preuzima lead uz potpuni uvid u dostupnost i KPI-jeve.",
+      summary: "Direktor ručno odabire tim člana koji preuzima lead iz dropdowna u Direktor Dashboard tabu.",
       details: `**Kako funkcionira**
-- Direktor otvara pregled dostupnih timova/članova s prikazom njihovih SLA pokazatelja i trenutačnog opterećenja.
-- Odabrani tim/član dobiva lead i mora potvrditi preuzimanje unutar definiranog SLA-a.
-- Ako preuzimanje nije potvrđeno, lead se automatski vraća direktoru ili prelazi na sljedećeg kandidata.
+- Direktor vidi sve PENDING leadove u Direktor Dashboard tabu "Interni Lead Queue".
+- Za svaki PENDING lead, direktor može odabrati tim člana iz dropdowna.
+- Odabrani tim član automatski dobiva lead i notifikaciju.
+- Tip dodjele se označava kao MANUAL za audit trail.
 
 **Prednosti**
 - Omogućuje ljudsku procjenu za VIP klijente i specijalne slučajeve.
-- Održava audit trail dodjela i sprječava da lead ostane bez odgovornog kontakta.
+- Direktor ima potpunu kontrolu nad distribucijom leadova.
+- Održava audit trail dodjela (assignmentType: MANUAL).
 
 **Kada koristiti**
 - Za strateški važne ili osjetljive upite gdje direktor želi osobno odlučiti.
-- Kod eskalacija kada automatizirana pravila ne daju zadovoljavajući rezultat.
+- Kada direktor želi dodijeliti lead specifičnom tim članu na temelju ekspertize.
+- Kod eskalacija kada auto-assign ne daje zadovoljavajući rezultat.
 `,
       technicalDetails: `**Frontend**
-- \`AssignLeadDrawer\` prikazuje listu kandidata s KPI karticama, dostupnošću i SLA countdownom.
-- Optimistički update pomiče lead između kolona, uz loader i blokadu višestrukih klikova.
+- Direktor Dashboard tab "Interni Lead Queue" prikazuje dropdown "Odaberi tim člana..." za svaki PENDING lead.
+- Dropdown prikazuje sve tim članove s njihovim imenima i email adresama.
+- Odabir tim člana automatski dodjeljuje lead.
 
 **Backend**
-- \`leadAssignmentService.assignManual\` provjerava vlasništvo, zaključava lead u transakciji i emitira \`lead.manually_assigned\` event.
-- Notification servis šalje email/push/in-app obavijesti odabranom timu/članu.
+- \`assignLeadToTeamMember\` funkcija u \`company-lead-distribution.js\`:
+  - Provjerava da je korisnik direktor
+  - Provjerava da tim član pripada direktoru
+  - Provjerava da lead još nije dodijeljen
+  - Dodjeljuje lead tim članu
+  - Postavlja assignmentType na MANUAL
 
 **Baza**
-- \`LeadAssignment\` bilježi \`assignedBy=directorId\`, \`teamId\`/\`memberId\` i \`assignedAt\`.
-- \`LeadTimeline\` dodaje događaj \`LEAD_MANUALLY_ASSIGNED\`; SLA watcher prati potvrdu.
+- \`CompanyLeadQueue\` model čuva \`assignmentType: MANUAL\` za audit trail.
+- \`assignedAt\` timestamp bilježi kada je lead dodijeljen.
 
 **Integracije**
-- Notification servis, internal chat (otvara thread ako ne postoji), analytics za praćenje ručnih dodjela.
+- Notification servis šalje obavijest tim članu o ručnoj dodjeli.
+- Analytics može pratiti učinkovitost ručnih dodjela.
 
 **API**
-- \`POST /api/director/leads/:leadId/assign\` – ručna dodjela.
-- \`GET /api/director/leads/:leadId/assignees\` – kandidat lista s KPI parametrima.
-- \`POST /api/director/leads/:leadId/reassign\` – promjena odgovornog tima/člana.
+- \`POST /api/director/lead-queue/:queueId/assign\` - ručna dodjela tim članu (zahtijeva teamMemberId u body-ju)
 `
     },
     "Pregled aktivnosti tima": {
