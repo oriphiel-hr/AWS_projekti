@@ -8,10 +8,25 @@ const r = Router();
 // Get user's chat rooms
 r.get('/rooms', auth(true), async (req, res, next) => {
   try {
-    const rooms = await prisma.chatRoom.findMany({
+    // Dohvati PUBLIC chat roomove
+    const { getPublicChatRooms } = await import('../services/public-chat-service.js');
+    const publicRooms = await getPublicChatRooms(req.user.id);
+
+    // Dohvati OFFER_BASED chat roomove (stari sustav)
+    const offerBasedRooms = await prisma.chatRoom.findMany({
       where: {
         participants: {
           some: { id: req.user.id }
+        },
+        job: {
+          offers: {
+            some: { status: 'ACCEPTED' }
+          },
+          leadPurchases: {
+            none: {
+              status: { in: ['ACTIVE', 'CONTACTED', 'CONVERTED'] }
+            }
+          }
         }
       },
       include: {
@@ -19,13 +34,15 @@ r.get('/rooms', auth(true), async (req, res, next) => {
           select: {
             id: true,
             fullName: true,
-            email: true
+            email: true,
+            role: true
           }
         },
         job: {
           select: {
             id: true,
-            title: true
+            title: true,
+            status: true
           }
         },
         messages: {
@@ -33,14 +50,24 @@ r.get('/rooms', auth(true), async (req, res, next) => {
           take: 1,
           include: {
             sender: {
-              select: { id: true, fullName: true }
+              select: {
+                id: true,
+                fullName: true
+              }
             }
           }
         }
       },
       orderBy: { updatedAt: 'desc' }
     });
-    res.json(rooms);
+
+    // Kombiniraj i ukloni duplikate
+    const allRooms = [...publicRooms, ...offerBasedRooms];
+    const uniqueRooms = Array.from(
+      new Map(allRooms.map(room => [room.id, room])).values()
+    );
+
+    res.json(uniqueRooms);
   } catch (e) {
     next(e);
   }
@@ -168,6 +195,25 @@ r.get('/check/:jobId', auth(true), async (req, res, next) => {
   try {
     const { jobId } = req.params;
 
+    // Provjeri PUBLIC chat pristup (nakon otključavanja leada)
+    const { checkPublicChatAccess } = await import('../services/public-chat-service.js');
+    const publicChatAccess = await checkPublicChatAccess(jobId, req.user.id);
+
+    if (publicChatAccess.hasAccess) {
+      return res.json({
+        hasAccess: true,
+        chatType: 'PUBLIC',
+        room: publicChatAccess.room,
+        job: publicChatAccess.room?.job,
+        roomExists: !!publicChatAccess.room,
+        roomId: publicChatAccess.room?.id,
+        isJobOwner: publicChatAccess.isJobOwner,
+        isProvider: publicChatAccess.isProvider,
+        isTeamMember: publicChatAccess.isTeamMember
+      });
+    }
+
+    // Fallback na stari sustav (ACCEPTED offer)
     const job = await prisma.job.findUnique({
       where: { id: jobId },
       include: {
@@ -216,6 +262,7 @@ r.get('/check/:jobId', auth(true), async (req, res, next) => {
 
     res.json({
       hasAccess: true,
+      chatType: 'OFFER_BASED',
       otherParticipant,
       job: {
         id: job.id,
@@ -250,6 +297,12 @@ r.get('/rooms/:roomId/messages', auth(true), async (req, res, next) => {
             offers: {
               where: { status: 'ACCEPTED' },
               include: { user: true }
+            },
+            leadPurchases: {
+              where: {
+                status: { in: ['ACTIVE', 'CONTACTED', 'CONVERTED'] }
+              },
+              take: 1
             }
           }
         }
@@ -260,9 +313,12 @@ r.get('/rooms/:roomId/messages', auth(true), async (req, res, next) => {
       return res.status(403).json({ error: 'Access denied' });
     }
 
-    // Additional validation: ensure job has accepted offer
-    if (!room.job.offers || room.job.offers.length === 0) {
-      return res.status(403).json({ error: 'Chat is only available after job acceptance' });
+    // Provjeri pristup: PUBLIC chat (lead purchase) ili OFFER_BASED chat (accepted offer)
+    const hasLeadPurchase = room.job.leadPurchases && room.job.leadPurchases.length > 0;
+    const hasAcceptedOffer = room.job.offers && room.job.offers.length > 0;
+
+    if (!hasLeadPurchase && !hasAcceptedOffer) {
+      return res.status(403).json({ error: 'Chat is only available after lead unlock or job acceptance' });
     }
 
     const messages = await prisma.chatMessage.findMany({
@@ -380,6 +436,12 @@ r.post('/rooms/:roomId/upload-image', auth(true), upload.single('image'), async 
             offers: {
               where: { status: 'ACCEPTED' },
               include: { user: true }
+            },
+            leadPurchases: {
+              where: {
+                status: { in: ['ACTIVE', 'CONTACTED', 'CONVERTED'] }
+              },
+              take: 1
             }
           }
         }
@@ -390,9 +452,12 @@ r.post('/rooms/:roomId/upload-image', auth(true), upload.single('image'), async 
       return res.status(403).json({ error: 'Access denied' });
     }
 
-    // Additional validation: ensure job has accepted offer
-    if (!room.job.offers || room.job.offers.length === 0) {
-      return res.status(403).json({ error: 'Chat is only available after job acceptance' });
+    // Provjeri pristup: PUBLIC chat (lead purchase) ili OFFER_BASED chat (accepted offer)
+    const hasLeadPurchase = room.job.leadPurchases && room.job.leadPurchases.length > 0;
+    const hasAcceptedOffer = room.job.offers && room.job.offers.length > 0;
+
+    if (!hasLeadPurchase && !hasAcceptedOffer) {
+      return res.status(403).json({ error: 'Chat is only available after lead unlock or job acceptance' });
     }
 
     // Get image URL
@@ -438,6 +503,12 @@ r.post('/rooms/:roomId/messages', auth(true), async (req, res, next) => {
             offers: {
               where: { status: 'ACCEPTED' },
               include: { user: true }
+            },
+            leadPurchases: {
+              where: {
+                status: { in: ['ACTIVE', 'CONTACTED', 'CONVERTED'] }
+              },
+              take: 1
             }
           }
         }
@@ -448,9 +519,12 @@ r.post('/rooms/:roomId/messages', auth(true), async (req, res, next) => {
       return res.status(403).json({ error: 'Access denied' });
     }
 
-    // Additional validation: ensure job has accepted offer
-    if (!room.job.offers || room.job.offers.length === 0) {
-      return res.status(403).json({ error: 'Chat is only available after job acceptance' });
+    // Provjeri pristup: PUBLIC chat (lead purchase) ili OFFER_BASED chat (accepted offer)
+    const hasLeadPurchase = room.job.leadPurchases && room.job.leadPurchases.length > 0;
+    const hasAcceptedOffer = room.job.offers && room.job.offers.length > 0;
+
+    if (!hasLeadPurchase && !hasAcceptedOffer) {
+      return res.status(403).json({ error: 'Chat is only available after lead unlock or job acceptance' });
     }
 
     // Create message

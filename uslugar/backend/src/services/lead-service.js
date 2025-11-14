@@ -178,6 +178,16 @@ export async function purchaseLead(jobId, providerId, options = {}) {
       jobId
     });
 
+    // 9. Automatski kreiraj PUBLIC chat room između klijenta i tvrtke
+    try {
+      const { createPublicChatRoom } = await import('./public-chat-service.js');
+      await createPublicChatRoom(jobId, providerId);
+      console.log(`[LEAD] Public chat room automatski kreiran za job ${jobId}`);
+    } catch (chatError) {
+      console.error('[LEAD] Greška pri kreiranju PUBLIC chat rooma:', chatError);
+      // Ne baci grešku - lead je kupljen, chat se može kreirati kasnije
+    }
+
     // 9. Ažuriraj ROI statistiku
     await updateProviderROI(providerId, {
       leadsPurchased: 1,

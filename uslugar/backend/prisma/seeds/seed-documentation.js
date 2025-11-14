@@ -387,7 +387,7 @@ const features = [
     {
       category: "Chat Sustav (PUBLIC i INTERNAL)",
       items: [
-        { name: "PUBLIC chat (Klijent ↔ Tvrtka)", implemented: false },
+        { name: "PUBLIC chat (Klijent ↔ Tvrtka)", implemented: true },
         { name: "INTERNAL chat (Direktor ↔ Team)", implemented: false },
         { name: "Maskirani kontakti do prihvata ponude", implemented: false },
         { name: "Chat thread vezan uz upit/ponudu", implemented: true },
@@ -11057,37 +11057,50 @@ SMS verifikacija osigurava da vaš telefonski broj pripada vama i povećava povj
       implemented: true,
       summary: "Javni chat između klijenta i tvrtke automatski se otvara nakon otključavanja lead-a i prati cijeli posao.",
       details: `**Kako funkcionira**
-- Thread nastaje pri otključavanju lead-a i dostupni su klijent, direktor i ovlašteni članovi tima.
-- Razgovor prati životni ciklus od upita do zatvaranja posla; nakon završetka thread ostaje read-only.
-- Kontakti su maskirani do prihvata ponude, a sve poruke prolaze kroz moderaciju i audit.
+- Chat se automatski kreira kada provider kupi lead (otključa kontakt informacije).
+- Sudionici chata su: klijent (vlasnik posla), provider koji je kupio lead, direktor (ako je provider tim član), i tim član kojem je lead dodijeljen (ako je lead dodijeljen u internom queueu).
+- Chat prati cijeli životni ciklus posla - od otključavanja leada do završetka posla.
+- Sve poruke su vezane uz posao i ostaju dostupne tijekom cijelog procesa.
 
 **Prednosti**
-- Centralizira komunikaciju i štiti kontakt podatke do formalnog dogovora.
-- Omogućuje revizijski trag za prigovore ili sporove.
+- Centralizirana komunikacija između klijenta i tvrtke na jednom mjestu.
+- Automatsko otvaranje chata nakon otključavanja leada - nema potrebe za ručnim kreiranjem.
+- Tim članovi mogu sudjelovati u chatu ako je lead dodijeljen njima.
+- Chat prati cijeli posao - sve komunikacije su na jednom mjestu.
 
 **Kada koristiti**
-- Svaka interakcija s klijentom na platformi nakon otključavanja lead-a.
-- Praćenje otvorenih razgovora i statusa ponuda.
+- Svaka interakcija s klijentom nakon otključavanja leada.
+- Komunikacija o detaljima posla, ponudama, i statusu izvršenja.
+- Praćenje otvorenih razgovora i statusa poslova.
 `,
       technicalDetails: `**Frontend**
-- \`ChatThread\` komponenta renderira poruke, SLA indikator i status maskiranih kontakata.
-- Socket kanal \`public-chat:{leadId}\` upravlja novim porukama, tipkanjem i read statusima.
+- Chat komponenta prikazuje sve PUBLIC chat roomove korisnika.
+- Socket kanal za real-time poruke (ako je implementiran).
+- Chat thread vezan uz posao - sve poruke su povezane s jobId.
 
 **Backend**
-- WebSocket gateway autorizira pristup kombinacijom leadId/userId i logira događaje.
-- \`chatService.storePublicMessage\` provodi validaciju i moderaciju prije spremanja.
+- \`public-chat-service.js\` upravlja PUBLIC chat funkcionalnostima:
+  - \`createPublicChatRoom\` - automatski kreira chat room nakon otključavanja leada
+  - \`checkPublicChatAccess\` - provjerava pristup korisnika chatu
+  - \`getPublicChatRooms\` - dohvaća sve PUBLIC chat roomove korisnika
+- Chat se automatski kreira u \`lead-service.js\` kada se lead kupi (\`purchaseLead\`).
+- Chat rute podržavaju i PUBLIC chat (lead purchase) i OFFER_BASED chat (accepted offer).
 
 **Baza**
-- \`ChatThread\` (leadId, type='PUBLIC', status), \`ChatMessage\` (senderId, body, attachment, moderationStatus).
-- \`ChatAttachment\` čuva metapodatke privitaka (mimeType, size, s3Key).
+- \`ChatRoom\` model povezan s \`Job\` preko \`jobId\`.
+- \`ChatMessage\` model čuva poruke s \`senderId\`, \`roomId\`, \`content\`, \`attachments\`.
+- Sudionici chata su povezani preko \`participants\` relacije u \`ChatRoom\`.
 
 **Integracije**
-- Content moderation servis (AI heuristike), notification servis za push/email obavijesti.
+- Notification servis šalje obavijesti o novim porukama.
+- Chat se automatski kreira kada se lead otključi.
 
 **API**
-- \`GET /api/chat/public/:leadId\` – dohvat threada i zadnjih poruka.
-- \`POST /api/chat/public/:leadId/message\` – slanje poruke.
-- \`PATCH /api/chat/public/:leadId/read\` – ažuriranje read statusa.
+- \`GET /api/chat/rooms\` - dohvaća sve chat roomove korisnika (PUBLIC i OFFER_BASED)
+- \`GET /api/chat/check/:jobId\` - provjerava pristup chatu za posao
+- \`GET /api/chat/rooms/:roomId/messages\` - dohvaća poruke iz chat rooma
+- \`POST /api/chat/rooms/:roomId/messages\` - šalje novu poruku
+- \`POST /api/chat/rooms/:roomId/upload-image\` - upload slike za chat poruku
 `
     },
     "Maskirani kontakti do prihvata ponude": {
