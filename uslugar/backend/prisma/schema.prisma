@@ -205,6 +205,12 @@ model ProviderProfile {
 
   // GEO-DYNAMIC LOCATIONS - Multiple team locations per provider
   teamLocations ProviderTeamLocation[]
+
+  // DIRECTOR & TEAM MANAGEMENT
+  isDirector Boolean @default(false) // Da li je direktor/administrator profila tvrtke
+  companyId  String? // ID tvrtke (ako je član tima, povezuje se s direktorom)
+  company    ProviderProfile? @relation("CompanyMembers", fields: [companyId], references: [id], onDelete: SetNull)
+  teamMembers ProviderProfile[] @relation("CompanyMembers") // Članovi tima (ako je direktor)
 }
 
 // Geo-dynamic team locations (mobilni timovi, više lokacija)

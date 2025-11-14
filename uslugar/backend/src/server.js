@@ -40,6 +40,7 @@ import invoicesRouter from './routes/invoices.js'
 import licenseUploadRouter from './routes/license-upload.js'
 import documentationRouter from './routes/documentation.js'
 import publicRouter from './routes/public.js'
+import directorRouter from './routes/director.js'
 import { startQueueScheduler } from './lib/queueScheduler.js'
 import { checkExpiringSubscriptions } from './lib/subscription-reminder.js'
 
@@ -288,6 +289,7 @@ app.use('/api/kyc', kycRouter)
 app.use('/api/sms-verification', smsVerificationRouter)
 app.use('/api/documentation', documentationRouter)
 app.use('/api/public', publicRouter)
+app.use('/api/director', directorRouter)
 
 // basic error handler
 app.use((err, _req, res, _next) => {

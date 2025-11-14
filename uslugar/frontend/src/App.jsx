@@ -32,6 +32,7 @@ import MyJobs from './pages/MyJobs';
 import TeamLocations from './pages/TeamLocations';
 import SubscriptionPlans from './pages/SubscriptionPlans';
 import Invoices from './pages/Invoices';
+import DirectorDashboard from './pages/DirectorDashboard';
 import CreditsWidget from './components/CreditsWidget';
 // Navigation components
 import DropdownMenu from './components/DropdownMenu';
@@ -65,7 +66,7 @@ export default function App(){
   // TAB: 'user' | 'admin' | 'login' | 'register-user' | 'register-provider' | 'upgrade-to-provider' | 'verify' | 'forgot-password' | 'reset-password' | 'leads' | 'my-leads' | 'roi' | 'subscription' | 'pricing' | 'providers' | 'documentation' | 'faq'
   const [tab, setTab] = useState(() => {
     const hash = window.location.hash?.slice(1).split('?')[0];
-    const validTabs = ['admin', 'login', 'register-user', 'register-provider', 'provider-profile', 'user-profile', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'leads', 'my-leads', 'my-jobs', 'roi', 'subscription', 'subscription-success', 'pricing', 'providers', 'documentation', 'faq', 'about', 'contact', 'time-landing', 'team-locations', 'invoices', 'user', 'user-types'];
+    const validTabs = ['admin', 'login', 'register-user', 'register-provider', 'provider-profile', 'user-profile', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'leads', 'my-leads', 'my-jobs', 'roi', 'subscription', 'subscription-success', 'pricing', 'providers', 'documentation', 'faq', 'about', 'contact', 'time-landing', 'team-locations', 'invoices', 'user', 'user-types', 'director'];
     return validTabs.includes(hash) ? hash : 'time-landing';
   });
 
@@ -188,7 +189,7 @@ export default function App(){
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash?.slice(1).split('?')[0];
-      const validTabs = ['admin', 'login', 'register-user', 'register-provider', 'provider-profile', 'user-profile', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'leads', 'my-leads', 'my-jobs', 'roi', 'subscription', 'subscription-success', 'pricing', 'providers', 'documentation', 'faq', 'about', 'contact', 'time-landing', 'team-locations', 'invoices', 'user', 'user-types'];
+      const validTabs = ['admin', 'login', 'register-user', 'register-provider', 'provider-profile', 'user-profile', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'leads', 'my-leads', 'my-jobs', 'roi', 'subscription', 'subscription-success', 'pricing', 'providers', 'documentation', 'faq', 'about', 'contact', 'time-landing', 'team-locations', 'invoices', 'user', 'user-types', 'director'];
       
       // Check for provider direct link: #provider/{providerId}
       const providerMatch = hash.match(/^provider\/(.+)$/);
@@ -442,6 +443,12 @@ export default function App(){
                     onClick={() => { setTab('invoices'); }}
                   >
                     📄 Fakture
+                  </button>
+                  <button
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"
+                    onClick={() => { setTab('director'); }}
+                  >
+                    👔 Direktor Dashboard
                   </button>
                 </DropdownMenu>
               )}
@@ -1108,6 +1115,12 @@ export default function App(){
       {tab === 'subscription' && (
         <section id="subscription" className="tab-section">
           <SubscriptionPlans />
+        </section>
+      )}
+
+      {tab === 'director' && (
+        <section id="director" className="tab-section">
+          <DirectorDashboard />
         </section>
       )}
 
