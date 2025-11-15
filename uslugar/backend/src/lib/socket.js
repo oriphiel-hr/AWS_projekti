@@ -69,9 +69,21 @@ export const initSocket = (httpServer) => {
           }
         });
 
+        // Provjeri je li korisnik admin
+        const user = await prisma.user.findUnique({
+          where: { id: socket.userId },
+          select: { role: true }
+        });
+
         // Load chat history
         const messages = await prisma.chatMessage.findMany({
-          where: { roomId },
+          where: { 
+            roomId,
+            // Filtriraj odbijene poruke (osim ako je admin)
+            moderationStatus: user && user.role === 'ADMIN' 
+              ? undefined 
+              : { not: 'REJECTED' }
+          },
           include: {
             sender: {
               select: { id: true, fullName: true, email: true }
@@ -137,13 +149,36 @@ export const initSocket = (httpServer) => {
           return;
         }
 
+        // Automatska moderacija poruke
+        let moderationStatus = null;
+        let moderationNotes = null;
+        
+        try {
+          const { autoModerateMessage } = await import('../services/message-moderation-service.js');
+          const moderationResult = await autoModerateMessage(
+            content.trim() || '',
+            roomId,
+            socket.userId
+          );
+
+          if (!moderationResult.isApproved) {
+            moderationStatus = 'PENDING';
+            moderationNotes = moderationResult.reason;
+          }
+        } catch (modError) {
+          console.error('Error in auto-moderation:', modError);
+          // Ne blokiraj poruku ako moderacija ne uspije
+        }
+
         // Save message to database
         const message = await prisma.chatMessage.create({
           data: {
             content: content.trim() || '', // Može biti prazan ako su samo slike
             attachments: Array.isArray(attachments) ? attachments : [],
             senderId: socket.userId,
-            roomId
+            roomId,
+            moderationStatus: moderationStatus || null,
+            moderationNotes: moderationNotes || null
           },
           include: {
             sender: {

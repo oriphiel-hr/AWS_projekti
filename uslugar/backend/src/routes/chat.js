@@ -464,7 +464,13 @@ r.get('/rooms/:roomId/messages', auth(true), async (req, res, next) => {
     });
 
     const messages = await prisma.chatMessage.findMany({
-      where: { roomId },
+      where: { 
+        roomId,
+        // Filtriraj odbijene poruke (osim ako je admin)
+        moderationStatus: req.user.role === 'ADMIN' 
+          ? undefined 
+          : { not: 'REJECTED' }
+      },
       include: {
         sender: {
           select: {
@@ -508,7 +514,13 @@ r.get('/rooms/:roomId/messages', auth(true), async (req, res, next) => {
 
     // Ponovno dohvati poruke s ažuriranim statusom
     const updatedMessages = await prisma.chatMessage.findMany({
-      where: { roomId },
+      where: { 
+        roomId,
+        // Filtriraj odbijene poruke (osim ako je admin)
+        moderationStatus: req.user.role === 'ADMIN' 
+          ? undefined 
+          : { not: 'REJECTED' }
+      },
       include: {
         sender: {
           select: {
@@ -756,13 +768,36 @@ r.post('/rooms/:roomId/messages', auth(true), async (req, res, next) => {
       }
     }
 
+    // Automatska moderacija poruke
+    let moderationStatus = null;
+    let moderationNotes = null;
+    
+    try {
+      const { autoModerateMessage } = await import('../services/message-moderation-service.js');
+      const moderationResult = await autoModerateMessage(
+        content.trim() || '',
+        roomId,
+        req.user.id
+      );
+
+      if (!moderationResult.isApproved) {
+        moderationStatus = 'PENDING';
+        moderationNotes = moderationResult.reason;
+      }
+    } catch (modError) {
+      console.error('Error in auto-moderation:', modError);
+      // Ne blokiraj poruku ako moderacija ne uspije
+    }
+
     // Create message
     const message = await prisma.chatMessage.create({
       data: {
         content: content.trim() || '',
         attachments: Array.isArray(attachments) ? attachments : [],
         senderId: req.user.id,
-        roomId
+        roomId,
+        moderationStatus: moderationStatus || null,
+        moderationNotes: moderationNotes || null
       },
       include: {
         sender: {
@@ -1347,6 +1382,121 @@ r.get('/providers/:providerId/sla-status', auth(true), async (req, res, next) =>
     }
 
     res.json(slaStatus);
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * POST /api/chat/messages/:messageId/report
+ * Prijavi poruku za moderaciju
+ */
+r.post('/messages/:messageId/report', auth(true), async (req, res, next) => {
+  try {
+    const { messageId } = req.params;
+    const { reason } = req.body;
+
+    const { reportMessage } = await import('../services/message-moderation-service.js');
+    const reportedMessage = await reportMessage(messageId, req.user.id, reason);
+
+    res.json({
+      success: true,
+      message: reportedMessage,
+      info: 'Poruka je prijavljena za moderaciju'
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * GET /api/chat/moderation/pending
+ * Dohvati poruke koje čekaju moderaciju (samo admin)
+ */
+r.get('/moderation/pending', auth(true), async (req, res, next) => {
+  try {
+    if (req.user.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Only admins can view pending moderation' });
+    }
+
+    const { limit = 50, offset = 0 } = req.query;
+    const { getPendingModerationMessages } = await import('../services/message-moderation-service.js');
+    const messages = await getPendingModerationMessages(parseInt(limit), parseInt(offset));
+
+    res.json(messages);
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * GET /api/chat/moderation/stats
+ * Dohvati statistiku moderacije (samo admin)
+ */
+r.get('/moderation/stats', auth(true), async (req, res, next) => {
+  try {
+    if (req.user.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Only admins can view moderation stats' });
+    }
+
+    const { getModerationStats } = await import('../services/message-moderation-service.js');
+    const stats = await getModerationStats();
+
+    res.json(stats);
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * POST /api/chat/messages/:messageId/approve
+ * Odobri poruku (samo admin)
+ */
+r.post('/messages/:messageId/approve', auth(true), async (req, res, next) => {
+  try {
+    if (req.user.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Only admins can approve messages' });
+    }
+
+    const { messageId } = req.params;
+    const { notes } = req.body;
+
+    const { approveMessage } = await import('../services/message-moderation-service.js');
+    const approvedMessage = await approveMessage(messageId, req.user.id, notes);
+
+    res.json({
+      success: true,
+      message: approvedMessage
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * POST /api/chat/messages/:messageId/reject
+ * Odbij poruku (samo admin)
+ */
+r.post('/messages/:messageId/reject', auth(true), async (req, res, next) => {
+  try {
+    if (req.user.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Only admins can reject messages' });
+    }
+
+    const { messageId } = req.params;
+    const { rejectionReason, notes } = req.body;
+
+    if (!rejectionReason) {
+      return res.status(400).json({ error: 'Rejection reason is required' });
+    }
+
+    const { rejectMessage } = await import('../services/message-moderation-service.js');
+    const rejectedMessage = await rejectMessage(messageId, req.user.id, rejectionReason, notes);
+
+    res.json({
+      success: true,
+      message: rejectedMessage
+    });
   } catch (e) {
     next(e);
   }

@@ -396,7 +396,7 @@ const features = [
         { name: "Audit log svih poruka", implemented: true },
         { name: "Zaključavanje threada nakon završetka", implemented: true },
         { name: "SLA podsjetnici za odgovor", implemented: true },
-        { name: "Moderacija chat poruka", implemented: false }
+        { name: "Moderacija chat poruka", implemented: true }
       ]
     },
     {
@@ -11453,38 +11453,58 @@ SMS verifikacija osigurava da vaš telefonski broj pripada vama i povećava povj
       implemented: true,
       summary: "Automatska i ručna moderacija filtrira neprikladan sadržaj, dijeljenje kontakata i omogućuje prijave.",
       details: `**Kako funkcionira**
-- Svaka poruka prolazi AI/heurističku provjeru; sumnjive se označavaju “pending review”.
-- Korisnici mogu prijaviti poruku moderatorima koji odlučuju (sakrij, upozori, suspendiraj autora).
-- Politike zabranjuju dijeljenje osobnih podataka prije prihvata ponude i uvredljiv sadržaj.
+- Svaka poruka prolazi automatsku heurističku provjeru; sumnjive se označavaju "pending review".
+- Korisnici mogu prijaviti poruku moderatorima koji odlučuju (odobri, odbij).
+- Politike zabranjuju dijeljenje osobnih podataka (email, telefon) prije prihvata ponude i uvredljiv sadržaj.
+- Odbijene poruke se automatski sakrivaju od korisnika (osim admina).
 
 **Prednosti**
 - Održava profesionalnu komunikaciju i štiti marketplace.
 - Brzo reagira na zloupotrebe uz audit trag.
+- Sprječava off-platform komunikaciju prije formalnog prihvaćanja ponude.
 
 **Kada koristiti**
-- Kontinuirano – svaki chat prolazi moderaciju.
-- Kod prijava korisnika i periodičnih pregleda kvalitete.
+- Za sve poruke u chat sistemu.
+- Za automatsku provjeru neprikladnog sadržaja.
+- Za ručnu moderaciju prijavljenih poruka.
 `,
       technicalDetails: `**Frontend**
-- Inline upozorenja u editoru kada AI prepozna zabranjene fraze.
-- Gumb “Prijavi” otvara modal s razlozima; moderator dashboard prikazuje prijave.
+- UI za prijavu poruka (gumb "Prijavi" na svakoj poruci).
+- Admin dashboard za pregled i moderaciju prijavljenih poruka.
+- Indikatori statusa moderacije (pending, approved, rejected).
 
 **Backend**
-- \`contentModerationService.scan\` evaluira poruku prije spremanja.
-- Prijavljene poruke ulaze u queue \`moderation_review\`; endpoint omogućuje moderatorima akcije.
+- \`message-moderation-service.js\` upravlja moderacijom:
+  - \`autoModerateMessage\` - automatska provjera poruke
+  - \`reportMessage\` - prijava poruke za moderaciju
+  - \`approveMessage\` - odobravanje poruke (admin)
+  - \`rejectMessage\` - odbijanje poruke (admin)
+  - \`getPendingModerationMessages\` - dohvaćanje poruka koje čekaju moderaciju
+  - \`getModerationStats\` - statistika moderacije
+- Automatska provjera pri kreiranju poruke (REST i WebSocket).
+- Filtracija odbijenih poruka u chat endpointovima.
 
 **Baza**
-- \`ChatMessageModeration\` (messageId, status, reason, reviewedBy, resolution).
-- \`Report\` čuva korisničke prijave.
+- \`ChatMessage\` model već ima polja za moderaciju:
+  - \`moderationStatus\` - status moderacije (PENDING, APPROVED, REJECTED)
+  - \`moderationReportedBy\` - ID korisnika koji je prijavio
+  - \`moderationReportedAt\` - kada je prijavljeno
+  - \`moderationReviewedBy\` - ID admina koji je pregledao
+  - \`moderationReviewedAt\` - kada je pregledano
+  - \`moderationRejectionReason\` - razlog odbijanja
+  - \`moderationNotes\` - bilješke moderatora
 
 **Integracije**
-- Notification servis obavještava moderatora i, po potrebi, korisnika o ishodu.
-- Analytics prati najčešće razloge prijava.
+- Automatska provjera pri kreiranju poruke.
+- Notifikacije adminima o novim prijavama.
+- Notifikacije korisnicima o odbijanju poruka.
 
 **API**
-- \`POST /api/chat/messages/:id/report\` – kreira prijavu.
-- \`POST /api/admin/chat/messages/:id/moderate\` – moderacijska akcija.
-- \`GET /api/admin/moderation/reports\` – pregled otvorenih prijava.
+- \`POST /api/chat/messages/:messageId/report\` - prijavi poruku
+- \`GET /api/chat/moderation/pending\` - dohvaća poruke koje čekaju moderaciju (admin)
+- \`GET /api/chat/moderation/stats\` - statistika moderacije (admin)
+- \`POST /api/chat/messages/:messageId/approve\` - odobri poruku (admin)
+- \`POST /api/chat/messages/:messageId/reject\` - odbij poruku (admin)
 `
     },
     "INTERNAL chat (Direktor ↔ Team)": {
