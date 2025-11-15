@@ -142,6 +142,7 @@ model User {
   smsLogs            SmsLog[]            @relation("UserSmsLogs")
   pushSubscriptions  PushSubscription[]  @relation("UserPushSubscriptions")
   auditLogs          AuditLog[]          @relation("UserAuditLogs")
+  lockedThreads      ChatRoom[]          @relation("LockedThreads") // Threadovi koje je korisnik zaključao
 
   // Testing runs authored by this user (admin)
   testRuns TestRun[] @relation("TestRunAuthor")
@@ -462,8 +463,21 @@ model ChatRoom {
   participants User[]        @relation("participants")
   messages     ChatMessage[]
   auditLogs    AuditLog[]    // Audit logovi za ovaj room
+  
+  // THREAD LOCKING
+  isLocked     Boolean       @default(false) // Da li je thread zaključan (read-only)
+  lockedAt     DateTime?     // Kada je thread zaključan
+  lockedReason String?        // Razlog zaključavanja (JOB_COMPLETED, INACTIVITY, MANUAL)
+  unlockedUntil DateTime?     // Privremeno otključan do (null = trajno zaključan)
+  lastActivityAt DateTime?    // Zadnja aktivnost u threadu (za automatsko zaključavanje)
+  lockedBy     User?         @relation("LockedThreads", fields: [lockedById], references: [id], onDelete: SetNull)
+  lockedById   String?       // ID korisnika koji je zaključao thread (null = automatski)
+  
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
+  
+  @@index([isLocked])
+  @@index([lastActivityAt])
 }
 
 model ChatMessage {

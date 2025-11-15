@@ -14,6 +14,8 @@ import { checkExpiringLicenses } from '../services/license-expiry-checker.js'
 import { validateAllLicenses } from '../services/license-validator.js'
 import { batchAutoVerifyClients } from '../services/auto-verification.js'
 
+import { lockInactiveThreads, reLockExpiredTemporaryUnlocks } from '../services/thread-locking-service.js';
+
 export function startQueueScheduler() {
   console.log('⏰ Starting Queue Scheduler...')
   
@@ -92,12 +94,40 @@ export function startQueueScheduler() {
     console.log(`⏰ Queue Monitor: ${new Date().toISOString()} - System running`)
   })
   
+  // Thread locking scheduler - provjerava neaktivne threadove svaki dan u 2:00
+  cron.schedule('0 2 * * *', async () => {
+    console.log(`\n${'='.repeat(50)}`)
+    console.log(`🔒 Thread Locking Check: ${new Date().toISOString()}`)
+    console.log('='.repeat(50))
+    
+    try {
+      // Zaključaj neaktivne threadove (90 dana neaktivnosti)
+      const lockedCount = await lockInactiveThreads(90);
+      if (lockedCount > 0) {
+        console.log(`✅ Locked ${lockedCount} inactive threads`);
+      }
+      
+      // Provjeri i ponovno zaključaj threadove čije je privremeno otključavanje isteklo
+      const reLockedCount = await reLockExpiredTemporaryUnlocks();
+      if (reLockedCount > 0) {
+        console.log(`✅ Re-locked ${reLockedCount} threads after temporary unlock expired`);
+      }
+      
+      console.log('✅ Thread locking check completed')
+    } catch (error) {
+      console.error('❌ Thread locking check failed:', error)
+    }
+    
+    console.log('='.repeat(50) + '\n')
+  })
+
   console.log('✅ Queue Scheduler started successfully')
   console.log('   - Expired offers check: Every hour at :00')
   console.log('   - Inactive lead purchases check (48h auto-refund): Every hour at :00')
   console.log('   - License expiry check: Daily at 09:00')
   console.log('   - License validity check: Daily at 10:00')
   console.log('   - Batch auto-verification: Daily at 11:00')
+  console.log('   - Thread locking check: Daily at 02:00')
   console.log('   - Monitor heartbeat: Every 15 minutes')
 }
 

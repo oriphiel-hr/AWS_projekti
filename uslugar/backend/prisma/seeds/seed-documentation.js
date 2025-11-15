@@ -394,7 +394,7 @@ const features = [
         { name: "Privici u chatu (fotke, PDF ponude)", implemented: true },
         { name: "Verzioniranje poruka", implemented: true },
         { name: "Audit log svih poruka", implemented: true },
-        { name: "Zaključavanje threada nakon završetka", implemented: false },
+        { name: "Zaključavanje threada nakon završetka", implemented: true },
         { name: "SLA podsjetnici za odgovor", implemented: false },
         { name: "Moderacija chat poruka", implemented: false }
       ]
@@ -11341,37 +11341,55 @@ SMS verifikacija osigurava da vaš telefonski broj pripada vama i povećava povj
       implemented: true,
       summary: "Nakon završetka posla ili dulje neaktivnosti thread prelazi u read-only uz opciju privremenog otključavanja.",
       details: `**Kako funkcionira**
-- Kada lead/posao dobije status DONE/CLOSED ili thread miruje duže od definiranog perioda, automatski se zaključava.
-- Sudionici mogu pregledavati povijest, ali ne mogu slati nove poruke.
-- Direktor može privremeno otključati thread (npr. radi garancije) uz obavezno navođenje razloga.
+- Kada posao dobije status COMPLETED, svi threadovi za taj posao se automatski zaključavaju.
+- Threadovi bez aktivnosti dulje od 90 dana se automatski zaključavaju (cron job).
+- Sudionici mogu pregledavati povijest, ali ne mogu slati nove poruke ili uređivati postojeće.
+- Sudionici mogu privremeno otključati thread (npr. radi garancije) na određeno vrijeme (1-1440 minuta).
+- Sudionici mogu trajno otključati thread ako imaju pristup.
 
 **Prednosti**
 - Štiti od kasnih izmjena dogovora i čuva arhivu urednom.
 - Jasno označava završene poslove i smanjuje šum u aktivnim chatovima.
+- Automatsko upravljanje neaktivnim threadovima.
 
 **Kada koristiti**
-- Nakon završetka projekta, ugarantnom periodu ili duljoj neaktivnosti.
+- Nakon završetka projekta - automatski se zaključavaju svi threadovi.
+- Nakon dulje neaktivnosti (90+ dana) - automatski zaključavanje.
 - Kod reklamacija gdje je potrebno privremeno ponovno otvoriti komunikaciju.
 `,
       technicalDetails: `**Frontend**
-- Banner “Thread je zaključan” i skriven input za poruke; postoji CTA za traženje otključavanja.
+- Banner "Thread je zaključan" i skriven input za poruke.
 - Timer prikazuje koliko dugo će privremeno otključan thread ostati otvoren.
+- UI za zaključavanje/otključavanje threadova.
 
 **Backend**
-- \`chatService.lockThread\` se poziva pri promjeni statusa posla; \`unlockThread\` zahtijeva razlog i rolu DIREKTOR.
-- Cron \`threadInactivityJob\` provjerava threade bez aktivnosti i zaključava ih.
+- \`thread-locking-service.js\` upravlja zaključavanjem:
+  - \`lockThread\` - zaključava thread
+  - \`unlockThread\` - trajno otključava thread
+  - \`temporarilyUnlockThread\` - privremeno otključava thread
+  - \`lockThreadsForCompletedJob\` - automatski zaključava threadove za završeni posao
+  - \`lockInactiveThreads\` - zaključava neaktivne threadove
+  - \`reLockExpiredTemporaryUnlocks\` - ponovno zaključava threadove čije je privremeno otključavanje isteklo
+  - \`updateThreadActivity\` - ažurira zadnju aktivnost u threadu
+- Cron job u \`queueScheduler.js\` provjerava neaktivne threadove svaki dan u 2:00.
+- API endpointovi:
+  - \`POST /api/chat/rooms/:roomId/lock\` - zaključaj thread
+  - \`POST /api/chat/rooms/:roomId/unlock\` - otključaj thread
+  - \`POST /api/chat/rooms/:roomId/temporarily-unlock\` - privremeno otključaj thread
+- Chat endpointovi provjeravaju je li thread zaključan prije slanja/uređivanja poruka.
 
 **Baza**
-- \`ChatThread.status\` (OPEN, LOCKED, TEMP_UNLOCKED).
-- \`ThreadUnlockRequest\` bilježi razlog, tko je tražio i trajanje otključavanja.
+- \`ChatRoom\` model ima polja za zaključavanje:
+  - \`isLocked\` - da li je thread zaključan
+  - \`lockedAt\` - kada je thread zaključan
+  - \`lockedReason\` - razlog zaključavanja (JOB_COMPLETED, INACTIVITY, MANUAL)
+  - \`unlockedUntil\` - privremeno otključan do (null = trajno zaključan)
+  - \`lastActivityAt\` - zadnja aktivnost u threadu
+  - \`lockedById\` - ID korisnika koji je zaključao thread (null = automatski)
 
 **Integracije**
-- Notification servis obavještava sudionike o zaključavanju/otključavanju.
-
-**API**
-- \`POST /api/chat/threads/:id/lock\` (interno).
-- \`POST /api/chat/threads/:id/unlock\` – zahtjev za otključavanje.
-- \`GET /api/chat/threads/:id/status\` – status i rok ponovnog zaključavanja.
+- Automatsko zaključavanje kada se posao označi kao COMPLETED.
+- Cron job za automatsko zaključavanje neaktivnih threadova (svaki dan u 2:00).
 `
     },
     "SLA podsjetnici za odgovor": {

@@ -380,6 +380,15 @@ r.patch('/:jobId/complete', auth(true, ['USER', 'PROVIDER']), async (req, res, n
       data: { status: 'COMPLETED' }
     });
     
+    // Automatski zaključaj sve threadove za ovaj posao
+    try {
+      const { lockThreadsForCompletedJob } = await import('../services/thread-locking-service.js');
+      await lockThreadsForCompletedJob(jobId);
+    } catch (lockError) {
+      console.error('Error locking threads for completed job:', lockError);
+      // Ne bacamo grešku - notifikacija je važnija
+    }
+    
     // Send notifications
     await notifyJobCompleted(jobId);
     

@@ -452,6 +452,17 @@ r.get('/rooms/:roomId/messages', auth(true), async (req, res, next) => {
       }
     }
 
+    // Dohvati room s informacijama o zaključavanju
+    const room = await prisma.chatRoom.findUnique({
+      where: { id: roomId },
+      select: {
+        isLocked: true,
+        lockedReason: true,
+        unlockedUntil: true,
+        lockedAt: true
+      }
+    });
+
     const messages = await prisma.chatMessage.findMany({
       where: { roomId },
       include: {
@@ -520,7 +531,16 @@ r.get('/rooms/:roomId/messages', auth(true), async (req, res, next) => {
       skip: parseInt(offset)
     });
 
-    res.json(updatedMessages.reverse());
+    // Provjeri je li thread zaključan
+    const { isThreadLocked } = await import('../services/thread-locking-service.js');
+    const lockStatus = await isThreadLocked(roomId);
+
+    res.json({
+      messages: updatedMessages.reverse(),
+      threadLocked: lockStatus.isLocked,
+      lockReason: lockStatus.reason,
+      unlockedUntil: lockStatus.unlockedUntil
+    });
   } catch (e) {
     next(e);
   }
@@ -597,6 +617,17 @@ r.post('/rooms/:roomId/upload-image', auth(true), upload.single('image'), async 
 
     if (!room) {
       return res.status(403).json({ error: 'Access denied' });
+    }
+
+    // Provjeri je li thread zaključan
+    const { isThreadLocked } = await import('../services/thread-locking-service.js');
+    const lockStatus = await isThreadLocked(roomId);
+    if (lockStatus.isLocked) {
+      return res.status(403).json({ 
+        error: 'Thread is locked',
+        reason: lockStatus.reason,
+        message: 'Ovaj thread je zaključan i ne može se uploadati privitke.'
+      });
     }
 
     // Provjeri tip chata: INTERNAL (jobId = null), PUBLIC (lead purchase), ili OFFER_BASED (accepted offer)
@@ -695,6 +726,17 @@ r.post('/rooms/:roomId/messages', auth(true), async (req, res, next) => {
       return res.status(403).json({ error: 'Access denied' });
     }
 
+    // Provjeri je li thread zaključan
+    const { isThreadLocked } = await import('../services/thread-locking-service.js');
+    const lockStatus = await isThreadLocked(roomId);
+    if (lockStatus.isLocked) {
+      return res.status(403).json({ 
+        error: 'Thread is locked',
+        reason: lockStatus.reason,
+        message: 'Ovaj thread je zaključan i ne može se slati nove poruke.'
+      });
+    }
+
     // Provjeri tip chata: INTERNAL (jobId = null), PUBLIC (lead purchase), ili OFFER_BASED (accepted offer)
     if (room.jobId === null) {
       // INTERNAL chat - provjeri pristup
@@ -733,11 +775,9 @@ r.post('/rooms/:roomId/messages', auth(true), async (req, res, next) => {
       }
     });
 
-    // Update room updatedAt
-    await prisma.chatRoom.update({
-      where: { id: roomId },
-      data: { updatedAt: new Date() }
-    });
+    // Update room updatedAt and lastActivityAt
+    const { updateThreadActivity } = await import('../services/thread-locking-service.js');
+    await updateThreadActivity(roomId);
 
     // Log audit - message created
     const { logMessageCreated } = await import('../services/audit-log-service.js');
@@ -805,6 +845,17 @@ r.patch('/rooms/:roomId/messages/:messageId', auth(true), async (req, res, next)
       return res.status(403).json({ error: 'Access denied' });
     }
 
+    // Provjeri je li thread zaključan
+    const { isThreadLocked } = await import('../services/thread-locking-service.js');
+    const lockStatus = await isThreadLocked(roomId);
+    if (lockStatus.isLocked) {
+      return res.status(403).json({ 
+        error: 'Thread is locked',
+        reason: lockStatus.reason,
+        message: 'Ovaj thread je zaključan i ne može se uređivati.'
+      });
+    }
+
     // Provjeri tip chata: INTERNAL (jobId = null), PUBLIC (lead purchase), ili OFFER_BASED (accepted offer)
     if (room.jobId === null) {
       // INTERNAL chat - provjeri pristup
@@ -834,11 +885,9 @@ r.patch('/rooms/:roomId/messages/:messageId', auth(true), async (req, res, next)
       reason || null
     );
 
-    // Update room updatedAt
-    await prisma.chatRoom.update({
-      where: { id: roomId },
-      data: { updatedAt: new Date() }
-    });
+    // Update room updatedAt and lastActivityAt
+    const { updateThreadActivity } = await import('../services/thread-locking-service.js');
+    await updateThreadActivity(roomId);
 
     // Log audit - message edited (s IP i user agent)
     try {
@@ -1108,6 +1157,117 @@ r.get('/messages/:messageId/audit-logs', auth(true), async (req, res, next) => {
     const auditLogs = await getMessageAuditLogs(messageId, parseInt(limit), parseInt(offset));
 
     res.json(auditLogs);
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * POST /api/chat/rooms/:roomId/lock
+ * Zaključaj thread (samo za sudionike)
+ */
+r.post('/rooms/:roomId/lock', auth(true), async (req, res, next) => {
+  try {
+    const { roomId } = req.params;
+    const { reason = 'MANUAL' } = req.body;
+
+    // Verify user has access to this room
+    const room = await prisma.chatRoom.findFirst({
+      where: {
+        id: roomId,
+        participants: {
+          some: { id: req.user.id }
+        }
+      }
+    });
+
+    if (!room) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const { lockThread } = await import('../services/thread-locking-service.js');
+    const lockedRoom = await lockThread(roomId, reason, req.user.id, null);
+
+    res.json({
+      success: true,
+      room: lockedRoom,
+      message: 'Thread zaključan'
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * POST /api/chat/rooms/:roomId/unlock
+ * Otključaj thread (samo za sudionike)
+ */
+r.post('/rooms/:roomId/unlock', auth(true), async (req, res, next) => {
+  try {
+    const { roomId } = req.params;
+
+    // Verify user has access to this room
+    const room = await prisma.chatRoom.findFirst({
+      where: {
+        id: roomId,
+        participants: {
+          some: { id: req.user.id }
+        }
+      }
+    });
+
+    if (!room) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const { unlockThread } = await import('../services/thread-locking-service.js');
+    const unlockedRoom = await unlockThread(roomId, req.user.id);
+
+    res.json({
+      success: true,
+      room: unlockedRoom,
+      message: 'Thread otključan'
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * POST /api/chat/rooms/:roomId/temporarily-unlock
+ * Privremeno otključaj thread (samo za sudionike)
+ */
+r.post('/rooms/:roomId/temporarily-unlock', auth(true), async (req, res, next) => {
+  try {
+    const { roomId } = req.params;
+    const { durationMinutes = 60 } = req.body; // Default: 1 sat
+
+    if (durationMinutes < 1 || durationMinutes > 1440) {
+      return res.status(400).json({ error: 'Duration must be between 1 and 1440 minutes (24 hours)' });
+    }
+
+    // Verify user has access to this room
+    const room = await prisma.chatRoom.findFirst({
+      where: {
+        id: roomId,
+        participants: {
+          some: { id: req.user.id }
+        }
+      }
+    });
+
+    if (!room) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const { temporarilyUnlockThread } = await import('../services/thread-locking-service.js');
+    const unlockedRoom = await temporarilyUnlockThread(roomId, durationMinutes, req.user.id);
+
+    res.json({
+      success: true,
+      room: unlockedRoom,
+      message: `Thread privremeno otključan na ${durationMinutes} minuta`
+    });
   } catch (e) {
     next(e);
   }

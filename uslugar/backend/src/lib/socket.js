@@ -129,6 +129,14 @@ export const initSocket = (httpServer) => {
           return;
         }
 
+        // Provjeri je li thread zaključan
+        const { isThreadLocked } = await import('../services/thread-locking-service.js');
+        const lockStatus = await isThreadLocked(roomId);
+        if (lockStatus.isLocked) {
+          socket.emit('error', 'Thread is locked and cannot accept new messages');
+          return;
+        }
+
         // Save message to database
         const message = await prisma.chatMessage.create({
           data: {
@@ -143,6 +151,10 @@ export const initSocket = (httpServer) => {
             }
           }
         });
+
+        // Update thread activity
+        const { updateThreadActivity } = await import('../services/thread-locking-service.js');
+        await updateThreadActivity(roomId);
 
         // Broadcast to room
         io.to(roomId).emit('new-message', message);
@@ -214,6 +226,14 @@ export const initSocket = (httpServer) => {
           return;
         }
 
+        // Provjeri je li thread zaključan
+        const { isThreadLocked } = await import('../services/thread-locking-service.js');
+        const lockStatus = await isThreadLocked(roomId);
+        if (lockStatus.isLocked) {
+          socket.emit('error', 'Thread is locked and cannot be edited');
+          return;
+        }
+
         // Uredi poruku (kreira novu verziju)
         const { editMessage } = await import('../services/message-versioning.js');
         const updatedMessage = await editMessage(
@@ -224,11 +244,9 @@ export const initSocket = (httpServer) => {
           reason || null
         );
 
-        // Update room updatedAt
-        await prisma.chatRoom.update({
-          where: { id: roomId },
-          data: { updatedAt: new Date() }
-        });
+        // Update thread activity
+        const { updateThreadActivity } = await import('../services/thread-locking-service.js');
+        await updateThreadActivity(roomId);
 
         // Broadcast updated message to room
         io.to(roomId).emit('message-edited', updatedMessage);
