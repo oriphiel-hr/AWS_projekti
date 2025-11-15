@@ -461,6 +461,14 @@ r.get('/rooms/:roomId/messages', auth(true), async (req, res, next) => {
             fullName: true,
             email: true
           }
+        },
+        versions: {
+          orderBy: { version: 'desc' },
+          take: 1,
+          select: {
+            version: true,
+            editedAt: true
+          }
         }
       },
       orderBy: { createdAt: 'desc' },
@@ -496,6 +504,14 @@ r.get('/rooms/:roomId/messages', auth(true), async (req, res, next) => {
             id: true,
             fullName: true,
             email: true
+          }
+        },
+        versions: {
+          orderBy: { version: 'desc' },
+          take: 1,
+          select: {
+            version: true,
+            editedAt: true
           }
         }
       },
@@ -706,6 +722,158 @@ r.post('/rooms/:roomId/messages', auth(true), async (req, res, next) => {
     });
 
     res.status(201).json(message);
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * PATCH /api/chat/rooms/:roomId/messages/:messageId
+ * Uredi poruku (kreira novu verziju)
+ */
+r.patch('/rooms/:roomId/messages/:messageId', auth(true), async (req, res, next) => {
+  try {
+    const { roomId, messageId } = req.params;
+    const { content, attachments, reason } = req.body;
+
+    // Validate: mora biti ili content ili attachments
+    if (content === undefined && attachments === undefined) {
+      return res.status(400).json({ error: 'Missing content or attachments' });
+    }
+
+    // Verify user has access to this room
+    const room = await prisma.chatRoom.findFirst({
+      where: {
+        id: roomId,
+        participants: {
+          some: { id: req.user.id }
+        }
+      },
+      include: {
+        job: {
+          include: {
+            offers: {
+              where: { status: 'ACCEPTED' },
+              include: { user: true }
+            },
+            leadPurchases: {
+              where: {
+                status: { in: ['ACTIVE', 'CONTACTED', 'CONVERTED'] }
+              },
+              take: 1
+            }
+          }
+        }
+      }
+    });
+
+    if (!room) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    // Provjeri tip chata: INTERNAL (jobId = null), PUBLIC (lead purchase), ili OFFER_BASED (accepted offer)
+    if (room.jobId === null) {
+      // INTERNAL chat - provjeri pristup
+      const { checkInternalChatAccess } = await import('../services/internal-chat-service.js');
+      const access = await checkInternalChatAccess(roomId, req.user.id);
+      
+      if (!access.hasAccess) {
+        return res.status(403).json({ error: access.message || 'Nemate pristup ovom INTERNAL chatu' });
+      }
+    } else {
+      // PUBLIC ili OFFER_BASED chat
+      const hasLeadPurchase = room.job.leadPurchases && room.job.leadPurchases.length > 0;
+      const hasAcceptedOffer = room.job.offers && room.job.offers.length > 0;
+
+      if (!hasLeadPurchase && !hasAcceptedOffer) {
+        return res.status(403).json({ error: 'Chat is only available after lead unlock or job acceptance' });
+      }
+    }
+
+    // Uredi poruku (kreira novu verziju)
+    const { editMessage } = await import('../services/message-versioning.js');
+    const updatedMessage = await editMessage(
+      messageId,
+      req.user.id,
+      content !== undefined ? content.trim() : undefined,
+      attachments !== undefined ? (Array.isArray(attachments) ? attachments : []) : null,
+      reason || null
+    );
+
+    // Update room updatedAt
+    await prisma.chatRoom.update({
+      where: { id: roomId },
+      data: { updatedAt: new Date() }
+    });
+
+    res.json(updatedMessage);
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * GET /api/chat/rooms/:roomId/messages/:messageId/versions
+ * Dohvati sve verzije poruke
+ */
+r.get('/rooms/:roomId/messages/:messageId/versions', auth(true), async (req, res, next) => {
+  try {
+    const { roomId, messageId } = req.params;
+
+    // Verify user has access to this room
+    const room = await prisma.chatRoom.findFirst({
+      where: {
+        id: roomId,
+        participants: {
+          some: { id: req.user.id }
+        }
+      }
+    });
+
+    if (!room) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const { getMessageVersions } = await import('../services/message-versioning.js');
+    const versions = await getMessageVersions(messageId, req.user.id);
+
+    res.json(versions);
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * GET /api/chat/rooms/:roomId/messages/:messageId/versions/:version
+ * Dohvati specifičnu verziju poruke
+ */
+r.get('/rooms/:roomId/messages/:messageId/versions/:version', auth(true), async (req, res, next) => {
+  try {
+    const { roomId, messageId, version } = req.params;
+    const versionNumber = parseInt(version);
+
+    if (isNaN(versionNumber) || versionNumber < 0) {
+      return res.status(400).json({ error: 'Invalid version number' });
+    }
+
+    // Verify user has access to this room
+    const room = await prisma.chatRoom.findFirst({
+      where: {
+        id: roomId,
+        participants: {
+          some: { id: req.user.id }
+        }
+      }
+    });
+
+    if (!room) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const { getMessageVersion } = await import('../services/message-versioning.js');
+    const messageVersion = await getMessageVersion(messageId, versionNumber, req.user.id);
+
+    res.json(messageVersion);
   } catch (e) {
     next(e);
   }

@@ -75,6 +75,14 @@ export const initSocket = (httpServer) => {
           include: {
             sender: {
               select: { id: true, fullName: true, email: true }
+            },
+            versions: {
+              orderBy: { version: 'desc' },
+              take: 1,
+              select: {
+                version: true,
+                editedAt: true
+              }
             }
           },
           orderBy: { createdAt: 'asc' },
@@ -178,6 +186,56 @@ export const initSocket = (httpServer) => {
 
     socket.on('stop-typing', (roomId) => {
       socket.to(roomId).emit('user-stop-typing', { userId: socket.userId });
+    });
+
+    // Edit message (with versioning)
+    socket.on('edit-message', async (data) => {
+      try {
+        const { roomId, messageId, content, attachments, reason } = data;
+
+        // Validate: mora biti ili content ili attachments
+        if (content === undefined && attachments === undefined) {
+          socket.emit('error', 'Missing content or attachments');
+          return;
+        }
+
+        // Verify user has access to this room
+        const room = await prisma.chatRoom.findFirst({
+          where: {
+            id: roomId,
+            participants: {
+              some: { id: socket.userId }
+            }
+          }
+        });
+
+        if (!room) {
+          socket.emit('error', 'Access denied to this room');
+          return;
+        }
+
+        // Uredi poruku (kreira novu verziju)
+        const { editMessage } = await import('../services/message-versioning.js');
+        const updatedMessage = await editMessage(
+          messageId,
+          socket.userId,
+          content !== undefined ? content.trim() : undefined,
+          attachments !== undefined ? (Array.isArray(attachments) ? attachments : []) : null,
+          reason || null
+        );
+
+        // Update room updatedAt
+        await prisma.chatRoom.update({
+          where: { id: roomId },
+          data: { updatedAt: new Date() }
+        });
+
+        // Broadcast updated message to room
+        io.to(roomId).emit('message-edited', updatedMessage);
+      } catch (error) {
+        console.error('Error editing message:', error);
+        socket.emit('error', error.message || 'Failed to edit message');
+      }
     });
 
     // Leave room
