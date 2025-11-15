@@ -779,6 +779,24 @@ r.post('/rooms/:roomId/messages', auth(true), async (req, res, next) => {
     const { updateThreadActivity } = await import('../services/thread-locking-service.js');
     await updateThreadActivity(roomId);
 
+    // Kreiraj SLA tracking ako poruka nije od samog sebe (npr. provider odgovara klijentu)
+    try {
+      const { createSLATracking } = await import('../services/sla-reminder-service.js');
+      // Provjeri je li poruka od korisnika (klijenta) - provideri trebaju odgovoriti
+      const sender = await prisma.user.findUnique({
+        where: { id: req.user.id },
+        select: { role: true }
+      });
+      
+      // Ako je poruka od korisnika (USER), kreiraj SLA tracking za providere
+      if (sender && sender.role === 'USER') {
+        await createSLATracking(message.id, roomId, 240); // 4 sata SLA
+      }
+    } catch (slaError) {
+      console.error('Error creating SLA tracking:', slaError);
+      // Ne bacamo grešku - SLA tracking ne smije blokirati slanje poruke
+    }
+
     // Log audit - message created
     const { logMessageCreated } = await import('../services/audit-log-service.js');
     const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
@@ -1268,6 +1286,67 @@ r.post('/rooms/:roomId/temporarily-unlock', auth(true), async (req, res, next) =
       room: unlockedRoom,
       message: `Thread privremeno otključan na ${durationMinutes} minuta`
     });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * GET /api/chat/rooms/:roomId/sla-status
+ * Dohvati SLA status za chat room
+ */
+r.get('/rooms/:roomId/sla-status', auth(true), async (req, res, next) => {
+  try {
+    const { roomId } = req.params;
+
+    // Verify user has access to this room
+    const room = await prisma.chatRoom.findFirst({
+      where: {
+        id: roomId,
+        participants: {
+          some: { id: req.user.id }
+        }
+      }
+    });
+
+    if (!room) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const { getSLAStatusForRoom } = await import('../services/sla-reminder-service.js');
+    const slaStatus = await getSLAStatusForRoom(roomId);
+
+    if (!slaStatus) {
+      return res.status(500).json({ error: 'Failed to fetch SLA status' });
+    }
+
+    res.json(slaStatus);
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * GET /api/chat/providers/:providerId/sla-status
+ * Dohvati SLA status za providera
+ */
+r.get('/providers/:providerId/sla-status', auth(true), async (req, res, next) => {
+  try {
+    const { providerId } = req.params;
+
+    // Provjeri da li je korisnik provider ili admin
+    if (req.user.role !== 'ADMIN' && req.user.id !== providerId) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const { getSLAStatusForProvider } = await import('../services/sla-reminder-service.js');
+    const slaStatus = await getSLAStatusForProvider(providerId);
+
+    if (!slaStatus) {
+      return res.status(500).json({ error: 'Failed to fetch SLA status' });
+    }
+
+    res.json(slaStatus);
   } catch (e) {
     next(e);
   }

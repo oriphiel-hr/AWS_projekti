@@ -463,6 +463,7 @@ model ChatRoom {
   participants User[]        @relation("participants")
   messages     ChatMessage[]
   auditLogs    AuditLog[]    // Audit logovi za ovaj room
+  slaTrackings MessageSLA[]  // SLA tracking za poruke u ovom roomu
   
   // THREAD LOCKING
   isLocked     Boolean       @default(false) // Da li je thread zaključan (read-only)
@@ -498,6 +499,7 @@ model ChatMessage {
   isEdited   Boolean         @default(false) // Da li je poruka ikad uređena
   editedAt   DateTime? // Kada je poruka zadnji put uređena
   auditLogs  AuditLog[]     // Audit logovi za ovu poruku
+  slaTracking MessageSLA?    // SLA tracking za ovu poruku
 
   // MODERATION (samo za poruke koje su prijavljene)
   moderationStatus          ModerationStatus? // Status moderacije (null = nije prijavljeno)

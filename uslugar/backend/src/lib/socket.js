@@ -156,6 +156,51 @@ export const initSocket = (httpServer) => {
         const { updateThreadActivity } = await import('../services/thread-locking-service.js');
         await updateThreadActivity(roomId);
 
+        // Kreiraj SLA tracking ako poruka nije od samog sebe
+        try {
+          const { createSLATracking } = await import('../services/sla-reminder-service.js');
+          const sender = await prisma.user.findUnique({
+            where: { id: socket.userId },
+            select: { role: true }
+          });
+          
+          // Ako je poruka od korisnika (USER), kreiraj SLA tracking za providere
+          if (sender && sender.role === 'USER') {
+            await createSLATracking(message.id, roomId, 240); // 4 sata SLA
+          }
+        } catch (slaError) {
+          console.error('Error creating SLA tracking:', slaError);
+        }
+
+        // Provjeri je li ovo odgovor na postojeću poruku i označi je kao odgovorenu
+        try {
+          const { markMessageAsResponded } = await import('../services/sla-reminder-service.js');
+          // Pronađi zadnju poruku u roomu koja nije od trenutnog korisnika i nije odgovorena
+          const lastUnansweredSLA = await prisma.messageSLA.findFirst({
+            where: {
+              roomId,
+              respondedAt: null,
+              message: {
+                senderId: { not: socket.userId }
+              }
+            },
+            include: {
+              message: true
+            },
+            orderBy: {
+              message: {
+                createdAt: 'desc'
+              }
+            }
+          });
+
+          if (lastUnansweredSLA && lastUnansweredSLA.message) {
+            await markMessageAsResponded(lastUnansweredSLA.message.id, message.id);
+          }
+        } catch (slaError) {
+          console.error('Error marking message as responded:', slaError);
+        }
+
         // Broadcast to room
         io.to(roomId).emit('new-message', message);
 

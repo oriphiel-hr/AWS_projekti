@@ -395,7 +395,7 @@ const features = [
         { name: "Verzioniranje poruka", implemented: true },
         { name: "Audit log svih poruka", implemented: true },
         { name: "Zaključavanje threada nakon završetka", implemented: true },
-        { name: "SLA podsjetnici za odgovor", implemented: false },
+        { name: "SLA podsjetnici za odgovor", implemented: true },
         { name: "Moderacija chat poruka", implemented: false }
       ]
     },
@@ -11396,38 +11396,57 @@ SMS verifikacija osigurava da vaš telefonski broj pripada vama i povećava povj
       implemented: true,
       summary: "Platforma podsjeća timove na obvezu odgovora unutar SLA-a i bilježi kršenja koja utječu na reputaciju.",
       details: `**Kako funkcionira**
-- Direktor definira SLA vrijeme odgovora i radno vrijeme; svaki lead/chat dobiva timer.
-- Sustav šalje podsjetnike prije isteka, a propušteni SLA automatski označava lead i utječe na trust score.
-- Dashboard prikazuje prekršaje i trend vremena odgovora po timovima/članovima.
+- Kada korisnik (USER) pošalje poruku, automatski se kreira SLA tracking s ciljem odgovora unutar 4 sata (240 minuta).
+- Platforma šalje podsjetnike:
+  - 1 sat prije isteka SLA-a (50% vremena)
+  - 30 minuta prije isteka SLA-a (87.5% vremena)
+  - Nakon prekoračenja SLA-a (svakih 2 sata)
+- Kada provider odgovori, SLA se označava kao ispunjen (MET) ili prekoračen (BREACHED).
+- Prekoračenja SLA-a utječu na reputaciju providera.
 
 **Prednosti**
-- Održava visoku razinu usluge i brzinu reakcije.
-- Transparentno prikazuje timovima gdje kasne i motivira na poboljšanje.
+- Osigurava brze odgovore i bolje korisničko iskustvo.
+- Automatski podsjeća providere na obvezu odgovora.
+- Bilježi kršenja koja utječu na reputaciju.
 
 **Kada koristiti**
-- Svaka tvrtka koja želi garantirani odaziv klijentima.
-- Praćenje performansi tijekom sezonskih gužvi.
+- Za sve poruke od korisnika (USER) koje zahtijevaju odgovor od providera.
+- Za praćenje performansi providera u odgovaranju na poruke.
 `,
       technicalDetails: `**Frontend**
-- Timer u chatu prikazuje preostalo vrijeme, a badge “SLA breached” označava kršenja.
-- Dashboard grafovi (Response time by member/team) vizualiziraju trendove.
+- UI za prikaz SLA statusa u chat roomu.
+- Indikatori vremena do isteka SLA-a.
+- Notifikacije o podsjetnicima.
 
 **Backend**
-- \`slaScheduler\` kreira delayed job za svaki lead; event \`sla.breached\` emitira se po isteku.
-- Integracija s reputacijskim modulom smanjuje prioritet u distribuciji leadova.
+- \`sla-reminder-service.js\` upravlja SLA trackingom:
+  - \`createSLATracking\` - kreira SLA tracking za poruku
+  - \`markMessageAsResponded\` - označava poruku kao odgovorenu
+  - \`checkAndSendSLAReminders\` - provjerava i šalje podsjetnike
+  - \`getSLAStatusForRoom\` - dohvaća SLA status za room
+  - \`getSLAStatusForProvider\` - dohvaća SLA status za providera
+- Cron job u \`queueScheduler.js\` provjerava SLA svaki sat.
+- Automatsko kreiranje SLA trackinga kada korisnik pošalje poruku.
+- Automatsko označavanje poruke kao odgovorene kada provider odgovori.
 
 **Baza**
-- \`SLAStatus\` (leadId, teamId, dueAt, respondedAt, breached).
-- \`SLAStats\` materialized view agregira podatke po periodu i timu.
+- \`MessageSLA\` model za tracking:
+  - \`expectedResponseMinutes\` - očekivano vrijeme odgovora (default: 240 minuta)
+  - \`respondedAt\` - kada je odgovoreno
+  - \`responseTimeMinutes\` - vrijeme odgovora u minutama
+  - \`slaStatus\` - status (PENDING, MET, BREACHED)
+  - \`breachedAt\` - kada je SLA prekoračen
+  - \`reminderSentAt\` - kada je poslana podsjetnica
+  - \`reminderCount\` - broj poslanih podsjetnica
 
 **Integracije**
-- Notification servis šalje reminder-e i obavijesti o kršenjima.
-- Analytics koristi iste podatke za KPI izvještaje.
+- Automatsko kreiranje SLA trackinga kada korisnik pošalje poruku.
+- Cron job za provjeru i slanje podsjetnica (svaki sat).
+- Notifikacije i push notifikacije za podsjetnike.
 
 **API**
-- \`POST /api/sla/configure\` – postavke SLA-a.
-- \`POST /api/sla/:leadId/ack\` – potvrđuje da je odgovor poslan.
-- \`GET /api/sla/stats\` – agregirani podaci.
+- \`GET /api/chat/rooms/:roomId/sla-status\` - dohvaća SLA status za room
+- \`GET /api/chat/providers/:providerId/sla-status\` - dohvaća SLA status za providera
 `
     },
     "Moderacija chat poruka": {

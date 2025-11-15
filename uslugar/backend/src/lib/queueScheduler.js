@@ -15,6 +15,7 @@ import { validateAllLicenses } from '../services/license-validator.js'
 import { batchAutoVerifyClients } from '../services/auto-verification.js'
 
 import { lockInactiveThreads, reLockExpiredTemporaryUnlocks } from '../services/thread-locking-service.js';
+import { checkAndSendSLAReminders } from '../services/sla-reminder-service.js';
 
 export function startQueueScheduler() {
   console.log('⏰ Starting Queue Scheduler...')
@@ -31,6 +32,12 @@ export function startQueueScheduler() {
       
       // Provjeri neaktivne lead purchase-ove (automatski refund nakon 48h)
       await checkInactiveLeadPurchases()
+      
+      // Provjeri i pošalji SLA podsjetnike
+      const remindersSent = await checkAndSendSLAReminders()
+      if (remindersSent > 0) {
+        console.log(`✅ Sent ${remindersSent} SLA reminders`)
+      }
       
       console.log('✅ Scheduled check completed')
     } catch (error) {
@@ -124,6 +131,7 @@ export function startQueueScheduler() {
   console.log('✅ Queue Scheduler started successfully')
   console.log('   - Expired offers check: Every hour at :00')
   console.log('   - Inactive lead purchases check (48h auto-refund): Every hour at :00')
+  console.log('   - SLA reminders check: Every hour at :00')
   console.log('   - License expiry check: Daily at 09:00')
   console.log('   - License validity check: Daily at 10:00')
   console.log('   - Batch auto-verification: Daily at 11:00')
