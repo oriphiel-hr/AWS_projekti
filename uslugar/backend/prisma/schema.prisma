@@ -118,6 +118,7 @@ model User {
   notifications      Notification[]
   chatMessages       ChatMessage[]       @relation("senderMessages")
   chatRooms          ChatRoom[]          @relation("participants")
+  messageVersions    MessageVersion[]    @relation("messageVersions")
   leadPurchases      LeadPurchase[]
   providerROI        ProviderROI?
   creditTransactions CreditTransaction[]
@@ -461,6 +462,12 @@ model ChatMessage {
   room        ChatRoom      @relation(fields: [roomId], references: [id], onDelete: Cascade)
   roomId      String
   createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt // Ažurirano kada se poruka uredi
+
+  // VERSIONING
+  versions    MessageVersion[] // Povijest verzija poruke
+  isEdited   Boolean         @default(false) // Da li je poruka ikad uređena
+  editedAt   DateTime? // Kada je poruka zadnji put uređena
 
   // MODERATION (samo za poruke koje su prijavljene)
   moderationStatus          ModerationStatus? // Status moderacije (null = nije prijavljeno)
@@ -474,6 +481,23 @@ model ChatMessage {
   @@index([roomId, createdAt])
   @@index([status])
   @@index([moderationStatus])
+  @@index([isEdited])
+}
+
+model MessageVersion {
+  id          String      @id @default(cuid())
+  message     ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  messageId   String
+  content     String // Sadržaj verzije
+  attachments String[]    @default([]) // Privici verzije
+  version     Int // Broj verzije (1, 2, 3...)
+  editedBy    User        @relation("messageVersions", fields: [editedById], references: [id], onDelete: Cascade)
+  editedById  String // ID korisnika koji je uredio poruku
+  editedAt    DateTime    @default(now()) // Kada je verzija kreirana
+  reason      String? // Razlog uređivanja (opcionalno)
+
+  @@index([messageId, version])
+  @@index([editedAt])
 }
 
 // Pretplate (za provajdere usluga)

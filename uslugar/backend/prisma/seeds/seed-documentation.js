@@ -392,7 +392,7 @@ const features = [
         { name: "Maskirani kontakti do prihvata ponude", implemented: true },
         { name: "Chat thread vezan uz upit/ponudu", implemented: true },
         { name: "Privici u chatu (fotke, PDF ponude)", implemented: true },
-        { name: "Verzioniranje poruka", implemented: false },
+        { name: "Verzioniranje poruka", implemented: true },
         { name: "Audit log svih poruka", implemented: false },
         { name: "Zaključavanje threada nakon završetka", implemented: false },
         { name: "SLA podsjetnici za odgovor", implemented: false },
@@ -11229,37 +11229,54 @@ SMS verifikacija osigurava da vaš telefonski broj pripada vama i povećava povj
       implemented: true,
       summary: "Poruke i privici imaju verzije – svaka izmjena čuva staru verziju radi audita i transparentnosti.",
       details: `**Kako funkcionira**
-- Korisnik može urediti svoju poruku unutar definiranog vremenskog okvira; sustav čuva original i označava poruku kao uređenu.
-- Direktor/moderator ima uvid u povijest verzija (tekst + privici) s informacijom tko je i kada mijenjao sadržaj.
+- Korisnik može urediti svoju poruku; sustav čuva original i označava poruku kao uređenu.
+- Svaka izmjena kreira novu verziju poruke - stara verzija se čuva u MessageVersion modelu.
+- Sudionici chata imaju uvid u povijest verzija (tekst + privici) s informacijom tko je i kada mijenjao sadržaj.
 - Zamjena privitka ne briše staru verziju; obje su dostupne za pregled i audit.
 
 **Prednosti**
 - Transparentnost komunikacije i dokazni trag kod sporova.
 - Mogućnost ispravaka bez gubitka originalnog konteksta.
+- Potpuna povijest izmjena poruka za audit i compliance.
 
 **Kada koristiti**
-- Korekcije tipfelera ili dopuna informacija u kratkom roku nakon slanja.
+- Korekcije tipfelera ili dopuna informacija nakon slanja.
+- Ispravci grešaka u porukama.
 - Moderatorski pregled spornih razgovora.
 `,
       technicalDetails: `**Frontend**
-- \`MessageBubble\` prikazuje badge “Edited” i link na povijest.
-- Modal “History” prikazuje sve verzije s difom i pregledom privitaka.
+- Chat komponenta prikazuje badge "Uređeno" za poruke koje su bile uređene.
+- UI omogućuje pregled povijesti verzija poruke.
+- Modal "Povijest verzija" prikazuje sve verzije s informacijom o korisniku i vremenu uređivanja.
 
 **Backend**
-- \`messageVersionService.create\` stvara novu verziju pri svakom uređivanju.
-- Moderatorski endpoint omogućuje vraćanje stare verzije ako je potrebno.
+- \`message-versioning.js\` servis upravlja verzioniranjem poruka:
+  - \`editMessage\` - uređuje poruku i kreira novu verziju
+  - \`getMessageVersions\` - dohvaća sve verzije poruke
+  - \`getMessageVersion\` - dohvaća specifičnu verziju poruke
+- API endpointovi:
+  - \`PATCH /api/chat/rooms/:roomId/messages/:messageId\` - uređuje poruku (kreira novu verziju)
+  - \`GET /api/chat/rooms/:roomId/messages/:messageId/versions\` - dohvaća sve verzije poruke
+  - \`GET /api/chat/rooms/:roomId/messages/:messageId/versions/:version\` - dohvaća specifičnu verziju
 
 **Baza**
-- \`ChatMessageVersion\` (messageId, version, content, editedBy, createdAt, isLatest).
-- \`ChatAttachmentVersion\` drži verzije privitaka.
+- \`MessageVersion\` model čuva verzije poruka:
+  - \`messageId\` - ID originalne poruke
+  - \`content\` - sadržaj verzije
+  - \`attachments\` - privici verzije
+  - \`version\` - broj verzije (1, 2, 3...)
+  - \`editedById\` - ID korisnika koji je uredio poruku
+  - \`editedAt\` - kada je verzija kreirana
+  - \`reason\` - razlog uređivanja (opcionalno)
+- \`ChatMessage\` model ima:
+  - \`isEdited\` - flag da li je poruka ikad uređena
+  - \`editedAt\` - kada je poruka zadnji put uređena
+  - \`updatedAt\` - ažurirano kada se poruka uredi
+  - \`versions\` - relacija na MessageVersion
 
 **Integracije**
 - Audit servis koristi verzije za pravne zahtjeve.
-
-**API**
-- \`PATCH /api/chat/messages/:id\` – kreira novu verziju umjesto overwrite-a.
-- \`GET /api/chat/messages/:id/history\` – dohvat verzija.
-- \`POST /api/admin/chat/messages/:id/restore\` – vraća staru verziju (admin).
+- Povijest verzija je dostupna svim sudionicima chata za transparentnost.
 `
     },
     "Audit log svih poruka": {
