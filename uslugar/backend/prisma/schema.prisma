@@ -49,6 +49,12 @@ enum AuditActionType {
   ROOM_DELETED         // Chat room obrisan
 }
 
+enum SLASStatus {
+  PENDING  // Čeka odgovor
+  MET      // SLA ispunjen (odgovoreno unutar vremena)
+  BREACHED // SLA prekoračen (nije odgovoreno unutar vremena)
+}
+
 // Support Ticket System (must be before User model)
 model SupportTicket {
   id         String          @id @default(cuid())
@@ -1089,4 +1095,27 @@ model PushSubscription {
   @@index([userId])
   @@index([isActive])
   @@index([endpoint])
+}
+
+model MessageSLA {
+  id              String      @id @default(cuid())
+  message         ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  messageId       String      @unique // Jedan SLA tracking po poruci
+  room            ChatRoom    @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  roomId          String
+  expectedResponseMinutes Int  @default(240) // SLA: 4 sata (240 minuta) default
+  respondedAt     DateTime?   // Kada je odgovoreno (null = nije odgovoreno)
+  responseTimeMinutes Int?     // Vrijeme odgovora u minutama (izračunato kada se odgovori)
+  slaStatus       SLASStatus  @default(PENDING) // PENDING, MET, BREACHED
+  breachedAt      DateTime?   // Kada je SLA prekoračen
+  reminderSentAt  DateTime?   // Kada je poslana podsjetnica
+  reminderCount   Int         @default(0) // Broj poslanih podsjetnica
+  lastReminderAt  DateTime?   // Kada je poslana zadnja podsjetnica
+  
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([roomId, slaStatus])
+  @@index([slaStatus, createdAt])
+  @@index([reminderSentAt])
 }
