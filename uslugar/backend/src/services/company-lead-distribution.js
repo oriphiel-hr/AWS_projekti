@@ -75,6 +75,32 @@ export async function addLeadToCompanyQueue(jobId, directorId) {
 
   console.log(`   ✅ Lead dodan u interni queue (pozicija ${queueEntry.position})`);
 
+  // Pokušaj automatski dodijeliti lead najbolje matchanom tim članu
+  try {
+    const { assignLeadToBestTeamMember } = await import('./team-category-matching.js');
+    const assignedMember = await assignLeadToBestTeamMember(jobId, directorId);
+    
+    if (assignedMember) {
+      console.log(`   ✅ Lead automatski dodijeljen tim članu ${assignedMember.user?.fullName || assignedMember.id}`);
+      
+      // Ažuriraj queue entry s dodijeljenim tim članom
+      const updatedQueue = await prisma.companyLeadQueue.update({
+        where: { id: queueEntry.id },
+        data: {
+          assignedToId: assignedMember.id,
+          status: 'ASSIGNED',
+          assignmentType: 'AUTO',
+          assignedAt: new Date()
+        }
+      });
+      
+      return updatedQueue;
+    }
+  } catch (autoAssignError) {
+    console.error(`   ⚠️ Greška pri automatskoj dodjeli leada:`, autoAssignError);
+    // Nastavi s PENDING statusom - direktor će ručno dodijeliti
+  }
+
   return queueEntry;
 }
 
@@ -238,17 +264,19 @@ export async function autoAssignLead(queueId, directorId) {
     throw new Error('Lead je već dodijeljen');
   }
 
-  // Pronađi najboljeg tim člana za ovaj lead
-  const bestTeamMember = findBestTeamMemberForLead(
-    director.teamMembers,
-    queueEntry.job
-  );
+  // Koristi team-category-matching service za pronalaženje najboljeg matcha
+  const { findBestTeamMatches } = await import('./team-category-matching.js');
+  const matches = await findBestTeamMatches(queueEntry.jobId, directorId);
 
-  if (!bestTeamMember) {
-    throw new Error('Nema dostupnog tim člana za ovaj lead');
+  if (matches.length === 0) {
+    throw new Error('Nema matchanih tim članova za ovaj lead');
   }
 
-  // Dodijeli lead
+  // Uzmi najbolje matchanog tim člana
+  const bestMatch = matches[0];
+  const bestTeamMember = bestMatch.teamMember;
+
+  // Dodijeli lead najbolje matchanom tim članu
   const updated = await prisma.companyLeadQueue.update({
     where: { id: queueId },
     data: {
@@ -287,13 +315,14 @@ export async function autoAssignLead(queueId, directorId) {
     data: {
       userId: bestTeamMember.userId,
       title: 'Novi lead automatski dodijeljen',
-      message: `Sustav vam je automatski dodijelio novi lead: ${queueEntry.job.title}`,
+      message: `Sustav vam je automatski dodijelio novi lead: ${queueEntry.job.title} (match score: ${bestMatch.matchScore.toFixed(2)})`,
       type: 'LEAD_ASSIGNED',
-      link: `/my-leads`
+      link: `/my-leads`,
+      jobId: queueEntry.jobId
     }
   });
 
-  console.log(`   ✅ Lead automatski dodijeljen tim članu ${bestTeamMember.user.fullName}`);
+  console.log(`   ✅ Lead automatski dodijeljen tim članu ${bestTeamMember.user.fullName} (match score: ${bestMatch.matchScore})`);
 
   return updated;
 }

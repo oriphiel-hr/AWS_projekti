@@ -126,38 +126,82 @@ export async function findTopProviders(job, limit = 5) {
     console.log(`   Nakon filtriranja po licencama: ${providers.length}`)
   }
   
-  // Sortiraj po REPUTATION SCORE (napredni algoritam)
-  providers.sort((a, b) => {
-    // Reputation Score = kombinacija rating, response time, conversion rate
+  // Izračunaj kombinirani match score (tvrtka + tim) za providere s timovima
+  const providersWithScores = await Promise.all(providers.map(async (provider) => {
+    let combinedMatchScore = 0;
+    let hasTeamMatch = false;
+    let bestTeamMember = null;
+
+    // Ako je direktor, provjeri match tima
+    if (provider.isDirector && provider.id) {
+      try {
+        const { calculateCombinedMatchScore } = await import('../services/team-category-matching.js');
+        const matchResult = await calculateCombinedMatchScore(job.id, provider.id);
+        combinedMatchScore = matchResult.combinedScore;
+        hasTeamMatch = matchResult.hasTeamMatch;
+        bestTeamMember = matchResult.bestTeamMember;
+      } catch (teamError) {
+        console.error(`[LEAD-QUEUE] Error calculating team match for provider ${provider.id}:`, teamError);
+        // Ako nema tima ili greška, koristi samo company match
+        const companyCategoryIds = provider.categories?.map(cat => cat.id) || [];
+        const { calculateCategoryMatchScore } = await import('../services/team-category-matching.js');
+        combinedMatchScore = calculateCategoryMatchScore(job.categoryId, companyCategoryIds);
+      }
+    } else {
+      // Nije direktor, koristi samo company match
+      const companyCategoryIds = provider.categories?.map(cat => cat.id) || [];
+      const { calculateCategoryMatchScore } = await import('../services/team-category-matching.js');
+      combinedMatchScore = calculateCategoryMatchScore(job.categoryId, companyCategoryIds);
+    }
+
+    return {
+      ...provider,
+      combinedMatchScore,
+      hasTeamMatch,
+      bestTeamMember
+    };
+  }));
+
+  // Sortiraj po kombiniranom match score-u i REPUTATION SCORE
+  providersWithScores.sort((a, b) => {
+    // 1. Prvo po kombiniranom match score-u (50% weight)
+    const matchScoreA = a.combinedMatchScore * 0.5;
+    const matchScoreB = b.combinedMatchScore * 0.5;
     
-    // 1. Rating (40% weight)
+    // 2. Reputation Score (50% weight) = kombinacija rating, response time, conversion rate
+    // Rating (40% weight)
     const ratingScoreA = a.ratingAvg * 0.4 + (a.ratingCount > 10 ? 0.5 : a.ratingCount / 20) * 0.4;
     const ratingScoreB = b.ratingAvg * 0.4 + (b.ratingCount > 10 ? 0.5 : b.ratingCount / 20) * 0.4;
     
-    // 2. Response Time (30% weight) - niže = bolje
-    // Normalizacija: 0-60min = 1.0, 60-240min = 0.5, 240+ = 0.1
-    const responseTimeScoreA = a.avgResponseTimeMinutes <= 0 ? 0.5 : // Nema podataka
+    // Response Time (30% weight) - niže = bolje
+    const responseTimeScoreA = a.avgResponseTimeMinutes <= 0 ? 0.5 :
       a.avgResponseTimeMinutes <= 60 ? 1.0 :
       a.avgResponseTimeMinutes <= 240 ? 0.5 : 0.1;
     const responseTimeScoreB = b.avgResponseTimeMinutes <= 0 ? 0.5 :
       b.avgResponseTimeMinutes <= 60 ? 1.0 :
       b.avgResponseTimeMinutes <= 240 ? 0.5 : 0.1;
     
-    // 3. Conversion Rate (30% weight)
-    const conversionScoreA = a.conversionRate / 100; // 0-1
+    // Conversion Rate (30% weight)
+    const conversionScoreA = a.conversionRate / 100;
     const conversionScoreB = b.conversionRate / 100;
     
-    // Kombinirani score
-    const scoreA = ratingScoreA * 0.4 + responseTimeScoreA * 0.3 + conversionScoreA * 0.3;
-    const scoreB = ratingScoreB * 0.4 + responseTimeScoreB * 0.3 + conversionScoreB * 0.3;
+    const reputationScoreA = ratingScoreA * 0.4 + responseTimeScoreA * 0.3 + conversionScoreA * 0.3;
+    const reputationScoreB = ratingScoreB * 0.4 + responseTimeScoreB * 0.3 + conversionScoreB * 0.3;
     
-    if (Math.abs(scoreB - scoreA) > 0.01) {
-      return scoreB - scoreA; // Viši score = bolji
+    // Kombinirani finalni score
+    const finalScoreA = matchScoreA + (reputationScoreA * 0.5);
+    const finalScoreB = matchScoreB + (reputationScoreB * 0.5);
+    
+    if (Math.abs(finalScoreB - finalScoreA) > 0.01) {
+      return finalScoreB - finalScoreA; // Viši score = bolji
     }
     
     // Fallback: ako su scoreovi gotovo jednaki, koristi rating count
     return b.ratingCount - a.ratingCount;
-  })
+  });
+
+  // Vrati samo provider objekte (bez dodatnih polja)
+  const providers = providersWithScores.map(({ combinedMatchScore, hasTeamMatch, bestTeamMember, ...provider }) => provider);
   
   const topProviders = providers.slice(0, limit)
   console.log(`✅ Top ${topProviders.length} providera odabrano`)

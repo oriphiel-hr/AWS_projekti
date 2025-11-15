@@ -419,7 +419,7 @@ const features = [
       category: "Matchmaking Kategorija",
       items: [
         { name: "Usporedba kategorija korisnika i tvrtke", implemented: true },
-        { name: "Usporedba kategorija korisnika i tima", implemented: false },
+        { name: "Usporedba kategorija korisnika i tima", implemented: true },
         { name: "Kombinirani match score (Tvrtka + Tim)", implemented: false },
         { name: "Eligibility filter po kategoriji", implemented: true },
         { name: "Eligibility filter po regiji", implemented: true },
@@ -11679,36 +11679,46 @@ SMS verifikacija osigurava da vaš telefonski broj pripada vama i povećava povj
       implemented: true,
       summary: "Nakon filtera po tvrtki, lead se uspoređuje s vještinama timova kako bi ga preuzeo najrelevantniji specijalist.",
       details: `**Kako funkcionira**
-- Timovi imaju detaljnije kategorije i razine vještina; engine izračuna match score (kompetencije + workload + iskustvo).
-- Lead se dodjeljuje timu s najvišim scoreom, uz fallback na direktora ako nema aktivnih timova.
-- Direktor pri ručnoj dodjeli vidi objektivni match score i upozorenja (npr. tim preopterećen).
+- Nakon što lead prođe filter po tvrtki, engine uspoređuje kategoriju posla s kategorijama tim članova.
+- Match score se izračunava na osnovu točnog poklapanja kategorija (1.0 = savršen match, 0 = nema matcha).
+- Lead se automatski dodjeljuje tim članu s najvišim match score-om.
+- Ako nema matchanih tim članova, lead ostaje u queueu za ručnu dodjelu.
 
 **Prednosti**
 - Povećava kvalitetu izvršenja i zadovoljstvo klijenta.
-- Ravnomjerno raspoređuje workload među timovima.
+- Omogućava automatsku dodjelu leadova najrelevantnijim specijalistima.
+- Direktor može vidjeti match score pri ručnoj dodjeli.
 
 **Kada koristiti**
 - Kod automatizirane dodjele leadova unutar tvrtke.
 - U ručnoj dodjeli kao pomoć pri izboru tima.
 `,
       technicalDetails: `**Frontend**
-- \`TeamWorkspace\` prikazuje karticu “Kompetencije” s match indikatorom.
-- Sidebar pri dodjeli pokazuje match score breakdown.
+- UI za prikaz match score-a pri dodjeli leadova.
+- Dashboard prikazuje statistiku automatskih dodjela.
 
 **Backend**
-- \`teamMatchService.calculate\` vraća kombinirani score (kategorije, workload, iskustvo).
-- \`teamLoadMonitor\` blokira dodjelu timovima iznad kapaciteta.
+- \`team-category-matching.js\` upravlja usporedbom kategorija:
+  - \`calculateCategoryMatchScore\` - izračunava match score (0-1)
+  - \`findBestTeamMatches\` - pronalazi najbolje matchane tim članove
+  - \`assignLeadToBestTeamMember\` - automatski dodjeljuje lead najboljem tim članu
+  - \`calculateCombinedMatchScore\` - kombinirani score (tvrtka + tim)
+- Integrirano u \`company-lead-distribution.js\` - automatska dodjela pri dodavanju leada u queue
+- Integrirano u \`leadQueueManager.js\` - kombinirani match score u rangiranju providera
 
 **Baza**
-- \`TeamCategory\` (teamId, categoryId, skillLevel), \`TeamAssignment\` zapisuje dodjelu.
-- \`TeamWorkload\` agregira trenutno opterećenje.
+- \`ProviderProfile.categories\` - kategorije tim članova
+- \`CompanyLeadQueue\` - čuva dodjelu leada tim članu
+- \`ProviderProfile.companyId\` - povezuje tim člana s direktorom
 
 **Integracije**
-- Notification servis informira tim o dodjeli, analytics prati performanse.
+- Automatska dodjela pri dodavanju leada u interni queue tvrtke.
+- Notifikacije tim članovima o dodijeljenim leadovima.
+- Match score se prikazuje u notifikacijama.
 
 **API**
-- \`GET /api/internal/matchmaking/lead/:leadId/team-matches\` – score po timu.
-- \`POST /api/internal/leads/:leadId/assign-team\` – dodjela tima.
+- Automatski se koristi u \`addLeadToCompanyQueue\` i \`autoAssignLead\` funkcijama.
+- Match score se koristi u \`findTopProviders\` za rangiranje providera s timovima.
 `
     },
     "Kombinirani match score (Tvrtka + Tim)": {
