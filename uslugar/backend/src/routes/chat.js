@@ -621,6 +621,24 @@ r.post('/rooms/:roomId/upload-image', auth(true), upload.single('image'), async 
     // Get image URL
     const imageUrl = getImageUrl(req, req.file.filename);
 
+    // Log audit - attachment uploaded
+    const { logAttachmentUploaded } = await import('../services/audit-log-service.js');
+    const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+    const userAgent = req.headers['user-agent'];
+    await logAttachmentUploaded(
+      null, // messageId - privitak se može uploadati prije kreiranja poruke
+      req.user.id,
+      roomId,
+      {
+        filename: req.file.filename,
+        size: req.file.size,
+        type: req.file.mimetype,
+        url: imageUrl
+      },
+      ipAddress,
+      userAgent
+    );
+
     res.json({
       success: true,
       imageUrl,
@@ -721,6 +739,22 @@ r.post('/rooms/:roomId/messages', auth(true), async (req, res, next) => {
       data: { updatedAt: new Date() }
     });
 
+    // Log audit - message created
+    const { logMessageCreated } = await import('../services/audit-log-service.js');
+    const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+    const userAgent = req.headers['user-agent'];
+    await logMessageCreated(
+      message.id,
+      req.user.id,
+      roomId,
+      {
+        contentPreview: content.trim().substring(0, 100),
+        attachmentsCount: Array.isArray(attachments) ? attachments.length : 0
+      },
+      ipAddress,
+      userAgent
+    );
+
     res.status(201).json(message);
   } catch (e) {
     next(e);
@@ -805,6 +839,27 @@ r.patch('/rooms/:roomId/messages/:messageId', auth(true), async (req, res, next)
       where: { id: roomId },
       data: { updatedAt: new Date() }
     });
+
+    // Log audit - message edited (s IP i user agent)
+    try {
+      const { logMessageEdited } = await import('../services/audit-log-service.js');
+      const latestVersion = updatedMessage.versions?.[0];
+      if (latestVersion && oldMessage) {
+        await logMessageEdited(
+          messageId,
+          req.user.id,
+          roomId,
+          latestVersion.version,
+          oldMessage,
+          { content: updatedMessage.content, attachments: updatedMessage.attachments },
+          reason || null,
+          ipAddress,
+          userAgent
+        );
+      }
+    } catch (auditError) {
+      console.error('Error logging message edit audit:', auditError);
+    }
 
     res.json(updatedMessage);
   } catch (e) {
@@ -980,6 +1035,79 @@ r.post('/rooms/:roomId/mark-all-read', auth(true), async (req, res, next) => {
       messagesMarkedAsRead: result.count,
       message: `${result.count} poruka označeno kao pročitano`
     });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * GET /api/chat/rooms/:roomId/audit-logs
+ * Dohvati audit logove za chat room
+ */
+r.get('/rooms/:roomId/audit-logs', auth(true), async (req, res, next) => {
+  try {
+    const { roomId } = req.params;
+    const { limit = 100, offset = 0 } = req.query;
+
+    // Verify user has access to this room
+    const room = await prisma.chatRoom.findFirst({
+      where: {
+        id: roomId,
+        participants: {
+          some: { id: req.user.id }
+        }
+      }
+    });
+
+    if (!room) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const { getRoomAuditLogs } = await import('../services/audit-log-service.js');
+    const auditLogs = await getRoomAuditLogs(roomId, parseInt(limit), parseInt(offset));
+
+    res.json(auditLogs);
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * GET /api/chat/messages/:messageId/audit-logs
+ * Dohvati audit logove za poruku
+ */
+r.get('/messages/:messageId/audit-logs', auth(true), async (req, res, next) => {
+  try {
+    const { messageId } = req.params;
+    const { limit = 50, offset = 0 } = req.query;
+
+    // Verify user has access to this message
+    const message = await prisma.chatMessage.findUnique({
+      where: { id: messageId },
+      include: {
+        room: {
+          include: {
+            participants: {
+              select: { id: true }
+            }
+          }
+        }
+      }
+    });
+
+    if (!message) {
+      return res.status(404).json({ error: 'Message not found' });
+    }
+
+    const isParticipant = message.room.participants.some(p => p.id === req.user.id);
+    if (!isParticipant) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const { getMessageAuditLogs } = await import('../services/audit-log-service.js');
+    const auditLogs = await getMessageAuditLogs(messageId, parseInt(limit), parseInt(offset));
+
+    res.json(auditLogs);
   } catch (e) {
     next(e);
   }

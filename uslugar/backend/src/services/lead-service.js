@@ -954,7 +954,27 @@ export async function unlockContact(jobId, providerId) {
       }
     });
 
-    // 6. Ažuriraj ROI statistiku
+    // 6. Log audit - contact revealed
+    try {
+      const { logContactRevealed } = await import('./audit-log-service.js');
+      await logContactRevealed(
+        jobId,
+        providerId,
+        null, // roomId - može se dodati ako je dostupan
+        {
+          method: 'PAY_PER_CONTACT',
+          unlockCost,
+          purchaseId: purchase.id
+        },
+        null, // IP address - treba se proslijediti iz route handlera
+        null  // User agent - treba se proslijediti iz route handlera
+      );
+    } catch (auditError) {
+      console.error('Error logging contact reveal audit:', auditError);
+      // Ne bacamo grešku - audit log ne smije blokirati glavnu funkcionalnost
+    }
+
+    // 7. Ažuriraj ROI statistiku
     await updateProviderROI(providerId, {
       creditsSpent: unlockCost
     });

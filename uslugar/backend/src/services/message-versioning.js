@@ -102,6 +102,9 @@ export async function editMessage(messageId, userId, newContent, newAttachments 
 
   console.log(`   ✅ Poruka ažurirana, kreirana verzija ${nextVersion}`);
 
+  // Audit log se logira u route handleru gdje imamo pristup IP adresi i user agentu
+  // Ovdje samo vraćamo ažuriranu poruku
+
   return updatedMessage;
 }
 

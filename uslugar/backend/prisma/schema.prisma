@@ -37,6 +37,18 @@ enum ModerationStatus {
   REJECTED // Odbijeno
 }
 
+enum AuditActionType {
+  MESSAGE_CREATED      // Poruka kreirana
+  MESSAGE_EDITED       // Poruka uređena
+  MESSAGE_DELETED      // Poruka obrisana
+  ATTACHMENT_UPLOADED  // Privitak uploadan
+  ATTACHMENT_DELETED   // Privitak obrisan
+  CONTACT_REVEALED     // Kontakt otkriven
+  CONTACT_MASKED       // Kontakt maskiran
+  ROOM_CREATED         // Chat room kreiran
+  ROOM_DELETED         // Chat room obrisan
+}
+
 // Support Ticket System (must be before User model)
 model SupportTicket {
   id         String          @id @default(cuid())
@@ -319,6 +331,7 @@ model Job {
   companyLeadQueue      CompanyLeadQueue[]  @relation("CompanyJobQueue")
   notifications         Notification[]
   reviews               Review[] // Recenzije ostavljene na ovom job-u
+  auditLogs             AuditLog[]         @relation("JobAuditLogs") // Audit logovi za otkrivanje kontakata
 
   // MODERATION
   moderationStatus          ModerationStatus @default(PENDING) // Status moderacije
@@ -447,6 +460,7 @@ model ChatRoom {
   jobId        String?
   participants User[]        @relation("participants")
   messages     ChatMessage[]
+  auditLogs    AuditLog[]    // Audit logovi za ovaj room
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 }
@@ -468,6 +482,7 @@ model ChatMessage {
   versions    MessageVersion[] // Povijest verzija poruke
   isEdited   Boolean         @default(false) // Da li je poruka ikad uređena
   editedAt   DateTime? // Kada je poruka zadnji put uređena
+  auditLogs  AuditLog[]     // Audit logovi za ovu poruku
 
   // MODERATION (samo za poruke koje su prijavljene)
   moderationStatus          ModerationStatus? // Status moderacije (null = nije prijavljeno)
@@ -498,6 +513,31 @@ model MessageVersion {
 
   @@index([messageId, version])
   @@index([editedAt])
+}
+
+// Audit Log za sve akcije vezane uz poruke
+model AuditLog {
+  id          String          @id @default(cuid())
+  action      AuditActionType // Tip akcije
+  actor       User            @relation("UserAuditLogs", fields: [actorId], references: [id], onDelete: Cascade)
+  actorId     String          // ID korisnika koji je izvršio akciju
+  message     ChatMessage?    @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  messageId   String?         // ID poruke (ako je akcija vezana uz poruku)
+  room        ChatRoom?       @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  roomId      String?         // ID chat rooma (ako je akcija vezana uz room)
+  job         Job?            @relation("JobAuditLogs", fields: [jobId], references: [id], onDelete: Cascade)
+  jobId       String?         // ID posla (za otkrivanje kontakata)
+  metadata    Json?           // Dodatni podaci (npr. stara/nova verzija, razlog, itd.)
+  ipAddress   String?         // IP adresa korisnika
+  userAgent   String?         // User agent korisnika
+  createdAt   DateTime        @default(now())
+
+  @@index([actorId, createdAt])
+  @@index([messageId, createdAt])
+  @@index([roomId, createdAt])
+  @@index([jobId, createdAt])
+  @@index([action, createdAt])
+  @@index([createdAt])
 }
 
 // Pretplate (za provajdere usluga)

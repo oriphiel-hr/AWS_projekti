@@ -393,7 +393,7 @@ const features = [
         { name: "Chat thread vezan uz upit/ponudu", implemented: true },
         { name: "Privici u chatu (fotke, PDF ponude)", implemented: true },
         { name: "Verzioniranje poruka", implemented: true },
-        { name: "Audit log svih poruka", implemented: false },
+        { name: "Audit log svih poruka", implemented: true },
         { name: "Zaključavanje threada nakon završetka", implemented: false },
         { name: "SLA podsjetnici za odgovor", implemented: false },
         { name: "Moderacija chat poruka", implemented: false }
@@ -11284,36 +11284,57 @@ SMS verifikacija osigurava da vaš telefonski broj pripada vama i povećava povj
       summary: "Svaka poruka, uređivanje, privitak i otkrivanje kontakta bilježi se u audit log s vremenom i korisnikom.",
       details: `**Kako funkcionira**
 - Kreiranje, uređivanje, brisanje poruka i otkrivanje kontakata zapisuje se s korisnikom, vremenom i metapodacima.
-- Direktor/moderator ima zaseban “Audit” pogled s filtrima (tip događaja, korisnik, datum) i mogućnošću izvoza.
-- Podaci se čuvaju dugoročno (npr. 5 godina) radi usklađenosti i pravne zaštite.
+- Svaka akcija se bilježi s IP adresom i user agentom za potpunu sljedivost.
+- Direktor/moderator ima pristup audit logovima kroz API endpointove s filtriranjem po tipu akcije, korisniku i datumu.
+- Podaci se čuvaju dugoročno radi usklađenosti i pravne zaštite.
 
 **Prednosti**
 - Potpuna sljedivost komunikacije.
 - Jednostavan odgovor na regulatorne ili pravne zahtjeve.
+- Transparentnost svih akcija u sustavu.
 
 **Kada koristiti**
 - Moderiranje, rješavanje prigovora, interni compliance review.
-- Izvoz zapisa za pravne timove ili osiguravatelje.
+- Pregled povijesti izmjena poruka i otkrivanja kontakata.
+- Analiza ponašanja korisnika i sigurnosni audit.
 `,
       technicalDetails: `**Frontend**
-- “Audit” tab prikazuje card listu događaja i omogućuje filtriranje.
-- Export koristi CSV/Excel generiranje na klijentu.
+- "Audit" tab prikazuje listu događaja i omogućuje filtriranje.
+- Export koristi CSV/Excel generiranje na klijentu (budući feature).
 
 **Backend**
-- \`chatAuditService.record\` zapisuje događaj pri svakoj relevantnoj akciji.
-- Logovi se repliciraju u data lake (S3/Redshift) za dugoročno čuvanje.
+- \`audit-log-service.js\` zapisuje događaj pri svakoj relevantnoj akciji:
+  - \`logMessageCreated\` - kreiranje poruke
+  - \`logMessageEdited\` - uređivanje poruke
+  - \`logMessageDeleted\` - brisanje poruke
+  - \`logAttachmentUploaded\` - upload privitka
+  - \`logAttachmentDeleted\` - brisanje privitka
+  - \`logContactRevealed\` - otkrivanje kontakta
+  - \`logContactMasked\` - maskiranje kontakta
+  - \`logRoomCreated\` - kreiranje chat rooma
+  - \`logRoomDeleted\` - brisanje chat rooma
+- API endpointovi za dohvaćanje audit logova:
+  - \`GET /api/chat/rooms/:roomId/audit-logs\` - audit logovi za chat room
+  - \`GET /api/chat/messages/:messageId/audit-logs\` - audit logovi za poruku
+  - \`GET /api/jobs/:jobId/audit-logs\` - audit logovi za otkrivanje kontakata
 
 **Baza**
-- \`ChatAuditLog\` (threadId, messageId, actorId, action, payload JSONB, createdAt).
-- Indexi po threadId i action ubrzavaju filtriranje.
+- \`AuditLog\` model čuva sve audit zapise:
+  - \`action\` - tip akcije (MESSAGE_CREATED, MESSAGE_EDITED, CONTACT_REVEALED, itd.)
+  - \`actorId\` - ID korisnika koji je izvršio akciju
+  - \`messageId\` - ID poruke (ako je akcija vezana uz poruku)
+  - \`roomId\` - ID chat rooma (ako je akcija vezana uz room)
+  - \`jobId\` - ID posla (za otkrivanje kontakata)
+  - \`metadata\` - JSON s dodatnim podacima (stara/nova verzija, razlog, itd.)
+  - \`ipAddress\` - IP adresa korisnika
+  - \`userAgent\` - User agent korisnika
+  - \`createdAt\` - vrijeme izvršavanja akcije
+- Indexi po \`actorId\`, \`messageId\`, \`roomId\`, \`jobId\`, \`action\` i \`createdAt\` ubrzavaju upite.
 
 **Integracije**
-- Analytics/BI i compliance alati konzumiraju audit podatke.
+- Audit logovi se automatski kreiraju pri svakoj relevantnoj akciji.
+- Analytics/BI i compliance alati mogu konzumirati audit podatke kroz API.
 
-**API**
-- \`GET /api/chat/:threadId/audit\` – audit za sudionike.
-- \`GET /api/admin/chat/:threadId/audit\` – detaljniji prikaz (IP, userAgent).
-- \`GET /api/chat/audit/export\` – izvoz zapisa.
 `
     },
     "Zaključavanje threada nakon završetka": {

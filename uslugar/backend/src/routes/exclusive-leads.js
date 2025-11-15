@@ -160,6 +160,26 @@ r.post('/:jobId/unlock-contact', auth(true, ['PROVIDER']), async (req, res, next
     
     const result = await unlockContact(jobId, providerId);
     
+    // Log audit - contact revealed (s IP i user agent)
+    try {
+      const { logContactRevealed } = await import('../services/audit-log-service.js');
+      const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+      const userAgent = req.headers['user-agent'];
+      await logContactRevealed(
+        jobId,
+        providerId,
+        null, // roomId
+        {
+          method: 'PAY_PER_CONTACT',
+          purchaseId: result.purchase?.id
+        },
+        ipAddress,
+        userAgent
+      );
+    } catch (auditError) {
+      console.error('Error logging contact reveal audit:', auditError);
+    }
+    
     res.json(result);
   } catch (e) {
     const status = e.message.includes('Insufficient credits') ? 402 :

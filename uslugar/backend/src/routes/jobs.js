@@ -445,4 +445,39 @@ r.patch('/:jobId/cancel', auth(true, ['USER', 'PROVIDER']), async (req, res, nex
   } catch (e) { next(e); }
 });
 
+/**
+ * GET /api/jobs/:jobId/audit-logs
+ * Dohvati audit logove za otkrivanje kontakata za posao
+ */
+r.get('/:jobId/audit-logs', auth(true), async (req, res, next) => {
+  try {
+    const { jobId } = req.params;
+    const { limit = 50, offset = 0 } = req.query;
+
+    // Verify user has access to this job
+    const job = await prisma.job.findUnique({
+      where: { id: jobId },
+      include: {
+        user: true
+      }
+    });
+
+    if (!job) {
+      return res.status(404).json({ error: 'Job not found' });
+    }
+
+    // Only job owner or admin can view audit logs
+    if (job.userId !== req.user.id && req.user.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const { getJobAuditLogs } = await import('../services/audit-log-service.js');
+    const auditLogs = await getJobAuditLogs(jobId, parseInt(limit), parseInt(offset));
+
+    res.json(auditLogs);
+  } catch (e) {
+    next(e);
+  }
+});
+
 export default r;
