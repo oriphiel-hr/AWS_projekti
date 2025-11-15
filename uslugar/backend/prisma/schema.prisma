@@ -141,6 +141,7 @@ model User {
   whiteLabel         WhiteLabel?         @relation("UserWhiteLabel")
   smsLogs            SmsLog[]            @relation("UserSmsLogs")
   pushSubscriptions  PushSubscription[]  @relation("UserPushSubscriptions")
+  auditLogs          AuditLog[]          @relation("UserAuditLogs")
 
   // Testing runs authored by this user (admin)
   testRuns TestRun[] @relation("TestRunAuthor")
