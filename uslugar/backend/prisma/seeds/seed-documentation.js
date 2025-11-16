@@ -12302,6 +12302,24 @@ async function seedDocumentation() {
       }
     }
 
+    // Eksplicitno osiguraj da "Direktor Dashboard - upravljanje timovima" u bazi
+    // ima ažuriran summary/details iz featureDescriptions, čak i ako je prethodno
+    // kreiran bez opisa ili u drugoj kategoriji.
+    const direktorTeamDesc = featureDescriptions['Direktor Dashboard - upravljanje timovima'];
+    if (direktorTeamDesc) {
+      const updatedCount = await prisma.documentationFeature.updateMany({
+        where: { name: 'Direktor Dashboard - upravljanje timovima' },
+        data: {
+          summary: direktorTeamDesc.summary || null,
+          details: direktorTeamDesc.details || null,
+          implemented: direktorTeamDesc.implemented ?? true
+        }
+      });
+      console.log(`🔄 Sync "Direktor Dashboard - upravljanje timovima" opis u bazi (updateMany count = ${updatedCount}).`);
+    } else {
+      console.warn('⚠️ featureDescriptions nema ključ "Direktor Dashboard - upravljanje timovima" – provjeri seed-documentation.js.');
+    }
+
     // === ADMIN-ONLY FUNKCIONALNOSTI ===
     console.log('');
     console.log('🔐 Seeding admin-only funkcionalnosti...');
