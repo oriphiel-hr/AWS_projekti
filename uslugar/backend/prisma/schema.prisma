@@ -148,6 +148,8 @@ model User {
   smsLogs            SmsLog[]            @relation("UserSmsLogs")
   pushSubscriptions  PushSubscription[]  @relation("UserPushSubscriptions")
   auditLogs          AuditLog[]          @relation("UserAuditLogs")
+  billingPlans       BillingPlan[]
+  billingAdjustments BillingAdjustment[]
   lockedThreads      ChatRoom[]          @relation("LockedThreads") // Threadovi koje je korisnik zaključao
 
   // Testing runs authored by this user (admin)
@@ -283,6 +285,7 @@ model Category {
   parent      Category?         @relation("CategoryHierarchy", fields: [parentId], references: [id])
   children    Category[]        @relation("CategoryHierarchy")
   providers   ProviderProfile[] @relation("ProviderCategories")
+  billingPlans BillingPlan[]
   jobs        Job[]
 
   // USLUGAR EXCLUSIVE - NKD i licence
