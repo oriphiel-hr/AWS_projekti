@@ -707,18 +707,23 @@ model LeadPurchase {
 
 /// Billing plan definiran po korisniku, kategoriji i/ili regiji, s očekivanim volumenom leadova po periodu
 model BillingPlan {
-  id            String   @id @default(cuid())
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId        String
-  name          String   // Npr. "Građevina Zagreb - Basic"
-  category      Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  categoryId    String?
-  region        String?  // Npr. grad ili regija (Zagreb, Dalmacija...)
-  expectedLeads Int      // Očekivani broj leadova po periodu
-  period        BillingPeriod @default(MONTHLY) // Obračunski period
-  isActive      Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                  String        @id @default(cuid())
+  user                User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId              String
+  name                String        // Npr. "Građevina Zagreb - Basic"
+  category            Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  categoryId          String?
+  region              String?       // Npr. grad ili regija (Zagreb, Dalmacija...)
+  expectedLeads       Int           // Očekivani broj leadova po periodu
+  period              BillingPeriod @default(MONTHLY) // Obračunski period
+  isActive            Boolean       @default(true)
+
+  // Garancija minimalnog broja leadova
+  guaranteeEnabled    Boolean       @default(false) // Je li uključen guarantee za ovaj plan
+  guaranteedMinLeads  Int?                      // Ako je null, koristi expectedLeads kao garantirani minimum
+
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
 
   adjustments   BillingAdjustment[]
 

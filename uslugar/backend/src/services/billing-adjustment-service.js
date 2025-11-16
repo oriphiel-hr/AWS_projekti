@@ -51,25 +51,40 @@ export async function calculateAdjustmentForPlan(plan, periodStart, periodEnd) {
   const deliveredLeads = await calculateDeliveredLeadsForPlan(plan, periodStart, periodEnd);
   const expectedLeads = plan.expectedLeads || 0;
 
+  // Ako je uključen guarantee, minimalni prag je guaranteedMinLeads (ako je postavljen),
+  // inače koristimo expectedLeads kao garantirani minimum.
+  const guaranteedMinLeads =
+    plan.guaranteeEnabled && typeof plan.guaranteedMinLeads === 'number'
+      ? plan.guaranteedMinLeads
+      : expectedLeads;
+
   // Ako nema očekivanja ili je sve u okviru ±10%, možemo samo logirati NONE
   if (expectedLeads <= 0) {
     return null;
   }
 
   const diff = deliveredLeads - expectedLeads;
+  const guaranteeDiff = deliveredLeads - guaranteedMinLeads;
 
   let adjustmentType = 'NONE';
   let adjustmentCredits = 0;
   let notes = '';
 
-  if (diff === 0) {
+  if (diff === 0 && (!plan.guaranteeEnabled || guaranteeDiff === 0)) {
     adjustmentType = 'NONE';
-    notes = 'Isporučen volumen odgovara očekivanom.';
-  } else if (diff < 0) {
-    // Isporuka manja od garantirane → CREDIT
+    notes = 'Isporučen volumen odgovara očekivanom / garantiranim kvotama.';
+  } else if (diff < 0 || (plan.guaranteeEnabled && guaranteeDiff < 0)) {
+    // Isporuka manja od očekivanog ili garantirane kvote → CREDIT
+    const baseMissing = Math.max(0, expectedLeads - deliveredLeads);
+    const guaranteeMissing = Math.max(0, guaranteedMinLeads - deliveredLeads);
     adjustmentType = 'CREDIT';
-    adjustmentCredits = Math.abs(diff); // npr. 1 lead = 1 kredit
-    notes = `Isporučeno ${deliveredLeads} od očekivanih ${expectedLeads} leadova. Klijentu se odobrava ${adjustmentCredits} kredita.`;
+    adjustmentCredits = Math.max(baseMissing, guaranteeMissing); // npr. 1 lead = 1 kredit
+
+    if (plan.guaranteeEnabled) {
+      notes = `Garancija minimalnog broja leadova aktivna. Isporučeno ${deliveredLeads}, garantirano minimalno ${guaranteedMinLeads}, očekivano ${expectedLeads}. Klijentu se odobrava ${adjustmentCredits} kredita.`;
+    } else {
+      notes = `Isporučeno ${deliveredLeads} od očekivanih ${expectedLeads} leadova. Klijentu se odobrava ${adjustmentCredits} kredita.`;
+    }
   } else if (diff > 0) {
     // Isporuka veća od očekivane → SURCHARGE (ili preporuka za viši paket)
     adjustmentType = 'SURCHARGE';

@@ -431,7 +431,7 @@ const features = [
       category: "Fer Billing Model",
       items: [
         { name: "Dinamički billing po volumenu leadova", implemented: true },
-        { name: "Garancija minimalnog broja leadova", implemented: false },
+        { name: "Garancija minimalnog broja leadova", implemented: true },
         { name: "Automatsko snižavanje cijene ako nema leadova", implemented: false },
         { name: "Credit refund ako tržište miruje", implemented: false },
         { name: "Proporcionalna naplata (REAL_VALUE)", implemented: false },
