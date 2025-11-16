@@ -907,6 +907,39 @@ const featureDescriptions = {
 - \`POST /api/internal/leads/:leadId/rescore\` pokreće ručni re-score za QA ili dispute.
 `
     },
+    "SMS notifikacije (Twilio)": {
+      implemented: true,
+      summary: "Sustav šalje transakcijske SMS poruke preko Twilio API-ja (verifikacija, novi leadovi, kupnje, refundacije, urgentne obavijesti) i sve ih logira u bazu.",
+      details: `**Kako funkcionira**
+- Centralni \`sms-service\` definira generičku funkciju \`sendSMS\` i specifične helper funkcije (\`sendVerificationCode\`, \`notifyNewLeadAvailable\`, \`notifyLeadPurchased\`, \`notifyRefund\`, \`sendUrgentNotification\`).
+- Ako su Twilio kredencijali podešeni, poruke se šalju preko Twilio Messaging API-ja; u suprotnom se koristi "simulation" način za development/test okruženja.
+- Svaki pokušaj slanja (uspješan ili neuspješan) zapisuje se u tablicu \`SmsLog\` s metapodacima (tip, status, Twilio SID, error, userId, metadata).
+
+**Prednosti**
+- Pouzdane SMS obavijesti za kritične događaje (novi lead, kupnja, refund, verifikacija, VIP podrška).
+- Transparentno praćenje i debugiranje kroz detaljne logove u bazi i fallback na simulation mode ako Twilio nije konfiguriran ili je u trial režimu.
+
+**Kada koristiti**
+- Kad želite obavijestiti providera o novom ekskluzivnom leadu ili uspješnoj kupnji leada.
+- Kod refundacija kredita, verifikacije telefona ili urgentnih poruka VIP podrške.
+`,
+      technicalDetails: `**Frontend**
+- Ne poziva Twilio direktno; koristi postojeće API endpointe (npr. \`/api/sms-verification/send\`, akcije oko leadova i refundacija) koji triggere SMS servis.
+- UI reagira na \`smsMode\` i \`smsSuccess\` u response-u (prikaz poruka, fallback na prikaz koda u dev okruženju).
+
+**Backend**
+- \`sms-service.js\`:
+  - \`sendSMS(phone, message, type, userId, metadata)\` bira Twilio ili simulation ovisno o env varijablama i vraća strukturirani rezultat (\`success\`, \`sid\`, \`mode\`, \`error\`).
+  - \`sendVerificationCode\`, \`notifyNewLeadAvailable\`, \`notifyLeadPurchased\`, \`notifyRefund\`, \`sendUrgentNotification\` grade sadržaj poruke za različite use-caseove.
+- \`routes/sms-verification.js\` koristi \`sendVerificationCode\` za slanje OTP koda uz rate limiting, ponovnu upotrebu aktivnog koda i detaljan error handling (trial brojevi, blokirani brojevi).
+
+**Baza**
+- Model \`SmsLog\` (phone, message, type, status, mode, twilioSid, error, userId, metadata, timestamps) služi kao audit trail za sve SMS-ove.
+
+**Integracije**
+- Twilio Messaging API (uz podršku za trial ograničenja i "verified numbers").
+- Notifikacijski i billing servisi okidaju odgovarajuće SMS helper funkcije ovisno o događaju (lead, refund, verifikacija, VIP ticket).`
+    },
     "SMS verifikacija telefonskog broja (Twilio)": {
       implemented: true,
       summary: "Telefonski broj se potvrđuje jednokratnim kodom poslanim preko Twilio SMS-a.",
