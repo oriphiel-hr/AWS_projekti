@@ -722,6 +722,10 @@ model BillingPlan {
   guaranteeEnabled    Boolean       @default(false) // Je li uključen guarantee za ovaj plan
   guaranteedMinLeads  Int?                      // Ako je null, koristi expectedLeads kao garantirani minimum
 
+  // Carryover neiskorištenih leadova
+  carryoverEnabled    Boolean       @default(false) // Je li uključen carryover za ovaj plan
+  carryoverLeads      Int           @default(0)     // Neiskorišteni leadovi preneseni u sljedeći period
+
   createdAt           DateTime      @default(now())
   updatedAt           DateTime      @updatedAt
 

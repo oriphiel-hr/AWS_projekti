@@ -49,16 +49,23 @@ async function calculateDeliveredLeadsForPlan(plan, periodStart, periodEnd) {
  */
 export async function calculateAdjustmentForPlan(plan, periodStart, periodEnd) {
   const deliveredLeads = await calculateDeliveredLeadsForPlan(plan, periodStart, periodEnd);
-  const expectedLeads = plan.expectedLeads || 0;
+  const baseExpectedLeads = plan.expectedLeads || 0;
+
+  // Carryover neiskorištenih leadova: efektivni očekivani volumen = baza + carryover
+  const carryoverInLeads =
+    plan.carryoverEnabled && typeof plan.carryoverLeads === 'number'
+      ? plan.carryoverLeads
+      : 0;
+  const expectedLeads = baseExpectedLeads + carryoverInLeads;
 
   // Ako je uključen guarantee, minimalni prag je guaranteedMinLeads (ako je postavljen),
-  // inače koristimo expectedLeads kao garantirani minimum.
+  // inače koristimo baseExpectedLeads kao garantirani minimum (bez carryover-a).
   const guaranteedMinLeads =
     plan.guaranteeEnabled && typeof plan.guaranteedMinLeads === 'number'
       ? plan.guaranteedMinLeads
-      : expectedLeads;
+      : baseExpectedLeads;
 
-  // Ako nema očekivanja ili je sve u okviru ±10%, možemo samo logirati NONE
+  // Ako nema očekivanja, nema ni obračuna
   if (expectedLeads <= 0) {
     return null;
   }
@@ -103,6 +110,11 @@ export async function calculateAdjustmentForPlan(plan, periodStart, periodEnd) {
     notes = `Isporučeno ${deliveredLeads} leadova, očekivano ${expectedLeads}. Moguća dodatna naplata za ${adjustmentCredits} leadova ili prijedlog za viši paket.`;
   }
 
+  // Izračunaj carryover za sljedeći period (samo ako je planom omogućeno)
+  const nextCarryoverLeads = plan.carryoverEnabled
+    ? Math.max(0, expectedLeads - deliveredLeads)
+    : 0;
+
   // Ako je NONE, možemo i dalje spremiti zapis radi transparentnosti
   const existing = await prisma.billingAdjustment.findFirst({
     where: {
@@ -113,7 +125,7 @@ export async function calculateAdjustmentForPlan(plan, periodStart, periodEnd) {
   });
 
   if (existing) {
-    return await prisma.billingAdjustment.update({
+    const updated = await prisma.billingAdjustment.update({
       where: { id: existing.id },
       data: {
         expectedLeads,
@@ -124,9 +136,19 @@ export async function calculateAdjustmentForPlan(plan, periodStart, periodEnd) {
         notes
       }
     });
+
+    // Ažuriraj carryover na planu (idempotentno za isti period)
+    if (plan.carryoverEnabled) {
+      await prisma.billingPlan.update({
+        where: { id: plan.id },
+        data: { carryoverLeads: nextCarryoverLeads }
+      });
+    }
+
+    return updated;
   }
 
-  return await prisma.billingAdjustment.create({
+  const created = await prisma.billingAdjustment.create({
     data: {
       billingPlanId: plan.id,
       userId: plan.userId,
@@ -140,6 +162,15 @@ export async function calculateAdjustmentForPlan(plan, periodStart, periodEnd) {
       notes
     }
   });
+
+  if (plan.carryoverEnabled) {
+    await prisma.billingPlan.update({
+      where: { id: plan.id },
+      data: { carryoverLeads: nextCarryoverLeads }
+    });
+  }
+
+  return created;
 }
 
 /**
