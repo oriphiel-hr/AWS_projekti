@@ -1,4 +1,4 @@
-// Seed skripta za dokumentaciju funkcionalnosti
+// Seed skripta za dokumentaciju funkcionalnosti 
 // Automatski generirano iz Documentation.jsx
 
 import { PrismaClient } from '@prisma/client';
