@@ -1012,6 +1012,40 @@ const featureDescriptions = {
 - \`GET /api/analytics/providers/response-time\` – vraća prosjek i trend.
 `
     },
+    "VIP podrška 24/7 (Support tickets)": {
+      implemented: true,
+      summary: "PRO i PREMIUM partneri dobivaju prioritetnu 24/7 podršku kroz support ticket sustav s eskalacijama i praćenjem statusa.",
+      details: `**Kako funkcionira**
+- Korisnik kreira ticket s temom i opisom; backend ga sprema u \`SupportTicket\` s početnim statusom OPEN.
+- Ovisno o pretplatničkom planu, prioritet se automatski diže (PRO → URGENT, PREMIUM → HIGH), dok BASIC ostaje NORMAL.
+- Support tim obrađuje tickete, dodaje napomene i zatvara ih kada su riješeni; korisnik može pratiti povijest i status svojih upita u dashboardu.
+
+**Prednosti**
+- PRO i PREMIUM partneri dobivaju garantiran brži odgovor i eskalaciju na kritične probleme (billing, leadovi, tehnički problemi).
+- Jedno centralno mjesto za svu komunikaciju s podrškom, umjesto raštrkanih emailova i poziva.
+
+**Kada koristiti**
+- Kod blokirajućih problema (npr. nemogućnost kupnje leadova, greške u billing-u, sumnja na bug).
+- Za VIP/PRO korisnike koji očekuju SLA razinu podrške i brzu reakciju 24/7.`,
+      technicalDetails: `**Frontend**
+- Ekran “Podrška” prikazuje listu mojih ticket-a s filterima po statusu i prioritetu.
+- Forma za kreiranje ticket-a (subject, category, opis) prilagođena je za mobilne korisnike i PRO/PREMIUM badgeve.
+
+**Backend**
+- \`support-service.js\`:
+  - \`createSupportTicket(userId, subject, message, priority, category)\` automatski postavlja prioritet prema \`subscription.plan\` (PRO → URGENT, PREMIUM → HIGH).
+  - \`getMySupportTickets(userId)\` vraća listu ticket-a sortiranu po \`createdAt desc\`.
+  - \`getSupportTicket(ticketId, userId)\` osigurava da korisnik vidi samo vlastite ticket-e.
+  - \`resolveTicket(ticketId, userId)\` mijenja status u RESOLVED i postavlja \`resolvedAt\`.
+- Admin panel (ili skripte) koriste \`addTicketNote(ticketId, notes)\` za internu komunikaciju i audit trag.
+
+**Baza**
+- Model \`SupportTicket\` (id, userId, subject, message, priority, category, status, notes, createdAt, resolvedAt).
+- Povezanost s \`User\` modelom omogućuje segmentaciju po planu (BASIC/PREMIUM/PRO) i povijest komunikacije po partneru.
+
+**Integracije**
+- Notifikacijski sustav može slati email/SMS obavijesti kod novih ticket-a ili promjene statusa za VIP korisnike.`
+    },
     "Online plaćanje (Stripe Checkout)": {
       implemented: true,
       summary: "Pretplate i jednokratne kupnje leadova procesiraju se kroz Stripe Checkout radi sigurnog plaćanja.",
