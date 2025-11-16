@@ -212,10 +212,78 @@ export async function assignLeadToBestTeamMember(jobId, companyId) {
 }
 
 /**
- * Kombinirani match score (tvrtka + tim)
+ * Izračunaj Company Reputation Score (reputacija, odziv, compliance)
+ * @param {Object} companyProfile - ProviderProfile tvrtke
+ * @returns {Number} - Reputation score (0-1)
+ */
+function calculateCompanyReputationScore(companyProfile) {
+  // Rating (40% weight)
+  const ratingScore = (companyProfile.ratingAvg || 0) / 5.0; // Normalizacija 0-5 -> 0-1
+  const ratingCountBonus = companyProfile.ratingCount > 10 ? 0.1 : companyProfile.ratingCount / 100;
+  const ratingComponent = (ratingScore * 0.4) + (ratingCountBonus * 0.4);
+  
+  // Response Time (30% weight) - niže = bolje
+  const responseTimeScore = companyProfile.avgResponseTimeMinutes <= 0 ? 0.5 : // Nema podataka
+    companyProfile.avgResponseTimeMinutes <= 60 ? 1.0 :
+    companyProfile.avgResponseTimeMinutes <= 240 ? 0.5 : 0.1;
+  const responseTimeComponent = responseTimeScore * 0.3;
+  
+  // Conversion Rate (30% weight)
+  const conversionScore = (companyProfile.conversionRate || 0) / 100; // 0-100 -> 0-1
+  const conversionComponent = conversionScore * 0.3;
+  
+  // Kombinirani reputation score
+  const reputationScore = ratingComponent + responseTimeComponent + conversionComponent;
+  
+  return Math.min(1.0, Math.max(0.0, reputationScore));
+}
+
+/**
+ * Izračunaj Context Score (hitnost, paket, povijest)
+ * @param {Object} job - Job objekat
+ * @param {Object} companyProfile - ProviderProfile tvrtke
+ * @returns {Number} - Context score (0-1)
+ */
+function calculateContextScore(job, companyProfile) {
+  let contextScore = 0.5; // Bazni score
+  
+  // Urgency (30% weight)
+  switch (job.urgency) {
+    case 'URGENT':
+      contextScore += 0.3; // Hitni poslovi = veći prioritet
+      break;
+    case 'HIGH':
+      contextScore += 0.15;
+      break;
+    case 'LOW':
+      contextScore -= 0.1; // Niska prioriteta = niži score
+      break;
+  }
+  
+  // Package tier (30% weight) - Premium partneri dobivaju bonus
+  // Može se proširiti s provjerom subscription paketa
+  // Za sada koristimo featured status kao indikator
+  if (companyProfile.isFeatured) {
+    contextScore += 0.2; // Featured = premium tier
+  }
+  
+  // History (40% weight) - povijest uspješnih poslova s ovim klijentom
+  // Može se proširiti s provjerom prethodnih poslova
+  // Za sada koristimo rating count kao indikator iskustva
+  if (companyProfile.ratingCount > 50) {
+    contextScore += 0.2; // Iskusan provider
+  } else if (companyProfile.ratingCount > 20) {
+    contextScore += 0.1;
+  }
+  
+  return Math.min(1.0, Math.max(0.0, contextScore));
+}
+
+/**
+ * Kombinirani match score (tvrtka + tim + reputacija + context)
  * @param {String} jobId - ID posla
  * @param {String} companyProviderId - ID provider profila tvrtke (direktor)
- * @returns {Object} - { companyMatchScore, teamMatchScore, bestTeamMember, combinedScore }
+ * @returns {Object} - { companyMatchScore, teamMatchScore, companyReputationScore, contextScore, bestTeamMember, combinedScore, breakdown }
  */
 export async function calculateCombinedMatchScore(jobId, companyProviderId) {
   try {
@@ -231,7 +299,7 @@ export async function calculateCombinedMatchScore(jobId, companyProviderId) {
       throw new Error('Job not found');
     }
 
-    // Dohvati provider profil tvrtke (direktor)
+    // Dohvati provider profil tvrtke (direktor) s reputacijskim podacima
     const companyProfile = await prisma.providerProfile.findUnique({
       where: { id: companyProviderId },
       include: {
@@ -248,33 +316,93 @@ export async function calculateCombinedMatchScore(jobId, companyProviderId) {
       throw new Error('Company profile not found');
     }
 
-    // Izračunaj match score tvrtke
+    // 1. Company Category Match Score (30% weight)
     const companyCategoryIds = companyProfile.categories.map(cat => cat.id);
     const companyMatchScore = calculateCategoryMatchScore(job.categoryId, companyCategoryIds);
 
-    // Pronađi najbolje matchane tim članove
+    // 2. Team Match Score (20% weight)
     const teamMatches = await findBestTeamMatches(jobId, companyProviderId);
     const bestTeamMember = teamMatches.length > 0 ? teamMatches[0] : null;
     const teamMatchScore = bestTeamMember ? bestTeamMember.matchScore : 0;
 
-    // Kombinirani score (60% tvrtka, 40% tim)
-    const combinedScore = (companyMatchScore * 0.6) + (teamMatchScore * 0.4);
+    // 3. Company Reputation Score (30% weight)
+    const companyReputationScore = calculateCompanyReputationScore(companyProfile);
+
+    // 4. Context Score (20% weight)
+    const contextScore = calculateContextScore(job, companyProfile);
+
+    // Kombinirani finalni score
+    const combinedScore = (
+      companyMatchScore * 0.3 +      // Kategorije tvrtke
+      teamMatchScore * 0.2 +          // Kategorije tima
+      companyReputationScore * 0.3 + // Reputacija tvrtke
+      contextScore * 0.2              // Context (hitnost, paket, povijest)
+    );
+
+    // Breakdown za transparentnost
+    const breakdown = {
+      companyCategoryMatch: {
+        score: companyMatchScore,
+        weight: 0.3,
+        contribution: companyMatchScore * 0.3,
+        description: 'Poklapanje kategorija tvrtke s kategorijom posla'
+      },
+      teamCategoryMatch: {
+        score: teamMatchScore,
+        weight: 0.2,
+        contribution: teamMatchScore * 0.2,
+        description: 'Poklapanje kategorija najboljeg tim člana s kategorijom posla',
+        bestTeamMember: bestTeamMember ? {
+          id: bestTeamMember.teamMember.id,
+          name: bestTeamMember.teamMember.user?.fullName || 'N/A'
+        } : null
+      },
+      companyReputation: {
+        score: companyReputationScore,
+        weight: 0.3,
+        contribution: companyReputationScore * 0.3,
+        description: 'Reputacija tvrtke (rating, response time, conversion rate)',
+        details: {
+          rating: companyProfile.ratingAvg || 0,
+          ratingCount: companyProfile.ratingCount || 0,
+          responseTimeMinutes: companyProfile.avgResponseTimeMinutes || 0,
+          conversionRate: companyProfile.conversionRate || 0
+        }
+      },
+      context: {
+        score: contextScore,
+        weight: 0.2,
+        contribution: contextScore * 0.2,
+        description: 'Context faktori (hitnost, paket, povijest)',
+        details: {
+          urgency: job.urgency || 'NORMAL',
+          isFeatured: companyProfile.isFeatured || false,
+          ratingCount: companyProfile.ratingCount || 0
+        }
+      }
+    };
 
     return {
       companyMatchScore,
       teamMatchScore,
+      companyReputationScore,
+      contextScore,
       bestTeamMember: bestTeamMember ? bestTeamMember.teamMember : null,
       combinedScore,
-      hasTeamMatch: teamMatches.length > 0
+      hasTeamMatch: teamMatches.length > 0,
+      breakdown
     };
   } catch (error) {
     console.error('[TEAM-MATCH ERROR] Failed to calculate combined match score:', error);
     return {
       companyMatchScore: 0,
       teamMatchScore: 0,
+      companyReputationScore: 0,
+      contextScore: 0,
       bestTeamMember: null,
       combinedScore: 0,
-      hasTeamMatch: false
+      hasTeamMatch: false,
+      breakdown: null
     };
   }
 }

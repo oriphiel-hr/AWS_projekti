@@ -132,7 +132,7 @@ export async function findTopProviders(job, limit = 5) {
     let hasTeamMatch = false;
     let bestTeamMember = null;
 
-    // Ako je direktor, provjeri match tima
+    // Ako je direktor, provjeri match tima i koristi kombinirani score
     if (provider.isDirector && provider.id) {
       try {
         const { calculateCombinedMatchScore } = await import('../services/team-category-matching.js');
@@ -140,18 +140,42 @@ export async function findTopProviders(job, limit = 5) {
         combinedMatchScore = matchResult.combinedScore;
         hasTeamMatch = matchResult.hasTeamMatch;
         bestTeamMember = matchResult.bestTeamMember;
+        // Spremi breakdown za kasnije korištenje (može se proširiti)
+        provider._matchBreakdown = matchResult.breakdown;
       } catch (teamError) {
         console.error(`[LEAD-QUEUE] Error calculating team match for provider ${provider.id}:`, teamError);
-        // Ako nema tima ili greška, koristi samo company match
+        // Ako nema tima ili greška, koristi samo company match + reputaciju
         const companyCategoryIds = provider.categories?.map(cat => cat.id) || [];
         const { calculateCategoryMatchScore } = await import('../services/team-category-matching.js');
-        combinedMatchScore = calculateCategoryMatchScore(job.categoryId, companyCategoryIds);
+        const categoryMatch = calculateCategoryMatchScore(job.categoryId, companyCategoryIds);
+        
+        // Izračunaj reputation score
+        const ratingScore = (provider.ratingAvg || 0) / 5.0;
+        const responseTimeScore = provider.avgResponseTimeMinutes <= 0 ? 0.5 :
+          provider.avgResponseTimeMinutes <= 60 ? 1.0 :
+          provider.avgResponseTimeMinutes <= 240 ? 0.5 : 0.1;
+        const conversionScore = (provider.conversionRate || 0) / 100;
+        const reputationScore = (ratingScore * 0.4) + (responseTimeScore * 0.3) + (conversionScore * 0.3);
+        
+        // Kombinirani score bez tima (60% kategorije, 40% reputacija)
+        combinedMatchScore = (categoryMatch * 0.6) + (reputationScore * 0.4);
       }
     } else {
-      // Nije direktor, koristi samo company match
+      // Nije direktor, koristi company match + reputaciju
       const companyCategoryIds = provider.categories?.map(cat => cat.id) || [];
       const { calculateCategoryMatchScore } = await import('../services/team-category-matching.js');
-      combinedMatchScore = calculateCategoryMatchScore(job.categoryId, companyCategoryIds);
+      const categoryMatch = calculateCategoryMatchScore(job.categoryId, companyCategoryIds);
+      
+      // Izračunaj reputation score
+      const ratingScore = (provider.ratingAvg || 0) / 5.0;
+      const responseTimeScore = provider.avgResponseTimeMinutes <= 0 ? 0.5 :
+        provider.avgResponseTimeMinutes <= 60 ? 1.0 :
+        provider.avgResponseTimeMinutes <= 240 ? 0.5 : 0.1;
+      const conversionScore = (provider.conversionRate || 0) / 100;
+      const reputationScore = (ratingScore * 0.4) + (responseTimeScore * 0.3) + (conversionScore * 0.3);
+      
+      // Kombinirani score (60% kategorije, 40% reputacija)
+      combinedMatchScore = (categoryMatch * 0.6) + (reputationScore * 0.4);
     }
 
     return {

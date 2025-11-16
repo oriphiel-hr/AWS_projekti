@@ -41,6 +41,7 @@ import licenseUploadRouter from './routes/license-upload.js'
 import documentationRouter from './routes/documentation.js'
 import publicRouter from './routes/public.js'
 import directorRouter from './routes/director.js'
+import matchmakingRouter from './routes/matchmaking.js'
 import { startQueueScheduler } from './lib/queueScheduler.js'
 import { checkExpiringSubscriptions } from './lib/subscription-reminder.js'
 
@@ -290,6 +291,7 @@ app.use('/api/sms-verification', smsVerificationRouter)
 app.use('/api/documentation', documentationRouter)
 app.use('/api/public', publicRouter)
 app.use('/api/director', directorRouter)
+app.use('/api/matchmaking', matchmakingRouter)
 
 // basic error handler
 app.use((err, _req, res, _next) => {
