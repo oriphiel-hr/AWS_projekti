@@ -12312,7 +12312,8 @@ async function seedDocumentation() {
         data: {
           summary: direktorTeamDesc.summary || null,
           details: direktorTeamDesc.details || null,
-          implemented: direktorTeamDesc.implemented ?? true
+          implemented: direktorTeamDesc.implemented ?? true,
+          isAdminOnly: false
         }
       });
       console.log(`🔄 Sync "Direktor Dashboard - upravljanje timovima" opis u bazi (updateMany count = ${updatedCount}).`);
