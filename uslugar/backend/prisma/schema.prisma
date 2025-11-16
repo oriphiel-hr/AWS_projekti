@@ -700,6 +700,72 @@ model LeadPurchase {
   @@index([createdAt])
 }
 
+// Dinamički billing po volumenu leadova - planovi i korekcije
+
+/// Billing plan definiran po korisniku, kategoriji i/ili regiji, s očekivanim volumenom leadova po periodu
+model BillingPlan {
+  id            String   @id @default(cuid())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String
+  name          String   // Npr. "Građevina Zagreb - Basic"
+  category      Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  categoryId    String?
+  region        String?  // Npr. grad ili regija (Zagreb, Dalmacija...)
+  expectedLeads Int      // Očekivani broj leadova po periodu
+  period        BillingPeriod @default(MONTHLY) // Obračunski period
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  adjustments   BillingAdjustment[]
+
+  @@index([userId])
+  @@index([categoryId])
+  @@index([region])
+  @@index([isActive])
+}
+
+/// Korekcija billing-a na temelju usporedbe očekivanog i isporučenog volumena leadova
+model BillingAdjustment {
+  id             String                 @id @default(cuid())
+  billingPlan    BillingPlan            @relation(fields: [billingPlanId], references: [id], onDelete: Cascade)
+  billingPlanId  String
+  user           User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         String
+  periodStart    DateTime
+  periodEnd      DateTime
+  expectedLeads  Int
+  deliveredLeads Int
+  adjustmentType BillingAdjustmentType
+  adjustmentCredits Int                 // Pozitivno: broj kredita za korekciju (bilo da su kredit ili surcharge)
+  status         BillingAdjustmentStatus @default(PENDING)
+  notes          String?
+  createdAt      DateTime               @default(now())
+  appliedAt      DateTime?
+
+  @@index([userId])
+  @@index([billingPlanId])
+  @@index([periodStart, periodEnd])
+  @@index([status])
+}
+
+enum BillingPeriod {
+  MONTHLY
+  QUARTERLY
+}
+
+enum BillingAdjustmentType {
+  CREDIT     // Klijentu se odobravaju dodatni krediti / popust
+  SURCHARGE  // Dodatna naplata zbog većeg volumena od očekivanog
+  NONE       // Bez korekcije (zapis za transparentnost)
+}
+
+enum BillingAdjustmentStatus {
+  PENDING
+  APPLIED
+  CANCELLED
+}
+
 // ROI statistika za providere
 model ProviderROI {
   id                  String   @id @default(cuid())

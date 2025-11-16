@@ -8,6 +8,7 @@ import {
   getCompanyLeadQueue,
   declineCompanyLead
 } from '../services/company-lead-distribution.js';
+import { getDirectorBillingSummary } from '../services/billing-adjustment-service.js';
 
 const r = Router();
 
@@ -307,6 +308,29 @@ r.get('/finances', auth(true, ['PROVIDER']), async (req, res, next) => {
         teamSize: director.teamMembers.length
       }
     });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * GET /api/director/billing/summary
+ * Dinamički billing sažetak za direktora (billing planovi + korekcije)
+ */
+r.get('/billing/summary', auth(true, ['PROVIDER']), async (req, res, next) => {
+  try {
+    const director = await getDirectorWithTeam(req.user.id);
+
+    if (!director) {
+      return res.status(403).json({
+        error: 'Nemate pristup',
+        message: 'Samo direktor može pristupiti billing sažetku.'
+      });
+    }
+
+    const summary = await getDirectorBillingSummary(req.user.id);
+
+    res.json(summary);
   } catch (e) {
     next(e);
   }

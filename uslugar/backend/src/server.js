@@ -31,6 +31,7 @@ import exclusiveLeadsRouter from './routes/exclusive-leads.js'
 import providerROIRouter from './routes/provider-roi.js'
 import clientVerificationRouter from './routes/client-verification.js'
 import leadQueueRouter from './routes/lead-queue.js'
+import adminBillingRouter from './routes/admin-billing.js'
 import supportRouter from './routes/support.js'
 import whitelabelRouter from './routes/whitelabel.js'
 import paymentsRouter from './routes/payments.js'
@@ -281,6 +282,7 @@ app.use('/api/exclusive/leads', exclusiveLeadsRouter)
 app.use('/api/exclusive/roi', providerROIRouter)
 app.use('/api/verification', clientVerificationRouter)
 app.use('/api/lead-queue', leadQueueRouter)
+app.use('/api/admin/billing', adminBillingRouter)
 app.use('/api/support', supportRouter)
 app.use('/api/whitelabel', whitelabelRouter)
 app.use('/api/payments', paymentsRouter)
