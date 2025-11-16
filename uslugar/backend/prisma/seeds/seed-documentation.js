@@ -12229,7 +12229,7 @@ SMS verifikacija osigurava da vaš telefonski broj pripada vama i povećava povj
   };
 
 async function seedDocumentation() {
-  console.log('🌱 Počinje seed dokumentacije...');
+  console.log(`🌱 Počinje seed dokumentacije... Ukupno kategorija: ${features.length}`);
 
   // Provjeri da li tablice postoje
   try {
