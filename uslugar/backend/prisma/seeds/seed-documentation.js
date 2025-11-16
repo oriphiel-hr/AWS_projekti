@@ -432,7 +432,7 @@ const features = [
       items: [
         { name: "Dinamički billing po volumenu leadova", implemented: true },
         { name: "Garancija minimalnog broja leadova", implemented: true },
-        { name: "Automatsko snižavanje cijene ako nema leadova", implemented: false },
+        { name: "Automatsko snižavanje cijene ako nema leadova", implemented: true },
         { name: "Credit refund ako tržište miruje", implemented: false },
         { name: "Proporcionalna naplata (REAL_VALUE)", implemented: false },
         { name: "Mjesečni izvještaj o isporučenim leadovima", implemented: true },

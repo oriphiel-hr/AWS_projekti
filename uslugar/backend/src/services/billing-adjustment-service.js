@@ -70,7 +70,15 @@ export async function calculateAdjustmentForPlan(plan, periodStart, periodEnd) {
   let adjustmentCredits = 0;
   let notes = '';
 
-  if (diff === 0 && (!plan.guaranteeEnabled || guaranteeDiff === 0)) {
+  // Poseban slučaj: nema nijednog leada u periodu → agresivnija kompenzacija / snižavanje cijene
+  if (deliveredLeads === 0) {
+    adjustmentType = 'CREDIT';
+    adjustmentCredits = expectedLeads; // puni credit za cijelu kvotu
+    notes = `Automatsko snižavanje cijene: u ovom obračunskom periodu nije isporučen nijedan lead (0/${expectedLeads}). Klijentu se odobrava ${adjustmentCredits} kredita (pun povrat kvote).`;
+  } else if (diff === 0 && (!plan.guaranteeEnabled || guaranteeDiff === 0)) {
+  if (deliveredLeads === 0) {
+    // već postavljeno gore
+  } else if (diff === 0 && (!plan.guaranteeEnabled || guaranteeDiff === 0)) {
     adjustmentType = 'NONE';
     notes = 'Isporučen volumen odgovara očekivanom / garantiranim kvotama.';
   } else if (diff < 0 || (plan.guaranteeEnabled && guaranteeDiff < 0)) {
