@@ -281,7 +281,7 @@ jobs:
               },
               "command": [
                 "sh","-lc",
-                "npx prisma db seed || npm run seed && npm run seed:documentation"
+                "npx prisma db seed || npm run seed; npm run seed:documentation"
               ]
             }
           ]
