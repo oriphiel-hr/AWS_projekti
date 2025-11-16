@@ -744,6 +744,7 @@ model BillingAdjustment {
   periodEnd      DateTime
   expectedLeads  Int
   deliveredLeads Int
+  realValueFactor Float?                // deliveredLeads / expectedLeads (proporcionalna naplata REAL_VALUE)
   adjustmentType BillingAdjustmentType
   adjustmentCredits Int                 // Pozitivno: broj kredita za korekciju (bilo da su kredit ili surcharge)
   status         BillingAdjustmentStatus @default(PENDING)

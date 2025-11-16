@@ -66,6 +66,9 @@ export async function calculateAdjustmentForPlan(plan, periodStart, periodEnd) {
   const diff = deliveredLeads - expectedLeads;
   const guaranteeDiff = deliveredLeads - guaranteedMinLeads;
 
+  // REAL_VALUE faktor: koliko je stvarno isporučeno u odnosu na očekivano
+  const realValueFactor = expectedLeads > 0 ? deliveredLeads / expectedLeads : 0;
+
   let adjustmentType = 'NONE';
   let adjustmentCredits = 0;
   let notes = '';
@@ -115,6 +118,7 @@ export async function calculateAdjustmentForPlan(plan, periodStart, periodEnd) {
       data: {
         expectedLeads,
         deliveredLeads,
+        realValueFactor,
         adjustmentType,
         adjustmentCredits,
         notes
@@ -130,6 +134,7 @@ export async function calculateAdjustmentForPlan(plan, periodStart, periodEnd) {
       periodEnd,
       expectedLeads,
       deliveredLeads,
+      realValueFactor,
       adjustmentType,
       adjustmentCredits,
       notes
