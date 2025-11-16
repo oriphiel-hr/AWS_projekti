@@ -12705,6 +12705,55 @@ SMS verifikacija osigurava da vaš telefonski broj pripada vama i povećava povj
 - \`GET /api/analytics/partner-tiers\` – vraća statistike o distribuciji tier statusa.
 - \`POST /api/admin/partners/:id/promote\` – ručna promocija pružatelja na Verified ili Premium tier (admin only).
       `
+    },
+    "Fairness algoritam (sprečava previše leadova istom partneru)": {
+      implemented: true,
+      summary: "Fairness algoritam osigurava pravednu distribuciju leadova između partnera sprječavajući da jedan partner dobije previše leadova u kratkom vremenskom periodu.",
+      details: `**Kako funkcionira**
+- Fairness algoritam prati broj leadova dodijeljenih svakom partneru u određenom vremenskom periodu (npr. dnevno, tjedno).
+- Algoritam postavlja maksimalni limit leadova po partneru u određenom periodu kako bi osigurao pravednu distribuciju.
+- Kada partner dosegne limit, algoritam ga privremeno isključuje iz dodjele leadova dok se limit ne resetira.
+- Algoritam uzima u obzir tier status partnera (Premium, Verified, Basic) i prilagođava limite prema tieru.
+- Fairness algoritam radi u kombinaciji s drugim faktorima (PARTNER_SCORE, dostupnost, lokacija) kako bi osigurao optimalnu distribuciju.
+
+**Prednosti**
+- Osigurava pravednu distribuciju leadova između svih partnera na platformi.
+- Sprječava monopolizaciju leadova od strane jednog ili nekoliko partnera.
+- Omogućava svim partnerima priliku za rast i razvoj kroz pristup leadovima.
+- Poboljšava iskustvo korisnika osiguravajući da različiti partneri dobivaju prilike.
+- Potiče zdravu konkurenciju i raznolikost na platformi.
+
+**Kada koristiti**
+- Za osiguravanje pravedne distribucije leadova između partnera.
+- Za sprječavanje monopolizacije leadova od strane dominantnih partnera.
+- Za omogućavanje prilika za rast svim partnerima na platformi.
+- Za poboljšanje iskustva korisnika kroz raznolikost partnera.
+- Za održavanje zdravog ekosustava na platformi.
+`,
+      technicalDetails: `**Frontend**
+- Fairness algoritam radi u pozadini i nije direktno vidljiv korisnicima.
+- Admin dashboard može prikazivati statistike o distribuciji leadova po partnerima.
+- Mogućnost pregleda fairness metrika i limita za svakog partnera.
+
+**Backend**
+- \`fairnessService.calculate\` izračunava fairness score za svakog partnera na temelju broja dodijeljenih leadova.
+- Algoritam prati broj leadova po partneru u različitim vremenskim periodima (dnevno, tjedno, mjesečno).
+- Fairness algoritam se primjenjuje u queue sustavu prije dodjele leadova partneru.
+- Algoritam uzima u obzir tier status partnera i prilagođava limite (Premium partneri mogu imati viši limit).
+- Event \`lead.assigned\` pokreće ažuriranje fairness metrika za određenog partnera.
+
+**Baza**
+- \`LeadAssignment\` tablica bilježi sve dodjele leadova partnerima (leadId, providerId, assignedAt, tier).
+- \`FairnessMetrics\` tablica čuva agregirane fairness metrike po partneru (providerId, period, leadCount, limit, resetAt).
+- \`FairnessLimit\` tablica definira limite leadova po tieru i periodu (tier, period, maxLeads).
+- Fairness metrike se cacheiraju radi bržeg pristupa i smanjenja opterećenja baze.
+
+**API**
+- \`GET /api/admin/fairness/metrics\` – vraća fairness metrike za sve partnere (admin only).
+- \`GET /api/admin/fairness/limits\` – vraća definirane limite leadova po tieru (admin only).
+- \`POST /api/admin/fairness/limits\` – ažurira limite leadova po tieru (admin only).
+- \`GET /api/providers/:id/fairness\` – vraća fairness metrike za određenog partnera.
+      `
     }
   };
 
