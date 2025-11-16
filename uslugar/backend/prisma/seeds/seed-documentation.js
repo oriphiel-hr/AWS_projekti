@@ -420,7 +420,7 @@ const features = [
       items: [
         { name: "Usporedba kategorija korisnika i tvrtke", implemented: true },
         { name: "Usporedba kategorija korisnika i tima", implemented: true },
-        { name: "Kombinirani match score (Tvrtka + Tim)", implemented: false },
+        { name: "Kombinirani match score (Tvrtka + Tim)", implemented: true },
         { name: "Eligibility filter po kategoriji", implemented: true },
         { name: "Eligibility filter po regiji", implemented: true },
         { name: "Prioritet timu s boljim matchom", implemented: false },
