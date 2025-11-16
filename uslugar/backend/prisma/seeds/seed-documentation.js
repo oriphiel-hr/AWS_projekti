@@ -424,7 +424,7 @@ const features = [
         { name: "Eligibility filter po kategoriji", implemented: true },
         { name: "Eligibility filter po regiji", implemented: true },
         { name: "Prioritet timu s boljim matchom", implemented: true },
-        { name: "Fallback na direktora ako nema tima", implemented: false }
+        { name: "Fallback na direktora ako nema tima", implemented: true }
       ]
     },
     {

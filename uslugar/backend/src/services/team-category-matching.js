@@ -117,8 +117,109 @@ export async function assignLeadToBestTeamMember(jobId, companyId) {
     const matches = await findBestTeamMatches(jobId, companyId);
 
     if (matches.length === 0) {
-      console.log(`[TEAM-MATCH] No matching team members found for job ${jobId}`);
-      return null;
+      console.log(`[TEAM-MATCH] No matching team members found for job ${jobId}, falling back to director ${companyId}`);
+
+      // FALLBACK: dodijeli lead direktoru ako nema tima ili nema matchanih članova
+      const existingQueue = await prisma.companyLeadQueue.findFirst({
+        where: {
+          jobId,
+          directorId: companyId
+        },
+        include: {
+          job: true
+        }
+      });
+
+      const directorProfile = await prisma.providerProfile.findUnique({
+        where: { id: companyId },
+        include: {
+          user: {
+            select: {
+              id: true,
+              fullName: true,
+              email: true
+            }
+          }
+        }
+      });
+
+      if (!directorProfile) {
+        console.warn(`[TEAM-MATCH] Director profile ${companyId} not found, cannot fallback`);
+        return null;
+      }
+
+      let queueEntry;
+
+      if (existingQueue) {
+        queueEntry = await prisma.companyLeadQueue.update({
+          where: { id: existingQueue.id },
+          data: {
+            assignedToId: companyId,
+            status: 'ASSIGNED',
+            assignmentType: 'AUTO',
+            assignedAt: new Date(),
+            notes: existingQueue.notes
+              ? `${existingQueue.notes} | Fallback na direktora - nema matchanih tim članova`
+              : 'Fallback na direktora - nema matchanih tim članova'
+          },
+          include: {
+            assignedTo: {
+              include: {
+                user: {
+                  select: {
+                    id: true,
+                    fullName: true,
+                    email: true
+                  }
+                }
+              }
+            }
+          }
+        });
+      } else {
+        queueEntry = await prisma.companyLeadQueue.create({
+          data: {
+            jobId,
+            directorId: companyId,
+            assignedToId: companyId,
+            status: 'ASSIGNED',
+            assignmentType: 'AUTO',
+            assignedAt: new Date(),
+            notes: 'Fallback na direktora - nema matchanih tim članova'
+          },
+          include: {
+            assignedTo: {
+              include: {
+                user: {
+                  select: {
+                    id: true,
+                    fullName: true,
+                    email: true
+                  }
+                }
+              }
+            },
+            job: true
+          }
+        });
+      }
+
+      // Pošalji notifikaciju direktoru
+      try {
+        await prisma.notification.create({
+          data: {
+            title: 'Lead dodijeljen vama (fallback)',
+            message: `Lead je automatski dodijeljen direktoru jer nema matchanih tim članova za posao: ${queueEntry.job?.title || 'Naziv posla'}`,
+            type: 'LEAD_ASSIGNED',
+            userId: directorProfile.userId,
+            jobId
+          }
+        });
+      } catch (notifError) {
+        console.error('[TEAM-MATCH] Failed to send fallback notification to director:', notifError);
+      }
+
+      return queueEntry.assignedTo;
     }
 
     // Uzmi najbolje matchanog tim člana

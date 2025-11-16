@@ -236,10 +236,6 @@ export async function autoAssignLead(queueId, directorId) {
     throw new Error('Samo direktor može koristiti auto-assign');
   }
 
-  if (director.teamMembers.length === 0) {
-    throw new Error('Nemate tim članova za auto-assign');
-  }
-
   // Dohvati queue entry i job
   const queueEntry = await prisma.companyLeadQueue.findUnique({
     where: { id: queueId },
@@ -269,7 +265,60 @@ export async function autoAssignLead(queueId, directorId) {
   const matches = await findBestTeamMatches(queueEntry.jobId, directorId);
 
   if (matches.length === 0) {
-    throw new Error('Nema matchanih tim članova za ovaj lead');
+    // FALLBACK: nema matchanih tim članova → dodijeli lead direktoru
+    console.log(`   ⚠️ Nema matchanih tim članova za lead ${queueId}, fallback na direktora ${directorId}`);
+
+    const updated = await prisma.companyLeadQueue.update({
+      where: { id: queueId },
+      data: {
+        assignedToId: directorId,
+        status: 'ASSIGNED',
+        assignmentType: 'AUTO',
+        assignedAt: new Date(),
+        notes: queueEntry.notes
+          ? `${queueEntry.notes} | Fallback na direktora - nema matchanih tim članova`
+          : 'Fallback na direktora - nema matchanih tim članova'
+      },
+      include: {
+        assignedTo: {
+          include: {
+            user: {
+              select: {
+                fullName: true,
+                email: true
+              }
+            }
+          }
+        },
+        job: {
+          include: {
+            category: true,
+            user: {
+              select: {
+                fullName: true,
+                email: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    // Pošalji notifikaciju direktoru
+    await prisma.notification.create({
+      data: {
+        userId: director.userId,
+        title: 'Lead dodijeljen vama (fallback)',
+        message: `Lead je automatski dodijeljen direktoru jer nema matchanih tim članova za posao: ${updated.job.title}`,
+        type: 'LEAD_ASSIGNED',
+        link: `/my-leads`,
+        jobId: updated.jobId
+      }
+    });
+
+    console.log(`   ✅ Lead automatski dodijeljen direktoru (fallback)`);
+
+    return updated;
   }
 
   // Uzmi najbolje matchanog tim člana
