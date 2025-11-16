@@ -12263,6 +12263,105 @@ SMS verifikacija osigurava da vaš telefonski broj pripada vama i povećava povj
 - \`POST /api/director/team/add\` – dodaje člana.
 - \`DELETE /api/director/team/:memberId\` – uklanja člana.
       `
+    },
+    "Direktor Dashboard - pristup financijama": {
+      implemented: true,
+      summary: "Direktor Dashboard omogućava pristup financijskim podacima tvrtke - pretplate, fakture i leadovi.",
+      details: `**Kako funkcionira**
+- Direktor Dashboard ima tab "Financije" koji prikazuje sve financijske podatke tvrtke.
+- Prikazuje se pretplata direktora (plan, status, krediti, datum isteka, cijena).
+- Prikazuju se fakture direktora i svih tim članova s detaljima (ukupno potrošeno, status, datum).
+- Prikazuju se lead purchases direktora i tim članova s informacijama o cijeni i statusu.
+- KPI kartice prikazuju: ukupno potrošeno, ukupno leadova kupljeno, veličina tima.
+- Sažetak financijskih podataka omogućava brz pregled stanja tvrtke.
+
+**Prednosti**
+- Centralizirani pregled svih financijskih podataka tvrtke na jednom mjestu.
+- Lako praćenje troškova i ROI-ja kroz različite periode.
+- Pregled pretplata i faktura direktora i tim članova.
+- Brza identifikacija najvećih troškova i trendova potrošnje.
+- Mogućnost analize učinkovitosti leadova i ROI-ja po članovima tima.
+
+**Kada koristiti**
+- Za planiranje budžeta i analizu troškova tvrtke.
+- Za pregled pretplata i faktura direktora i tim članova.
+- Za analizu ROI-ja i učinkovitosti leadova.
+- Za praćenje financijskog stanja tvrtke u realnom vremenu.
+- Za donošenje odluka o proširenju tima ili promjeni paketa.
+`,
+      technicalDetails: `**Frontend**
+- Komponenta \`DirectorDashboard\` s tabom "Financije".
+- KPI kartice: ukupno potrošeno, ukupno leadova, veličina tima.
+- Sekcija pretplate s detaljima (plan, status, krediti, datum isteka).
+- Lista nedavnih faktura direktora i tim članova s filtriranjem i sortiranjem.
+- Lista lead purchases s detaljima o cijeni i statusu.
+
+**Backend**
+- \`GET /api/director/finances\` – dohvaća financijske podatke direktora i tim članova.
+- Agregira podatke direktora i svih tim članova (fakture, lead purchases, pretplate).
+- Računa ukupne troškove i statistike za KPI kartice.
+
+**Baza**
+- \`Subscription\` – pretplate direktora (plan, status, krediti, datum isteka).
+- \`Invoice\` – fakture direktora i tim članova (ukupno potrošeno, status, datum).
+- \`LeadPurchase\` – lead purchases direktora i tim članova (cijena, status, datum).
+- \`ProviderProfile\` polje \`companyId\` povezuje tim članove s direktorom.
+
+**API**
+- \`GET /api/director/finances\` – dohvaća financijske podatke direktora i tim članova.
+- Vraća agregirane podatke: ukupno potrošeno, ukupno leadova, veličina tima.
+- Vraća listu faktura i lead purchases s detaljima.
+      `
+    },
+    "Direktor Dashboard - ključne odluke": {
+      implemented: true,
+      summary: "Direktor Dashboard omogućava pregled ključnih odluka koje čekaju na odobrenje - ponude i leadovi.",
+      details: `**Kako funkcionira**
+- Direktor Dashboard ima tab "Odluke" koji prikazuje sve odluke koje čekaju na odobrenje direktora.
+- Prikazuju se ponude koje čekaju na odobrenje (od tim članova) s detaljima o poslu, iznosu i statusu.
+- Prikazuju se leadovi koje tim članovi trebaju odobriti s informacijama o klijentu, kategoriji i cijeni.
+- Direktor vidi sve relevantne informacije za donošenje odluke: detalji posla/leadova, iznosi, statusi, datumi.
+- Mogućnost filtriranja i sortiranja odluka po različitim kriterijima (datum, iznos, status, tim član).
+- Direktor može odobriti ili odbiti odluke direktno iz dashboarda.
+
+**Prednosti**
+- Centralizirani pregled svih odluka koje čekaju na odobrenje na jednom mjestu.
+- Brzo donošenje odluka bez potrebe za navigacijom kroz različite sekcije.
+- Pregled aktivnosti tim članova i njihovih zahtjeva za odobrenje.
+- Poboljšana kontrola nad financijskim odlukama tvrtke.
+- Smanjenje vremena čekanja na odobrenje i ubrzanje poslovnih procesa.
+
+**Kada koristiti**
+- Za pregled ponuda koje čekaju na odobrenje od strane tim članova.
+- Za pregled leadova koje tim članovi trebaju odobriti prije kupnje.
+- Za donošenje ključnih odluka tvrtke koje zahtijevaju direktorsko odobrenje.
+- Za praćenje aktivnosti tim članova i njihovih zahtjeva.
+- Za kontrolu financijskih odluka i budžeta tvrtke.
+`,
+      technicalDetails: `**Frontend**
+- Komponenta \`DirectorDashboard\` s tabom "Odluke".
+- Dvije sekcije: "Ponude koje čekaju" i "Leadovi koje čekaju".
+- Prikaz relevantnih informacija za svaku odluku (detalji posla/leadova, iznosi, statusi, datumi).
+- Gumbi za odobravanje/odbijanje odluka s potvrdom.
+- Filtriranje i sortiranje odluka po različitim kriterijima.
+
+**Backend**
+- \`GET /api/director/decisions\` – dohvaća sve odluke koje čekaju na odobrenje.
+- Filtrira ponude tim članova sa statusom PENDING koji zahtijevaju odobrenje.
+- Filtrira leadove tim članova koji zahtijevaju odobrenje prije kupnje.
+- Agregira podatke iz različitih izvora (ponude, leadovi) u jedinstveni prikaz.
+
+**Baza**
+- \`Offer\` – ponude tim članova sa statusom PENDING koji zahtijevaju odobrenje.
+- \`LeadPurchase\` – leadovi tim članova koji zahtijevaju odobrenje prije kupnje.
+- \`ProviderProfile\` polje \`companyId\` povezuje tim članove s direktorom.
+
+**API**
+- \`GET /api/director/decisions\` – dohvaća sve odluke koje čekaju na odobrenje.
+- Vraća listu ponuda i leadova s detaljima i statusima.
+- \`POST /api/director/decisions/approve\` – odobrava odluku (ponudu ili lead).
+- \`POST /api/director/decisions/reject\` – odbija odluku s razlogom.
+      `
     }
   };
 
@@ -13513,81 +13612,6 @@ async function seedDocumentation() {
 - GET /api/admin/kyc-metrics?period=monthly|weekly&breakdown=category|region
 - GET /api/admin/kyc-metrics/reasons?top=5
 - POST /api/admin/kyc-metrics/recalculate (ručno osvježavanje cachea)
-      `
-      },
-      "Direktor Dashboard - pristup financijama": {
-        implemented: true,
-        summary: "Direktor Dashboard omogućava pristup financijskim podacima tvrtke - pretplate, fakture i leadovi.",
-        details: `**Kako funkcionira**
-- Direktor Dashboard ima tab "Financije" koji prikazuje financijske podatke.
-- Prikazuje se pretplata direktora (plan, status, krediti, datum isteka).
-- Prikazuju se fakture direktora i tim članova (ukupno potrošeno, status).
-- Prikazuju se lead purchases direktora i tim članova.
-- Sažetak: ukupno potrošeno, ukupno leadova, veličina tima.
-
-**Prednosti**
-- Centralizirani pregled svih financijskih podataka tvrtke.
-- Lako praćenje troškova i ROI-ja.
-- Pregled pretplata i faktura na jednom mjestu.
-
-**Kada koristiti**
-- Za planiranje budžeta i analizu troškova.
-- Za pregled pretplata i faktura.
-- Za analizu ROI-ja i učinkovitosti leadova.
-`,
-        technicalDetails: `**Frontend**
-- Komponenta \`DirectorDashboard\` s tabom "Financije".
-- KPI kartice: ukupno potrošeno, ukupno leadova, veličina tima.
-- Sekcija pretplate s detaljima.
-- Lista nedavnih faktura direktora i tim članova.
-
-**Backend**
-- \`GET /api/director/finances\` – dohvaća financijske podatke.
-- Agregira podatke direktora i svih tim članova.
-
-**Baza**
-- \`Subscription\` – pretplate direktora.
-- \`Invoice\` – fakture direktora i tim članova.
-- \`LeadPurchase\` – lead purchases direktora i tim članova.
-
-**API**
-- \`GET /api/director/finances\` – dohvaća financijske podatke.
-      `
-      },
-      "Direktor Dashboard - ključne odluke": {
-        implemented: true,
-        summary: "Direktor Dashboard omogućava pregled ključnih odluka koje čekaju na odobrenje - ponude i leadovi.",
-        details: `**Kako funkcionira**
-- Direktor Dashboard ima tab "Odluke" koji prikazuje odluke koje čekaju na odobrenje.
-- Prikazuju se ponude koje čekaju na odobrenje (od tim članova).
-- Prikazuju se leadovi koje tim članovi trebaju odobriti.
-- Direktor vidi sve relevantne informacije za donošenje odluke.
-
-**Prednosti**
-- Centralizirani pregled svih odluka koje čekaju na odobrenje.
-- Brzo donošenje odluka na jednom mjestu.
-- Pregled aktivnosti tim članova.
-
-**Kada koristiti**
-- Za pregled ponuda koje čekaju na odobrenje.
-- Za pregled leadova koje tim članovi trebaju odobriti.
-- Za donošenje ključnih odluka tvrtke.
-`,
-        technicalDetails: `**Frontend**
-- Komponenta \`DirectorDashboard\` s tabom "Odluke".
-- Dvije sekcije: "Ponude koje čekaju" i "Leadovi koje čekaju".
-- Prikaz relevantnih informacija za svaku odluku.
-
-**Backend**
-- \`GET /api/director/decisions\` – dohvaća odluke koje čekaju.
-- Filtrira ponude i leadove tim članova koji čekaju na odobrenje.
-
-**Baza**
-- \`Offer\` – ponude tim članova sa statusom PENDING.
-- \`LeadPurchase\` – leadovi tim članova sa statusom ACTIVE.
-
-**API**
-- \`GET /api/director/decisions\` – dohvaća odluke koje čekaju.
       `
       },
       "Provider Approvals": {
