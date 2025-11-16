@@ -74,7 +74,7 @@ export async function calculateAdjustmentForPlan(plan, periodStart, periodEnd) {
   if (deliveredLeads === 0) {
     adjustmentType = 'CREDIT';
     adjustmentCredits = expectedLeads; // puni credit za cijelu kvotu
-    notes = `Automatsko snižavanje cijene: u ovom obračunskom periodu nije isporučen nijedan lead (0/${expectedLeads}). Klijentu se odobrava ${adjustmentCredits} kredita (pun povrat kvote).`;
+    notes = `Automatsko snižavanje cijene i credit refund: u ovom obračunskom periodu tržište je mirno (0/${expectedLeads} leadova). Klijentu se odobrava ${adjustmentCredits} kredita (pun povrat kvote).`;
   } else if (diff === 0 && (!plan.guaranteeEnabled || guaranteeDiff === 0)) {
   if (deliveredLeads === 0) {
     // već postavljeno gore
@@ -163,6 +163,87 @@ export async function calculateBillingAdjustmentsForPeriod(periodStart, periodEn
   console.log(`[BILLING] Izračunate korekcije za period ${periodStart.toISOString()} - ${periodEnd.toISOString()}: ${adjustments.length} zapisa.`);
 
   return adjustments;
+}
+
+/**
+ * Primijeni credit refund na temelju obračunatih BillingAdjustment zapisa za "mirno" tržište.
+ *
+ * - Za svaki CREDIT adjustment gdje je deliveredLeads = 0 kreira REFUND credit transaction
+ *   i vraća odgovarajući broj kredita korisniku (subscription.creditsBalance).
+ */
+export async function applyQuietMarketCreditRefunds(periodStart, periodEnd) {
+  const adjustments = await prisma.billingAdjustment.findMany({
+    where: {
+      periodStart,
+      periodEnd,
+      adjustmentType: 'CREDIT',
+      deliveredLeads: 0,
+      status: 'PENDING'
+    }
+  });
+
+  const results = [];
+
+  for (const adj of adjustments) {
+    const { userId, adjustmentCredits, id: adjustmentId } = adj;
+
+    const subscription = await prisma.subscription.findUnique({
+      where: { userId }
+    });
+
+    if (!subscription) {
+      console.warn(`[QUIET-MARKET-REFUND] User ${userId} nema subscription, preskačem refund.`);
+      continue;
+    }
+
+    const newBalance = subscription.creditsBalance + adjustmentCredits;
+
+    await prisma.$transaction(async tx => {
+      // 1) Ažuriraj subscription balance
+      await tx.subscription.update({
+        where: { userId },
+        data: {
+          creditsBalance: newBalance
+        }
+      });
+
+      // 2) Kreiraj credit transaction (REFUND)
+      const transaction = await tx.creditTransaction.create({
+        data: {
+          userId,
+          type: 'REFUND',
+          amount: adjustmentCredits,
+          balance: newBalance,
+          description: `Credit refund jer je tržište mirno (0 leadova u obračunskom periodu). BillingAdjustment: ${adjustmentId}`
+        }
+      });
+
+      // 3) Označi adjustment kao APPLIED
+      await tx.billingAdjustment.update({
+        where: { id: adjustmentId },
+        data: {
+          status: 'APPLIED',
+          appliedAt: new Date()
+        }
+      });
+
+      // 4) Notifikacija korisniku
+      await tx.notification.create({
+        data: {
+          userId,
+          type: 'SYSTEM',
+          title: 'Credit refund jer je tržište mirno',
+          message: `U ovom obračunskom periodu nije bilo leadova. Vraćeno vam je ${transaction.amount} kredita. Novo stanje: ${transaction.balance} kredita.`
+        }
+      });
+    });
+
+    results.push({ adjustmentId, userId, creditsRefunded: adjustmentCredits, newBalance });
+  }
+
+  console.log(`[QUIET-MARKET-REFUND] Primijenjeno refundova: ${results.length}`);
+
+  return results;
 }
 
 /**
