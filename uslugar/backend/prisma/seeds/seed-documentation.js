@@ -12362,6 +12362,349 @@ SMS verifikacija osigurava da vaš telefonski broj pripada vama i povećava povj
 - \`POST /api/director/decisions/approve\` – odobrava odluku (ponudu ili lead).
 - \`POST /api/director/decisions/reject\` – odbija odluku s razlogom.
       `
+    },
+    "Reputation Score (0-100)": {
+      implemented: true,
+      summary: "Reputation Score je numerička ocjena pružatelja usluga od 0 do 100 koja odražava njihovu kvalitetu, pouzdanost i profesionalnost.",
+      details: `**Kako funkcionira**
+- Reputation Score se izračunava na temelju više faktora: prosječna ocjena korisnika, brzina odgovora na ponude, stopa konverzije, broj završenih poslova i povijest recenzija.
+- Score se automatski ažurira nakon svake nove recenzije, završenog posla ili promjene u performansama pružatelja.
+- Prikazuje se na profilu pružatelja kao numerička vrijednost od 0 do 100, gdje 100 predstavlja najbolju moguću ocjenu.
+- Score se također prikazuje vizualno kroz badge ili indikator koji omogućava brzu identifikaciju kvalitete pružatelja.
+- Klijenti mogu filtrirati i sortirati pružatelje prema Reputation Score-u kako bi pronašli najkvalitetnije pružatelje.
+
+**Prednosti**
+- Jednostavna i razumljiva numerička ocjena koja omogućava brzu procjenu kvalitete pružatelja.
+- Automatsko ažuriranje osigurava da score uvijek odražava trenutno stanje performansi.
+- Poboljšava iskustvo korisnika omogućavajući im da pronađu najbolje pružatelje usluga.
+- Potiče pružatelje da održavaju visoku kvalitetu usluga kako bi zadržali ili poboljšali svoj score.
+- Transparentan sustav ocjenjivanja koji gradi povjerenje između korisnika i pružatelja.
+
+**Kada koristiti**
+- Za pronalaženje najkvalitetnijih pružatelja usluga u određenoj kategoriji.
+- Za filtriranje i sortiranje pružatelja prema kvaliteti.
+- Za praćenje vlastitog Reputation Score-a i identifikaciju područja za poboljšanje.
+- Za donošenje odluka o odabiru pružatelja za važne projekte.
+- Za analizu trendova performansi pružatelja kroz vrijeme.
+`,
+      technicalDetails: `**Frontend**
+- Komponenta \`ReputationBadge\` prikazuje Reputation Score s različitim bojama ovisno o vrijednosti (zelena za visoke, žuta za srednje, crvena za niske).
+- Score se prikazuje na profilu pružatelja, u listi rezultata pretrage i u detaljima ponuda.
+- Mogućnost filtriranja i sortiranja pružatelja prema Reputation Score-u u pretrazi.
+
+**Backend**
+- \`reputationService.calculate\` izračunava Reputation Score na temelju ponderiranih komponenti.
+- Score se automatski ažurira nakon svake nove recenzije, završenog posla ili promjene u performansama.
+- Event \`reputation.updated\` informira ostale servise o promjeni score-a i invalidira cache.
+
+**Baza**
+- \`ProviderReputation\` tablica čuva Reputation Score za svakog pružatelja (providerId, score, breakdownJson, updatedAt).
+- \`ProviderReview\` tablica sadrži recenzije koje utječu na izračun score-a.
+- Score se cacheira radi bržeg pristupa i smanjenja opterećenja baze.
+
+**API**
+- \`GET /api/providers/:id/reputation\` – vraća Reputation Score i breakdown komponenti za određenog pružatelja.
+- \`GET /api/providers?sort=reputation\` – sortira pružatelje prema Reputation Score-u.
+- \`GET /api/providers?minReputation=80\` – filtrira pružatelje s minimalnim Reputation Score-om.
+      `
+    },
+    "Response Rate mjerenje": {
+      implemented: true,
+      summary: "Response Rate mjerenje prati postotak odgovora pružatelja usluga na primljene ponude i leadove, što je ključni pokazatelj angažmana i profesionalnosti.",
+      details: `**Kako funkcionira**
+- Response Rate se izračunava kao postotak odgovora pružatelja na primljene ponude i leadove u određenom vremenskom periodu.
+- Sustav automatski bilježi svaki odgovor (prihvaćanje, odbijanje, pregovaranje) i ažurira Response Rate u realnom vremenu.
+- Response Rate se prikazuje kao postotak (npr. 85%) i može se filtrirati po različitim periodima (dnevno, tjedno, mjesečno).
+- Sustav prati i prosječno vrijeme odgovora (response time) koje pokazuje koliko brzo pružatelj reagira na nove prilike.
+- Response Rate utječe na Reputation Score i PARTNER_SCORE, što znači da pružatelji s višim Response Rate-om imaju bolje pozicije u sustavu.
+
+**Prednosti**
+- Omogućava klijentima da identificiraju aktivne i odgovorne pružatelje usluga.
+- Potiče pružatelje da brzo odgovaraju na ponude i leadove kako bi zadržali visok Response Rate.
+- Poboljšava iskustvo korisnika jer dobivaju brže odgovore na svoje zahtjeve.
+- Transparentan sustav mjerenja koji gradi povjerenje i profesionalnost.
+- Automatsko praćenje osigurava objektivnu procjenu angažmana pružatelja.
+
+**Kada koristiti**
+- Za procjenu angažmana i profesionalnosti pružatelja usluga.
+- Za filtriranje i sortiranje pružatelja prema brzini i učestalosti odgovora.
+- Za praćenje vlastitog Response Rate-a i identifikaciju područja za poboljšanje.
+- Za donošenje odluka o dodjeli leadova i prioritizaciji pružatelja.
+- Za analizu trendova odgovora i optimizaciju komunikacije s pružateljima.
+`,
+      technicalDetails: `**Frontend**
+- Response Rate se prikazuje na profilu pružatelja kao postotak s vizualnim indikatorom (zelena za visoke, žuta za srednje, crvena za niske).
+- Analytics dashboard prikazuje grafikone Response Rate-a kroz različite periode.
+- Mogućnost filtriranja i sortiranja pružatelja prema Response Rate-u u pretrazi.
+
+**Backend**
+- \`responseRateService.calculate\` izračunava Response Rate na temelju broja odgovora i primljenih ponuda/leadova.
+- Sustav automatski bilježi svaki odgovor i ažurira Response Rate u realnom vremenu.
+- Response Rate se koristi kao komponenta u izračunu Reputation Score-a (10% ponder) i PARTNER_SCORE-a.
+- Event \`response.recorded\` informira ostale servise o novom odgovoru i pokreće ažuriranje metrika.
+
+**Baza**
+- \`ProviderResponse\` tablica bilježi sve odgovore pružatelja (providerId, offerId/leadId, responseType, responseTime, timestamp).
+- \`ProviderAnalytics\` tablica čuva agregirane Response Rate metrike (providerId, responseRate, averageResponseTime, period).
+- Response Rate se cacheira radi bržeg pristupa i smanjenja opterećenja baze.
+
+**API**
+- \`GET /api/providers/:id/response-rate\` – vraća Response Rate i prosječno vrijeme odgovora za određenog pružatelja.
+- \`GET /api/providers?sort=responseRate\` – sortira pružatelje prema Response Rate-u.
+- \`GET /api/providers?minResponseRate=80\` – filtrira pružatelje s minimalnim Response Rate-om.
+- \`GET /api/analytics/response-rate?period=monthly\` – vraća Response Rate statistike za određeni period.
+      `
+    },
+    "Completion Rate tracking": {
+      implemented: true,
+      summary: "Completion Rate tracking prati postotak uspješno završenih poslova u odnosu na prihvaćene ponude, što je ključni pokazatelj pouzdanosti i profesionalnosti pružatelja.",
+      details: `**Kako funkcionira**
+- Completion Rate se izračunava kao postotak uspješno završenih poslova u odnosu na sve prihvaćene ponude u određenom vremenskom periodu.
+- Sustav automatski bilježi status svakog posla (ZAVRŠEN, OTKAZAN, U TIJEKU) i ažurira Completion Rate u realnom vremenu.
+- Completion Rate se prikazuje kao postotak (npr. 92%) i može se filtrirati po različitim periodima (dnevno, tjedno, mjesečno).
+- Sustav prati i razloge otkazivanja poslova kako bi se identificirali obrasci i područja za poboljšanje.
+- Completion Rate utječe na Reputation Score i PARTNER_SCORE, što znači da pružatelji s višim Completion Rate-om imaju bolje pozicije u sustavu.
+
+**Prednosti**
+- Omogućava klijentima da identificiraju pouzdane pružatelje usluga koji dovršavaju poslove do kraja.
+- Potiče pružatelje da održavaju visoku stopu završetka poslova kako bi zadržali visok Completion Rate.
+- Poboljšava iskustvo korisnika jer mogu računati na završetak poslova koje su prihvatili.
+- Transparentan sustav praćenja koji gradi povjerenje i profesionalnost.
+- Automatsko praćenje osigurava objektivnu procjenu pouzdanosti pružatelja.
+
+**Kada koristiti**
+- Za procjenu pouzdanosti i profesionalnosti pružatelja usluga.
+- Za filtriranje i sortiranje pružatelja prema stopi završetka poslova.
+- Za praćenje vlastitog Completion Rate-a i identifikaciju područja za poboljšanje.
+- Za donošenje odluka o dodjeli leadova i prioritizaciji pružatelja.
+- Za analizu trendova završetka poslova i optimizaciju procesa.
+`,
+      technicalDetails: `**Frontend**
+- Completion Rate se prikazuje na profilu pružatelja kao postotak s vizualnim indikatorom (zelena za visoke, žuta za srednje, crvena za niske).
+- Analytics dashboard prikazuje grafikone Completion Rate-a kroz različite periode.
+- Mogućnost filtriranja i sortiranja pružatelja prema Completion Rate-u u pretrazi.
+- Prikaz razloga otkazivanja poslova za analizu i poboljšanje.
+
+**Backend**
+- \`completionRateService.calculate\` izračunava Completion Rate na temelju broja završenih poslova i prihvaćenih ponuda.
+- Sustav automatski bilježi status svakog posla i ažurira Completion Rate u realnom vremenu.
+- Completion Rate se koristi kao komponenta u izračunu Reputation Score-a i PARTNER_SCORE-a.
+- Event \`job.status.updated\` informira ostale servise o promjeni statusa posla i pokreće ažuriranje metrika.
+
+**Baza**
+- \`Job\` tablica sadrži status svakog posla (status: OTVOREN, U TIJEKU, ZAVRŠEN, OTKAZAN).
+- \`ProviderAnalytics\` tablica čuva agregirane Completion Rate metrike (providerId, completionRate, cancelledJobs, period).
+- \`JobCancellation\` tablica bilježi razloge otkazivanja poslova za analizu.
+- Completion Rate se cacheira radi bržeg pristupa i smanjenja opterećenja baze.
+
+**API**
+- \`GET /api/providers/:id/completion-rate\` – vraća Completion Rate i statistike završetka poslova za određenog pružatelja.
+- \`GET /api/providers?sort=completionRate\` – sortira pružatelje prema Completion Rate-u.
+- \`GET /api/providers?minCompletionRate=90\` – filtrira pružatelje s minimalnim Completion Rate-om.
+- \`GET /api/analytics/completion-rate?period=monthly\` – vraća Completion Rate statistike za određeni period.
+      `
+    },
+    "Platform Compliance Score": {
+      implemented: true,
+      summary: "Platform Compliance Score mjeri usklađenost pružatelja usluga s pravilima i standardima platforme, uključujući licence, verifikacije, dokumentaciju i etičke standarde.",
+      details: `**Kako funkcionira**
+- Platform Compliance Score se izračunava na temelju više faktora: valjanost licenci, verifikacije identiteta, ažurnost dokumentacije, povijest kršenja pravila i usklađenost s etičkim standardima.
+- Sustav automatski provjerava compliance faktore i ažurira score u realnom vremenu kada se promijene relevantni podaci.
+- Compliance Score se prikazuje kao numerička vrijednost (npr. 0-100) gdje viša vrijednost označava bolju usklađenost s pravilima platforme.
+- Sustav prati i bilježi sve compliance incidente (kršenja pravila, istekle licence, neuspjele verifikacije) koji utječu na score.
+- Compliance Score utječe na PARTNER_SCORE i može utjecati na prioritet dodjele leadova i dostupnost određenih funkcionalnosti.
+
+**Prednosti**
+- Osigurava da pružatelji usluga poštuju pravila i standarde platforme.
+- Poboljšava kvalitetu usluga i povjerenje korisnika u platformu.
+- Automatsko praćenje compliance faktora smanjuje potrebu za ručnim provjerama.
+- Transparentan sustav ocjenjivanja koji potiče pružatelje da održavaju visoku razinu compliance-a.
+- Zaštita korisnika i platforme od neusklađenih pružatelja usluga.
+
+**Kada koristiti**
+- Za procjenu usklađenosti pružatelja s pravilima i standardima platforme.
+- Za filtriranje i sortiranje pružatelja prema compliance score-u.
+- Za praćenje vlastitog compliance score-a i identifikaciju područja za poboljšanje.
+- Za donošenje odluka o dodjeli leadova i prioritizaciji pružatelja.
+- Za provođenje compliance provjera i audit procesa.
+`,
+      technicalDetails: `**Frontend**
+- Compliance Score se prikazuje na profilu pružatelja kao numerička vrijednost s vizualnim indikatorom (zelena za visoke, žuta za srednje, crvena za niske).
+- Compliance dashboard prikazuje detaljne informacije o compliance faktorima i incidentima.
+- Mogućnost filtriranja i sortiranja pružatelja prema Compliance Score-u u pretrazi.
+- Prikaz upozorenja i obavijesti o isteku licenci ili potrebi za ažuriranje dokumentacije.
+
+**Backend**
+- \`complianceService.calculate\` izračunava Compliance Score na temelju različitih compliance faktora.
+- Sustav automatski provjerava valjanost licenci, verifikacije i dokumentacije i ažurira score u realnom vremenu.
+- Compliance Score se koristi kao komponenta u izračunu PARTNER_SCORE-a.
+- Event \`compliance.updated\` informira ostale servise o promjeni compliance statusa i pokreće ažuriranje metrika.
+- \`complianceAuditService\` provodi periodične provjere compliance faktora.
+
+**Baza**
+- \`ProviderCompliance\` tablica čuva Compliance Score za svakog pružatelja (providerId, score, factors, updatedAt).
+- \`License\` tablica sadrži licence pružatelja koje utječu na compliance score.
+- \`ComplianceIncident\` tablica bilježi sve compliance incidente (kršenja pravila, istekle licence, neuspjele verifikacije).
+- \`Verification\` tablica sadrži verifikacije identiteta koje utječu na compliance score.
+
+**API**
+- \`GET /api/providers/:id/compliance\` – vraća Compliance Score i detalje o compliance faktorima za određenog pružatelja.
+- \`GET /api/providers?sort=complianceScore\` – sortira pružatelje prema Compliance Score-u.
+- \`GET /api/providers?minComplianceScore=80\` – filtrira pružatelje s minimalnim Compliance Score-om.
+- \`GET /api/compliance/incidents\` – vraća listu compliance incidenta za određenog pružatelja.
+- \`POST /api/compliance/audit\` – pokreće compliance audit za određenog pružatelja.
+      `
+    },
+    "Premium Partner tier (Score ≥ 80)": {
+      implemented: true,
+      summary: "Premium Partner tier je najviša razina partnera na platformi, dodjeljuje se pružateljima usluga s PARTNER_SCORE-om od 80 ili više, što osigurava prioritetnu dodjelu leadova i ekskluzivne privilegije.",
+      details: `**Kako funkcionira**
+- Premium Partner tier se automatski dodjeljuje pružateljima usluga koji postignu PARTNER_SCORE od 80 ili više.
+- PARTNER_SCORE se izračunava na temelju više faktora: Response Rate, Completion Rate, Rating, Conversion Rate, Compliance Score i Freshness.
+- Dnevni/tjedni job automatski računa PARTNER_SCORE i dodjeljuje odgovarajući tier (Premium ≥80, Verified 60-79, Basic <60).
+- Premium Partneri dobivaju prioritetnu dodjelu leadova u queue sustavu, što znači da se njima prvo nude nove prilike.
+- Premium Partneri imaju pristup ekskluzivnim funkcionalnostima, poput naprednih analitika, prioritetne podrške i ekskluzivnih leadova.
+
+**Prednosti**
+- Prioritetna dodjela leadova osigurava veći broj prilika za posao.
+- Ekskluzivni pristup funkcionalnostima i resursima platforme.
+- Poboljšana vidljivost i pozicioniranje u pretrazi pružatelja.
+- Pristup naprednim analitičkim alatima za optimizaciju poslovanja.
+- Prioritetna podrška od tima platforme za brže rješavanje problema.
+
+**Kada koristiti**
+- Za identifikaciju najkvalitetnijih pružatelja usluga na platformi.
+- Za prioritizaciju dodjele leadova i resursa platforme.
+- Za praćenje vlastitog PARTNER_SCORE-a i ciljanje Premium tier statusa.
+- Za donošenje odluka o promociji pružatelja na Premium tier.
+- Za analizu performansi i trendova Premium Partnera.
+`,
+      technicalDetails: `**Frontend**
+- Premium Partner badge se prikazuje na profilu pružatelja s posebnom bojom i ikonom.
+- Premium Partneri imaju pristup ekskluzivnom dashboardu s naprednim analitičkim alatima.
+- Prikaz PARTNER_SCORE-a i breakdown komponenti na profilu pružatelja.
+- Mogućnost filtriranja i sortiranja pružatelja prema tier statusu u pretrazi.
+
+**Backend**
+- \`partnerScoreService.calculate\` izračunava PARTNER_SCORE na temelju ključnih metrika (ResponseRate, CompletionRate, Rating, ConversionRate, Compliance, Freshness).
+- Dnevni/tjedni job automatski računa PARTNER_SCORE i dodjeljuje tier (Premium ≥80, Verified 60-79, Basic <60).
+- Premium Partneri dobivaju prioritet u queue sustavu za dodjelu leadova.
+- Event \`partner.tier.updated\` informira ostale servise o promjeni tier statusa i pokreće ažuriranje privilegija.
+
+**Baza**
+- \`PartnerScore\` tablica čuva PARTNER_SCORE za svakog pružatelja (providerId, score, tier, breakdown JSONB, updatedAt).
+- \`PartnerScoreHistory\` tablica čuva povijest PARTNER_SCORE-a za analizu trendova.
+- \`PartnerTierChange\` tablica bilježi sve promjene tier statusa s razlozima i timestampom.
+- Tier se cacheira radi bržeg pristupa i smanjenja opterećenja baze.
+
+**API**
+- \`GET /api/providers/:id/partner-score\` – vraća PARTNER_SCORE i tier status za određenog pružatelja.
+- \`GET /api/providers?tier=premium\` – filtrira pružatelje s Premium tier statusom.
+- \`GET /api/providers?sort=partnerScore\` – sortira pružatelje prema PARTNER_SCORE-u.
+- \`GET /api/analytics/partner-tiers\` – vraća statistike o distribuciji tier statusa.
+- \`POST /api/admin/partners/:id/promote\` – ručna promocija pružatelja na Premium tier (admin only).
+      `
+    },
+    "Verified Partner tier (Score 60-79)": {
+      implemented: true,
+      summary: "Verified Partner tier je srednja razina partnera na platformi, dodjeljuje se pružateljima usluga s PARTNER_SCORE-om između 60 i 79, što osigurava standardnu dodjelu leadova i osnovne privilegije.",
+      details: `**Kako funkcionira**
+- Verified Partner tier se automatski dodjeljuje pružateljima usluga koji postignu PARTNER_SCORE između 60 i 79.
+- PARTNER_SCORE se izračunava na temelju više faktora: Response Rate, Completion Rate, Rating, Conversion Rate, Compliance Score i Freshness.
+- Dnevni/tjedni job automatski računa PARTNER_SCORE i dodjeljuje odgovarajući tier (Premium ≥80, Verified 60-79, Basic <60).
+- Verified Partneri dobivaju standardnu dodjelu leadova u queue sustavu, nakon Premium Partnera ali prije Basic Partnera.
+- Verified Partneri imaju pristup osnovnim funkcionalnostima platforme i standardnoj podršci.
+
+**Prednosti**
+- Standardna dodjela leadova osigurava redovite prilike za posao.
+- Pristup osnovnim funkcionalnostima i resursima platforme.
+- Mogućnost napredovanja na Premium tier kroz poboljšanje performansi.
+- Poboljšana vidljivost u odnosu na Basic Partner tier.
+- Standardna podrška od tima platforme.
+
+**Kada koristiti**
+- Za identifikaciju pouzdanih pružatelja usluga s dobrim performansama.
+- Za standardnu dodjelu leadova i resursa platforme.
+- Za praćenje vlastitog PARTNER_SCORE-a i ciljanje Premium tier statusa.
+- Za donošenje odluka o promociji pružatelja na Premium tier ili degradaciji na Basic tier.
+- Za analizu performansi i trendova Verified Partnera.
+`,
+      technicalDetails: `**Frontend**
+- Verified Partner badge se prikazuje na profilu pružatelja s posebnom bojom i ikonom.
+- Verified Partneri imaju pristup standardnom dashboardu s osnovnim analitičkim alatima.
+- Prikaz PARTNER_SCORE-a i breakdown komponenti na profilu pružatelja.
+- Mogućnost filtriranja i sortiranja pružatelja prema tier statusu u pretrazi.
+
+**Backend**
+- \`partnerScoreService.calculate\` izračunava PARTNER_SCORE na temelju ključnih metrika (ResponseRate, CompletionRate, Rating, ConversionRate, Compliance, Freshness).
+- Dnevni/tjedni job automatski računa PARTNER_SCORE i dodjeljuje tier (Premium ≥80, Verified 60-79, Basic <60).
+- Verified Partneri dobivaju standardni prioritet u queue sustavu za dodjelu leadova (nakon Premium, prije Basic).
+- Event \`partner.tier.updated\` informira ostale servise o promjeni tier statusa i pokreće ažuriranje privilegija.
+
+**Baza**
+- \`PartnerScore\` tablica čuva PARTNER_SCORE za svakog pružatelja (providerId, score, tier, breakdown JSONB, updatedAt).
+- \`PartnerScoreHistory\` tablica čuva povijest PARTNER_SCORE-a za analizu trendova.
+- \`PartnerTierChange\` tablica bilježi sve promjene tier statusa s razlozima i timestampom.
+- Tier se cacheira radi bržeg pristupa i smanjenja opterećenja baze.
+
+**API**
+- \`GET /api/providers/:id/partner-score\` – vraća PARTNER_SCORE i tier status za određenog pružatelja.
+- \`GET /api/providers?tier=verified\` – filtrira pružatelje s Verified tier statusom.
+- \`GET /api/providers?sort=partnerScore\` – sortira pružatelje prema PARTNER_SCORE-u.
+- \`GET /api/analytics/partner-tiers\` – vraća statistike o distribuciji tier statusa.
+- \`POST /api/admin/partners/:id/promote\` – ručna promocija pružatelja na Premium tier (admin only).
+      `
+    },
+    "Basic Partner tier (Score < 60)": {
+      implemented: true,
+      summary: "Basic Partner tier je osnovna razina partnera na platformi, dodjeljuje se pružateljima usluga s PARTNER_SCORE-om ispod 60, što osigurava ograničenu dodjelu leadova i osnovne funkcionalnosti.",
+      details: `**Kako funkcionira**
+- Basic Partner tier se automatski dodjeljuje pružateljima usluga koji postignu PARTNER_SCORE ispod 60.
+- PARTNER_SCORE se izračunava na temelju više faktora: Response Rate, Completion Rate, Rating, Conversion Rate, Compliance Score i Freshness.
+- Dnevni/tjedni job automatski računa PARTNER_SCORE i dodjeljuje odgovarajući tier (Premium ≥80, Verified 60-79, Basic <60).
+- Basic Partneri dobivaju ograničenu dodjelu leadova u queue sustavu, nakon Premium i Verified Partnera.
+- Basic Partneri imaju pristup osnovnim funkcionalnostima platforme, ali s ograničenjima u odnosu na više tierove.
+
+**Prednosti**
+- Osnovna dodjela leadova osigurava prilike za posao, iako s nižim prioritetom.
+- Pristup osnovnim funkcionalnostima platforme za početak rada.
+- Mogućnost napredovanja na Verified ili Premium tier kroz poboljšanje performansi.
+- Prilika za učenje i razvoj kroz korištenje platforme.
+- Osnovna podrška od tima platforme.
+
+**Kada koristiti**
+- Za identifikaciju novih ili pružatelja s nižim performansama koji trebaju podršku.
+- Za ograničenu dodjelu leadova i resursa platforme.
+- Za praćenje vlastitog PARTNER_SCORE-a i ciljanje napredovanja na viši tier.
+- Za donošenje odluka o podršci i mentorstvu Basic Partnera.
+- Za analizu performansi i trendova Basic Partnera kako bi se identificirala područja za poboljšanje.
+`,
+      technicalDetails: `**Frontend**
+- Basic Partner badge se prikazuje na profilu pružatelja s posebnom bojom i ikonom.
+- Basic Partneri imaju pristup osnovnom dashboardu s minimalnim analitičkim alatima.
+- Prikaz PARTNER_SCORE-a i breakdown komponenti na profilu pružatelja.
+- Mogućnost filtriranja i sortiranja pružatelja prema tier statusu u pretrazi.
+- Prikaz preporuka za poboljšanje performansi i napredovanje na viši tier.
+
+**Backend**
+- \`partnerScoreService.calculate\` izračunava PARTNER_SCORE na temelju ključnih metrika (ResponseRate, CompletionRate, Rating, ConversionRate, Compliance, Freshness).
+- Dnevni/tjedni job automatski računa PARTNER_SCORE i dodjeljuje tier (Premium ≥80, Verified 60-79, Basic <60).
+- Basic Partneri dobivaju najniži prioritet u queue sustavu za dodjelu leadova (nakon Premium i Verified).
+- Event \`partner.tier.updated\` informira ostale servise o promjeni tier statusa i pokreće ažuriranje privilegija.
+
+**Baza**
+- \`PartnerScore\` tablica čuva PARTNER_SCORE za svakog pružatelja (providerId, score, tier, breakdown JSONB, updatedAt).
+- \`PartnerScoreHistory\` tablica čuva povijest PARTNER_SCORE-a za analizu trendova.
+- \`PartnerTierChange\` tablica bilježi sve promjene tier statusa s razlozima i timestampom.
+- Tier se cacheira radi bržeg pristupa i smanjenja opterećenja baze.
+
+**API**
+- \`GET /api/providers/:id/partner-score\` – vraća PARTNER_SCORE i tier status za određenog pružatelja.
+- \`GET /api/providers?tier=basic\` – filtrira pružatelje s Basic tier statusom.
+- \`GET /api/providers?sort=partnerScore\` – sortira pružatelje prema PARTNER_SCORE-u.
+- \`GET /api/analytics/partner-tiers\` – vraća statistike o distribuciji tier statusa.
+- \`POST /api/admin/partners/:id/promote\` – ručna promocija pružatelja na Verified ili Premium tier (admin only).
+      `
     }
   };
 
