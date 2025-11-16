@@ -1046,6 +1046,37 @@ const featureDescriptions = {
 **Integracije**
 - Notifikacijski sustav može slati email/SMS obavijesti kod novih ticket-a ili promjene statusa za VIP korisnike.`
     },
+    "White-label opcija (PRO plan)": {
+      implemented: true,
+      summary: "PRO partneri mogu brendirati Uslugar portal svojim logotipom, bojama i domenom kako bi platforma izgledala kao njihov vlastiti lead portal.",
+      details: `**Kako funkcionira**
+- Direktoru PRO plana se u postavkama prikazuje “White-label” modul gdje može dodati logotip, primarnu/sekundarnu boju i vlastitu domenu (CNAME).
+- Frontend koristi te postavke za brandiranje navigacije, headera, email predložaka i javnih stranica (npr. pozivi klijentima, onboarding tima).
+- Backend učitava \`WhiteLabel\` konfiguraciju po \`userId\`/tvrtki i dinamički vraća odgovarajuće brand parametre (theme, logo URL, naziv brenda).
+
+**Prednosti**
+- PRO partneri dobivaju dojam vlastite platforme bez potrebe da sami razvijaju sustav za leadove.
+- Smanjuje churn jer je Uslugar “ugrađen” u njihov brand i procese (sve komunikacije nose njihov logotip i ime).
+
+**Kada koristiti**
+- Za veće agencije i franšize koje žele centralno upravljati leadovima pod svojim brandom.
+- Kada je cilj ponuditi “powered by Uslugar” rješenje partnerima koji traže white-label lead platformu.`,
+      technicalDetails: `**Frontend**
+- Tema (boje, logo, naziv) se dohvaća preko API-ja i sprema u globalni store; layout i email predlošci čitaju te vrijednosti umjesto hardcodanog “Uslugar”.
+- Komponente headera, footera i ključnih stranica imaju propse za brand (logo, naziv, boje) i prilagođavaju se White-label konfiguraciji.
+
+**Backend**
+- Model \`WhiteLabel\` povezan s \`User\`/tvrtkom sprem-a konfiguraciju (logoUrl, primaryColor, secondaryColor, customDomain, settings).
+- Middleware na osnovu domene/tenant-a učitava White-label konfiguraciju i izlaže je kroz context (npr. \`req.whiteLabel\`).
+- API endpoint npr. \`GET /api/whitelabel/config\` vraća aktivnu konfiguraciju za prijavljenog direktora/tenant-a.
+
+**Baza**
+- \`WhiteLabel\` (id, userId/companyId, logoUrl, primaryColor, secondaryColor, customDomain, isActive, createdAt, updatedAt).
+
+**Integracije**
+- DNS/CNAME konfiguracija za custom domene (npr. \`portal.partner.hr\` → Uslugar).
+- Email servis koristi brand parametre za From ime, logotip i boje u templatu.`
+    },
     "Online plaćanje (Stripe Checkout)": {
       implemented: true,
       summary: "Pretplate i jednokratne kupnje leadova procesiraju se kroz Stripe Checkout radi sigurnog plaćanja.",
