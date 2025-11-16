@@ -717,6 +717,7 @@ model BillingPlan {
   expectedLeads       Int           // Očekivani broj leadova po periodu
   period              BillingPeriod @default(MONTHLY) // Obračunski period
   isActive            Boolean       @default(true)
+  isPaused            Boolean       @default(false) // Ako je true, plan je pauziran i ne naplaćuje se
 
   // Garancija minimalnog broja leadova
   guaranteeEnabled    Boolean       @default(false) // Je li uključen guarantee za ovaj plan

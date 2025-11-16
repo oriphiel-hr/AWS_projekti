@@ -437,7 +437,7 @@ const features = [
         { name: "Proporcionalna naplata (REAL_VALUE)", implemented: true },
         { name: "Mjesečni izvještaj o isporučenim leadovima", implemented: true },
         { name: "Carryover neiskorištenih leadova", implemented: true },
-        { name: "Pauziranje kategorije bez naplate", implemented: false }
+        { name: "Pauziranje kategorije bez naplate", implemented: true }
       ]
     },
     {

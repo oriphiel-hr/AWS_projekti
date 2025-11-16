@@ -183,7 +183,8 @@ export async function calculateAdjustmentForPlan(plan, periodStart, periodEnd) {
 export async function calculateBillingAdjustmentsForPeriod(periodStart, periodEnd) {
   const plans = await prisma.billingPlan.findMany({
     where: {
-      isActive: true
+      isActive: true,
+      isPaused: false // Pauzirani planovi se ne obračunavaju (nema naplate dok je pauzirano)
     }
   });
 
