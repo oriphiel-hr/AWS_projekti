@@ -70,6 +70,29 @@ r.get('/', async (req, res, next) => {
       });
     });
 
+    // Fallback: ako dokumentacija za određene ključne feature-e nije seedana u bazu,
+    // ručno dodaj smislen opis kako bi GUI odmah prikazao pravi tekst.
+    if (!featureDescriptions['Direktor Dashboard - upravljanje timovima']) {
+      featureDescriptions['Direktor Dashboard - upravljanje timovima'] = {
+        implemented: true,
+        summary: 'Direktor Dashboard omogućava upravljanje timovima – dodavanje, uklanjanje i pregled članova tima.',
+        details: `**Kako funkcionira**
+- Direktor u Dashboardu ima tab "Tim" koji prikazuje sve članove tima povezane s tvrtkom.
+- Može dodati novog člana unosom email adrese PROVIDER korisnika; član se veže na \`companyId\` direktora.
+- Članovi se mogu ukloniti jednim klikom, bez utjecaja na povijest leadova i ponuda.
+- Za svakog člana prikazuju se status dostupnosti, kategorije u kojima radi, lokacija i osnovne kontakt informacije.
+
+**Prednosti**
+- Jednostavno upravljanje strukturom tima na jednom mjestu.
+- Brzo dodavanje novih operativaca i uklanjanje onih koji više ne rade za tvrtku.
+- Jasna slika tko je aktivan u timu i na kojim kategorijama/regijama radi.
+
+**Kada koristiti**
+- Kada direktor onboarda nove članove tima ili mijenja strukturu tima.
+- Kada treba provjeriti tko je trenutno aktivan i za koje kategorije/regije prima leadove.`
+      };
+    }
+
     res.json({
       features,
       featureDescriptions
