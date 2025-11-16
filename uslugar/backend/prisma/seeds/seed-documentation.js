@@ -12754,6 +12754,55 @@ SMS verifikacija osigurava da vaš telefonski broj pripada vama i povećava povj
 - \`POST /api/admin/fairness/limits\` – ažurira limite leadova po tieru (admin only).
 - \`GET /api/providers/:id/fairness\` – vraća fairness metrike za određenog partnera.
       `
+    },
+    "Auto-assign prioritet za Premium partnere": {
+      implemented: true,
+      summary: "Auto-assign prioritet za Premium partnere osigurava da Premium Partneri (PARTNER_SCORE ≥ 80) dobivaju prioritetnu automatsku dodjelu leadova u queue sustavu.",
+      details: `**Kako funkcionira**
+- Auto-assign prioritet automatski dodjeljuje leadove Premium Partnerima prije ostalih partnera u queue sustavu.
+- Premium Partneri (PARTNER_SCORE ≥ 80) dobivaju najviši prioritet u automatskoj distribuciji leadova.
+- Algoritam prvo provjerava dostupne Premium Partnere prije nego što proslijedi leadove Verified ili Basic Partnerima.
+- Premium Partneri dobivaju leadove automatski bez potrebe za ručnom kupnjom, osim ako eksplicitno odbiju.
+- Prioritet se kombinuje s drugim faktorima (lokacija, kategorija, dostupnost) kako bi se osigurala optimalna dodjela.
+
+**Prednosti**
+- Premium Partneri dobivaju brži pristup novim leadovima bez čekanja.
+- Automatska dodjela smanjuje vrijeme između stvaranja leada i dodjele partneru.
+- Poboljšava iskustvo Premium Partnera osiguravajući im prioritetnu poziciju.
+- Povećava konverziju leadova jer Premium Partneri imaju bolje performanse.
+- Potiče partnere da teže Premium tier statusu kako bi dobili prioritetnu dodjelu.
+
+**Kada koristiti**
+- Za osiguravanje prioritetne dodjele leadova Premium Partnerima.
+- Za poboljšanje iskustva Premium Partnera kroz brži pristup leadovima.
+- Za povećanje konverzije leadova kroz dodjelu najkvalitetnijim partnerima.
+- Za poticanje partnera da teže Premium tier statusu.
+- Za optimizaciju distribucije leadova u queue sustavu.
+`,
+      technicalDetails: `**Frontend**
+- Premium Partneri vide automatski dodijeljene leadove u svojoj lead listi s oznakom "Auto-assigned".
+- Dashboard prikazuje statistike o automatski dodijeljenim leadovima.
+- Mogućnost konfiguracije auto-assign postavki (ako je omogućeno).
+
+**Backend**
+- \`queueService.autoAssign\` provjerava dostupne Premium Partnere prije dodjele leadova.
+- Algoritam sortira partnere prema tier statusu (Premium → Verified → Basic) prije dodjele.
+- Auto-assign prioritet se primjenjuje u queue sustavu prije ručne kupnje leadova.
+- Premium Partneri dobivaju notifikacije o automatski dodijeljenim leadovima.
+- Event \`lead.autoAssigned\` informira ostale servise o automatskoj dodjeli leada Premium Partneru.
+
+**Baza**
+- \`LeadAssignment\` tablica bilježi automatske dodjele leadova (leadId, providerId, assignedAt, assignmentType: AUTO, tier).
+- \`QueuePriority\` tablica definira prioritete dodjele po tieru (tier, priority, autoAssignEnabled).
+- \`AutoAssignLog\` tablica bilježi sve automatske dodjele za analizu (leadId, providerId, assignedAt, reason).
+- Auto-assign metrike se cacheiraju radi bržeg pristupa i smanjenja opterećenja baze.
+
+**API**
+- \`GET /api/providers/:id/auto-assigned-leads\` – vraća listu automatski dodijeljenih leadova za određenog partnera.
+- \`GET /api/admin/auto-assign/stats\` – vraća statistike o automatskim dodjelama po tieru (admin only).
+- \`POST /api/admin/auto-assign/config\` – konfigurira auto-assign postavke (admin only).
+- \`GET /api/queue/priority\` – vraća prioritete dodjele leadova po tieru.
+      `
     }
   };
 
