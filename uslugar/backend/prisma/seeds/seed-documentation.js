@@ -12225,6 +12225,44 @@ SMS verifikacija osigurava da vaš telefonski broj pripada vama i povećava povj
 - \`GET /api/registration/wizard/status\` omogućava nastavak prekinute registracije.
 - \`POST /api/registration/wizard/complete\` potvrđuje završetak i pokreće TRIAL aktivaciju.
 `
+    },
+    "Direktor Dashboard - upravljanje timovima": {
+      implemented: true,
+      summary: "Direktor Dashboard omogućava upravljanje timovima - dodavanje i uklanjanje članova tima.",
+      details: `**Kako funkcionira**
+- Direktor Dashboard ima tab "Tim" koji prikazuje sve članove tima.
+- Direktor može dodati novog člana unoseći email adresu PROVIDER korisnika.
+- Direktor može ukloniti člana iz tima jednim klikom.
+- Prikazuje se status dostupnosti, kategorije i kontakt informacije svakog člana.
+
+**Prednosti**
+- Jednostavno upravljanje timom na jednom mjestu.
+- Brzo dodavanje novih članova i uklanjanje onih koji više ne rade za tvrtku.
+- Pregled svih aktivnih članova tima s njihovim informacijama.
+
+**Kada koristiti**
+- Kada trebate dodati novog člana tima.
+- Kada član tima više ne radi za tvrtku.
+- Za pregled svih aktivnih članova tima.
+`,
+      technicalDetails: `**Frontend**
+- Komponenta \`DirectorDashboard\` s tabom "Tim".
+- Forma za dodavanje člana tima (email input).
+- Lista članova tima s informacijama i gumbom za uklanjanje.
+
+**Backend**
+- \`GET /api/director/team\` – dohvaća direktora i sve članove tima.
+- \`POST /api/director/team/add\` – dodaje člana tima (zahtijeva userId).
+- \`DELETE /api/director/team/:memberId\` – uklanja člana iz tima.
+
+**Baza**
+- \`ProviderProfile\` polje \`companyId\` povezuje tim člana s direktorom.
+
+**API**
+- \`GET /api/director/team\` – dohvaća tim i članove.
+- \`POST /api/director/team/add\` – dodaje člana.
+- \`DELETE /api/director/team/:memberId\` – uklanja člana.
+      `
     }
   };
 
@@ -13475,44 +13513,6 @@ async function seedDocumentation() {
 - GET /api/admin/kyc-metrics?period=monthly|weekly&breakdown=category|region
 - GET /api/admin/kyc-metrics/reasons?top=5
 - POST /api/admin/kyc-metrics/recalculate (ručno osvježavanje cachea)
-      `
-      },
-      "Direktor Dashboard - upravljanje timovima": {
-        implemented: true,
-        summary: "Direktor Dashboard omogućava upravljanje timovima - dodavanje i uklanjanje članova tima.",
-        details: `**Kako funkcionira**
-- Direktor Dashboard ima tab "Tim" koji prikazuje sve članove tima.
-- Direktor može dodati novog člana unoseći email adresu PROVIDER korisnika.
-- Direktor može ukloniti člana iz tima jednim klikom.
-- Prikazuje se status dostupnosti, kategorije i kontakt informacije svakog člana.
-
-**Prednosti**
-- Jednostavno upravljanje timom na jednom mjestu.
-- Brzo dodavanje novih članova i uklanjanje onih koji više ne rade za tvrtku.
-- Pregled svih aktivnih članova tima s njihovim informacijama.
-
-**Kada koristiti**
-- Kada trebate dodati novog člana tima.
-- Kada član tima više ne radi za tvrtku.
-- Za pregled svih aktivnih članova tima.
-`,
-        technicalDetails: `**Frontend**
-- Komponenta \`DirectorDashboard\` s tabom "Tim".
-- Forma za dodavanje člana tima (email input).
-- Lista članova tima s informacijama i gumbom za uklanjanje.
-
-**Backend**
-- \`GET /api/director/team\` – dohvaća direktora i sve članove tima.
-- \`POST /api/director/team/add\` – dodaje člana tima (zahtijeva userId).
-- \`DELETE /api/director/team/:memberId\` – uklanja člana iz tima.
-
-**Baza**
-- \`ProviderProfile\` polje \`companyId\` povezuje tim člana s direktorom.
-
-**API**
-- \`GET /api/director/team\` – dohvaća tim i članove.
-- \`POST /api/director/team/add\` – dodaje člana.
-- \`DELETE /api/director/team/:memberId\` – uklanja člana.
       `
       },
       "Direktor Dashboard - pristup financijama": {
