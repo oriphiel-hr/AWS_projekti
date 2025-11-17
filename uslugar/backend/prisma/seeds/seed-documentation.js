@@ -12803,6 +12803,512 @@ SMS verifikacija osigurava da vaš telefonski broj pripada vama i povećava povj
 - \`POST /api/admin/auto-assign/config\` – konfigurira auto-assign postavke (admin only).
 - \`GET /api/queue/priority\` – vraća prioritete dodjele leadova po tieru.
       `
+    },
+    "Eligibility filter po kategoriji": {
+      implemented: true,
+      summary: "Eligibility filter po kategoriji osigurava da se leadovi dodjeljuju samo partnerima koji su kvalificirani za određene kategorije usluga, na temelju njihovih odabranih kategorija i licenci.",
+      details: `**Kako funkcionira**
+- Eligibility filter po kategoriji provjerava da li je partner kvalificiran za kategoriju leada prije dodjele.
+- Partner mora imati odabranu kategoriju u svom profilu i, ako je potrebno, valjanu licencu za tu kategoriju.
+- Algoritam filtrira partnere na temelju njihovih odabranih kategorija i licenci prije dodjele leadova.
+- Filter uzima u obzir i podkategorije, tako da partner s odabranom glavnom kategorijom može primati leadove iz podkategorija.
+- Eligibility filter se primjenjuje u queue sustavu prije dodjele leadova, osiguravajući da se leadovi dodjeljuju samo relevantnim partnerima.
+
+**Prednosti**
+- Osigurava da se leadovi dodjeljuju samo partnerima koji su kvalificirani za određene kategorije.
+- Smanjuje broj nepotrebnih leadova i poboljšava konverziju.
+- Poboljšava iskustvo partnera osiguravajući da dobivaju samo relevantne leadove.
+- Povećava kvalitetu dodjele leadova i smanjuje odbijanja.
+- Osigurava compliance s licencnim zahtjevima za određene kategorije.
+
+**Kada koristiti**
+- Za osiguravanje da se leadovi dodjeljuju samo kvalificiranim partnerima.
+- Za poboljšanje konverzije leadova kroz dodjelu relevantnim partnerima.
+- Za osiguravanje compliance s licencnim zahtjevima za određene kategorije.
+- Za optimizaciju distribucije leadova u queue sustavu.
+- Za poboljšanje iskustva partnera kroz relevantne leadove.
+`,
+      technicalDetails: `**Frontend**
+- Partneri vide svoje odabrane kategorije u profilu i mogu ih ažurirati.
+- Lead marketplace prikazuje samo leadove iz kategorija za koje je partner kvalificiran.
+- Filter panel omogućava filtriranje leadova po kategorijama.
+- Prikaz upozorenja ako partner pokuša kupiti lead iz kategorije za koju nije kvalificiran.
+
+**Backend**
+- \`eligibilityService.checkCategory\` provjerava da li je partner kvalificiran za određenu kategoriju.
+- Algoritam provjerava odabrane kategorije partnera i valjanost licenci prije dodjele leadova.
+- Eligibility filter se primjenjuje u queue sustavu prije dodjele leadova partneru.
+- Filter uzima u obzir i podkategorije, tako da partner s glavnom kategorijom može primati leadove iz podkategorija.
+- Event \`provider.category.updated\` invalidira eligibility cache i ažurira queue prioritete.
+
+**Baza**
+- \`ProviderCategory\` tablica povezuje partnere s kategorijama (providerId, categoryId, isActive).
+- \`License\` tablica sadrži licence partnera koje utječu na eligibility za određene kategorije.
+- \`CategoryLicenseRequirement\` tablica definira koje kategorije zahtijevaju licence (categoryId, requiresLicense).
+- Eligibility metrike se cacheiraju radi bržeg pristupa i smanjenja opterećenja baze.
+
+**API**
+- \`GET /api/providers/:id/categories\` – vraća odabrane kategorije za određenog partnera.
+- \`POST /api/providers/:id/categories\` – ažurira odabrane kategorije partnera.
+- \`GET /api/queue/eligibility/:categoryId\` – vraća listu partnera kvalificiranih za određenu kategoriju.
+- \`GET /api/leads?categoryId=:id\` – vraća leadove iz određene kategorije (filtrirano po eligibility).
+      `
+    },
+    "Eligibility filter po regiji": {
+      implemented: true,
+      summary: "Eligibility filter po regiji osigurava da se leadovi dodjeljuju samo partnerima koji rade u određenim regijama, na temelju njihovih odabranih regija i lokacije.",
+      details: `**Kako funkcionira**
+- Eligibility filter po regiji provjerava da li je partner kvalificiran za regiju leada prije dodjele.
+- Partner mora imati odabranu regiju u svom profilu koja odgovara regiji leada.
+- Algoritam filtrira partnere na temelju njihovih odabranih regija prije dodjele leadova.
+- Filter uzima u obzir i geografsku blizinu, tako da partneri u susjednim regijama mogu primati leadove ako je to omogućeno.
+- Eligibility filter se primjenjuje u queue sustavu prije dodjele leadova, osiguravajući da se leadovi dodjeljuju samo partnerima u relevantnim regijama.
+
+**Prednosti**
+- Osigurava da se leadovi dodjeljuju samo partnerima koji rade u relevantnim regijama.
+- Smanjuje broj nepotrebnih leadova i poboljšava konverziju.
+- Poboljšava iskustvo partnera osiguravajući da dobivaju samo leadove iz regija u kojima rade.
+- Povećava kvalitetu dodjele leadova i smanjuje odbijanja zbog lokacije.
+- Osigurava da klijenti dobivaju partnere koji mogu pružiti usluge u njihovoj regiji.
+
+**Kada koristiti**
+- Za osiguravanje da se leadovi dodjeljuju samo partnerima u relevantnim regijama.
+- Za poboljšanje konverzije leadova kroz dodjelu partnerima koji mogu pružiti usluge u određenoj regiji.
+- Za optimizaciju distribucije leadova u queue sustavu na temelju geografskih faktora.
+- Za poboljšanje iskustva partnera kroz relevantne leadove iz njihovih regija.
+- Za osiguravanje da klijenti dobivaju partnere koji mogu pružiti usluge u njihovoj regiji.
+`,
+      technicalDetails: `**Frontend**
+- Partneri vide svoje odabrane regije u profilu i mogu ih ažurirati.
+- Lead marketplace prikazuje samo leadove iz regija za koje je partner kvalificiran.
+- Filter panel omogućava filtriranje leadova po regijama.
+- Prikaz upozorenja ako partner pokuša kupiti lead iz regije za koju nije kvalificiran.
+- Geografska mapa prikazuje dostupne regije i leadove po regijama.
+
+**Backend**
+- \`eligibilityService.checkRegion\` provjerava da li je partner kvalificiran za određenu regiju.
+- Algoritam provjerava odabrane regije partnera i geografsku blizinu prije dodjele leadova.
+- Eligibility filter se primjenjuje u queue sustavu prije dodjele leadova partneru.
+- Filter uzima u obzir i susjedne regije, tako da partneri u blizini mogu primati leadove ako je to omogućeno.
+- Event \`provider.region.updated\` invalidira eligibility cache i ažurira queue prioritete.
+
+**Baza**
+- \`ProviderRegion\` tablica povezuje partnere s regijama (providerId, regionId, isActive).
+- \`Lead\` tablica sadrži regiju leada (region, city, coordinates) koja se koristi za filtriranje.
+- \`RegionProximity\` tablica definira susjedne regije za geografsku blizinu (regionId, nearbyRegionId, distance).
+- Eligibility metrike se cacheiraju radi bržeg pristupa i smanjenja opterećenja baze.
+
+**API**
+- \`GET /api/providers/:id/regions\` – vraća odabrane regije za određenog partnera.
+- \`POST /api/providers/:id/regions\` – ažurira odabrane regije partnera.
+- \`GET /api/queue/eligibility/region/:regionId\` – vraća listu partnera kvalificiranih za određenu regiju.
+- \`GET /api/leads?regionId=:id\` – vraća leadove iz određene regije (filtrirano po eligibility).
+      `
+    },
+    "Prioritet timu s boljim matchom": {
+      implemented: true,
+      summary: "Prioritet timu s boljim matchom osigurava da se leadovi dodjeljuju timovima s najboljim match score-om, koji kombinira faktore tvrtke i tim članova za optimalnu dodjelu.",
+      details: `**Kako funkcionira**
+- Prioritet timu s boljim matchom koristi kombinirani match score koji uzima u obzir faktore tvrtke (PARTNER_SCORE, tier, compliance) i tim članova (kategorije, licence, dostupnost).
+- Algoritam izračunava match score za svaki tim na temelju relevantnosti tim članova za određeni lead (kategorija, regija, licence).
+- Timovi s višim match score-om dobivaju prioritet u queue sustavu i prvo im se nude leadovi.
+- Match score se izračunava u realnom vremenu prije dodjele leadova, uzimajući u obzir trenutnu dostupnost tim članova.
+- Algoritam kombinira match score tvrtke i tim članova kako bi osigurao optimalnu dodjelu leadova najkvalitetnijim timovima.
+
+**Prednosti**
+- Osigurava da se leadovi dodjeljuju timovima s najboljim match score-om.
+- Povećava konverziju leadova kroz dodjelu najrelevantnijim timovima.
+- Poboljšava iskustvo klijenata osiguravajući da dobivaju najkvalitetnije timove.
+- Potiče timove da održavaju visoku kvalitetu i relevantnost kako bi dobili prioritet.
+- Optimizira distribuciju leadova u queue sustavu na temelju match score-a.
+
+**Kada koristiti**
+- Za osiguravanje prioritetne dodjele leadova timovima s najboljim match score-om.
+- Za poboljšanje konverzije leadova kroz dodjelu najrelevantnijim timovima.
+- Za optimizaciju distribucije leadova u queue sustavu na temelju match score-a.
+- Za poticanje timova da održavaju visoku kvalitetu i relevantnost.
+- Za poboljšanje iskustva klijenata kroz dodjelu najkvalitetnijih timova.
+`,
+      technicalDetails: `**Frontend**
+- Timovi vide svoj match score u dashboardu i mogu pratiti kako se mijenja.
+- Lead marketplace prikazuje match score za svaki lead u odnosu na tim.
+- Dashboard prikazuje statistike o match score-u i prioritetima dodjele.
+- Mogućnost pregleda breakdown match score-a (tvrtka + tim članovi).
+
+**Backend**
+- \`matchService.calculateTeamMatchScore\` izračunava kombinirani match score za tim.
+- Algoritam kombinira match score tvrtke (PARTNER_SCORE, tier, compliance) i tim članova (kategorije, licence, dostupnost).
+- \`findBestTeamMatches\` pronalazi najbolje matchane tim članove za određeni lead.
+- \`calculateCombinedMatchScore\` kombinira score tvrtke i tim članova u jedinstveni match score.
+- Match score se koristi u queue sustavu za prioritizaciju dodjele leadova timovima.
+
+**Baza**
+- \`TeamMatchScore\` tablica čuva match score za svaki tim (teamId, leadId, matchScore, breakdown JSONB, calculatedAt).
+- \`TeamMemberMatch\` tablica bilježi match score pojedinih tim članova (memberId, leadId, matchScore, factors).
+- \`MatchScoreHistory\` tablica čuva povijest match score-a za analizu trendova.
+- Match score se cacheira radi bržeg pristupa i smanjenja opterećenja baze.
+
+**API**
+- \`GET /api/teams/:id/match-score\` – vraća match score za određeni tim.
+- \`GET /api/teams/:id/match-score/:leadId\` – vraća match score tima za određeni lead.
+- \`GET /api/queue/team-matches/:leadId\` – vraća listu timova sortiranih po match score-u za određeni lead.
+- \`GET /api/analytics/team-match-scores\` – vraća statistike o match score-ovima timova.
+      `
+    },
+    "Fallback na direktora ako nema tima": {
+      implemented: true,
+      summary: "Fallback na direktora ako nema tima osigurava da se leadovi dodjeljuju direktoru tvrtke kada tim nema dostupnih članova ili kada tim ne može primiti lead.",
+      details: `**Kako funkcionira**
+- Fallback na direktora se aktivira kada tim nema dostupnih članova koji mogu primiti lead (npr. svi članovi su zauzeti, nedostaju licence, ili tim nije aktivan).
+- Algoritam prvo pokušava dodijeliti lead timu, ali ako tim ne može primiti lead, automatski se prebacuje na direktora tvrtke.
+- Direktor dobiva lead kao fallback opciju, osiguravajući da lead ne ostane nedodijeljen.
+- Fallback se primjenjuje u queue sustavu nakon neuspješnog pokušaja dodjele timu.
+- Direktor može primiti lead iako tim nije dostupan, osiguravajući kontinuitet usluge.
+
+**Prednosti**
+- Osigurava da leadovi ne ostaju nedodijeljeni kada tim nije dostupan.
+- Omogućava direktoru da preuzme leadove kada tim ne može raditi.
+- Poboljšava iskustvo klijenata osiguravajući da uvijek dobivaju odgovor.
+- Osigurava kontinuitet usluge čak i kada tim nije dostupan.
+- Omogućava direktoru da kontrolira kvalitetu usluge kroz direktno preuzimanje leadova.
+
+**Kada koristiti**
+- Za osiguravanje da leadovi ne ostaju nedodijeljeni kada tim nije dostupan.
+- Za omogućavanje direktoru da preuzme leadove kada tim ne može raditi.
+- Za poboljšanje iskustva klijenata osiguravajući da uvijek dobivaju odgovor.
+- Za osiguravanje kontinuiteta usluge čak i kada tim nije dostupan.
+- Za omogućavanje direktoru da kontrolira kvalitetu usluge kroz direktno preuzimanje leadova.
+`,
+      technicalDetails: `**Frontend**
+- Direktor vidi fallback leadove u svojoj lead listi s oznakom "Fallback".
+- Dashboard prikazuje statistike o fallback leadovima i razloge zašto su dodijeljeni direktoru.
+- Mogućnost konfiguracije fallback postavki (ako je omogućeno).
+- Prikaz upozorenja kada tim nije dostupan i lead se dodjeljuje direktoru.
+
+**Backend**
+- \`queueService.fallbackToDirector\` provjerava da li tim može primiti lead i, ako ne, prebacuje na direktora.
+- Algoritam provjerava dostupnost tim članova, licence i aktivnost tima prije fallback-a.
+- Fallback se primjenjuje u queue sustavu nakon neuspješnog pokušaja dodjele timu.
+- Direktor dobiva notifikacije o fallback leadovima s razlogom zašto su dodijeljeni.
+- Event \`lead.fallbackToDirector\` informira ostale servise o fallback dodjeli leada direktoru.
+
+**Baza**
+- \`LeadAssignment\` tablica bilježi fallback dodjele leadova (leadId, directorId, assignedAt, assignmentType: FALLBACK, reason).
+- \`TeamAvailability\` tablica prati dostupnost tim članova (teamId, availableMembers, unavailableReason).
+- \`FallbackLog\` tablica bilježi sve fallback dodjele za analizu (leadId, directorId, teamId, reason, timestamp).
+- Fallback metrike se cacheiraju radi bržeg pristupa i smanjenja opterećenja baze.
+
+**API**
+- \`GET /api/director/fallback-leads\` – vraća listu fallback leadova za određenog direktora.
+- \`GET /api/admin/fallback/stats\` – vraća statistike o fallback dodjelama (admin only).
+- \`POST /api/admin/fallback/config\` – konfigurira fallback postavke (admin only).
+- \`GET /api/queue/fallback/:leadId\` – provjerava da li lead treba fallback na direktora.
+      `
+    },
+    "Automatsko snižavanje cijene ako nema leadova": {
+      implemented: true,
+      summary: "Automatsko snižavanje cijene ako nema leadova osigurava da se klijentima automatski odobrava credit refund kada u obračunskom periodu nema isporučenih leadova, što predstavlja automatsko snižavanje cijene.",
+      details: `**Kako funkcionira**
+- Automatsko snižavanje cijene se aktivira kada u obračunskom periodu nema isporučenih leadova (deliveredLeads = 0).
+- Sustav automatski kreira BillingAdjustment s tipom CREDIT i odobrava puni credit za cijelu kvotu (adjustmentCredits = expectedLeads).
+- Credit se automatski dodaje na subscription balance klijenta, što predstavlja snižavanje cijene za sljedeći period.
+- Sustav šalje notifikaciju klijentu o credit refund-u s objašnjenjem da je tržište mirno.
+- Automatsko snižavanje cijene se primjenjuje u kombinaciji s "Credit refund ako tržište miruje" funkcionalnošću.
+
+**Prednosti**
+- Osigurava fer naplatu kada tržište miruje i nema leadova.
+- Automatski odobrava credit refund bez potrebe za ručnom intervencijom.
+- Poboljšava iskustvo klijenata osiguravajući da ne plaćaju za usluge koje nisu dobili.
+- Transparentan sustav koji gradi povjerenje između platforme i klijenata.
+- Potiče klijente da ostanu na platformi čak i kada tržište miruje.
+
+**Kada koristiti**
+- Za osiguravanje fer naplate kada tržište miruje i nema leadova.
+- Za automatsko odobravanje credit refund-a bez potrebe za ručnom intervencijom.
+- Za poboljšanje iskustva klijenata osiguravajući da ne plaćaju za usluge koje nisu dobili.
+- Za izgradnju povjerenja između platforme i klijenata kroz transparentan sustav.
+- Za poticanje klijenata da ostanu na platformi čak i kada tržište miruje.
+`,
+      technicalDetails: `**Frontend**
+- Klijenti vide automatski odobrene credit refund-ove u billing dashboardu.
+- Dashboard prikazuje BillingAdjustment s tipom CREDIT i razlogom "Automatsko snižavanje cijene".
+- Prikaz notifikacije o credit refund-u s objašnjenjem da je tržište miruje.
+- Mogućnost pregleda povijesti automatskih credit refund-ova.
+
+**Backend**
+- \`billingAdjustmentService.calculateAdjustmentForPlan\` izračunava adjustment i detektira kada nema leadova (deliveredLeads = 0).
+- Algoritam automatski kreira BillingAdjustment s tipom CREDIT i punim creditom za cijelu kvotu.
+- \`applyQuietMarketCreditRefunds\` primjenjuje credit refund-ove za sve klijente koji nemaju leadova u periodu.
+- Credit se automatski dodaje na subscription balance klijenta.
+- Event \`billing.adjustment.applied\` informira ostale servise o primijenjenom credit refund-u.
+
+**Baza**
+- \`BillingAdjustment\` tablica bilježi automatske credit refund-ove (billingPlanId, adjustmentType: CREDIT, adjustmentCredits, deliveredLeads: 0, notes).
+- \`CreditTransaction\` tablica bilježi credit refund transakcije (userId, type: REFUND, amount, balance, description).
+- \`Subscription\` tablica čuva creditsBalance koji se ažurira automatskim credit refund-om.
+- \`Notification\` tablica bilježi notifikacije o credit refund-u klijentima.
+
+**API**
+- \`GET /api/director/billing/adjustments\` – vraća listu BillingAdjustment-a uključujući automatske credit refund-ove.
+- \`GET /api/director/billing/credits\` – vraća trenutno stanje kredita i povijest transakcija.
+- \`POST /api/admin/billing/apply-quiet-market-refunds\` – ručno pokretanje automatskih credit refund-ova (admin only).
+- \`GET /api/admin/billing/quiet-market-stats\` – vraća statistike o automatskim credit refund-ovima (admin only).
+      `
+    },
+    "Credit refund ako tržište miruje": {
+      implemented: true,
+      summary: "Credit refund ako tržište miruje automatski vraća kredite klijentima kada u obračunskom periodu nema isporučenih leadova (0 leadova), što predstavlja kompenzaciju za mirno tržište.",
+      details: `**Kako funkcionira**
+- Credit refund se aktivira kada u obračunskom periodu nema isporučenih leadova (deliveredLeads = 0).
+- Sustav automatski pronalazi sve BillingAdjustment-e s tipom CREDIT i deliveredLeads = 0 koji su u statusu PENDING.
+- Za svaki takav adjustment, sustav automatski dodaje credit na subscription balance klijenta.
+- Credit refund se bilježi kao CreditTransaction s tipom REFUND i opisom da je tržište mirno.
+- Sustav šalje notifikaciju klijentu o credit refund-u s objašnjenjem da je tržište miruje i da mu je vraćeno određeno količina kredita.
+
+**Prednosti**
+- Osigurava fer naplatu kada tržište miruje i nema leadova.
+- Automatski vraća kredite klijentima bez potrebe za ručnom intervencijom.
+- Poboljšava iskustvo klijenata osiguravajući da ne plaćaju za usluge koje nisu dobili.
+- Transparentan sustav koji gradi povjerenje između platforme i klijenata.
+- Potiče klijente da ostanu na platformi čak i kada tržište miruje.
+
+**Kada koristiti**
+- Za osiguravanje fer naplate kada tržište miruje i nema leadova.
+- Za automatsko vraćanje kredita klijentima bez potrebe za ručnom intervencijom.
+- Za poboljšanje iskustva klijenata osiguravajući da ne plaćaju za usluge koje nisu dobili.
+- Za izgradnju povjerenja između platforme i klijenata kroz transparentan sustav.
+- Za poticanje klijenata da ostanu na platformi čak i kada tržište miruje.
+`,
+      technicalDetails: `**Frontend**
+- Klijenti vide automatski odobrene credit refund-ove u billing dashboardu.
+- Dashboard prikazuje CreditTransaction s tipom REFUND i opisom "Credit refund jer je tržište miruje".
+- Prikaz notifikacije o credit refund-u s objašnjenjem da je tržište miruje i da mu je vraćeno određeno količina kredita.
+- Mogućnost pregleda povijesti credit refund-ova povezanih s mirnim tržištem.
+
+**Backend**
+- \`applyQuietMarketCreditRefunds\` pronalazi sve BillingAdjustment-e s tipom CREDIT i deliveredLeads = 0 koji su u statusu PENDING.
+- Algoritam automatski dodaje credit na subscription balance klijenta za svaki takav adjustment.
+- Credit refund se bilježi kao CreditTransaction s tipom REFUND i opisom da je tržište miruje.
+- Sustav šalje notifikaciju klijentu o credit refund-u s detaljima o vraćenom kreditu.
+- Event \`credit.refund.applied\` informira ostale servise o primijenjenom credit refund-u.
+
+**Baza**
+- \`BillingAdjustment\` tablica bilježi adjustment-e s tipom CREDIT i deliveredLeads = 0 (billingPlanId, adjustmentType: CREDIT, deliveredLeads: 0, status: PENDING/APPLIED).
+- \`CreditTransaction\` tablica bilježi credit refund transakcije (userId, type: REFUND, amount, balance, description: "Credit refund jer je tržište miruje").
+- \`Subscription\` tablica čuva creditsBalance koji se ažurira credit refund-om.
+- \`Notification\` tablica bilježi notifikacije o credit refund-u klijentima.
+
+**API**
+- \`GET /api/director/billing/credits\` – vraća trenutno stanje kredita i povijest transakcija uključujući credit refund-ove.
+- \`GET /api/director/billing/adjustments\` – vraća listu BillingAdjustment-a uključujući one s deliveredLeads = 0.
+- \`POST /api/admin/billing/apply-quiet-market-refunds\` – ručno pokretanje credit refund-ova za mirno tržište (admin only).
+- \`GET /api/admin/billing/quiet-market-stats\` – vraća statistike o credit refund-ovima za mirno tržište (admin only).
+      `
+    },
+    "Mjesečni izvještaj o isporučenim leadovima": {
+      implemented: true,
+      summary: "Mjesečni izvještaj o isporučenim leadovima automatski generira i šalje klijentima detaljne izvještaje o isporučenim leadovima u obračunskom periodu, uključujući statistike, trendove i billing informacije.",
+      details: `**Kako funkcionira**
+- Mjesečni izvještaj se automatski generira na kraju svakog obračunskog perioda (obično mjesec dana).
+- Izvještaj uključuje detaljne informacije o isporučenim leadovima: ukupan broj, po kategorijama, po regijama, konverzija, ROI.
+- Izvještaj prikazuje usporedbu očekivanog i isporučenog volumena leadova s grafikonskim prikazom.
+- Izvještaj uključuje billing informacije: fakture, kredite, adjustment-e, i ukupne troškove.
+- Izvještaj se automatski šalje klijentima putem emaila i dostupan je u billing dashboardu.
+
+**Prednosti**
+- Omogućava klijentima detaljan pregled performansi i isporučenih leadova.
+- Poboljšava transparentnost između platforme i klijenata kroz detaljne izvještaje.
+- Pomaže klijentima u analizi ROI-ja i optimizaciji budžeta.
+- Automatski generirani izvještaji štede vrijeme i osiguravaju dosljednost.
+- Pruža klijentima podatke potrebne za donošenje informiranih odluka.
+
+**Kada koristiti**
+- Za praćenje performansi i isporučenih leadova u obračunskom periodu.
+- Za analizu ROI-ja i optimizaciju budžeta.
+- Za pregled billing informacija i troškova.
+- Za donošenje informiranih odluka o budućim investicijama.
+- Za komunikaciju s timom o performansama i rezultatima.
+`,
+      technicalDetails: `**Frontend**
+- Klijenti vide mjesečne izvještaje u billing dashboardu s detaljnim grafikonskim prikazom.
+- Dashboard prikazuje statistike o isporučenim leadovima: ukupan broj, po kategorijama, po regijama, konverzija, ROI.
+- Mogućnost preuzimanja izvještaja u PDF ili Excel formatu.
+- Prikaz usporedbe očekivanog i isporučenog volumena leadova s grafikonskim prikazom.
+- Email notifikacija s linkom na izvještaj u dashboardu.
+
+**Backend**
+- \`reportService.generateMonthlyReport\` generira mjesečni izvještaj za svakog klijenta na kraju obračunskog perioda.
+- Algoritam agregira podatke o isporučenim leadovima iz BillingAdjustment i LeadAssignment tablica.
+- Izvještaj uključuje statistike, trendove, billing informacije i grafikonske prikaze.
+- \`emailService.sendMonthlyReport\` šalje izvještaj klijentima putem emaila.
+- Event \`report.monthly.generated\` informira ostale servise o generiranom izvještaju.
+
+**Baza**
+- \`MonthlyReport\` tablica čuva generirane izvještaje (userId, periodStart, periodEnd, reportData JSONB, generatedAt).
+- \`BillingAdjustment\` tablica sadrži podatke o isporučenim leadovima (deliveredLeads, expectedLeads, periodStart, periodEnd).
+- \`LeadAssignment\` tablica bilježi sve dodjele leadova koje se koriste za izračun statistika.
+- \`ReportCache\` tablica cacheira agregirane podatke za brže generiranje izvještaja.
+
+**API**
+- \`GET /api/director/billing/monthly-report\` – vraća mjesečni izvještaj za trenutni ili određeni period.
+- \`GET /api/director/billing/monthly-reports\` – vraća listu svih mjesečnih izvještaja.
+- \`GET /api/director/billing/monthly-report/:period/download\` – preuzimanje izvještaja u PDF ili Excel formatu.
+- \`POST /api/admin/billing/generate-monthly-reports\` – ručno generiranje mjesečnih izvještaja (admin only).
+      `
+    },
+    "Carryover neiskorištenih leadova": {
+      implemented: true,
+      summary: "Carryover neiskorištenih leadova omogućava da se neiskorišteni leadovi iz jednog obračunskog perioda prenesu u sljedeći period, što osigurava da klijenti ne gube leadove koje nisu iskoristili.",
+      details: `**Kako funkcionira**
+- Carryover se aktivira kada u obračunskom periodu nije isporučeno dovoljno leadova u odnosu na očekivani volumen (deliveredLeads < expectedLeads).
+- Neiskorišteni leadovi se automatski prenose u sljedeći obračunski period kao carryoverLeads.
+- U sljedećem periodu, efektivni očekivani volumen = baza (expectedLeads) + carryoverLeads iz prethodnog perioda.
+- Carryover se izračunava na temelju razlike između očekivanog i isporučenog volumena leadova.
+- Carryover se primjenjuje samo ako je omogućen na BillingPlan-u (carryoverEnabled = true).
+
+**Prednosti**
+- Osigurava da klijenti ne gube leadove koje nisu iskoristili u jednom periodu.
+- Omogućava fleksibilnost u korištenju leadova kroz različite periode.
+- Poboljšava iskustvo klijenata osiguravajući da dobivaju punu vrijednost svojih paketa.
+- Transparentan sustav koji gradi povjerenje između platforme i klijenata.
+- Potiče klijente da ostanu na platformi čak i kada ne iskoriste sve leadove u jednom periodu.
+
+**Kada koristiti**
+- Za osiguravanje da klijenti ne gube leadove koje nisu iskoristili.
+- Za omogućavanje fleksibilnosti u korištenju leadova kroz različite periode.
+- Za poboljšanje iskustva klijenata osiguravajući da dobivaju punu vrijednost svojih paketa.
+- Za izgradnju povjerenja između platforme i klijenata kroz transparentan sustav.
+- Za poticanje klijenata da ostanu na platformi čak i kada ne iskoriste sve leadove u jednom periodu.
+`,
+      technicalDetails: `**Frontend**
+- Klijenti vide carryover leadove u billing dashboardu s oznakom "Carryover".
+- Dashboard prikazuje efektivni očekivani volumen (baza + carryover) za trenutni period.
+- Prikaz povijesti carryover leadova i kako su se prenosili kroz periode.
+- Mogućnost pregleda carryover leadova i njihovog korištenja u sljedećem periodu.
+
+**Backend**
+- \`billingAdjustmentService.calculateAdjustmentForPlan\` izračunava carryover na temelju razlike između očekivanog i isporučenog volumena.
+- Algoritam automatski prenosi neiskorištene leadove u sljedeći period (nextCarryoverLeads = max(0, expectedLeads - deliveredLeads)).
+- Carryover se ažurira u BillingPlan tablici (carryoverLeads) na kraju svakog obračunskog perioda.
+- Carryover se primjenjuje samo ako je omogućen na BillingPlan-u (carryoverEnabled = true).
+- Event \`billing.carryover.updated\` informira ostale servise o ažuriranom carryover-u.
+
+**Baza**
+- \`BillingPlan\` tablica čuva carryover leadove (carryoverLeads, carryoverEnabled) za svaki plan.
+- \`BillingAdjustment\` tablica bilježi adjustment-e s informacijama o carryover-u (expectedLeads, deliveredLeads, realValueFactor).
+- \`CarryoverHistory\` tablica bilježi povijest carryover leadova (billingPlanId, periodStart, periodEnd, carryoverLeads, usedLeads).
+- Carryover metrike se cacheiraju radi bržeg pristupa i smanjenja opterećenja baze.
+
+**API**
+- \`GET /api/director/billing/carryover\` – vraća trenutne carryover leadove za određeni plan.
+- \`GET /api/director/billing/carryover-history\` – vraća povijest carryover leadova.
+- \`POST /api/admin/billing/plans/:id/carryover\` – omogućava/onemogućava carryover za određeni plan (admin only).
+- \`GET /api/admin/billing/carryover-stats\` – vraća statistike o carryover leadovima (admin only).
+      `
+    },
+    "Pauziranje kategorije bez naplate": {
+      implemented: true,
+      summary: "Pauziranje kategorije bez naplate omogućava klijentima da privremeno pauziraju primanje leadova iz određene kategorije bez naplate za tu kategoriju u obračunskom periodu.",
+      details: `**Kako funkcionira**
+- Pauziranje kategorije se aktivira postavljanjem BillingPlan.isPaused = true za određenu kategoriju.
+- Kada je kategorija pauzirana, klijent ne prima leadove iz te kategorije u obračunskom periodu.
+- Pauzirana kategorija se ne naplaćuje u obračunskom periodu, što znači da se ne računaju expectedLeads za tu kategoriju.
+- Klijent može ponovno aktivirati kategoriju postavljanjem isPaused = false, nakon čega se kategorija ponovno uključuje u obračun.
+- Pauziranje kategorije ne utječe na druge kategorije koje nisu pauzirane.
+
+**Prednosti**
+- Omogućava klijentima da privremeno pauziraju primanje leadova iz određene kategorije bez gubitka novca.
+- Osigurava da klijenti ne plaćaju za kategorije koje trenutno ne koriste.
+- Poboljšava iskustvo klijenata omogućavajući im fleksibilnost u upravljanju kategorijama.
+- Transparentan sustav koji gradi povjerenje između platforme i klijenata.
+- Potiče klijente da ostanu na platformi čak i kada privremeno ne koriste određene kategorije.
+
+**Kada koristiti**
+- Za privremeno pauziranje primanja leadova iz određene kategorije.
+- Za izbjegavanje naplate za kategorije koje trenutno ne koristite.
+- Za optimizaciju budžeta pauziranjem kategorija koje trenutno nisu prioritetne.
+- Za testiranje novih kategorija bez obveze dugotrajne naplate.
+- Za privremeno smanjenje troškova tijekom sezonskih promjena ili reorganizacije poslovanja.
+`,
+      technicalDetails: `**Frontend**
+- Klijenti vide opciju za pauziranje kategorije u billing dashboardu.
+- Dashboard prikazuje status svake kategorije (aktivna/pauzirana) s mogućnošću promjene.
+- Prikaz upozorenja kada je kategorija pauzirana i ne prima leadove.
+- Mogućnost ponovnog aktiviranja pauzirane kategorije jednim klikom.
+
+**Backend**
+- \`billingAdjustmentService.calculateBillingAdjustmentsForPeriod\` filtrira pauzirane planove (isPaused = false).
+- Pauzirani planovi se ne obračunavaju u obračunskom periodu, što znači da se ne računaju expectedLeads za tu kategoriju.
+- \`billingPlanService.pauseCategory\` postavlja isPaused = true za određenu kategoriju.
+- \`billingPlanService.resumeCategory\` postavlja isPaused = false za određenu kategoriju.
+- Event \`billing.category.paused\` i \`billing.category.resumed\` informiraju ostale servise o promjeni statusa.
+
+**Baza**
+- \`BillingPlan\` tablica čuva status pauziranja (isPaused) za svaki plan po kategoriji.
+- \`BillingAdjustment\` tablica ne bilježi adjustment-e za pauzirane planove jer se ne obračunavaju.
+- \`CategoryPauseHistory\` tablica bilježi povijest pauziranja kategorija (billingPlanId, categoryId, pausedAt, resumedAt, reason).
+- Pauzirani status se cacheira radi bržeg pristupa i smanjenja opterećenja baze.
+
+**API**
+- \`POST /api/director/billing/plans/:id/pause\` – pauzira kategoriju za određeni plan.
+- \`POST /api/director/billing/plans/:id/resume\` – ponovno aktivira pauziranu kategoriju.
+- \`GET /api/director/billing/plans/:id/status\` – vraća status svih kategorija (aktivne/pauzirane).
+- \`GET /api/admin/billing/paused-categories\` – vraća listu svih pauziranih kategorija (admin only).
+      `
+    },
+    "Hijerarhijski model paketa (Basic → Pro → Premium)": {
+      implemented: true,
+      summary: "Hijerarhijski model paketa omogućava korisnicima da odaberu i napreduju kroz tri razine paketa (Basic → Pro → Premium), svaki s različitim cijenama, kreditima i funkcionalnostima.",
+      details: `**Kako funkcionira**
+- Hijerarhijski model paketa sastoji se od tri razine: Basic, Pro i Premium, svaki s različitim cijenama i beneficijama.
+- Korisnici mogu odabrati bilo koji paket pri registraciji ili nadograditi postojeći paket na višu razinu.
+- Svaki paket ima određenu mjesečnu cijenu, alokaciju kredita i pristup različitim funkcionalnostima.
+- Basic paket nudi osnovne funkcionalnosti i najmanju alokaciju kredita.
+- Pro paket nudi napredne funkcionalnosti, veću alokaciju kredita i prioritetnu podršku.
+- Premium paket nudi sve funkcionalnosti, najveću alokaciju kredita, ekskluzivne benefite i VIP podršku.
+- Korisnici mogu nadograditi paket u bilo kojem trenutku, a razlika u cijeni se naplaćuje proporcionalno.
+
+**Prednosti**
+- Omogućava korisnicima da odaberu paket koji najbolje odgovara njihovim potrebama i budžetu.
+- Fleksibilnost u nadogradnji paketa kako rastu potrebe korisnika.
+- Jasna hijerarhija paketa olakšava razumijevanje opcija i donošenje odluka.
+- Poboljšava iskustvo korisnika omogućavajući im da počnu s osnovnim paketom i napreduju prema višim razinama.
+- Transparentan sustav cijena i benefita gradi povjerenje između platforme i korisnika.
+
+**Kada koristiti**
+- Za odabir paketa koji najbolje odgovara vašim potrebama i budžetu.
+- Za početak s osnovnim paketom i napredovanje prema višim razinama kako rastu potrebe.
+- Za pristup naprednim funkcionalnostima i većoj alokaciji kredita.
+- Za dobivanje prioritetne ili VIP podrške za važne projekte.
+- Za optimizaciju troškova kroz odabir paketa koji najbolje odgovara vašim potrebama.
+`,
+      technicalDetails: `**Frontend**
+- Komponenta \`SubscriptionPlans\` prikazuje usporedbu sva tri paketa (Basic, Pro, Premium) s cijenama i beneficijama.
+- Dashboard prikazuje trenutni paket korisnika s mogućnošću nadogradnje.
+- Checkout proces koristi Stripe modal za plaćanje odabranog paketa.
+- Prikaz razlika između paketa i preporuka za nadogradnju na temelju korištenja.
+
+**Backend**
+- \`subscriptionService.getPlans\` vraća listu svih dostupnih paketa s cijenama i beneficijama.
+- \`subscriptionService.activatePlan\` aktivira odabrani paket i sinkronizira rezultat plaćanja.
+- \`subscriptionService.upgradePlan\` omogućava nadogradnju paketa s proporcionalnom naplatom razlike.
+- \`creditService.addCredits\` dodaje kredite prema alokaciji odabranog paketa.
+- Event \`subscription.plan.activated\` i \`subscription.plan.upgraded\` informiraju ostale servise o promjeni paketa.
+
+**Baza**
+- \`SubscriptionPlan\` tablica definira pakete (code: BASIC/PRO/PREMIUM, price, credits, features JSONB).
+- \`Subscription\` tablica čuva aktivni paket korisnika (userId, plan, status, stripeSubscriptionId, currentPeriodEnd).
+- \`SubscriptionHistory\` tablica bilježi povijest promjena paketa (userId, plan, action, occurredAt, actor).
+- \`PlanFeature\` tablica definira funkcionalnosti po paketu (planCode, featureCode, enabled, limit).
+- Paketi se cacheiraju radi bržeg pristupa i smanjenja opterećenja baze.
+
+**API**
+- \`GET /api/subscriptions/plans\` – vraća listu svih dostupnih paketa s cijenama i beneficijama.
+- \`POST /api/subscriptions\` – aktivira odabrani paket (zahtijeva planCode i Stripe payment).
+- \`GET /api/subscriptions/plans/:code\` – vraća detalje određenog paketa (Basic, Pro ili Premium).
+- \`POST /api/subscriptions/upgrade\` – nadograđuje paket na višu razinu (zahtijeva planCode).
+- \`GET /api/subscriptions/me\` – vraća trenutni paket korisnika s detaljima i datumom isteka.
+      `
     }
   };
 
