@@ -394,6 +394,11 @@ model Review {
   toUserId   String
   createdAt  DateTime @default(now())
 
+  // RECIPROCAL DELAY - Simultana objava ocjena
+  isPublished   Boolean   @default(false) // Da li je review objavljen (vidljiv javno)
+  publishedAt   DateTime? // Kada je review objavljen
+  reviewDeadline DateTime? // Rok za ocjenjivanje (7-10 dana od završetka posla)
+
   // MODERATION
   moderationStatus          ModerationStatus @default(PENDING) // Status moderacije
   moderationReviewedBy      String? // ID admina koji je pregledao
@@ -405,6 +410,8 @@ model Review {
   @@index([jobId])
   @@index([toUserId])
   @@index([moderationStatus])
+  @@index([isPublished])
+  @@index([reviewDeadline])
 }
 
 enum Role {

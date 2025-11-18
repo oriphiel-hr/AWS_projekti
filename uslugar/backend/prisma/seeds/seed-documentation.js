@@ -474,9 +474,9 @@ const features = [
       items: [
         { name: "Korisnik ocjenjuje izvođača (kvaliteta, pouzdanost, cijena)", implemented: true },
         { name: "Izvođač ocjenjuje korisnika (komunikacija, pouzdanost)", implemented: true },
-        { name: "Simultana objava ocjena (reciprocal delay)", implemented: false },
-        { name: "Rok za ocjenjivanje (7-10 dana)", implemented: false },
-        { name: "Ocjene vidljive tek nakon obje strane ocijene", implemented: false },
+        { name: "Simultana objava ocjena (reciprocal delay)", implemented: true }, // Implementirano: ocjene se objavljuju tek kada obje strane ocijene ili istekne rok (10 dana), sprječava osvetničko ocjenjivanje
+        { name: "Rok za ocjenjivanje (7-10 dana)", implemented: true }, // Implementirano: reviewDeadline postavljen na 10 dana od završetka posla ili od trenutka
+        { name: "Ocjene vidljive tek nakon obje strane ocijene", implemented: true }, // Implementirano: isPublished flag, GET endpoint vraća samo objavljene review-e (osim admin/vlasnik)
         { name: "Odgovor na recenziju (1x dozvoljen)", implemented: false },
         { name: "Reputation Score izračun (ponderirane komponente)", implemented: true },
         { name: "Utjecaj ocjena na dodjelu leadova", implemented: true },
@@ -12197,36 +12197,43 @@ SMS verifikacija osigurava da vaš telefonski broj pripada vama i povećava povj
       summary: "Ocjene se objavljuju kad obje strane ocijene ili istekne rok, čime se sprječava osvetničko ocjenjivanje.",
       details: `**Kako funkcionira**
 - Nakon završetka posla obje strane daju ocjenu; obje ocjene ostaju skrivene dok i druga strana ne ocijeni.
-- Ako jedna strana ne ocijeni u roku (7-10 dana), pristigla ocjena se objavljuje po isteku roka.
-- Dozvoljen je jedan javni odgovor na recenziju bez mijenjanja originalne ocjene.
+- Ako jedna strana ne ocijeni u roku (10 dana), pristigla ocjena se objavljuje po isteku roka.
+- Review se automatski objavljuje ako postoji recipročni review (druga strana je već ocijenila).
+- Rok za ocjenjivanje je 10 dana od završetka posla (deadline) ili od trenutka kreiranja review-a.
 
 **Prednosti**
 - Potiče objektivnost i sprječava odmazdu.
 - Održava povjerenje u reputacijski sustav.
+- Sprječava osvetničko ocjenjivanje jer ocjene nisu vidljive dok obje strane ne ocijene.
 
 **Kada koristiti**
 - Nakon svake završene transakcije.
 - Kod sporova ili žalbi koje zahtijevaju provjeru vremena objave ocjena.
 `,
-      technicalDetails: `**Frontend**
-- UI prikazuje status “Čeka drugu stranu” i countdown do automatske objave.
-- Modali omogućuju pisanje ocjene i javnog odgovora.
-
-**Backend**
-- \`reviewService.schedulePublish\` čuva ocjenu i zakazuje objavu.
-- Cron job objavljuje ocjene kad istekne rok; event \`review.published\` obavještava stranke.
+      technicalDetails: `**Backend Implementacija**
+- \`routes/reviews.js\`: POST endpoint provjerava recipročni review i objavljuje oba ako postoje.
+- \`services/review-publish-service.js\`: Cron job provjerava istekle review-e i automatski ih objavljuje.
+- \`lib/queueScheduler.js\`: Pokreće \`publishExpiredReviews()\` svaki sat.
 
 **Baza**
-- \`Review\` polja \`status\`, \`submittedAt\`, \`publishAt\`.
-- \`ReviewReply\` bilježi javne odgovore.
+- \`Review\` model polja: \`isPublished\` (Boolean, default: false), \`publishedAt\` (DateTime?), \`reviewDeadline\` (DateTime?).
+- Indexi: \`@@index([isPublished])\`, \`@@index([reviewDeadline])\`.
 
-**Integracije**
-- Notification servis, analytics (tracking recenzija), dispute modul.
+**Logika**
+- Kada se kreira review, provjerava se da li postoji recipročni review (druga strana).
+- Ako postoji, oba review-a se objavljuju odmah (\`isPublished = true\`, \`publishedAt = now\`).
+- Ako ne postoji, review se ne objavljuje (\`isPublished = false\`) i postavlja se \`reviewDeadline\` na 10 dana.
+- Cron job provjerava review-e gdje je \`isPublished = false\` i \`reviewDeadline <= now\`, te ih automatski objavljuje.
 
 **API**
-- \`POST /api/reviews\` – kreiranje ocjene.
-- \`GET /api/reviews/:id\` – status i sadržaj.
-- \`POST /api/reviews/:id/reply\` – javni odgovor.
+- \`POST /api/reviews\` – kreiranje ocjene (automatski provjerava recipročni review).
+- \`GET /api/reviews/user/:userId\` – vraća samo objavljene review-e (osim ako je admin ili vlasnik).
+- Aggregate logika koristi samo objavljene review-e (\`isPublished = true\`).
+
+**Cron Job**
+- Pokreće se svaki sat u 0 minuta.
+- Provjerava i objavljuje review-e čiji je rok istekao.
+- Ažurira provider profile aggregate samo za objavljene review-e.
 `
     },
     "Reputation Score izračun (ponderirane komponente)": {

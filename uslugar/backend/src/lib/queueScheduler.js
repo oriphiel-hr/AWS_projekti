@@ -18,6 +18,7 @@ import { lockInactiveThreads, reLockExpiredTemporaryUnlocks } from '../services/
 import { checkAndSendSLAReminders } from '../services/sla-reminder-service.js';
 import { checkAddonLifecycles, processAutoRenewals, processAddonUpsells } from '../services/addon-lifecycle-service.js';
 import { checkAndDowngradeExpiredSubscriptions } from '../routes/subscriptions.js';
+import { publishExpiredReviews } from '../services/review-publish-service.js';
 
 export function startQueueScheduler() {
   console.log('⏰ Starting Queue Scheduler...')
@@ -63,6 +64,12 @@ export function startQueueScheduler() {
       const downgradeCheck = await checkAndDowngradeExpiredSubscriptions()
       if (downgradeCheck.downgraded > 0) {
         console.log(`✅ Downgraded ${downgradeCheck.downgraded} expired subscriptions to BASIC`)
+      }
+      
+      // Provjeri i objavi review-e čiji je rok istekao (reciprocal delay)
+      const reviewPublish = await publishExpiredReviews()
+      if (reviewPublish.published > 0) {
+        console.log(`✅ Published ${reviewPublish.published} expired reviews`)
       }
       
       console.log('✅ Scheduled check completed')
@@ -162,6 +169,7 @@ export function startQueueScheduler() {
   console.log('   - Add-on auto-renewal: Every hour at :00')
   console.log('   - Add-on upsell offers: Every hour at :00')
   console.log('   - Expired subscriptions downgrade (TRIAL→BASIC): Every hour at :00')
+  console.log('   - Review publish (reciprocal delay): Every hour at :00')
   console.log('   - License expiry check: Daily at 09:00')
   console.log('   - License validity check: Daily at 10:00')
   console.log('   - Batch auto-verification: Daily at 11:00')

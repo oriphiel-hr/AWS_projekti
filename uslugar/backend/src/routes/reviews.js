@@ -34,15 +34,26 @@ r.get('/', auth(true, ['ADMIN']), async (req, res, next) => {
 });
 
 // GET /api/reviews/user/:userId - Review-i za određenog korisnika
-r.get('/user/:userId', async (req, res, next) => {
+// Vraća samo objavljene review-e (osim ako je admin ili vlasnik)
+r.get('/user/:userId', auth(false), async (req, res, next) => {
   try {
     const { userId } = req.params;
-    const { page = 1, limit = 20 } = req.query;
+    const { page = 1, limit = 20, includePending = false } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
+    
+    // Provjeri da li je korisnik admin ili vlasnik review-a
+    const isAdmin = req.user?.role === 'ADMIN';
+    const isOwner = req.user?.id === userId;
+    
+    // Ako nije admin ili vlasnik, prikaži samo objavljene review-e
+    const where = { 
+      toUserId: userId,
+      ...(includePending === 'true' || isAdmin || isOwner ? {} : { isPublished: true })
+    };
     
     const [reviews, total] = await Promise.all([
       prisma.review.findMany({
-        where: { toUserId: userId },
+        where,
         include: {
           job: { select: { id: true, title: true } },
           from: { select: { id: true, fullName: true, email: true } }
@@ -51,7 +62,7 @@ r.get('/user/:userId', async (req, res, next) => {
         skip,
         take: parseInt(limit)
       }),
-      prisma.review.count({ where: { toUserId: userId } })
+      prisma.review.count({ where })
     ]);
     
     res.json({ reviews, total, page: parseInt(page), limit: parseInt(limit) });
@@ -115,13 +126,41 @@ r.post('/', auth(true), async (req, res, next) => {
       return res.status(400).json({ error: 'Već ste ocijenili ovaj posao' });
     }
     
+    // Izračunaj review deadline (7-10 dana od završetka posla ili od trenutka)
+    // Ako job ima deadline, koristimo ga; inače koristimo 10 dana od sada
+    const reviewDeadlineDays = 10; // 7-10 dana (srednja vrijednost)
+    const reviewDeadline = new Date();
+    if (job.deadline && new Date(job.deadline) < new Date()) {
+      // Ako je posao već završen (deadline prošao), postavi deadline na 10 dana od završetka
+      reviewDeadline.setTime(new Date(job.deadline).getTime() + reviewDeadlineDays * 24 * 60 * 60 * 1000);
+    } else {
+      // Ako posao još nije završen, postavi deadline na 10 dana od sada
+      reviewDeadline.setTime(reviewDeadline.getTime() + reviewDeadlineDays * 24 * 60 * 60 * 1000);
+    }
+    
+    // Provjeri da li postoji recipročni review (druga strana)
+    const reciprocalReview = await prisma.review.findFirst({
+      where: {
+        jobId: jobId,
+        fromUserId: toUserId, // Druga strana
+        toUserId: req.user.id // Trenutni korisnik
+      }
+    });
+    
+    // Ako postoji recipročni review, objavi oba odmah
+    const shouldPublish = !!reciprocalReview;
+    const now = new Date();
+    
     const review = await prisma.review.create({
       data: { 
         jobId,
         toUserId, 
         rating: Number(rating), 
         comment: comment || '', 
-        fromUserId: req.user.id 
+        fromUserId: req.user.id,
+        isPublished: shouldPublish,
+        publishedAt: shouldPublish ? now : null,
+        reviewDeadline: reviewDeadline
       },
       include: {
         job: {
@@ -132,18 +171,34 @@ r.post('/', auth(true), async (req, res, next) => {
       }
     });
 
-    // Update aggregates - samo za provider profile
-    const toUser = await prisma.user.findUnique({ where: { id: toUserId } });
-    if (toUser?.role === 'PROVIDER') {
-      const aggr = await prisma.review.aggregate({
-        where: { toUserId },
-        _avg: { rating: true },
-        _count: { rating: true }
+    // Ako postoji recipročni review, objavi i njega
+    if (reciprocalReview && !reciprocalReview.isPublished) {
+      await prisma.review.update({
+        where: { id: reciprocalReview.id },
+        data: {
+          isPublished: true,
+          publishedAt: now
+        }
       });
-      await prisma.providerProfile.updateMany({
-        where: { userId: toUserId },
-        data: { ratingAvg: aggr._avg.rating || 0, ratingCount: aggr._count.rating }
-      });
+    }
+
+    // Update aggregates - samo za objavljene review-e i samo za provider profile
+    if (shouldPublish) {
+      const toUser = await prisma.user.findUnique({ where: { id: toUserId } });
+      if (toUser?.role === 'PROVIDER') {
+        const aggr = await prisma.review.aggregate({
+          where: { 
+            toUserId,
+            isPublished: true // Samo objavljene review-e
+          },
+          _avg: { rating: true },
+          _count: { rating: true }
+        });
+        await prisma.providerProfile.updateMany({
+          where: { userId: toUserId },
+          data: { ratingAvg: aggr._avg.rating || 0, ratingCount: aggr._count.rating }
+        });
+      }
     }
 
     res.status(201).json(review);
@@ -176,16 +231,26 @@ r.put('/:id', auth(true, ['USER']), async (req, res, next) => {
       }
     });
 
-    // update aggregates
-    const aggr = await prisma.review.aggregate({
-      where: { toUserId: review.toUserId },
-      _avg: { rating: true },
-      _count: { rating: true }
+    // update aggregates - samo za objavljene review-e
+    const toUser = await prisma.user.findUnique({ 
+      where: { id: review.toUserId },
+      select: { role: true }
     });
-    await prisma.providerProfile.updateMany({
-      where: { userId: review.toUserId },
-      data: { ratingAvg: aggr._avg.rating || 0, ratingCount: aggr._count.rating }
-    });
+
+    if (toUser?.role === 'PROVIDER') {
+      const aggr = await prisma.review.aggregate({
+        where: { 
+          toUserId: review.toUserId,
+          isPublished: true // Samo objavljene review-e
+        },
+        _avg: { rating: true },
+        _count: { rating: true }
+      });
+      await prisma.providerProfile.updateMany({
+        where: { userId: review.toUserId },
+        data: { ratingAvg: aggr._avg.rating || 0, ratingCount: aggr._count.rating }
+      });
+    }
 
     res.json(updatedReview);
   } catch (e) { next(e); }
@@ -209,16 +274,26 @@ r.delete('/:id', auth(true, ['USER', 'ADMIN']), async (req, res, next) => {
     
     await prisma.review.delete({ where: { id } });
 
-    // update aggregates
-    const aggr = await prisma.review.aggregate({
-      where: { toUserId: review.toUserId },
-      _avg: { rating: true },
-      _count: { rating: true }
+    // update aggregates - samo za objavljene review-e
+    const toUser = await prisma.user.findUnique({ 
+      where: { id: review.toUserId },
+      select: { role: true }
     });
-    await prisma.providerProfile.updateMany({
-      where: { userId: review.toUserId },
-      data: { ratingAvg: aggr._avg.rating || 0, ratingCount: aggr._count.rating }
-    });
+
+    if (toUser?.role === 'PROVIDER') {
+      const aggr = await prisma.review.aggregate({
+        where: { 
+          toUserId: review.toUserId,
+          isPublished: true // Samo objavljene review-e
+        },
+        _avg: { rating: true },
+        _count: { rating: true }
+      });
+      await prisma.providerProfile.updateMany({
+        where: { userId: review.toUserId },
+        data: { ratingAvg: aggr._avg.rating || 0, ratingCount: aggr._count.rating }
+      });
+    }
 
     res.status(204).send();
   } catch (e) { next(e); }
