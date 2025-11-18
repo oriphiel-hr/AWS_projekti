@@ -13,6 +13,7 @@ COPY prisma ./prisma
 
 ENV PRISMA_GENERATE_SKIP_AUTOINSTALL=1
 ENV PRISMA_OPENSSL_VERSION=3.0.x
+ENV PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
 
 # Generiraj Prisma Client
 RUN npx prisma generate --schema=./prisma/schema.prisma
