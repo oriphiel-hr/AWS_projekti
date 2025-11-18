@@ -6,9 +6,58 @@ import { auth } from '../lib/auth.js';
 
 const r = Router();
 
+/**
+ * Provjerava je li korisnik novi (nema plaćene pretplate u povijesti)
+ * Korisnik je "novi" ako nema CreditTransaction tipa SUBSCRIPTION gdje plan nije TRIAL
+ * @param {String} userId - ID korisnika
+ * @returns {Promise<Boolean>} - true ako je korisnik novi, false ako je već imao plaćenu pretplatu
+ */
+async function isNewUser(userId) {
+  try {
+    // Provjeri da li korisnik ima bilo kakve plaćene pretplate (ne TRIAL)
+    const paidSubscriptions = await prisma.creditTransaction.findFirst({
+      where: {
+        userId: userId,
+        type: 'SUBSCRIPTION',
+        description: {
+          not: {
+            contains: 'TRIAL'
+          }
+        }
+      }
+    });
+
+    // Ako nema plaćenih pretplata, korisnik je novi
+    return !paidSubscriptions;
+  } catch (error) {
+    console.error(`[IS_NEW_USER] Error checking if user ${userId} is new:`, error);
+    // Ako dođe do greške, pretpostavljamo da korisnik nije novi (sigurnija opcija)
+    return false;
+  }
+}
+
+/**
+ * Izračunava smanjenu cijenu za nove korisnike
+ * Popust: 20% za nove korisnike
+ * @param {Number} originalPrice - Originalna cijena
+ * @returns {Object} - Objekt s originalnom cijenom, smanjenom cijenom i popustom
+ */
+function calculateNewUserDiscount(originalPrice) {
+  const discountPercent = 20; // 20% popust za nove korisnike
+  const discountAmount = (originalPrice * discountPercent) / 100;
+  const discountedPrice = originalPrice - discountAmount;
+  
+  return {
+    originalPrice,
+    discountedPrice: Math.round(discountedPrice * 100) / 100, // Zaokruži na 2 decimale
+    discountPercent,
+    discountAmount: Math.round(discountAmount * 100) / 100
+  };
+}
+
 // Helper function to get plans from database
 // Podržava segmentaciju po regiji i kategoriji
-async function getPlansFromDB(filters = {}) {
+async function getPlansFromDB(filters = {}, userId = null) {
   const { categoryId, region } = filters;
   
   // Build where clause for segmentation
@@ -36,6 +85,12 @@ async function getPlansFromDB(filters = {}) {
     orderBy: { displayOrder: 'asc' }
   });
   
+  // Provjeri je li korisnik novi (za smanjene cijene)
+  let isUserNew = false;
+  if (userId) {
+    isUserNew = await isNewUser(userId);
+  }
+
   // Transform to legacy format for backward compatibility
   // Za segmentirane pakete, koristimo kombinaciju name + category + region kao ključ
   const plansObj = {};
@@ -44,25 +99,44 @@ async function getPlansFromDB(filters = {}) {
       ? `${plan.name}_${plan.categoryId || ''}_${plan.region || ''}` 
       : plan.name;
     
+    // Izračunaj smanjenu cijenu za nove korisnike (samo za plaćene planove, ne TRIAL)
+    let price = plan.price;
+    let originalPrice = null;
+    let discount = null;
+    
+    if (isUserNew && plan.name !== 'TRIAL' && plan.price > 0) {
+      const discountInfo = calculateNewUserDiscount(plan.price);
+      price = discountInfo.discountedPrice;
+      originalPrice = discountInfo.originalPrice;
+      discount = {
+        percent: discountInfo.discountPercent,
+        amount: discountInfo.discountAmount,
+        originalPrice: discountInfo.originalPrice,
+        discountedPrice: discountInfo.discountedPrice
+      };
+    }
+    
     plansObj[key] = {
       id: plan.id,
       name: plan.displayName,
       planName: plan.name,
-      price: plan.price,
+      price: price,
+      originalPrice: originalPrice || plan.price, // Originalna cijena (za prikaz)
       credits: plan.credits,
       creditsPerLead: 1,
-      avgLeadPrice: plan.price / plan.credits,
+      avgLeadPrice: price / plan.credits,
       features: plan.features,
       savings: plan.savings,
       popular: plan.isPopular,
       categoryId: plan.categoryId,
       category: plan.category ? { id: plan.category.id, name: plan.category.name } : null,
       region: plan.region,
-      description: plan.description
+      description: plan.description,
+      newUserDiscount: discount // Informacije o popustu za nove korisnike
     };
   });
   
-  return { dbPlans, plansObj };
+  return { dbPlans, plansObj, isUserNew };
 }
 
 /**
@@ -251,7 +325,9 @@ r.get('/me', auth(true, ['PROVIDER', 'ADMIN', 'USER']), async (req, res, next) =
 // Get all available plans (from database)
 // Podržava filtriranje po regiji i kategoriji za segmentni model paketa
 // Query params: ?categoryId=xxx&region=Zagreb
-r.get('/plans', async (req, res, next) => {
+// Ako je korisnik autentificiran, vraća smanjene cijene za nove korisnike
+// Auth je opcionalan - ne-autentificirani korisnici vide normalne cijene
+r.get('/plans', auth(false), async (req, res, next) => {
   try {
     const { categoryId, region } = req.query;
     
@@ -263,10 +339,32 @@ r.get('/plans', async (req, res, next) => {
       filters.region = region === 'null' || region === '' ? null : region;
     }
     
-    const { plansObj, dbPlans } = await getPlansFromDB(filters);
+    // Provjeri je li korisnik autentificiran (za smanjene cijene)
+    let userId = null;
+    if (req.user && req.user.id) {
+      userId = req.user.id;
+    }
     
-    // Return database format with category info
-    res.json(dbPlans);
+    const { plansObj, dbPlans, isUserNew } = await getPlansFromDB(filters, userId);
+    
+    // Transformuj dbPlans da uključe smanjene cijene
+    const plansWithDiscounts = dbPlans.map(plan => {
+      const key = plan.categoryId || plan.region 
+        ? `${plan.name}_${plan.categoryId || ''}_${plan.region || ''}` 
+        : plan.name;
+      
+      const planInfo = plansObj[key];
+      
+      return {
+        ...plan,
+        price: planInfo.price, // Može biti smanjena cijena
+        originalPrice: planInfo.originalPrice, // Originalna cijena
+        newUserDiscount: planInfo.newUserDiscount // Informacije o popustu
+      };
+    });
+    
+    // Return database format with category info and discounts
+    res.json(plansWithDiscounts);
   } catch (e) {
     next(e);
   }

@@ -47,9 +47,12 @@ export default function SubscriptionPlans() {
       ]);
       
       // Convert array to object keyed by plan name
+      // API returns plans with 'name' field (BASIC, PREMIUM, PRO) from database
       const plansObj = {};
       plansRes.data.forEach(plan => {
-        plansObj[plan.name] = plan;
+        // Use 'name' field (BASIC, PREMIUM, PRO) as key, not displayName
+        const key = plan.name; // This is the plan code (BASIC, PREMIUM, PRO)
+        plansObj[key] = plan;
       });
       
       setPlans(plansObj);
@@ -195,12 +198,29 @@ export default function SubscriptionPlans() {
 
               <div className="p-8">
                 {/* Plan Name */}
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.displayName || plan.name}</h3>
                 
                 {/* Price */}
                 <div className="mb-6">
-                  <span className="text-5xl font-bold text-gray-900">{plan.price}€</span>
-                  <span className="text-gray-600">/mjesečno</span>
+                  {plan.newUserDiscount ? (
+                    <div>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-3xl font-bold text-gray-400 line-through">{plan.originalPrice}€</span>
+                        <span className="text-5xl font-bold text-green-600">{plan.price}€</span>
+                        <span className="text-gray-600">/mjesečno</span>
+                      </div>
+                      <div className="mt-2">
+                        <span className="inline-block px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-semibold">
+                          🎉 {plan.newUserDiscount.percent}% popust za nove korisnike!
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <span className="text-5xl font-bold text-gray-900">{plan.price}€</span>
+                      <span className="text-gray-600">/mjesečno</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Credits */}
@@ -248,6 +268,8 @@ export default function SubscriptionPlans() {
                     ? '✓ Trenutni plan'
                     : subscribing === key
                     ? 'Procesiranje...'
+                    : plan.newUserDiscount
+                    ? `Pretplati se - ${plan.price}€/mj (${plan.originalPrice}€)`
                     : `Pretplati se - ${plan.price}€/mj`
                   }
                 </button>
