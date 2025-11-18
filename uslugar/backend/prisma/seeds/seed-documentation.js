@@ -477,7 +477,7 @@ const features = [
         { name: "Simultana objava ocjena (reciprocal delay)", implemented: true }, // Implementirano: ocjene se objavljuju tek kada obje strane ocijene ili istekne rok (10 dana), sprječava osvetničko ocjenjivanje
         { name: "Rok za ocjenjivanje (7-10 dana)", implemented: true }, // Implementirano: reviewDeadline postavljen na 10 dana od završetka posla ili od trenutka
         { name: "Ocjene vidljive tek nakon obje strane ocijene", implemented: true }, // Implementirano: isPublished flag, GET endpoint vraća samo objavljene review-e (osim admin/vlasnik)
-        { name: "Odgovor na recenziju (1x dozvoljen)", implemented: false },
+        { name: "Odgovor na recenziju (1x dozvoljen)", implemented: true }, // Implementirano: POST /api/reviews/:id/reply endpoint, provjera hasReplied, samo toUserId može odgovoriti, samo na objavljene recenzije
         { name: "Reputation Score izračun (ponderirane komponente)", implemented: true },
         { name: "Utjecaj ocjena na dodjelu leadova", implemented: true },
         { name: "Moderacija ocjena (AI + ljudska)", implemented: false },
@@ -12234,6 +12234,51 @@ SMS verifikacija osigurava da vaš telefonski broj pripada vama i povećava povj
 - Pokreće se svaki sat u 0 minuta.
 - Provjerava i objavljuje review-e čiji je rok istekao.
 - Ažurira provider profile aggregate samo za objavljene review-e.
+`
+    },
+    "Odgovor na recenziju (1x dozvoljen)": {
+      implemented: true,
+      summary: "Korisnik koji je dobio recenziju može odgovoriti na nju, ali samo jednom. Odgovor je vidljiv javno uz originalnu recenziju.",
+      details: `**Kako funkcionira**
+- Korisnik koji je dobio recenziju (toUserId) može odgovoriti na objavljenu recenziju.
+- Odgovor je dozvoljen samo jednom po recenziji (hasReplied flag sprječava višestruke odgovore).
+- Odgovor se može poslati samo na objavljene recenzije (isPublished = true).
+- Odgovor je vidljiv javno uz originalnu recenziju.
+
+**Prednosti**
+- Omogućava konstruktivnu komunikaciju između strana.
+- Sprječava spam i višestruke odgovore.
+- Poboljšava transparentnost i povjerenje u sustav.
+
+**Kada koristiti**
+- Kada korisnik želi odgovoriti na recenziju koja je dobivena.
+- Za objasniti situaciju ili zahvaliti se na pozitivnoj recenziji.
+`,
+      technicalDetails: `**Backend Implementacija**
+- \`routes/reviews.js\`: POST /api/reviews/:id/reply endpoint za dodavanje odgovora.
+- Provjera autorizacije: samo toUserId (korisnik koji je dobio recenziju) može odgovoriti.
+- Provjera hasReplied: sprječava višestruke odgovore.
+- Provjera isPublished: odgovor se može poslati samo na objavljene recenzije.
+
+**Baza**
+- \`Review\` model polja: \`replyText\` (String?), \`repliedAt\` (DateTime?), \`hasReplied\` (Boolean, default: false).
+
+**Logika**
+- Kada se kreira odgovor, provjerava se da li je korisnik toUserId (autorizacija).
+- Provjerava se da li je review objavljen (isPublished = true).
+- Provjerava se da li je već odgovoreno (hasReplied = false).
+- Ako sve provjere prođu, ažurira se review s replyText, repliedAt i hasReplied = true.
+
+**API**
+- \`POST /api/reviews/:id/reply\` – dodavanje odgovora na recenziju (body: { replyText: string }).
+- \`GET /api/reviews/user/:userId\` – vraća review-e s odgovorima (replyText, repliedAt, hasReplied).
+- \`GET /api/reviews/:id\` – vraća pojedinačni review s odgovorom ako postoji.
+
+**Validacija**
+- replyText ne može biti prazan.
+- Samo toUserId može odgovoriti.
+- Odgovor je dozvoljen samo jednom (hasReplied provjera).
+- Odgovor se može poslati samo na objavljene recenzije.
 `
     },
     "Reputation Score izračun (ponderirane komponente)": {

@@ -399,6 +399,11 @@ model Review {
   publishedAt   DateTime? // Kada je review objavljen
   reviewDeadline DateTime? // Rok za ocjenjivanje (7-10 dana od završetka posla)
 
+  // REPLY - Odgovor na recenziju (1x dozvoljen)
+  replyText     String? // Tekst odgovora na recenziju
+  repliedAt     DateTime? // Kada je odgovor poslan
+  hasReplied    Boolean   @default(false) // Da li je već odgovoreno (sprječava višestruke odgovore)
+
   // MODERATION
   moderationStatus          ModerationStatus @default(PENDING) // Status moderacije
   moderationReviewedBy      String? // ID admina koji je pregledao

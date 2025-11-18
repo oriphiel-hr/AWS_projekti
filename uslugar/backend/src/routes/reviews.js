@@ -299,4 +299,77 @@ r.delete('/:id', auth(true, ['USER', 'ADMIN']), async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+// POST /api/reviews/:id/reply - Odgovor na recenziju (1x dozvoljen)
+r.post('/:id/reply', auth(true), async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { replyText } = req.body;
+    
+    if (!replyText || replyText.trim().length === 0) {
+      return res.status(400).json({ error: 'Odgovor ne može biti prazan' });
+    }
+    
+    // Pronađi review
+    const review = await prisma.review.findUnique({
+      where: { id },
+      include: {
+        job: {
+          select: {
+            id: true,
+            userId: true,
+            assignedProviderId: true
+          }
+        }
+      }
+    });
+    
+    if (!review) {
+      return res.status(404).json({ error: 'Recenzija nije pronađena' });
+    }
+    
+    // Provjeri da li je korisnik autoriziran da odgovori (mora biti toUserId - onaj koji je dobio recenziju)
+    if (review.toUserId !== req.user.id) {
+      return res.status(403).json({ 
+        error: 'Niste autorizirani da odgovorite na ovu recenziju. Samo korisnik koji je dobio recenziju može odgovoriti.' 
+      });
+    }
+    
+    // Provjeri da li je već odgovoreno (1x dozvoljen)
+    if (review.hasReplied) {
+      return res.status(400).json({ 
+        error: 'Već ste odgovorili na ovu recenziju. Odgovor je dozvoljen samo jednom.' 
+      });
+    }
+    
+    // Provjeri da li je review objavljen (može se odgovoriti samo na objavljene recenzije)
+    if (!review.isPublished) {
+      return res.status(400).json({ 
+        error: 'Ne možete odgovoriti na recenziju koja još nije objavljena.' 
+      });
+    }
+    
+    // Ažuriraj review s odgovorom
+    const updatedReview = await prisma.review.update({
+      where: { id },
+      data: {
+        replyText: replyText.trim(),
+        repliedAt: new Date(),
+        hasReplied: true
+      },
+      include: {
+        job: {
+          select: { id: true, title: true }
+        },
+        from: { select: { id: true, fullName: true, email: true } },
+        to: { select: { id: true, fullName: true, email: true } }
+      }
+    });
+    
+    res.json(updatedReview);
+  } catch (e) {
+    console.error('[REVIEWS] Error adding reply to review:', e);
+    next(e);
+  }
+});
+
 export default r;
