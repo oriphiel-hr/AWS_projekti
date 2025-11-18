@@ -152,6 +152,7 @@ model User {
   billingAdjustments BillingAdjustment[]
   featureOwnership   CompanyFeatureOwnership[] @relation("UserFeatureOwnership")
   lockedThreads      ChatRoom[]          @relation("LockedThreads") // Threadovi koje je korisnik zaključao
+  addonSubscriptions  AddonSubscription[] // Add-on paketi korisnika
 
   // Testing runs authored by this user (admin)
   testRuns TestRun[] @relation("TestRunAuthor")
@@ -586,7 +587,6 @@ model Subscription {
   updatedAt              DateTime           @updatedAt
 
   invoices Invoice[]
-  addonSubscriptions AddonSubscription[]
 
   @@index([userId])
   @@index([status])
