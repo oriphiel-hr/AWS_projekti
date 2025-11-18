@@ -8,13 +8,32 @@ const r = Router();
 
 /**
  * Provjerava je li korisnik novi (nema plaćene pretplate u povijesti)
- * Korisnik je "novi" ako nema CreditTransaction tipa SUBSCRIPTION gdje plan nije TRIAL
+ * Korisnik je "novi" ako:
+ * 1. Nema Subscription gdje je plan != 'TRIAL' i status != 'EXPIRED' (osim ako je samo TRIAL)
+ * 2. Nema Invoice gdje je amount > 0 (plaćene fakture)
+ * 3. Nema CreditTransaction tipa SUBSCRIPTION gdje description ne sadrži 'TRIAL'
  * @param {String} userId - ID korisnika
  * @returns {Promise<Boolean>} - true ako je korisnik novi, false ako je već imao plaćenu pretplatu
  */
 async function isNewUser(userId) {
   try {
     // Provjeri da li korisnik ima bilo kakve plaćene pretplate (ne TRIAL)
+    // 1. Provjeri Subscription tablicu - ako ima plan koji nije TRIAL i nije samo expired TRIAL
+    const subscription = await prisma.subscription.findUnique({
+      where: { userId: userId }
+    });
+
+    if (subscription) {
+      // Ako ima subscription i plan nije TRIAL, korisnik nije novi
+      if (subscription.plan && subscription.plan !== 'TRIAL') {
+        return false;
+      }
+      
+      // Ako ima subscription i plan je TRIAL, provjeri da li je ikad imao nešto drugo
+      // Provjeri povijest preko CreditTransaction
+    }
+
+    // 2. Provjeri CreditTransaction - da li ima plaćene pretplate (ne TRIAL)
     const paidSubscriptions = await prisma.creditTransaction.findFirst({
       where: {
         userId: userId,
@@ -27,8 +46,27 @@ async function isNewUser(userId) {
       }
     });
 
-    // Ako nema plaćenih pretplata, korisnik je novi
-    return !paidSubscriptions;
+    // 3. Provjeri Invoice - da li ima plaćene fakture
+    let paidInvoices = null;
+    try {
+      paidInvoices = await prisma.invoice.findFirst({
+        where: {
+          userId: userId,
+          amount: {
+            gt: 0
+          },
+          status: {
+            in: ['PAID', 'SENT'] // SENT znači da je faktura poslana (plaćena)
+          }
+        }
+      });
+    } catch (invoiceError) {
+      // Ako Invoice model ne postoji ili dođe do greške, ignoriraj
+      console.warn(`[IS_NEW_USER] Error checking invoices for user ${userId}:`, invoiceError.message);
+    }
+
+    // Ako nema plaćenih pretplata, faktura ili subscription-a koji nije TRIAL, korisnik je novi
+    return !paidSubscriptions && !paidInvoices;
   } catch (error) {
     console.error(`[IS_NEW_USER] Error checking if user ${userId} is new:`, error);
     // Ako dođe do greške, pretpostavljamo da korisnik nije novi (sigurnija opcija)
@@ -343,9 +381,14 @@ r.get('/plans', auth(false), async (req, res, next) => {
     let userId = null;
     if (req.user && req.user.id) {
       userId = req.user.id;
+      console.log(`[PLANS] User authenticated: ${userId}`);
+    } else {
+      console.log(`[PLANS] User not authenticated`);
     }
     
     const { plansObj, dbPlans, isUserNew } = await getPlansFromDB(filters, userId);
+    
+    console.log(`[PLANS] isUserNew: ${isUserNew}, plans count: ${dbPlans.length}`);
     
     // Transformuj dbPlans da uključe smanjene cijene
     const plansWithDiscounts = dbPlans.map(plan => {
@@ -355,12 +398,18 @@ r.get('/plans', auth(false), async (req, res, next) => {
       
       const planInfo = plansObj[key];
       
-      return {
+      const result = {
         ...plan,
         price: planInfo.price, // Može biti smanjena cijena
         originalPrice: planInfo.originalPrice, // Originalna cijena
         newUserDiscount: planInfo.newUserDiscount // Informacije o popustu
       };
+      
+      if (planInfo.newUserDiscount) {
+        console.log(`[PLANS] Plan ${plan.name} has discount: ${planInfo.originalPrice}€ -> ${planInfo.price}€`);
+      }
+      
+      return result;
     });
     
     // Return database format with category info and discounts

@@ -46,6 +46,8 @@ export default function SubscriptionPlans() {
         getMySubscription()
       ]);
       
+      console.log('Plans response:', plansRes.data);
+      
       // Convert array to object keyed by plan name
       // API returns plans with 'name' field (BASIC, PREMIUM, PRO) from database
       const plansObj = {};
@@ -53,6 +55,11 @@ export default function SubscriptionPlans() {
         // Use 'name' field (BASIC, PREMIUM, PRO) as key, not displayName
         const key = plan.name; // This is the plan code (BASIC, PREMIUM, PRO)
         plansObj[key] = plan;
+        
+        // Log discount info for debugging
+        if (plan.newUserDiscount) {
+          console.log(`Plan ${key} has discount:`, plan.newUserDiscount);
+        }
       });
       
       setPlans(plansObj);

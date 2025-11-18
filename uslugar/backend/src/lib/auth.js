@@ -24,6 +24,8 @@ export function auth(required = true, roles = []) {
       req.user = data;
       next();
     } catch (e) {
+      // Ako je auth optional, nastavi bez korisnika
+      if (!required) return next();
       return res.status(401).json({ error: 'Invalid token' });
     }
   };
