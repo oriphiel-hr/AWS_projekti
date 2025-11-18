@@ -295,22 +295,138 @@ r.get('/me', auth(true, ['PROVIDER', 'ADMIN', 'USER']), async (req, res, next) =
 
     // Create default subscription if doesn't exist (FREE TRIAL)
     if (!subscription) {
+      // TRIAL = maksimalni paket funkcionalnosti: 14 dana, 7-8 leadova, sve Premium features
+      const trialExpiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000); // 14 dana trial
+      const trialCredits = 8; // 7-8 leadova (srednja vrijednost)
+      
       subscription = await prisma.subscription.create({
         data: {
           userId: req.user.id,
           plan: 'TRIAL',
           status: 'ACTIVE',
           credits: 0,
-          creditsBalance: 5, // 5 besplatnih leadova za probati
-          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 dana trial
+          creditsBalance: trialCredits,
+          expiresAt: trialExpiresAt
         }
       });
+      
+      // Automatski kreiraj add-on subscriptions za 2 kategorije i 1 regiju
+      try {
+        // Dohvati prve 2 aktivne kategorije
+        const categories = await prisma.category.findMany({
+          where: { isActive: true },
+          take: 2,
+          orderBy: { name: 'asc' }
+        });
+        
+        // Dohvati prvu regiju (npr. Zagreb)
+        const regions = ['Zagreb', 'Split', 'Rijeka', 'Osijek', 'Zadar'];
+        const trialRegion = regions[0]; // Prva regija
+        
+        // Kreiraj add-on za svaku kategoriju
+        for (const category of categories) {
+          const graceUntil = new Date(trialExpiresAt);
+          graceUntil.setDate(graceUntil.getDate() + 7);
+          
+          const categoryAddon = await prisma.addonSubscription.create({
+            data: {
+              userId: req.user.id,
+              type: 'CATEGORY',
+              scope: category.id,
+              displayName: `TRIAL: ${category.name}`,
+              categoryId: category.id,
+              price: 0, // Besplatno u trial-u
+              validUntil: trialExpiresAt,
+              graceUntil: graceUntil,
+              autoRenew: false,
+              status: 'ACTIVE'
+            }
+          });
+          
+          // Kreiraj usage zapis
+          await prisma.addonUsage.create({
+            data: {
+              addonId: categoryAddon.id,
+              consumed: 0,
+              remaining: 0,
+              percentageUsed: 0.0,
+              leadsReceived: 0,
+              leadsConverted: 0
+            }
+          });
+          
+          // Kreiraj event log
+          await prisma.addonEventLog.create({
+            data: {
+              addonId: categoryAddon.id,
+              eventType: 'PURCHASED',
+              newStatus: 'ACTIVE',
+              metadata: {
+                type: 'CATEGORY',
+                scope: category.id,
+                price: 0,
+                trial: true
+              }
+            }
+          });
+        }
+        
+        // Kreiraj add-on za regiju
+        const graceUntil = new Date(trialExpiresAt);
+        graceUntil.setDate(graceUntil.getDate() + 7);
+        
+        const regionAddon = await prisma.addonSubscription.create({
+          data: {
+            userId: req.user.id,
+            type: 'REGION',
+            scope: trialRegion,
+            displayName: `TRIAL: ${trialRegion}`,
+            price: 0, // Besplatno u trial-u
+            validUntil: trialExpiresAt,
+            graceUntil: graceUntil,
+            autoRenew: false,
+            status: 'ACTIVE'
+          }
+        });
+        
+        // Kreiraj usage zapis za regiju
+        await prisma.addonUsage.create({
+          data: {
+            addonId: regionAddon.id,
+            consumed: 0,
+            remaining: 0,
+            percentageUsed: 0.0,
+            leadsReceived: 0,
+            leadsConverted: 0
+          }
+        });
+        
+        // Kreiraj event log za regiju
+        await prisma.addonEventLog.create({
+          data: {
+            addonId: regionAddon.id,
+            eventType: 'PURCHASED',
+            newStatus: 'ACTIVE',
+            metadata: {
+              type: 'REGION',
+              scope: trialRegion,
+              price: 0,
+              trial: true
+            }
+          }
+        });
+        
+        console.log(`[TRIAL] Created add-ons for user ${req.user.id}: ${categories.length} categories, 1 region`);
+      } catch (error) {
+        console.error(`[TRIAL] Error creating add-ons for user ${req.user.id}:`, error);
+        // Ne prekidaj kreiranje subscription-a ako add-on kreiranje ne uspije
+      }
       
       // Notify o trial-u
       await prisma.notification.create({
         data: {
           title: 'Dobrodošli u Uslugar EXCLUSIVE!',
-          message: 'Dobili ste 5 besplatnih leadova da probate našu platformu. Nadogradite pretplatu za više.',
+          message: `Dobili ste ${trialCredits} besplatnih leadova i sve Premium funkcionalnosti na 14 dana da probate našu platformu.`,
           type: 'SYSTEM',
           userId: req.user.id
         }

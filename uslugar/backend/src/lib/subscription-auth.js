@@ -12,7 +12,7 @@ import { prisma } from './prisma.js';
  * @returns {Function} - Express middleware
  */
 export function requirePlan(requiredPlan) {
-  const planHierarchy = { 'BASIC': 1, 'PREMIUM': 2, 'PRO': 3 };
+  const planHierarchy = { 'TRIAL': 1, 'BASIC': 1, 'PREMIUM': 2, 'PRO': 3 };
   
   return async (req, res, next) => {
     try {
@@ -28,8 +28,11 @@ export function requirePlan(requiredPlan) {
         });
       }
 
+      // TRIAL ima sve Premium features, tretiraj ga kao PREMIUM za feature access
+      const effectivePlan = subscription.plan === 'TRIAL' ? 'PREMIUM' : subscription.plan;
+      
       // Provjeri plan tier
-      const userTier = planHierarchy[subscription.plan] || 0;
+      const userTier = planHierarchy[effectivePlan] || 0;
       const requiredTier = planHierarchy[requiredPlan] || 999;
 
       if (userTier < requiredTier) {
@@ -103,19 +106,19 @@ export function requireCredits(requiredCredits) {
  */
 export function hasFeatureAccess(featureName, userPlan) {
   const featureAccess = {
-    'MINI_CRM': ['BASIC', 'PREMIUM', 'PRO'],
-    'ROI_STATS': ['BASIC', 'PREMIUM', 'PRO'],
-    'EXCLUSIVE_LEADS': ['BASIC', 'PREMIUM', 'PRO'],
-    'REFUND': ['BASIC', 'PREMIUM', 'PRO'],
-    'EMAIL_NOTIFICATIONS': ['BASIC', 'PREMIUM', 'PRO'],
-    'AI_PRIORITY': ['PREMIUM', 'PRO'],
-    'SMS_NOTIFICATIONS': ['PREMIUM', 'PRO'],
-    'PRIORITY_SUPPORT': ['PREMIUM', 'PRO'],  // ← Prioritetna podrška
+    'MINI_CRM': ['TRIAL', 'BASIC', 'PREMIUM', 'PRO'],
+    'ROI_STATS': ['TRIAL', 'BASIC', 'PREMIUM', 'PRO'],
+    'EXCLUSIVE_LEADS': ['TRIAL', 'BASIC', 'PREMIUM', 'PRO'],
+    'REFUND': ['TRIAL', 'BASIC', 'PREMIUM', 'PRO'],
+    'EMAIL_NOTIFICATIONS': ['TRIAL', 'BASIC', 'PREMIUM', 'PRO'],
+    'AI_PRIORITY': ['TRIAL', 'PREMIUM', 'PRO'], // TRIAL ima sve Premium features
+    'SMS_NOTIFICATIONS': ['TRIAL', 'PREMIUM', 'PRO'], // TRIAL ima sve Premium features
+    'PRIORITY_SUPPORT': ['TRIAL', 'PREMIUM', 'PRO'],  // TRIAL ima sve Premium features
     'PREMIUM_QUALITY_LEADS': ['PRO'],
     'VIP_SUPPORT': ['PRO'],  // ← VIP podrška 24/7 (viši level)
     'FEATURED_PROFILE': ['PRO'],
-    'CSV_EXPORT': ['PREMIUM', 'PRO'],
-    'ADVANCED_ANALYTICS': ['PREMIUM', 'PRO']
+    'CSV_EXPORT': ['TRIAL', 'PREMIUM', 'PRO'], // TRIAL ima sve Premium features
+    'ADVANCED_ANALYTICS': ['TRIAL', 'PREMIUM', 'PRO'] // TRIAL ima sve Premium features
   };
 
   const allowedPlans = featureAccess[featureName] || [];
@@ -129,6 +132,22 @@ export function hasFeatureAccess(featureName, userPlan) {
  */
 export function getAvailableFeatures(userPlan) {
   const features = {
+    'TRIAL': [
+      // TRIAL = maksimalni paket funkcionalnosti - sve Premium features
+      'MINI_CRM',
+      'ROI_STATS',
+      'EXCLUSIVE_LEADS',
+      'REFUND',
+      'EMAIL_NOTIFICATIONS',
+      'AI_PRIORITY', // ✅ Premium feature
+      'SMS_NOTIFICATIONS', // ✅ Premium feature
+      'PRIORITY_SUPPORT', // ✅ Premium feature
+      'CSV_EXPORT', // ✅ Premium feature
+      'ADVANCED_ANALYTICS' // ✅ Premium feature
+      // ❌ NEMA: VIP podrška 24/7 (samo PRO)
+      // ❌ NEMA: Premium Quality Leads (samo PRO)
+      // ❌ NEMA: Featured Profile (samo PRO)
+    ],
     'BASIC': [
       'MINI_CRM',
       'ROI_STATS',

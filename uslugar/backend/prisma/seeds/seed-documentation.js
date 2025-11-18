@@ -458,11 +458,11 @@ const features = [
     {
       category: "TRIAL Paket",
       items: [
-        { name: "TRIAL = maksimalni paket funkcionalnosti", implemented: false },
-        { name: "14-dnevni probni period", implemented: false },
-        { name: "Ograničen broj leadova (5-10)", implemented: true },
-        { name: "Ograničen broj kategorija/regija", implemented: true },
-        { name: "Sve Premium funkcionalnosti otključane", implemented: false },
+        { name: "TRIAL = maksimalni paket funkcionalnosti", implemented: true }, // Implementirano: 14 dana, 8 leadova, sve Premium features, automatski add-oni za 2 kategorije i 1 regiju
+        { name: "14-dnevni probni period", implemented: true }, // Implementirano: expiresAt = 14 dana
+        { name: "Ograničen broj leadova (5-10)", implemented: true }, // Implementirano: 8 leadova (srednja vrijednost)
+        { name: "Ograničen broj kategorija/regija", implemented: true }, // Implementirano: automatski add-oni za 2 kategorije i 1 regiju
+        { name: "Sve Premium funkcionalnosti otključane", implemented: true }, // Implementirano: TRIAL ima sve Premium features (AI_PRIORITY, SMS_NOTIFICATIONS, PRIORITY_SUPPORT, CSV_EXPORT, ADVANCED_ANALYTICS)
         { name: "Engagement tracking tijekom TRIAL-a", implemented: false },
         { name: "Podsjetnici 3 dana prije isteka", implemented: false },
         { name: "Automatski downgrade na BASIC nakon isteka", implemented: false },
@@ -12157,39 +12157,39 @@ SMS verifikacija osigurava da vaš telefonski broj pripada vama i povećava povj
     },
     "TRIAL = maksimalni paket funkcionalnosti": {
       implemented: true,
-      summary: "Trial od 14 dana aktivira sve Premium module (5-10 leadova, 2 kategorije, 1 regija) kako bi partner vidio punu vrijednost.",
+      summary: "Trial od 14 dana aktivira sve Premium module (8 leadova, 2 kategorije, 1 regija) kako bi partner vidio punu vrijednost.",
       details: `**Kako funkcionira**
-- Nakon registracije aktivira se trial s limitima: 14 dana, 5-10 leadova, 2 kategorije, 1 regija.
-- Engagement (dodjele, chat, konverzije) se prati i tri dana prije isteka šalje se reminder za upgrade.
-- Po isteku tvrtka se vraća na BASIC ako ne odabere plaćeni plan; dostupni su popusti za konverziju.
+- Nakon registracije automatski se aktivira trial s limitima: 14 dana, 8 leadova (srednja vrijednost između 5-10), 2 kategorije, 1 regija.
+- Automatski se kreiraju add-on subscriptions za 2 aktivne kategorije i 1 regiju (Zagreb).
+- TRIAL ima sve Premium funkcionalnosti: AI_PRIORITY, SMS_NOTIFICATIONS, PRIORITY_SUPPORT, CSV_EXPORT, ADVANCED_ANALYTICS.
+- Po isteku trial se označava kao EXPIRED, korisnik mora platiti da nastavi.
 
 **Prednosti**
 - Partner dobiva puni pregled mogućnosti bez troška.
-- Podaci o korištenju pomažu sales timu u ponudi nakon triala.
+- Sve Premium features su dostupne tijekom trial perioda.
+- Automatski add-oni omogućavaju testiranje kategorija i regija.
 
 **Kada koristiti**
-- Automatski onboarding novih partnera.
-- Reaktivacijske kampanje za stare partnere.
+- Automatski onboarding novih partnera pri registraciji.
+- Aktivira se u \`subscriptions.js\` i \`credit-service.js\` kada se kreira nova subscription.
 `,
-      technicalDetails: `**Frontend**
-- Trial banner s countdownom (hook \`useTrialContext\`) i CTA za upgrade.
-- Progress bar prati iskorištene leadove/kategorije/regije; onemogućuje dodatne kupnje nakon limita.
-
-**Backend**
-- \`trialService.activate\` grant-a sve feature i addons uz inicijalne limite.
-- Scheduler \`trialExpiryJob\` upravlja istekle trialove (downgrade/upgrade).
-- Notifikacije (email, in-app) tri dana prije isteka.
+      technicalDetails: `**Backend Implementacija**
+- \`routes/subscriptions.js\`: Kreira TRIAL subscription s 14 dana, 8 leadova, automatski kreira add-on subscriptions za 2 kategorije i 1 regiju.
+- \`services/credit-service.js\`: Kreira TRIAL subscription s 14 dana i 8 leadova.
+- \`lib/subscription-auth.js\`: TRIAL ima sve Premium features - \`hasFeatureAccess\` vraća true za sve Premium features, \`requirePlan\` tretira TRIAL kao PREMIUM za feature access.
 
 **Baza**
-- \`TrialSubscription\`, \`TrialUsage\`, \`TrialEventLog\` prate status, potrošnju i evente.
+- \`Subscription\` model: plan='TRIAL', creditsBalance=8, expiresAt=14 dana.
+- \`AddonSubscription\` model: automatski se kreiraju 2 CATEGORY add-oni i 1 REGION add-on s status='ACTIVE', price=0 (besplatno).
+- \`AddonUsage\` i \`AddonEventLog\` se kreiraju za svaki add-on.
 
-**Integracije**
-- Notification servis, CRM (sales pipeline), analytics za conversion rate.
+**Features**
+- TRIAL ima pristup svim Premium features: AI_PRIORITY, SMS_NOTIFICATIONS, PRIORITY_SUPPORT, CSV_EXPORT, ADVANCED_ANALYTICS.
+- TRIAL nema PRO-only features: VIP_SUPPORT, PREMIUM_QUALITY_LEADS, FEATURED_PROFILE.
 
 **API**
-- \`GET /api/director/trial\` – status (dani, limiti, potrošnja).
-- \`POST /api/director/trial/convert\` – prelazak na plaćeni plan.
-- \`POST /api/director/trial/extend\` – iznimno produženje (admin approve).
+- \`GET /api/subscriptions/me\` – vraća TRIAL subscription s add-onima.
+- Automatski se kreira pri prvom pristupu \`/api/subscriptions/me\` endpointu.
 `
     },
     "Simultana objava ocjena (reciprocal delay)": {

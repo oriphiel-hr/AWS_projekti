@@ -166,14 +166,18 @@ export async function getCreditsBalance(userId) {
   // Create default TRIAL subscription if doesn't exist
   if (!subscription) {
     console.log(`[CREDITS] Creating default TRIAL subscription for user ${userId}`);
+    // TRIAL = maksimalni paket funkcionalnosti: 14 dana, 7-8 leadova
+    const trialExpiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000); // 14 dana trial
+    const trialCredits = 8; // 7-8 leadova (srednja vrijednost)
+    
     subscription = await prisma.subscription.create({
       data: {
         userId: userId,
         plan: 'TRIAL',
         status: 'ACTIVE',
         credits: 0,
-        creditsBalance: 5, // 5 besplatnih leadova za probati
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 dana trial
+        creditsBalance: trialCredits,
+        expiresAt: trialExpiresAt
       },
       select: {
         creditsBalance: true,
