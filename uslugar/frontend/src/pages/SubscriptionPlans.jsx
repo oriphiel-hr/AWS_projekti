@@ -58,7 +58,10 @@ export default function SubscriptionPlans() {
         
         // Log discount info for debugging
         if (plan.newUserDiscount) {
-          console.log(`Plan ${key} has discount:`, plan.newUserDiscount);
+          console.log(`Plan ${key} has new user discount:`, plan.newUserDiscount);
+        }
+        if (plan.trialUpgradeDiscount) {
+          console.log(`Plan ${key} has TRIAL upgrade discount:`, plan.trialUpgradeDiscount);
         }
       });
       
@@ -209,7 +212,20 @@ export default function SubscriptionPlans() {
                 
                 {/* Price */}
                 <div className="mb-6">
-                  {plan.newUserDiscount ? (
+                  {plan.trialUpgradeDiscount ? (
+                    <div>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-3xl font-bold text-gray-400 line-through">{plan.originalPrice}€</span>
+                        <span className="text-5xl font-bold text-green-600">{plan.price}€</span>
+                        <span className="text-gray-600">/mjesečno</span>
+                      </div>
+                      <div className="mt-2">
+                        <span className="inline-block px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-semibold">
+                          🎁 {plan.trialUpgradeDiscount.percent}% popust za upgrade iz TRIAL-a!
+                        </span>
+                      </div>
+                    </div>
+                  ) : plan.newUserDiscount ? (
                     <div>
                       <div className="flex items-baseline gap-2">
                         <span className="text-3xl font-bold text-gray-400 line-through">{plan.originalPrice}€</span>
@@ -275,6 +291,8 @@ export default function SubscriptionPlans() {
                     ? '✓ Trenutni plan'
                     : subscribing === key
                     ? 'Procesiranje...'
+                    : plan.trialUpgradeDiscount
+                    ? `Pretplati se - ${plan.price}€/mj (${plan.originalPrice}€)`
                     : plan.newUserDiscount
                     ? `Pretplati se - ${plan.price}€/mj (${plan.originalPrice}€)`
                     : `Pretplati se - ${plan.price}€/mj`

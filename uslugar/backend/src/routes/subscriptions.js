@@ -93,6 +93,54 @@ function calculateNewUserDiscount(originalPrice) {
   };
 }
 
+/**
+ * Izračunava smanjenu cijenu za upgrade iz TRIAL-a
+ * Popust: 20% za TRIAL korisnike koji upgrade-uju
+ * @param {Number} originalPrice - Originalna cijena
+ * @returns {Object} - Objekt s originalnom cijenom, smanjenom cijenom i popustom
+ */
+function calculateTrialUpgradeDiscount(originalPrice) {
+  const discountPercent = 20; // 20% popust za upgrade iz TRIAL-a
+  const discountAmount = (originalPrice * discountPercent) / 100;
+  const discountedPrice = originalPrice - discountAmount;
+  
+  return {
+    originalPrice,
+    discountedPrice: Math.round(discountedPrice * 100) / 100, // Zaokruži na 2 decimale
+    discountPercent,
+    discountAmount: Math.round(discountAmount * 100) / 100
+  };
+}
+
+/**
+ * Provjerava da li je korisnik trenutno na TRIAL planu
+ * @param {String} userId - ID korisnika
+ * @returns {Promise<Boolean>} - true ako je korisnik na TRIAL planu
+ */
+async function isTrialUser(userId) {
+  try {
+    const subscription = await prisma.subscription.findUnique({
+      where: { userId: userId },
+      select: {
+        plan: true,
+        status: true,
+        expiresAt: true
+      }
+    });
+
+    if (!subscription) {
+      return false;
+    }
+
+    // Korisnik je na TRIAL-u ako je plan TRIAL i status je ACTIVE
+    // (ne provjeravamo expiresAt jer korisnik može upgrade-ovati i prije isteka)
+    return subscription.plan === 'TRIAL' && subscription.status === 'ACTIVE';
+  } catch (error) {
+    console.error(`[IS_TRIAL_USER] Error checking if user ${userId} is on TRIAL:`, error);
+    return false;
+  }
+}
+
 // Helper function to get plans from database
 // Podržava segmentaciju po regiji i kategoriji
 async function getPlansFromDB(filters = {}, userId = null) {
@@ -125,8 +173,10 @@ async function getPlansFromDB(filters = {}, userId = null) {
   
   // Provjeri je li korisnik novi (za smanjene cijene)
   let isUserNew = false;
+  let isUserTrial = false;
   if (userId) {
     isUserNew = await isNewUser(userId);
+    isUserTrial = await isTrialUser(userId);
   }
 
   // Transform to legacy format for backward compatibility
@@ -137,12 +187,24 @@ async function getPlansFromDB(filters = {}, userId = null) {
       ? `${plan.name}_${plan.categoryId || ''}_${plan.region || ''}` 
       : plan.name;
     
-    // Izračunaj smanjenu cijenu za nove korisnike (samo za plaćene planove, ne TRIAL)
+    // Izračunaj smanjenu cijenu za nove korisnike ili TRIAL upgrade (samo za plaćene planove, ne TRIAL)
     let price = plan.price;
     let originalPrice = null;
     let discount = null;
+    let trialUpgradeDiscount = null;
     
-    if (isUserNew && plan.name !== 'TRIAL' && plan.price > 0) {
+    // Prioritet: TRIAL upgrade popust ima prednost nad new user popustom
+    if (isUserTrial && plan.name !== 'TRIAL' && plan.price > 0) {
+      const discountInfo = calculateTrialUpgradeDiscount(plan.price);
+      price = discountInfo.discountedPrice;
+      originalPrice = discountInfo.originalPrice;
+      trialUpgradeDiscount = {
+        percent: discountInfo.discountPercent,
+        amount: discountInfo.discountAmount,
+        originalPrice: discountInfo.originalPrice,
+        discountedPrice: discountInfo.discountedPrice
+      };
+    } else if (isUserNew && plan.name !== 'TRIAL' && plan.price > 0) {
       const discountInfo = calculateNewUserDiscount(plan.price);
       price = discountInfo.discountedPrice;
       originalPrice = discountInfo.originalPrice;

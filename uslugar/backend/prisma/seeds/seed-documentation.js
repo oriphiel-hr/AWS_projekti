@@ -466,7 +466,7 @@ const features = [
         { name: "Engagement tracking tijekom TRIAL-a", implemented: true }, // Implementirano: TrialEngagement model, tracking servis, integracija u lead purchase/offer/chat/login, API endpoint za dohvat podataka
         { name: "Podsjetnici 3 dana prije isteka", implemented: true }, // Implementirano: automatski podsjetnik 3 dana prije isteka TRIAL-a, email + in-app notifikacija, provjera duplikata
         { name: "Automatski downgrade na BASIC nakon isteka", implemented: true }, // Implementirano: automatski downgrade TRIAL-a na BASIC nakon isteka, 10 kredita, 1 mjesec trajanja, cron job provjera svaki sat
-        { name: "Popust za upgrade iz TRIAL-a", implemented: false }
+        { name: "Popust za upgrade iz TRIAL-a", implemented: true } // Implementirano: 20% popust za TRIAL korisnike koji upgrade-uju, prioritet nad new user popustom, prikaz na frontendu i u checkout procesu
       ]
     },
     {

@@ -67,10 +67,12 @@ r.post('/create-checkout', auth(true, ['PROVIDER']), async (req, res, next) => {
       return res.status(400).json({ error: 'Invalid plan' });
     }
 
-    // Provjeri je li korisnik novi (za popust)
+    // Provjeri je li korisnik novi ili na TRIAL-u (za popust)
     let adjustedPrice = planDetails.price;
     let isUserNew = false;
+    let isUserTrial = false;
     let discountApplied = false;
+    let discountType = null; // 'new_user' ili 'trial_upgrade'
     
     try {
       // Provjeri da li korisnik ima bilo kakve plaćene pretplate (ne TRIAL)
@@ -88,18 +90,39 @@ r.post('/create-checkout', auth(true, ['PROVIDER']), async (req, res, next) => {
       
       isUserNew = !paidSubscriptions;
       
-      // Ako je korisnik novi i plan nije TRIAL, primijeni popust
-      if (isUserNew && plan !== 'TRIAL' && planDetails.price > 0) {
+      // Provjeri da li je korisnik na TRIAL planu
+      const subscription = await prisma.subscription.findUnique({
+        where: { userId: req.user.id },
+        select: {
+          plan: true,
+          status: true
+        }
+      });
+      
+      isUserTrial = subscription?.plan === 'TRIAL' && subscription?.status === 'ACTIVE';
+      
+      // Prioritet: TRIAL upgrade popust ima prednost nad new user popustom
+      if (isUserTrial && plan !== 'TRIAL' && planDetails.price > 0) {
+        const discountPercent = 20; // 20% popust za upgrade iz TRIAL-a
+        const discountAmount = (planDetails.price * discountPercent) / 100;
+        adjustedPrice = planDetails.price - discountAmount;
+        adjustedPrice = Math.round(adjustedPrice * 100) / 100; // Zaokruži na 2 decimale
+        discountApplied = true;
+        discountType = 'trial_upgrade';
+        
+        console.log(`[CHECKOUT] TRIAL upgrade discount applied: ${planDetails.price}€ -> ${adjustedPrice}€ (${discountPercent}% off)`);
+      } else if (isUserNew && plan !== 'TRIAL' && planDetails.price > 0) {
         const discountPercent = 20; // 20% popust za nove korisnike
         const discountAmount = (planDetails.price * discountPercent) / 100;
         adjustedPrice = planDetails.price - discountAmount;
         adjustedPrice = Math.round(adjustedPrice * 100) / 100; // Zaokruži na 2 decimale
         discountApplied = true;
+        discountType = 'new_user';
         
         console.log(`[CHECKOUT] New user discount applied: ${planDetails.price}€ -> ${adjustedPrice}€ (${discountPercent}% off)`);
       }
     } catch (error) {
-      console.warn('[CHECKOUT] Error checking if user is new, using regular price:', error.message);
+      console.warn('[CHECKOUT] Error checking if user is new/trial, using regular price:', error.message);
       // Nastavi s normalnom cijenom ako dođe do greške
     }
 
@@ -155,7 +178,8 @@ r.post('/create-checkout', auth(true, ['PROVIDER']), async (req, res, next) => {
       credits: planDetails.credits.toString(),
       originalPrice: planDetails.price.toString(),
       discountedPrice: adjustedPrice.toString(),
-      discountApplied: discountApplied.toString()
+      discountApplied: discountApplied.toString(),
+      discountType: discountType || ''
     };
     
     console.log('[CREATE-CHECKOUT] Creating session with metadata:', metadata);
@@ -169,7 +193,7 @@ r.post('/create-checkout', auth(true, ['PROVIDER']), async (req, res, next) => {
         price_data: {
           currency: planDetails.currency.toLowerCase() || 'eur',
           product_data: {
-            name: `${planDetails.displayName} Plan${discountApplied ? ' (Novi korisnik - 20% popust!)' : ''}`,
+            name: `${planDetails.displayName} Plan${discountApplied ? (discountType === 'trial_upgrade' ? ' (TRIAL upgrade - 20% popust!)' : ' (Novi korisnik - 20% popust!)') : ''}`,
             description: `${planDetails.credits} ekskluzivnih leadova mjesečno${discountApplied ? ` - Originalna cijena: ${planDetails.price}€` : ''}`,
           },
           unit_amount: Math.round(adjustedPrice * 100), // Stripe koristi cents, koristimo smanjenu cijenu
