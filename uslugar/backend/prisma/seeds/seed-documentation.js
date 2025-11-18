@@ -444,7 +444,7 @@ const features = [
       category: "Paketi i Add-on Model",
       items: [
         { name: "Hijerarhijski model paketa (Basic → Pro → Premium)", implemented: true },
-        { name: "Segmentni model paketa (po regiji/kategoriji)", implemented: false },
+        { name: "Segmentni model paketa (po regiji/kategoriji)", implemented: true },
         { name: "Feature ownership (funkcionalnosti ne nestaju)", implemented: true },
         { name: "Add-on paketi (regija, kategorija, krediti)", implemented: false },
         { name: "Automatska provjera postojećih funkcionalnosti", implemented: true },
@@ -13417,7 +13417,7 @@ SMS verifikacija osigurava da vaš telefonski broj pripada vama i povećava povj
       `
     },
     "Segmentni model paketa (po regiji/kategoriji)": {
-      implemented: false,
+      implemented: true,
       summary: "Segmentni model paketa omogućava definiranje različitih paketa prema regijama ili kategorijama, što omogućava fleksibilniju strukturu paketa prilagođenu specifičnim tržišnim potrebama.",
       details: `**Kako funkcionira**
 - Segmentni model paketa omogućava definiranje različitih paketa za različite regije ili kategorije usluga.
@@ -13442,31 +13442,35 @@ SMS verifikacija osigurava da vaš telefonski broj pripada vama i povećava povj
 - Za fleksibilniju strukturu paketa koja odgovara specifičnim potrebama tržišta.
 `,
       technicalDetails: `**Frontend**
-- Komponenta \`SegmentPlans\` prikazuje pakete filtrirane po regiji ili kategoriji.
-- Dashboard prikazuje trenutne pakete korisnika po segmentima (regija/kategorija).
-- Filter panel omogućava filtriranje paketa po regijama ili kategorijama.
+- Komponenta \`SubscriptionPlans\` može prikazati pakete filtrirane po regiji ili kategoriji koristeći query parametre.
+- Filter panel može omogućiti filtriranje paketa po regijama ili kategorijama.
 - Prikaz usporedbe paketa unutar istog segmenta s cijenama i beneficijama.
 
 **Backend**
-- \`subscriptionService.getSegmentPlans\` vraća listu paketa za određeni segment (regija ili kategorija).
-- \`subscriptionService.activateSegmentPlan\` aktivira paket za određeni segment.
-- \`subscriptionService.getAvailableSegments\` vraća listu dostupnih segmenata (regije/kategorije).
-- \`planSegmentService.defineSegment\` definira novi segment s paketima.
-- Event \`subscription.segment.activated\` informira ostale servise o aktivaciji segmentnog paketa.
+- \`GET /api/subscriptions/plans\` podržava query parametre \`?categoryId=xxx&region=Zagreb\` za filtriranje segmentiranih paketa.
+- Funkcija \`getPlansFromDB(filters)\` u \`subscriptions.js\` vraća pakete filtrirane po kategoriji i/ili regiji.
+- API automatski uključuje informacije o kategoriji u odgovoru.
 
 **Baza**
-- \`PlanSegment\` tablica definira segmente (segmentType: REGION/CATEGORY, segmentValue, isActive).
-- \`SegmentPlan\` tablica definira pakete po segmentu (segmentId, planCode, price, credits, features JSONB).
-- \`SubscriptionSegment\` tablica čuva aktivne segmentne pakete korisnika (userId, segmentId, planCode, status, currentPeriodEnd).
-- \`SegmentPlanHistory\` tablica bilježi povijest promjena segmentnih paketa (userId, segmentId, planCode, action, occurredAt).
-- Segmentni paketi se cacheiraju radi bržeg pristupa i smanjenja opterećenja baze.
+- \`SubscriptionPlan\` model proširen s poljima \`categoryId\` (String?) i \`region\` (String?).
+- Unique constraint na kombinaciji \`(name, categoryId, region)\` omogućava više paketa s istim imenom ali različitim segmentacijama.
+- Foreign key na \`Category\` tablicu osigurava referencijalnu integritet.
+- Indeksi na \`categoryId\`, \`region\` i kompozitni \`(categoryId, region)\` za brže pretraživanje.
+- Migracija: \`20251118123434_add_segmented_package_model/migration.sql\`
 
 **API**
-- \`GET /api/subscriptions/segments\` – vraća listu dostupnih segmenata (regije/kategorije).
-- \`GET /api/subscriptions/segments/:segmentId/plans\` – vraća listu paketa za određeni segment.
-- \`POST /api/subscriptions/segments/:segmentId/activate\` – aktivira paket za određeni segment (zahtijeva planCode i Stripe payment).
-- \`GET /api/subscriptions/segments/me\` – vraća trenutne segmentne pakete korisnika.
-- \`GET /api/subscriptions/segments/:segmentId/plans/:code\` – vraća detalje određenog segmentnog paketa.
+- \`GET /api/subscriptions/plans\` – vraća sve pakete (osnovni + segmentirani).
+- \`GET /api/subscriptions/plans?categoryId=xxx\` – vraća pakete za određenu kategoriju.
+- \`GET /api/subscriptions/plans?region=Zagreb\` – vraća pakete za određenu regiju.
+- \`GET /api/subscriptions/plans?categoryId=xxx&region=Zagreb\` – kombinirano filtriranje.
+- Odgovor uključuje \`category\` objekt s informacijama o kategoriji ako je paket segmentiran po kategoriji.
+
+**Seed Podaci**
+- Osnovni paketi (BASIC, PREMIUM, PRO) s \`categoryId: null\` i \`region: null\`.
+- Primjeri segmentiranih paketa:
+  - PREMIUM - Građevina Zagreb
+  - PRO - IT Dalmacija
+  - BASIC - Arhitekti Istra
       `
     }
   };
