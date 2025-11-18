@@ -499,7 +499,7 @@ const features = [
     {
       category: "Onboarding i Automatizacija",
       items: [
-        { name: "Wizard registracije (odabir kategorija i regija)", implemented: false },
+        { name: "Wizard registracije (odabir kategorija i regija)", implemented: true }, // Implementirano: GET /api/wizard/categories, GET /api/wizard/regions, GET /api/wizard/status, POST /api/wizard/categories, POST /api/wizard/regions, POST /api/wizard/complete
         { name: "Automatska aktivacija TRIAL-a", implemented: true },
         { name: "Chat-bot vodi za prvi lead", implemented: false },
         { name: "Automatski email + popust link pri isteku TRIAL-a", implemented: false },
