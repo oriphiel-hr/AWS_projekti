@@ -635,6 +635,120 @@ export const sendSubscriptionRefundEmail = async (toEmail, fullName, planName, r
   }
 };
 
+/**
+ * Pošalji upsell email za add-on koji ističe
+ * @param {String} toEmail - Email adresa korisnika
+ * @param {String} fullName - Ime korisnika
+ * @param {Object} addon - Add-on objekt
+ * @param {Number} daysLeft - Broj dana do isteka
+ * @param {Boolean} isExpired - Da li je već istekao
+ * @param {Boolean} isGracePeriod - Da li je u grace periodu
+ * @param {String} renewalUrl - URL za obnovu add-ona
+ * @param {String} upgradeUrl - URL za upgrade pretplate
+ */
+export const sendAddonUpsellEmail = async (
+  toEmail,
+  fullName,
+  addon,
+  daysLeft,
+  isExpired = false,
+  isGracePeriod = false,
+  renewalUrl,
+  upgradeUrl
+) => {
+  if (!transporter) {
+    console.log('SMTP not configured, skipping upsell email:', toEmail);
+    return;
+  }
+
+  try {
+    const addonType = addon.type === 'REGION' ? 'Regija' : addon.type === 'CATEGORY' ? 'Kategorija' : 'Krediti';
+    const discountPercent = isGracePeriod ? 10 : daysLeft === 3 ? 5 : 0;
+    
+    let subject, heading, bodyText, ctaText;
+    
+    if (isGracePeriod) {
+      subject = `🚨 ${addon.displayName} - Posljednja prilika za obnovu!`;
+      heading = 'Posljednja prilika!';
+      bodyText = `Vaš add-on "${addon.displayName}" ističe uskoro. Obnovite sada i dobijte <strong>10% popusta</strong>!`;
+      ctaText = 'Obnovi sada - 10% popust';
+    } else if (isExpired) {
+      subject = `⏰ ${addon.displayName} je istekao - Obnovite sada!`;
+      heading = 'Vaš add-on je istekao';
+      bodyText = `Vaš add-on "${addon.displayName}" je istekao. Obnovite sada i nastavite koristiti sve funkcionalnosti!`;
+      ctaText = 'Obnovi add-on';
+    } else if (daysLeft === 7) {
+      subject = `📅 ${addon.displayName} ističe za ${daysLeft} dana`;
+      heading = `Vaš add-on ističe za ${daysLeft} dana`;
+      bodyText = `Vaš add-on "${addon.displayName}" ističe za ${daysLeft} dana. Obnovite sada i osigurajte kontinuitet!`;
+      ctaText = 'Obnovi add-on';
+    } else if (daysLeft === 3) {
+      subject = `⏳ ${addon.displayName} ističe za ${daysLeft} dana - Specijalna ponuda!`;
+      heading = `Vaš add-on ističe za ${daysLeft} dana`;
+      bodyText = `Vaš add-on "${addon.displayName}" ističe za ${daysLeft} dana. Obnovite sada i dobijte <strong>5% popusta</strong>!`;
+      ctaText = 'Obnovi sada - 5% popust';
+    } else {
+      subject = `📢 ${addon.displayName} ističe uskoro`;
+      heading = 'Vaš add-on ističe uskoro';
+      bodyText = `Vaš add-on "${addon.displayName}" ističe uskoro. Obnovite sada!`;
+      ctaText = 'Obnovi add-on';
+    }
+
+    await transporter.sendMail({
+      from: `"Uslugar" <${process.env.SMTP_USER}>`,
+      to: toEmail,
+      subject: subject,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
+          <div style="background-color: #4CAF50; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="color: white; margin: 0; font-size: 28px;">USLUGAR</h1>
+          </div>
+          <div style="background-color: white; padding: 40px; border-radius: 0 0 10px 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <h2 style="color: #333; margin-top: 0; font-size: 24px;">${heading}</h2>
+            <p style="color: #666; font-size: 16px; line-height: 1.6;">Poštovani/na <strong>${fullName}</strong>,</p>
+            <p style="color: #666; font-size: 16px; line-height: 1.6;">${bodyText}</p>
+            
+            <div style="background-color: #f9f9f9; padding: 20px; border-radius: 8px; margin: 30px 0; border-left: 4px solid #4CAF50;">
+              <p style="margin: 0; color: #333; font-size: 14px;"><strong>Tip add-ona:</strong> ${addonType}</p>
+              <p style="margin: 5px 0 0 0; color: #333; font-size: 14px;"><strong>Naziv:</strong> ${addon.displayName}</p>
+              ${addon.validUntil ? `<p style="margin: 5px 0 0 0; color: #333; font-size: 14px;"><strong>Ističe:</strong> ${new Date(addon.validUntil).toLocaleDateString('hr-HR')}</p>` : ''}
+              ${discountPercent > 0 ? `<p style="margin: 10px 0 0 0; color: #4CAF50; font-size: 16px; font-weight: bold;">🎉 Specijalna ponuda: ${discountPercent}% popusta!</p>` : ''}
+            </div>
+
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${renewalUrl}" style="display: inline-block; background-color: #4CAF50; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-size: 16px; font-weight: bold; margin: 10px;">${ctaText}</a>
+            </div>
+
+            <p style="color: #999; font-size: 14px; line-height: 1.6; margin-top: 30px;">
+              Ili razmislite o <a href="${upgradeUrl}" style="color: #4CAF50; text-decoration: none;">nadogradnji pretplate</a> za još više funkcionalnosti!
+            </p>
+
+            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+            
+            <p style="color: #999; font-size: 12px; line-height: 1.6; margin: 0;">
+              Ako imate pitanja, kontaktirajte nas na <a href="mailto:support@uslugar.hr" style="color: #4CAF50;">support@uslugar.hr</a>
+            </p>
+          </div>
+          <div style="text-align: center; margin-top: 20px; color: #999; font-size: 12px;">
+            <p>© ${new Date().getFullYear()} Uslugar. Sva prava pridržana.</p>
+          </div>
+        </body>
+        </html>
+      `
+    });
+    console.log('Add-on upsell email sent to:', toEmail);
+  } catch (error) {
+    console.error('Error sending add-on upsell email:', error);
+    throw error;
+  }
+};
+
 export { transporter, createTransporter };
 export default { transporter, createTransporter };
 

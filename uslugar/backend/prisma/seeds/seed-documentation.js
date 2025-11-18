@@ -452,7 +452,7 @@ const features = [
         { name: "Grace period za Add-on (7 dana)", implemented: true },
         { name: "Auto-renew opcija za Add-on", implemented: true },
         { name: "Upozorenja pri 80%, 50%, 20% iskorištenosti", implemented: true },
-        { name: "Upsell mehanizam pri isteku Add-on", implemented: false }
+        { name: "Upsell mehanizam pri isteku Add-on", implemented: true }, // Implementirano: automatsko slanje upsell ponuda 7 dana prije, 3 dana prije, na dan isteka i u grace periodu, s popustima (5% na 3 dana, 10% u grace periodu), email + in-app notifikacije
       ]
     },
     {

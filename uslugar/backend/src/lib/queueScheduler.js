@@ -16,7 +16,7 @@ import { batchAutoVerifyClients } from '../services/auto-verification.js'
 
 import { lockInactiveThreads, reLockExpiredTemporaryUnlocks } from '../services/thread-locking-service.js';
 import { checkAndSendSLAReminders } from '../services/sla-reminder-service.js';
-import { checkAddonLifecycles, processAutoRenewals } from '../services/addon-lifecycle-service.js';
+import { checkAddonLifecycles, processAutoRenewals, processAddonUpsells } from '../services/addon-lifecycle-service.js';
 
 export function startQueueScheduler() {
   console.log('⏰ Starting Queue Scheduler...')
@@ -50,6 +50,12 @@ export function startQueueScheduler() {
       const renewals = await processAutoRenewals()
       if (renewals.renewed > 0) {
         console.log(`✅ Auto-renewed ${renewals.renewed} add-ons`)
+      }
+      
+      // Provjeri i pošalji upsell ponude za add-one koji ističu
+      const upsells = await processAddonUpsells()
+      if (upsells.upsellsSent > 0) {
+        console.log(`✅ Sent ${upsells.upsellsSent} add-on upsell offers`)
       }
       
       console.log('✅ Scheduled check completed')
@@ -147,6 +153,7 @@ export function startQueueScheduler() {
   console.log('   - SLA reminders check: Every hour at :00')
   console.log('   - Add-on lifecycle check: Every hour at :00')
   console.log('   - Add-on auto-renewal: Every hour at :00')
+  console.log('   - Add-on upsell offers: Every hour at :00')
   console.log('   - License expiry check: Daily at 09:00')
   console.log('   - License validity check: Daily at 10:00')
   console.log('   - Batch auto-verification: Daily at 11:00')
