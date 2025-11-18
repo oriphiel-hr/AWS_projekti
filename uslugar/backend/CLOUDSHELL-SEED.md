@@ -14,7 +14,7 @@ aws ecs execute-command \
   --task $TASK_ARN \
   --container uslugar \
   --region eu-north-1 \
-  --command "cd /app && npm run seed" \
+  --command "cd /app && npx prisma generate --schema=./prisma/schema.prisma && npm run seed" \
   2>&1
 ```
 
@@ -30,6 +30,7 @@ Ako gornja naredba ne radi, koristite AWS Console:
 
 ```bash
 cd /app
+npx prisma generate --schema=./prisma/schema.prisma
 npm run seed
 ```
 

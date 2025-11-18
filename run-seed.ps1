@@ -28,7 +28,7 @@ $containerDef = @{
     command = @(
         "sh",
         "-lc",
-        "npm run seed"
+        "npx prisma generate --schema=./prisma/schema.prisma && npm run seed"
     )
 } | ConvertTo-Json -Depth 10 -Compress
 
