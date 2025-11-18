@@ -2,6 +2,14 @@
 FROM node:20-bookworm-slim AS prisma-src
 WORKDIR /app
 
+# Install OpenSSL 3.0 for Prisma (potrebno za prisma generate)
+RUN apt-get update -y && apt-get install -y --no-install-recommends openssl libssl3 ca-certificates && rm -rf /var/lib/apt/lists/*
+
+# Prisma environment variables
+ENV PRISMA_GENERATE_SKIP_AUTOINSTALL=1
+ENV PRISMA_OPENSSL_VERSION=3.0.x
+ENV PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
+
 # 1) deps (uklj. dev → trebamo Prisma CLI za generate)
 COPY package*.json ./
 RUN npm ci
