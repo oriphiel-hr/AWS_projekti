@@ -16,6 +16,7 @@ import { batchAutoVerifyClients } from '../services/auto-verification.js'
 
 import { lockInactiveThreads, reLockExpiredTemporaryUnlocks } from '../services/thread-locking-service.js';
 import { checkAndSendSLAReminders } from '../services/sla-reminder-service.js';
+import { checkAddonLifecycles, processAutoRenewals } from '../services/addon-lifecycle-service.js';
 
 export function startQueueScheduler() {
   console.log('⏰ Starting Queue Scheduler...')
@@ -37,6 +38,18 @@ export function startQueueScheduler() {
       const remindersSent = await checkAndSendSLAReminders()
       if (remindersSent > 0) {
         console.log(`✅ Sent ${remindersSent} SLA reminders`)
+      }
+      
+      // Provjeri add-on lifecycle (status, isteci, grace period)
+      const addonCheck = await checkAddonLifecycles()
+      if (addonCheck.updated > 0) {
+        console.log(`✅ Updated ${addonCheck.updated} add-ons (${addonCheck.expired} expired, ${addonCheck.graceStarted} grace started)`)
+      }
+      
+      // Obradi auto-renewale
+      const renewals = await processAutoRenewals()
+      if (renewals.renewed > 0) {
+        console.log(`✅ Auto-renewed ${renewals.renewed} add-ons`)
       }
       
       console.log('✅ Scheduled check completed')
@@ -132,6 +145,8 @@ export function startQueueScheduler() {
   console.log('   - Expired offers check: Every hour at :00')
   console.log('   - Inactive lead purchases check (48h auto-refund): Every hour at :00')
   console.log('   - SLA reminders check: Every hour at :00')
+  console.log('   - Add-on lifecycle check: Every hour at :00')
+  console.log('   - Add-on auto-renewal: Every hour at :00')
   console.log('   - License expiry check: Daily at 09:00')
   console.log('   - License validity check: Daily at 10:00')
   console.log('   - Batch auto-verification: Daily at 11:00')

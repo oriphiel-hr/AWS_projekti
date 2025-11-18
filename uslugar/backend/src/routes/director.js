@@ -15,6 +15,16 @@ import {
   determineDelta,
   getAvailableFeatures
 } from '../services/feature-ownership-service.js';
+import {
+  purchaseAddon,
+  getAddons,
+  getAddon,
+  renewAddon,
+  cancelAddon,
+  getAvailableAddons,
+  checkAddonStatus,
+  updateAddonUsage
+} from '../services/addon-service.js';
 
 const r = Router();
 
@@ -778,6 +788,180 @@ r.post('/addons/quote', auth(true), async (req, res, next) => {
       addonScope,
       requestedFeatures,
       ...delta
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * GET /api/director/addons
+ * Dohvati sve add-one korisnika
+ */
+r.get('/addons', auth(true), async (req, res, next) => {
+  try {
+    const director = await getDirectorWithTeam(req.user.id);
+    if (!director) {
+      return res.status(403).json({
+        error: 'Nemate pristup',
+        message: 'Samo direktor može pristupiti ovom endpointu.'
+      });
+    }
+
+    const { status, type } = req.query;
+    const addons = await getAddons(director.user.id, { status, type });
+
+    res.json({
+      success: true,
+      addons
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * GET /api/director/addons/available
+ * Dohvati dostupne add-one (cjenik)
+ */
+r.get('/addons/available', auth(true), async (req, res, next) => {
+  try {
+    const available = await getAvailableAddons();
+    res.json({
+      success: true,
+      addons: available
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * GET /api/director/addons/:id
+ * Dohvati detalje određenog add-ona
+ */
+r.get('/addons/:id', auth(true), async (req, res, next) => {
+  try {
+    const director = await getDirectorWithTeam(req.user.id);
+    if (!director) {
+      return res.status(403).json({
+        error: 'Nemate pristup',
+        message: 'Samo direktor može pristupiti ovom endpointu.'
+      });
+    }
+
+    const addon = await getAddon(req.params.id, director.user.id);
+    res.json({
+      success: true,
+      addon
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * POST /api/director/addons/purchase
+ * Kupi novi add-on paket
+ */
+r.post('/addons/purchase', auth(true), async (req, res, next) => {
+  try {
+    const director = await getDirectorWithTeam(req.user.id);
+    if (!director) {
+      return res.status(403).json({
+        error: 'Nemate pristup',
+        message: 'Samo direktor može pristupiti ovom endpointu.'
+      });
+    }
+
+    const { type, scope, displayName, categoryId, creditsAmount, price, validUntil, autoRenew } = req.body;
+
+    if (!type || !scope || !displayName || !price || !validUntil) {
+      return res.status(400).json({
+        error: 'Missing required fields: type, scope, displayName, price, validUntil'
+      });
+    }
+
+    const addon = await purchaseAddon(director.user.id, {
+      type,
+      scope,
+      displayName,
+      categoryId,
+      creditsAmount,
+      price,
+      validUntil: new Date(validUntil),
+      autoRenew
+    });
+
+    res.status(201).json({
+      success: true,
+      addon,
+      message: 'Add-on paket uspješno kupljen'
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * POST /api/director/addons/:id/renew
+ * Obnovi add-on paket
+ */
+r.post('/addons/:id/renew', auth(true), async (req, res, next) => {
+  try {
+    const director = await getDirectorWithTeam(req.user.id);
+    if (!director) {
+      return res.status(403).json({
+        error: 'Nemate pristup',
+        message: 'Samo direktor može pristupiti ovom endpointu.'
+      });
+    }
+
+    const { validUntil, autoRenew } = req.body;
+
+    if (!validUntil) {
+      return res.status(400).json({
+        error: 'validUntil is required'
+      });
+    }
+
+    const addon = await renewAddon(req.params.id, director.user.id, {
+      validUntil: new Date(validUntil),
+      autoRenew
+    });
+
+    res.json({
+      success: true,
+      addon,
+      message: 'Add-on paket uspješno obnovljen'
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * POST /api/director/addons/:id/cancel
+ * Otkaži add-on paket
+ */
+r.post('/addons/:id/cancel', auth(true), async (req, res, next) => {
+  try {
+    const director = await getDirectorWithTeam(req.user.id);
+    if (!director) {
+      return res.status(403).json({
+        error: 'Nemate pristup',
+        message: 'Samo direktor može pristupiti ovom endpointu.'
+      });
+    }
+
+    const { reason } = req.body;
+
+    const addon = await cancelAddon(req.params.id, director.user.id, reason || 'User cancelled');
+
+    res.json({
+      success: true,
+      addon,
+      message: 'Add-on paket uspješno otkazan'
     });
   } catch (e) {
     next(e);

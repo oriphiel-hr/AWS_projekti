@@ -288,6 +288,7 @@ model Category {
   providers   ProviderProfile[] @relation("ProviderCategories")
   billingPlans BillingPlan[]
   subscriptionPlans SubscriptionPlan[] // Segmentni paketi po kategoriji
+  addonSubscriptions AddonSubscription[] // Add-on paketi po kategoriji
   jobs        Job[]
 
   // USLUGAR EXCLUSIVE - NKD i licence
@@ -585,9 +586,113 @@ model Subscription {
   updatedAt              DateTime           @updatedAt
 
   invoices Invoice[]
+  addonSubscriptions AddonSubscription[]
 
   @@index([userId])
   @@index([status])
+}
+
+// Add-on paketi - proširenje osnovnog plana s regijama, kategorijama ili kreditima
+// Lifecycle: ACTIVE → LOW_BALANCE → EXPIRED/DEPLETED → GRACE_MODE → RENEWED
+model AddonSubscription {
+  id          String      @id @default(cuid())
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String      // ID direktora (direktor je vlasnik tvrtke)
+  
+  type        AddonType   // REGION, CATEGORY, CREDITS
+  scope       String      // Vrijednost: regija (npr. "Zagreb"), categoryId, ili broj kredita
+  displayName String      // Ljudski čitljiv naziv (npr. "Dalmacija Add-on", "Građevina Add-on", "50 Extra Credits")
+  
+  // Za REGION i CATEGORY add-one
+  category    Category?   @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  categoryId  String?     // Ako je type CATEGORY, ovo je categoryId
+  
+  // Za CREDITS add-one
+  creditsAmount Int?      // Broj kredita ako je type CREDITS
+  
+  // Status i lifecycle
+  status      AddonStatus @default(ACTIVE)
+  autoRenew   Boolean     @default(false) // Automatska obnova nakon isteka
+  
+  // Vremenski periodi
+  validFrom   DateTime    @default(now())
+  validUntil  DateTime    // Datum isteka
+  graceUntil  DateTime?   // Kraj grace perioda (7 dana nakon validUntil)
+  
+  // Cijena i naplata
+  price       Float       // Cijena u EUR
+  currency    String      @default("EUR")
+  
+  // Stripe povezanost
+  stripeSubscriptionId String? // Stripe Subscription ID za auto-renew
+  stripePriceId       String? // Stripe Price ID
+  
+  // Metapodaci
+  notes       String?
+  cancelledAt DateTime?   // Kada je otkazan
+  cancelledReason String? // Razlog otkazivanja
+  
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  
+  // Relacije
+  usage       AddonUsage?
+  eventLogs   AddonEventLog[]
+  invoices    Invoice[]    @relation("AddonInvoices")
+  
+  @@unique([userId, type, scope]) // Jedan korisnik može imati jedan add-on po tipu i scope-u
+  @@index([userId])
+  @@index([type])
+  @@index([status])
+  @@index([validUntil])
+  @@index([categoryId])
+}
+
+// Praćenje potrošnje Add-on paketa
+model AddonUsage {
+  id              String            @id @default(cuid())
+  addon           AddonSubscription @relation(fields: [addonId], references: [id], onDelete: Cascade)
+  addonId         String            @unique // Jedan usage zapis po add-onu
+  
+  // Za CREDITS add-one
+  consumed        Int               @default(0) // Potrošeno kredita
+  remaining       Int               // Preostalo kredita
+  percentageUsed  Float             @default(0.0) // Postotak potrošnje (0-100)
+  
+  // Za REGION i CATEGORY add-one (broj leadova)
+  leadsReceived   Int               @default(0) // Broj leadova primljenih kroz ovaj add-on
+  leadsConverted  Int               @default(0) // Broj konvertiranih leadova
+  
+  // Notifikacije
+  notifiedAt80    DateTime?         // Kada je poslana notifikacija na 80%
+  notifiedAt50    DateTime?         // Kada je poslana notifikacija na 50%
+  notifiedAt20    DateTime?         // Kada je poslana notifikacija na 20%
+  notifiedExpiring DateTime?         // Kada je poslana notifikacija o isteku (3 dana prije)
+  
+  lastUpdated     DateTime           @default(now())
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  
+  @@index([addonId])
+  @@index([percentageUsed])
+}
+
+// Event log za Add-on pakete (povijest promjena statusa)
+model AddonEventLog {
+  id          String            @id @default(cuid())
+  addon       AddonSubscription @relation(fields: [addonId], references: [id], onDelete: Cascade)
+  addonId     String
+  
+  eventType   String            // "PURCHASED", "RENEWED", "EXPIRED", "DEPLETED", "LOW_BALANCE", "GRACE_STARTED", "CANCELLED"
+  oldStatus   AddonStatus?      // Prethodni status
+  newStatus   AddonStatus?      // Novi status
+  metadata    Json?             // Dodatni podaci (npr. consumed, remaining, reason)
+  
+  occurredAt  DateTime          @default(now())
+  
+  @@index([addonId])
+  @@index([eventType])
+  @@index([occurredAt])
 }
 
 // Subscription Plans - Cjenik planova (za admin upravljanje)
@@ -640,6 +745,8 @@ model Invoice {
   subscriptionId String?
   leadPurchase   LeadPurchase? @relation(fields: [leadPurchaseId], references: [id], onDelete: SetNull)
   leadPurchaseId String?
+  addon          AddonSubscription? @relation("AddonInvoices", fields: [addonId], references: [id], onDelete: SetNull)
+  addonId        String?
 
   // Stripe povezanost
   stripePaymentIntentId String? // Za subscription payment
@@ -1046,9 +1153,26 @@ enum SubscriptionStatus {
   EXPIRED // Istekla
 }
 
+// Add-on paketi - proširenje osnovnog plana
+enum AddonType {
+  REGION    // Add-on za dodatnu regiju
+  CATEGORY  // Add-on za dodatnu kategoriju
+  CREDITS   // Add-on za dodatne kredite
+}
+
+enum AddonStatus {
+  ACTIVE      // Aktivni add-on
+  LOW_BALANCE // Niska potrošnja (<20% preostalo)
+  EXPIRED     // Istekao (vrijeme)
+  DEPLETED    // Potrošen (krediti)
+  GRACE_MODE  // Grace period (7 dana nakon isteka)
+  CANCELLED   // Otkazan od strane korisnika
+}
+
 enum InvoiceType {
   SUBSCRIPTION // Faktura za pretplatu
   LEAD_PURCHASE // Faktura za kupovinu leada
+  ADDON        // Faktura za add-on paket
 }
 
 enum InvoiceStatus {

@@ -446,12 +446,12 @@ const features = [
         { name: "Hijerarhijski model paketa (Basic → Pro → Premium)", implemented: true },
         { name: "Segmentni model paketa (po regiji/kategoriji)", implemented: true },
         { name: "Feature ownership (funkcionalnosti ne nestaju)", implemented: true },
-        { name: "Add-on paketi (regija, kategorija, krediti)", implemented: false },
+        { name: "Add-on paketi (regija, kategorija, krediti)", implemented: true },
         { name: "Automatska provjera postojećih funkcionalnosti", implemented: true },
         { name: "Smanjena cijena za nove pakete (bez duplikata)", implemented: false }, // Postoji logika za provjeru, ali ne i za primjenu smanjenja cijene
-        { name: "Grace period za Add-on (7 dana)", implemented: false },
-        { name: "Auto-renew opcija za Add-on", implemented: false },
-        { name: "Upozorenja pri 80%, 50%, 20% iskorištenosti", implemented: false },
+        { name: "Grace period za Add-on (7 dana)", implemented: true },
+        { name: "Auto-renew opcija za Add-on", implemented: true },
+        { name: "Upozorenja pri 80%, 50%, 20% iskorištenosti", implemented: true },
         { name: "Upsell mehanizam pri isteku Add-on", implemented: false }
       ]
     },
@@ -12040,7 +12040,7 @@ SMS verifikacija osigurava da vaš telefonski broj pripada vama i povećava povj
 `
     },
     "Add-on paketi (regija, kategorija, krediti)": {
-      implemented: false,
+      implemented: true,
       summary: "Add-oni proširuju osnovni plan novim regijama, kategorijama ili kreditima uz lifecycle (active → low balance → expired), omogućavajući fleksibilno širenje poslovanja bez mijenjanja osnovnog paketa.",
       details: `**Kako funkcionira**
 - Direktor može kupiti dodatne regije, kategorije, kredite ili promo boost bez mijenjanja osnovnog plana.
@@ -12066,33 +12066,43 @@ SMS verifikacija osigurava da vaš telefonski broj pripada vama i povećava povj
 `,
       technicalDetails: `**Frontend**
 - Add-on konfigurator s ROI previewem i status badgevima (ACTIVE, LOW_BALANCE, EXPIRED, GRACE_MODE).
-- Reminder banner tri dana prije isteka (hook \`useAddonExpiryReminder\`).
+- Reminder banner tri dana prije isteka.
 - Dashboard prikazuje sve aktivne add-one s detaljima o potrošnji i statusu.
 - Prikaz upozorenja na 80%, 50% i 20% potrošnje s preporukama za obnovu.
 - Mogućnost aktivacije, deaktivacije i obnove add-ona direktno iz dashboarda.
 
 **Backend**
-- \`addonService.purchaseAddon\` validira kompatibilnost i kreira billing stavku.
-- \`addonService.renewAddon\` omogućava automatsku ili ručnu obnovu add-ona.
-- \`addonService.checkStatus\` provjerava status add-ona i pokreće lifecycle prijelaze.
-- Cron \`addonLifecycleJob\` ažurira statuse i šalje notifikacije pri kritičnim razinama.
-- Event \`addon.purchased\`, \`addon.expired\`, \`addon.renewed\` informiraju ostale servise o promjenama.
+- \`addon-service.js\` - Servis za upravljanje add-onima:
+  - \`purchaseAddon\` - Kupnja novog add-ona
+  - \`getAddons\` - Dohvat svih add-ona korisnika
+  - \`getAddon\` - Dohvat jednog add-ona
+  - \`renewAddon\` - Obnova add-ona
+  - \`cancelAddon\` - Otkazivanje add-ona
+  - \`checkAddonStatus\` - Provjera i ažuriranje statusa
+  - \`updateAddonUsage\` - Ažuriranje potrošnje
+- \`addon-lifecycle-service.js\` - Lifecycle management:
+  - \`checkAddonLifecycles\` - Provjera statusa svih add-ona
+  - \`processAutoRenewals\` - Automatska obnova add-ona s autoRenew=true
+- Cron job u \`queueScheduler.js\` pokreće se svaki sat i provjerava lifecycle add-ona
+- Automatske notifikacije na 80%, 50%, 20% potrošnje i 3 dana prije isteka
 
 **Baza**
-- \`AddonSubscription\` tablica čuva add-one (companyId, type: REGION/CATEGORY/CREDITS, scope, status, validUntil, autoRenew).
-- \`AddonUsage\` tablica prati potrošnju add-ona (addonId, consumed, remaining, percentageUsed, lastUpdated).
-- \`AddonEventLog\` tablica bilježi promjene statusa (addonId, eventType, occurredAt, metadata JSONB).
-- \`AddonNotification\` tablica bilježi poslane notifikacije (addonId, notificationType, sentAt, acknowledged).
-- Add-on podaci se cacheiraju radi bržeg pristupa i smanjenja opterećenja baze.
+- \`AddonSubscription\` model čuva add-one (userId, type: REGION/CATEGORY/CREDITS, scope, status, validUntil, autoRenew, graceUntil).
+- \`AddonUsage\` model prati potrošnju add-ona (addonId, consumed, remaining, percentageUsed, notifiedAt80/50/20/expiring).
+- \`AddonEventLog\` model bilježi promjene statusa (addonId, eventType, oldStatus, newStatus, metadata JSONB).
+- Enum \`AddonType\`: REGION, CATEGORY, CREDITS
+- Enum \`AddonStatus\`: ACTIVE, LOW_BALANCE, EXPIRED, DEPLETED, GRACE_MODE, CANCELLED
+- Migracija: \`20251118150000_add_addon_packages/migration.sql\`
 
 **API**
-- \`GET /api/director/addons\` – vraća aktivne/povijesne add-one s potrošnjom i statusom.
-- \`POST /api/director/addons/purchase\` – kupnja novog add-ona (zahtijeva type, scope, duration).
-- \`GET /api/director/addons/:id\` – vraća detalje određenog add-ona s potrošnjom i statusom.
-- \`POST /api/director/addons/:id/renew\` – ručna obnova add-ona (zahtijeva duration).
-- \`POST /api/director/addons/:id/cancel\` – otkazivanje add-ona (zahtijeva reason).
+- \`GET /api/director/addons\` – vraća aktivne/povijesne add-one s potrošnjom i statusom (query: ?status=ACTIVE&type=REGION).
 - \`GET /api/director/addons/available\` – vraća listu dostupnih add-ona s cijenama i opcijama.
-`
+- \`GET /api/director/addons/:id\` – vraća detalje određenog add-ona s potrošnjom i statusom.
+- \`POST /api/director/addons/purchase\` – kupnja novog add-ona (body: type, scope, displayName, categoryId?, creditsAmount?, price, validUntil, autoRenew?).
+- \`POST /api/director/addons/:id/renew\` – ručna obnova add-ona (body: validUntil, autoRenew?).
+- \`POST /api/director/addons/:id/cancel\` – otkazivanje add-ona (body: reason?).
+- \`POST /api/director/addons/quote\` – izračunava doplatu za novi add-on uzimajući u obzir već otkupljene funkcionalnosti.
+      `
     },
     "Automatska provjera postojećih funkcionalnosti": {
       implemented: true,

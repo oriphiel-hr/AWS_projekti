@@ -194,7 +194,27 @@ export async function purchaseLead(jobId, providerId, options = {}) {
       creditsSpent: usedCredits ? leadPrice : 0 // Ako se koristi Stripe, ne trošimo interne kredite
     });
 
-    // 10. Kreiraj fakturu ako je plaćanje preko Stripe
+    // 10. Ažuriraj add-on usage ako se koriste krediti
+    if (usedCredits && leadPrice > 0) {
+      try {
+        const { trackCreditsConsumption } = await import('./addon-service.js');
+        await trackCreditsConsumption(providerId, leadPrice);
+      } catch (addonError) {
+        console.error('[LEAD] Error tracking add-on usage:', addonError);
+        // Ne baci grešku - add-on tracking ne smije blokirati kupovinu leada
+      }
+    }
+
+    // 11. Ažuriraj add-on usage za REGION/CATEGORY add-one
+    try {
+      const { trackLeadReceived } = await import('./addon-service.js');
+      await trackLeadReceived(providerId, job.city, job.categoryId);
+    } catch (addonError) {
+      console.error('[LEAD] Error tracking add-on lead received:', addonError);
+      // Ne baci grešku - add-on tracking ne smije blokirati kupovinu leada
+    }
+
+    // 12. Kreiraj fakturu ako je plaćanje preko Stripe
     if (stripePaymentIntent) {
       try {
         const { createInvoice, generateAndSendInvoice } = await import('./invoice-service.js');
