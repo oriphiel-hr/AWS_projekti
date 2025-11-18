@@ -19,7 +19,8 @@ const features = [
         { name: "Resetiranje lozinke", implemented: true },
         { name: "Zaboravljena lozinka", implemented: true },
         { name: "JWT token autentifikacija", implemented: true },
-        { name: "Različite uloge korisnika (USER, PROVIDER, ADMIN)", implemented: true }
+        { name: "Različite uloge korisnika (USER, PROVIDER, ADMIN)", implemented: true },
+        { name: "Wizard registracije (odabir kategorija i regija)", implemented: true } // Implementirano: GET /api/wizard/categories, GET /api/wizard/regions, GET /api/wizard/status, POST /api/wizard/categories, POST /api/wizard/regions, POST /api/wizard/complete
       ]
     },
     {
@@ -12494,25 +12495,41 @@ SMS verifikacija osigurava da vaš telefonski broj pripada vama i povećava povj
 - Za onboarding novih tvrtki i reaktivaciju postojećih koje ponovno prolaze setup.
 - U marketing kampanjama kada želimo osigurati dosljedno prikupljanje podataka.
 `,
-      technicalDetails: `**Frontend**
-- React stepper s Formik formama i kontekstom \`RegistrationContext\` za spremanje stanja između koraka.
-- Debounced pretraga kategorija/regija koristi \`/api/public/categories\` i \`/api/public/regions\`.
-- Progress indikatori i CTA za upgrade nakon završetka triala.
-
-**Backend**
-- \`registrationController.completeWizard\` kreira tvrtku, direktora, tim i aktivira TRIAL unutar transakcije.
-- Webhook \`registration.completed\` šalje se marketing sustavu za onboarding sekvence.
-- Event \`company.created\` pokreće provisioning CRM workspacea, queue konfiguracije i default permissiona.
+      technicalDetails: `**Backend Implementacija**
+- \`routes/wizard.js\`: Wizard endpoint-i za odabir kategorija i regija.
+- \`GET /api/wizard/categories\`: Dohvat dostupnih kategorija (hijerarhijska struktura s glavnim i podkategorijama).
+- \`GET /api/wizard/regions\`: Dohvat dostupnih regija (lista hrvatskih županija i regija).
+- \`GET /api/wizard/status\`: Provjera statusa wizarda (da li je korisnik već prošao wizard).
+- \`POST /api/wizard/categories\`: Spremanje odabira kategorija (veže kategorije na ProviderProfile).
+- \`POST /api/wizard/regions\`: Spremanje odabira regija (sprema kao serviceArea u ProviderProfile).
+- \`POST /api/wizard/complete\`: Kompletiranje wizarda (opcionalno, za tracking).
 
 **Baza**
-- Unutar iste transakcije nastaju zapisi \`Company\`, \`User\`, \`Team\`, \`CompanyCategory\`, \`CompanyRegion\`.
-- \`RegistrationSnapshot\` čuva raw podatke iz wizarda za analitiku i debug.
-- \`OnboardingTask\` generira checklistu (verificiraj email, dodaj tim, dovrši profil).
+- \`ProviderProfile\` model: \`categories\` (many-to-many relacija s Category), \`serviceArea\` (String za regije).
+- Kategorije se vežu preko \`categories: { connect: categoryIds.map(id => ({ id })) }\`.
+- Regije se spremaju kao string u \`serviceArea\` polje (više regija odvojeno zarezom).
+
+**Logika**
+- Wizard je dostupan samo za PROVIDER role.
+- Validacija: minimalno 1 kategorija i 1 regija su obavezni.
+- Provjera da li kategorije postoje i da su aktivne (\`isActive: true\`).
+- Provjera da li regije su u listi dostupnih regija.
+- Wizard status se određuje na temelju toga da li korisnik ima odabrane kategorije i regije.
 
 **API**
-- \`POST /api/registration/wizard\` prima payload svih koraka i vraća ID tvrtke.
-- \`GET /api/registration/wizard/status\` omogućava nastavak prekinute registracije.
-- \`POST /api/registration/wizard/complete\` potvrđuje završetak i pokreće TRIAL aktivaciju.
+- \`GET /api/wizard/categories\` – dohvat kategorija (javni endpoint, auth optional).
+- \`GET /api/wizard/regions\` – dohvat regija (javni endpoint, auth optional).
+- \`GET /api/wizard/status\` – provjera statusa wizarda (auth required, PROVIDER only).
+- \`POST /api/wizard/categories\` – spremanje kategorija (auth required, PROVIDER only, body: { categoryIds: string[] }).
+- \`POST /api/wizard/regions\` – spremanje regija (auth required, PROVIDER only, body: { regions: string[] }).
+- \`POST /api/wizard/complete\` – kompletiranje wizarda (auth required, PROVIDER only).
+
+**Validacija**
+- categoryIds mora biti array s minimalno 1 elementom.
+- regions mora biti array s minimalno 1 elementom.
+- Sve kategorije moraju postojati i biti aktivne.
+- Sve regije moraju biti u listi dostupnih regija.
+- Provider profil se automatski kreira ako ne postoji pri spremanju kategorija.
 `
     },
     "Direktor Dashboard - upravljanje timovima": {
