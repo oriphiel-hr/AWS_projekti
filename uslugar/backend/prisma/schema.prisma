@@ -37,6 +37,13 @@ enum ModerationStatus {
   REJECTED // Odbijeno
 }
 
+enum ReportStatus {
+  PENDING // Čeka pregled
+  REVIEWED // Pregledano
+  DISMISSED // Odbijeno (prijava nije opravdana)
+  ACCEPTED // Prihvaćeno (recenzija je lažna)
+}
+
 enum AuditActionType {
   MESSAGE_CREATED      // Poruka kreirana
   MESSAGE_EDITED       // Poruka uređena
@@ -411,12 +418,24 @@ model Review {
   moderationRejectionReason String? // Razlog odbijanja (ako je odbijen)
   moderationNotes           String? // Bilješke moderatora
 
+  // REPORT - Prijava lažnih ocjena
+  isReported                Boolean   @default(false) // Da li je recenzija prijavljena kao lažna
+  reportedBy                String? // ID korisnika koji je prijavio
+  reportedAt                DateTime? // Kada je prijavljeno
+  reportReason              String? // Razlog prijave (npr. "Lažna ocjena", "Neprikladan sadržaj", "Osveta")
+  reportStatus              ReportStatus? // Status prijave (PENDING, REVIEWED, DISMISSED, ACCEPTED)
+  reportReviewedBy          String? // ID admina koji je pregledao prijavu
+  reportReviewedAt          DateTime? // Kada je prijava pregledana
+  reportReviewNotes         String? // Bilješke admina o prijavi
+
   @@unique([jobId, fromUserId]) // Jedna recenzija po job-u od svake strane
   @@index([jobId])
   @@index([toUserId])
   @@index([moderationStatus])
   @@index([isPublished])
   @@index([reviewDeadline])
+  @@index([isReported])
+  @@index([reportStatus])
 }
 
 enum Role {

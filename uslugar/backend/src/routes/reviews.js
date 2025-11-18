@@ -474,4 +474,282 @@ r.post('/:id/reject', auth(true, ['ADMIN']), async (req, res, next) => {
   }
 });
 
+// POST /api/reviews/:id/report - Prijava lažne ocjene
+r.post('/:id/report', auth(true), async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+    
+    if (!reason || reason.trim().length === 0) {
+      return res.status(400).json({ error: 'Razlog prijave je obavezan' });
+    }
+    
+    // Pronađi review
+    const review = await prisma.review.findUnique({
+      where: { id },
+      include: {
+        job: {
+          select: {
+            id: true,
+            userId: true,
+            assignedProviderId: true
+          }
+        }
+      }
+    });
+    
+    if (!review) {
+      return res.status(404).json({ error: 'Recenzija nije pronađena' });
+    }
+    
+    // Provjeri da li je korisnik autoriziran da prijavi (mora biti toUserId - onaj koji je dobio recenziju)
+    if (review.toUserId !== req.user.id) {
+      return res.status(403).json({ 
+        error: 'Niste autorizirani da prijavite ovu recenziju. Samo korisnik koji je dobio recenziju može je prijaviti.' 
+      });
+    }
+    
+    // Provjeri da li je već prijavljena
+    if (review.isReported && review.reportStatus === 'PENDING') {
+      return res.status(400).json({ 
+        error: 'Ova recenzija je već prijavljena i čeka pregled.' 
+      });
+    }
+    
+    // Ažuriraj review s prijavom
+    const updatedReview = await prisma.review.update({
+      where: { id },
+      data: {
+        isReported: true,
+        reportedBy: req.user.id,
+        reportedAt: new Date(),
+        reportReason: reason.trim(),
+        reportStatus: 'PENDING'
+      },
+      include: {
+        job: {
+          select: { id: true, title: true }
+        },
+        from: { select: { id: true, fullName: true, email: true } },
+        to: { select: { id: true, fullName: true, email: true } }
+      }
+    });
+    
+    // Obavijesti admina o novoj prijavi
+    try {
+      const reporter = await prisma.user.findUnique({
+        where: { id: req.user.id },
+        select: { fullName: true, email: true }
+      });
+      
+      const admins = await prisma.user.findMany({
+        where: { role: 'ADMIN' },
+        select: { id: true }
+      });
+      
+      for (const admin of admins) {
+        await prisma.notification.create({
+          data: {
+            title: 'Nova prijava lažne ocjene',
+            message: `Korisnik ${reporter?.fullName || reporter?.email || 'Nepoznat'} je prijavio recenziju kao lažnu. Razlog: ${reason.trim()}`,
+            type: 'REVIEW_REPORTED',
+            userId: admin.id
+          }
+        });
+      }
+    } catch (notifError) {
+      console.error('[REVIEWS] Failed to notify admins:', notifError);
+    }
+    
+    res.json(updatedReview);
+  } catch (e) {
+    console.error('[REVIEWS] Error reporting review:', e);
+    next(e);
+  }
+});
+
+// GET /api/reviews/reports - Lista prijava lažnih ocjena (admin)
+r.get('/reports', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const { page = 1, limit = 50, status } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    
+    const where = {
+      isReported: true,
+      ...(status ? { reportStatus: status } : {})
+    };
+    
+    const [reviews, total] = await Promise.all([
+      prisma.review.findMany({
+        where,
+        include: {
+          job: {
+            select: { id: true, title: true }
+          },
+          from: { select: { id: true, fullName: true, email: true } },
+          to: { select: { id: true, fullName: true, email: true } }
+        },
+        orderBy: { reportedAt: 'desc' },
+        skip,
+        take: parseInt(limit)
+      }),
+      prisma.review.count({ where })
+    ]);
+    
+    // Dohvati podatke o korisniku koji je prijavio (reportedBy)
+    const reportsWithReporter = await Promise.all(
+      reviews.map(async (review) => {
+        if (review.reportedBy) {
+          const reporter = await prisma.user.findUnique({
+            where: { id: review.reportedBy },
+            select: { id: true, fullName: true, email: true }
+          });
+          return { ...review, reporter };
+        }
+        return { ...review, reporter: null };
+      })
+    );
+    
+    res.json({
+      reports: reportsWithReporter,
+      total,
+      page: parseInt(page),
+      limit: parseInt(limit)
+    });
+  } catch (e) {
+    console.error('[REVIEWS] Error fetching reports:', e);
+    next(e);
+  }
+});
+
+// POST /api/reviews/:id/report/resolve - Rješavanje prijave (admin)
+r.post('/:id/report/resolve', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { action, notes } = req.body; // action: 'dismiss' ili 'accept'
+    
+    if (!action || !['dismiss', 'accept'].includes(action)) {
+      return res.status(400).json({ error: 'Action mora biti "dismiss" ili "accept"' });
+    }
+    
+    // Pronađi review
+    const review = await prisma.review.findUnique({
+      where: { id },
+      include: {
+        from: { select: { id: true, fullName: true, email: true } },
+        to: { select: { id: true, fullName: true, email: true } }
+      }
+    });
+    
+    if (!review) {
+      return res.status(404).json({ error: 'Recenzija nije pronađena' });
+    }
+    
+    if (!review.isReported) {
+      return res.status(400).json({ error: 'Ova recenzija nije prijavljena' });
+    }
+    
+    const reportStatus = action === 'accept' ? 'ACCEPTED' : 'DISMISSED';
+    
+    // Ako je prihvaćeno (recenzija je lažna), odbij recenziju
+    if (action === 'accept') {
+      await prisma.review.update({
+        where: { id },
+        data: {
+          reportStatus: 'ACCEPTED',
+          reportReviewedBy: req.user.id,
+          reportReviewedAt: new Date(),
+          reportReviewNotes: notes || 'Prijava prihvaćena - recenzija je lažna',
+          moderationStatus: 'REJECTED',
+          moderationReviewedBy: req.user.id,
+          moderationReviewedAt: new Date(),
+          moderationRejectionReason: 'Prijava lažne ocjene prihvaćena',
+          isPublished: false // Skrij recenziju
+        }
+      });
+      
+      // Obavijesti korisnika koji je dao recenziju
+      try {
+        await prisma.notification.create({
+          data: {
+            title: 'Vaša recenzija je odbijena',
+            message: 'Vaša recenzija je prijavljena i potvrđena kao lažna. Recenzija je uklonjena.',
+            type: 'REVIEW_REJECTED',
+            userId: review.fromUserId
+          }
+        });
+      } catch (notifError) {
+        console.error('[REVIEWS] Failed to notify user:', notifError);
+      }
+      
+      // Ažuriraj aggregate (ukloni odbijenu recenziju iz kalkulacije)
+      const toUser = await prisma.user.findUnique({
+        where: { id: review.toUserId },
+        select: { role: true }
+      });
+      
+      if (toUser?.role === 'PROVIDER') {
+        const aggr = await prisma.review.aggregate({
+          where: {
+            toUserId: review.toUserId,
+            isPublished: true,
+            moderationStatus: 'APPROVED'
+          },
+          _avg: { rating: true },
+          _count: { rating: true }
+        });
+        
+        await prisma.providerProfile.updateMany({
+          where: { userId: review.toUserId },
+          data: {
+            ratingAvg: aggr._avg.rating || 0,
+            ratingCount: aggr._count.rating
+          }
+        });
+      }
+    } else {
+      // Odbij prijavu (recenzija nije lažna)
+      await prisma.review.update({
+        where: { id },
+        data: {
+          reportStatus: 'DISMISSED',
+          reportReviewedBy: req.user.id,
+          reportReviewedAt: new Date(),
+          reportReviewNotes: notes || 'Prijava odbijena - recenzija nije lažna'
+        }
+      });
+      
+      // Obavijesti korisnika koji je prijavio
+      try {
+        await prisma.notification.create({
+          data: {
+            title: 'Prijava odbijena',
+            message: 'Vaša prijava lažne ocjene je pregledana i odbijena. Recenzija ostaje objavljena.',
+            type: 'REVIEW_REPORT_DISMISSED',
+            userId: review.reportedBy
+          }
+        });
+      } catch (notifError) {
+        console.error('[REVIEWS] Failed to notify user:', notifError);
+      }
+    }
+    
+    const updatedReview = await prisma.review.findUnique({
+      where: { id },
+      include: {
+        job: {
+          select: { id: true, title: true }
+        },
+        from: { select: { id: true, fullName: true, email: true } },
+        to: { select: { id: true, fullName: true, email: true } }
+      }
+    });
+    
+    res.json(updatedReview);
+  } catch (e) {
+    console.error('[REVIEWS] Error resolving report:', e);
+    next(e);
+  }
+});
+
 export default r;

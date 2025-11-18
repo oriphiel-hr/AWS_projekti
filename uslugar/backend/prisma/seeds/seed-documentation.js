@@ -481,7 +481,7 @@ const features = [
         { name: "Reputation Score izračun (ponderirane komponente)", implemented: true },
         { name: "Utjecaj ocjena na dodjelu leadova", implemented: true },
         { name: "Moderacija ocjena (AI + ljudska)", implemented: true }, // Implementirano: AI automatska provjera sadržaja, ljudska moderacija kroz admin endpoint-e, provjera spam-a, zabranjenih riječi, linkova
-        { name: "Prijava lažnih ocjena", implemented: false }
+        { name: "Prijava lažnih ocjena", implemented: true }, // Implementirano: POST /api/reviews/:id/report endpoint, GET /api/reviews/reports (admin), POST /api/reviews/:id/report/resolve (admin), notifikacije adminima i korisnicima
       ]
     },
     {
@@ -12348,6 +12348,60 @@ SMS verifikacija osigurava da vaš telefonski broj pripada vama i povećava povj
 - Samo odobrene recenzije (moderationStatus = 'APPROVED') utječu na provider profile ratingAvg i ratingCount.
 - Kada se recenzija odobri ili odbije, aggregate se automatski ažurira.
 - Ako recenzija nije odobrena, ne utječe na provider profile rating.
+`
+    },
+    "Prijava lažnih ocjena": {
+      implemented: true,
+      summary: "Korisnici mogu prijaviti lažne ocjene koje su dobili. Admin pregledava prijave i može prihvatiti (ukloniti recenziju) ili odbiti (ostaviti recenziju).",
+      details: `**Kako funkcionira**
+- Korisnik koji je dobio recenziju (toUserId) može prijaviti recenziju kao lažnu s razlogom.
+- Prijava se automatski šalje adminima na pregled.
+- Admin može prihvatiti prijavu (recenzija se uklanja i označava kao lažna) ili odbiti prijavu (recenzija ostaje objavljena).
+- Ako je prijava prihvaćena, recenzija se automatski odbija (moderationStatus = REJECTED) i skriva (isPublished = false).
+- Aggregate rating se automatski ažurira kada se recenzija ukloni.
+
+**Prednosti**
+- Omogućava korisnicima da se zaštite od lažnih ocjena.
+- Sprječava osvetničko ocjenjivanje i lažne recenzije.
+- Poboljšava kvalitetu i pouzdanost sustava ocjenjivanja.
+
+**Kada koristiti**
+- Kada korisnik dobije ocjenu koja je očito lažna ili osvetnička.
+- Kada ocjena ne odgovara stvarnom iskustvu s poslom.
+- Za održavanje kvalitete i integriteta sustava ocjenjivanja.
+`,
+      technicalDetails: `**Backend Implementacija**
+- \`routes/reviews.js\`: POST /api/reviews/:id/report endpoint za prijavu lažne ocjene.
+- \`routes/reviews.js\`: GET /api/reviews/reports endpoint za admin pregled prijava.
+- \`routes/reviews.js\`: POST /api/reviews/:id/report/resolve endpoint za rješavanje prijave (admin).
+
+**Baza**
+- \`Review\` model polja: \`isReported\` (Boolean), \`reportedBy\` (String?), \`reportedAt\` (DateTime?), \`reportReason\` (String?), \`reportStatus\` (ReportStatus?), \`reportReviewedBy\` (String?), \`reportReviewedAt\` (DateTime?), \`reportReviewNotes\` (String?).
+- \`ReportStatus\` enum: PENDING, REVIEWED, DISMISSED, ACCEPTED.
+- Indexi: \`@@index([isReported])\`, \`@@index([reportStatus])\`.
+
+**Logika**
+- Kada se kreira prijava, provjerava se da li je korisnik toUserId (autorizacija).
+- Provjerava se da li je već prijavljena (sprječava duplikate).
+- Ako je prijava prihvaćena, recenzija se automatski odbija i skriva.
+- Ako je prijava odbijena, recenzija ostaje objavljena.
+- Aggregate rating se automatski ažurira kada se recenzija ukloni.
+
+**API**
+- \`POST /api/reviews/:id/report\` – prijava lažne ocjene (body: { reason: string }).
+- \`GET /api/reviews/reports\` – lista prijava lažnih ocjena (admin, query: status?, page?, limit?).
+- \`POST /api/reviews/:id/report/resolve\` – rješavanje prijave (admin, body: { action: 'dismiss' | 'accept', notes?: string }).
+
+**Notifikacije**
+- Admini dobivaju notifikaciju kada se prijavi nova lažna ocjena.
+- Korisnik koji je dao recenziju dobiva notifikaciju ako je prijava prihvaćena (recenzija uklonjena).
+- Korisnik koji je prijavio dobiva notifikaciju ako je prijava odbijena (recenzija ostaje objavljena).
+
+**Validacija**
+- reason ne može biti prazan.
+- Samo toUserId može prijaviti recenziju.
+- Prijava je dozvoljena samo jednom po recenziji (sprječava duplikate).
+- Admin može prihvatiti (accept) ili odbiti (dismiss) prijavu.
 `
     },
     "Reputation Score izračun (ponderirane komponente)": {
