@@ -197,7 +197,7 @@ const features = [
         { name: "Povijest pretplata", implemented: true, partiallyImplemented: true },
         { name: "Trial period (7 dana)", implemented: true },
         { name: "Besplatni krediti za trial (5 leadova)", implemented: true },
-        { name: "Automatsko vraćanje na BASIC plan", implemented: false }
+        { name: "Automatsko vraćanje na BASIC plan", implemented: true }
       ]
     },
     {
@@ -5897,8 +5897,8 @@ const featureDescriptions = {
 `
     },
     "Automatsko vraćanje na BASIC plan": {
-      implemented: false,
-      summary: "Nakon isteka pretplate račun se vraća na BASIC s osnovnim funkcionalnostima.",
+      implemented: true,
+      summary: "Nakon isteka pretplate račun se automatski vraća na BASIC plan s osnovnim funkcionalnostima. Premium značajke se deaktiviraju, ali krediti i povijest leadova ostaju.",
       details: `**Kako funkcionira**
 - Kada status pretplate postane EXPIRED/CANCELLED, sustav aktivira BASIC plan.
 - Premium značajke se deaktiviraju, ali krediti i povijest leadova ostaju.
@@ -5913,24 +5913,31 @@ const featureDescriptions = {
 - Admin može ručno prebaciti korisnika na BASIC radi compliancea.
 `,
       technicalDetails: `**Frontend**
-- Banner prikazuje da je račun na BASIC-u i CTA “Aktiviraj plan”.
+- Banner prikazuje da je račun na BASIC-u i CTA "Aktiviraj plan".
 
 **Backend**
-- \`subscriptionService.downgradeToBasic\` postavlja BASIC i uklanja premium feature flagove.
-- Event \`subscription.downgraded\` emitira notifikacije.
+- \`downgradeToBasic(userId, previousPlan)\` funkcija u \`subscriptions.js\` automatski vraća korisnika na BASIC plan.
+- Funkcija zadržava postojeće kredite (\`creditsBalance\`) i povijest leadova.
+- Premium značajke se automatski deaktiviraju jer je plan postavljen na BASIC (provjera kroz \`requirePlan\` middleware).
+- \`checkAndDowngradeExpiredSubscriptions()\` funkcija provjerava istekle pretplate i automatski vraća na BASIC (može se pozivati periodično kroz cron job).
+
+**Automatsko vraćanje:**
+- U \`GET /api/subscriptions/me\` endpointu se automatski provjerava je li pretplata istekla i poziva se \`downgradeToBasic\`.
+- U \`POST /api/subscriptions/cancel\` endpointu se također automatski vraća na BASIC (osim za TRIAL).
+- TRIAL plan se ne vraća na BASIC - ostaje EXPIRED dok korisnik ne plati.
 
 **Baza**
-- \`Subscription\` polje \`plan=BASIC\`, \`downgradedFrom\` (opis prethodnog plana).
-- Feature flag tablica/konfiguracija ažurira dostupne funkcionalnosti.
+- \`Subscription\` polje \`plan\` se postavlja na \`BASIC\`, \`status\` se postavlja na \`ACTIVE\`.
+- \`creditsBalance\` ostaje isti (zadržavaju se postojeći krediti).
+- Premium značajke se automatski deaktiviraju jer je plan BASIC (provjera kroz \`subscription-auth.js\`).
 
-**Integracije**
-- Analytics bilježi downgrade i potiče remarketing kampanju.
-- Notification servis šalje email s instrukcijama za ponovnu aktivaciju.
+**Notifikacije**
+- Automatska notifikacija korisniku: "Pretplata vraćena na BASIC plan" s objašnjenjem da su krediti i povijest leadova zadržani.
 
 **API**
-- \`POST /api/subscriptions/downgrade-basic\` – ručni downgrade (admin).
-- \`GET /api/subscriptions/me\` – prikazuje plan BASIC.
-- Webhook \`subscription.expired\` pokreće downgrade.
+- \`GET /api/subscriptions/me\` – automatski provjerava istekle pretplate i vraća na BASIC.
+- \`POST /api/subscriptions/cancel\` – automatski vraća na BASIC (osim za TRIAL).
+- \`checkAndDowngradeExpiredSubscriptions()\` – može se pozivati periodično kroz cron job za batch processing isteklih pretplata.
 `
     },
     "Upload dokumenata licenci": {
