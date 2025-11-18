@@ -248,6 +248,15 @@ export async function purchaseLead(jobId, providerId, options = {}) {
       }
     }
 
+    // Track TRIAL engagement - lead purchase
+    try {
+      const { trackLeadPurchase } = await import('./trial-engagement-service.js');
+      await trackLeadPurchase(providerId, jobId);
+    } catch (engagementError) {
+      console.error('[LEAD] Error tracking TRIAL engagement:', engagementError);
+      // Ne baci grešku - engagement tracking ne smije blokirati kupovinu leada
+    }
+
     const paymentMethod = stripePaymentIntent ? 'Stripe Payment' : 'Internal Credits';
     console.log(`[LEAD] Provider ${providerId} purchased lead ${jobId} for ${leadPrice} credits (${paymentMethod})`);
 
@@ -387,6 +396,15 @@ export async function markLeadConverted(purchaseId, providerId, revenue = 0) {
       lifetimeLeadsConverted: { increment: 1 }
     }
   });
+
+  // Track TRIAL engagement - lead conversion
+  try {
+    const { trackLeadConversion } = await import('./trial-engagement-service.js');
+    await trackLeadConversion(providerId, purchase.jobId);
+  } catch (engagementError) {
+    console.error('[LEAD] Error tracking TRIAL engagement conversion:', engagementError);
+    // Ne baci grešku - engagement tracking ne smije blokirati konverziju
+  }
 
   // Ažuriraj ROI statistiku
   await updateProviderROI(providerId, {

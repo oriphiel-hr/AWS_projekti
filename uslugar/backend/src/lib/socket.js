@@ -187,6 +187,15 @@ export const initSocket = (httpServer) => {
           }
         });
 
+        // Track TRIAL engagement - chat message sent
+        try {
+          const { trackChatMessage } = await import('../services/trial-engagement-service.js');
+          await trackChatMessage(socket.userId, roomId);
+        } catch (engagementError) {
+          console.error('[SOCKET] Error tracking TRIAL engagement:', engagementError);
+          // Ne baci grešku - engagement tracking ne smije blokirati slanje poruke
+        }
+
         // Update thread activity
         const { updateThreadActivity } = await import('../services/thread-locking-service.js');
         await updateThreadActivity(roomId);

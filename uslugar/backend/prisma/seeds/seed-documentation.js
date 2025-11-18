@@ -463,7 +463,7 @@ const features = [
         { name: "Ograničen broj leadova (5-10)", implemented: true }, // Implementirano: 8 leadova (srednja vrijednost)
         { name: "Ograničen broj kategorija/regija", implemented: true }, // Implementirano: automatski add-oni za 2 kategorije i 1 regiju
         { name: "Sve Premium funkcionalnosti otključane", implemented: true }, // Implementirano: TRIAL ima sve Premium features (AI_PRIORITY, SMS_NOTIFICATIONS, PRIORITY_SUPPORT, CSV_EXPORT, ADVANCED_ANALYTICS)
-        { name: "Engagement tracking tijekom TRIAL-a", implemented: false },
+        { name: "Engagement tracking tijekom TRIAL-a", implemented: true }, // Implementirano: TrialEngagement model, tracking servis, integracija u lead purchase/offer/chat/login, API endpoint za dohvat podataka
         { name: "Podsjetnici 3 dana prije isteka", implemented: false },
         { name: "Automatski downgrade na BASIC nakon isteka", implemented: false },
         { name: "Popust za upgrade iz TRIAL-a", implemented: false }

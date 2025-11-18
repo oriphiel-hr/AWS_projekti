@@ -75,6 +75,15 @@ r.post('/', auth(true, ['PROVIDER']), async (req, res, next) => {
     // Deduct credit
     await deductCredit(req.user.id);
     
+    // Track TRIAL engagement - offer sent
+    try {
+      const { trackOfferSent } = await import('../services/trial-engagement-service.js');
+      await trackOfferSent(req.user.id, jobId);
+    } catch (engagementError) {
+      console.error('[OFFER] Error tracking TRIAL engagement:', engagementError);
+      // Ne baci grešku - engagement tracking ne smije blokirati slanje ponude
+    }
+    
     // Pošalji notifikaciju vlasniku posla
     await notifyNewOffer(offer, job);
     

@@ -336,6 +336,16 @@ r.post('/login', async (req, res, next) => {
     const user = validUsers[0];
     console.log('[LOGIN] Successful login for:', email, 'role:', user.role);
     const token = signToken({ id: user.id, email: user.email, role: user.role, name: user.fullName });
+    
+    // Track TRIAL engagement - login
+    try {
+      const { trackLogin } = await import('../services/trial-engagement-service.js');
+      await trackLogin(user.id);
+    } catch (engagementError) {
+      console.error('[AUTH] Error tracking TRIAL engagement:', engagementError);
+      // Ne baci grešku - engagement tracking ne smije blokirati login
+    }
+    
     res.json({ 
       token, 
       user: { 

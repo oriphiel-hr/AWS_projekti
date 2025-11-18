@@ -270,6 +270,44 @@ export async function downgradeToBasic(userId, previousPlan = null) {
   }
 }
 
+/**
+ * GET /api/subscriptions/trial/engagement
+ * Dohvati engagement podatke za TRIAL korisnika
+ */
+r.get('/trial/engagement', auth(true, ['PROVIDER']), async (req, res, next) => {
+  try {
+    const { getTrialEngagement } = await import('../services/trial-engagement-service.js');
+    const engagement = await getTrialEngagement(req.user.id);
+    
+    if (!engagement) {
+      return res.json({
+        isTrial: false,
+        message: 'Niste na TRIAL planu'
+      });
+    }
+    
+    res.json({
+      isTrial: true,
+      engagement: {
+        leadsPurchased: engagement.leadsPurchased,
+        leadsConverted: engagement.leadsConverted,
+        offersSent: engagement.offersSent,
+        chatMessagesSent: engagement.chatMessagesSent,
+        loginsCount: engagement.loginsCount,
+        lastLoginAt: engagement.lastLoginAt,
+        totalTimeSpentMinutes: engagement.totalTimeSpentMinutes,
+        lastActivityAt: engagement.lastActivityAt,
+        subscription: {
+          expiresAt: engagement.subscription.expiresAt,
+          creditsBalance: engagement.subscription.creditsBalance
+        }
+      }
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
 // Get current subscription
 // Dozvoljeno za PROVIDER, ADMIN i USER-e koji su tvrtke/obrti (imaju legalStatusId)
 r.get('/me', auth(true, ['PROVIDER', 'ADMIN', 'USER']), async (req, res, next) => {
@@ -420,6 +458,26 @@ r.get('/me', auth(true, ['PROVIDER', 'ADMIN', 'USER']), async (req, res, next) =
       } catch (error) {
         console.error(`[TRIAL] Error creating add-ons for user ${req.user.id}:`, error);
         // Ne prekidaj kreiranje subscription-a ako add-on kreiranje ne uspije
+      }
+      
+      // Kreiraj TrialEngagement zapis za tracking
+      try {
+        await prisma.trialEngagement.create({
+          data: {
+            userId: req.user.id,
+            subscriptionId: subscription.id,
+            leadsPurchased: 0,
+            leadsConverted: 0,
+            offersSent: 0,
+            chatMessagesSent: 0,
+            loginsCount: 0,
+            totalTimeSpentMinutes: 0
+          }
+        });
+        console.log(`[TRIAL] Created engagement tracking for user ${req.user.id}`);
+      } catch (engagementError) {
+        console.error(`[TRIAL] Error creating engagement tracking:`, engagementError);
+        // Ne prekidaj kreiranje subscription-a ako engagement kreiranje ne uspije
       }
       
       // Notify o trial-u

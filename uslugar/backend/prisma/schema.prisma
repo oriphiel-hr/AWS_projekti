@@ -142,6 +142,7 @@ model User {
   creditTransactions CreditTransaction[]
   clientVerification ClientVerification?
   subscriptions      Subscription[]
+  trialEngagement   TrialEngagement?
   invoices           Invoice[]
   supportTickets     SupportTicket[]     @relation("UserSupportTickets")
   whiteLabel         WhiteLabel?         @relation("UserWhiteLabel")
@@ -586,10 +587,38 @@ model Subscription {
   createdAt              DateTime           @default(now())
   updatedAt              DateTime           @updatedAt
 
-  invoices Invoice[]
+  invoices         Invoice[]
+  trialEngagement  TrialEngagement?
 
   @@index([userId])
   @@index([status])
+}
+
+// Engagement tracking tijekom TRIAL-a
+model TrialEngagement {
+  id                    String       @id @default(cuid())
+  user                  User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId                String       @unique // Jedan engagement zapis po korisniku
+  subscription          Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  subscriptionId        String       @unique // Veza na TRIAL subscription
+  
+  // Engagement metrike
+  leadsPurchased        Int          @default(0) // Broj kupljenih leadova tijekom TRIAL-a
+  leadsConverted        Int          @default(0) // Broj konvertiranih leadova (uspešno završeni poslovi)
+  offersSent            Int          @default(0) // Broj poslanih ponuda
+  chatMessagesSent      Int          @default(0) // Broj poslanih chat poruka
+  loginsCount           Int          @default(0) // Broj login-a tijekom TRIAL-a
+  lastLoginAt           DateTime?    // Zadnji login
+  totalTimeSpentMinutes Int          @default(0) // Ukupno vrijeme provedeno na platformi (u minutama)
+  lastActivityAt        DateTime?    // Zadnja aktivnost
+  
+  // Metapodaci
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+
+  @@index([userId])
+  @@index([subscriptionId])
+  @@index([lastActivityAt])
 }
 
 // Add-on paketi - proširenje osnovnog plana s regijama, kategorijama ili kreditima
