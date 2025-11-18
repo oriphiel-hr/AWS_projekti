@@ -6,7 +6,8 @@ RUN apt-get update -y && apt-get install -y --no-install-recommends     openssl 
 
 # Trebaju nam devDependencies jer Prisma CLI obično stoji u devDeps
 COPY package*.json ./
-RUN npm ci --ignore-scripts
+# Ne koristimo --ignore-scripts jer Prisma treba postinstall skriptu za preuzimanje query engine-a
+RUN npm ci
 
 # Multi-file schema layout
 COPY prisma ./prisma
@@ -16,9 +17,16 @@ COPY prisma ./prisma
 # Workaround za Prisma CDN probleme: generiraj lokalno s "npx prisma generate" prije build-a
 RUN mkdir -p node_modules/.prisma node_modules/@prisma 2>/dev/null || true
 
-ENV PRISMA_GENERATE_SKIP_AUTOINSTALL=1
+# Prisma environment varijable
 ENV PRISMA_OPENSSL_VERSION=3.0.x
 ENV PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
+# Ne postavljamo PRISMA_GENERATE_SKIP_AUTOINSTALL jer trebamo query engine
+
+# Provjeri da li je query engine preuzet (npm ci bi trebao pokrenuti postinstall)
+# Ako nije, prisma generate će ga preuzeti automatski
+RUN echo "Checking Prisma installation..." && \
+    npx prisma --version && \
+    echo "✅ Prisma CLI ready"
 
 # Provjeri postoji li već lokalno generirani Prisma Client
 # Ako postoji, preskoči generiranje (koristi se za workaround kada Prisma CDN nije dostupan)
