@@ -448,7 +448,7 @@ const features = [
         { name: "Feature ownership (funkcionalnosti ne nestaju)", implemented: true },
         { name: "Add-on paketi (regija, kategorija, krediti)", implemented: true },
         { name: "Automatska provjera postojećih funkcionalnosti", implemented: true },
-        { name: "Smanjena cijena za nove pakete (bez duplikata)", implemented: false }, // Postoji logika za provjeru, ali ne i za primjenu smanjenja cijene
+        { name: "Smanjena cijena za nove pakete (bez duplikata)", implemented: true }, // Implementirano: 20% popust za nove korisnike, provjera preko Subscription/CreditTransaction/Invoice, primjenjuje se u checkout-u
         { name: "Grace period za Add-on (7 dana)", implemented: true },
         { name: "Auto-renew opcija za Add-on", implemented: true },
         { name: "Upozorenja pri 80%, 50%, 20% iskorištenosti", implemented: true },
