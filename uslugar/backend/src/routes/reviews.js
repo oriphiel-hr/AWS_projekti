@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { prisma } from '../lib/prisma.js';
 import { auth } from '../lib/auth.js';
+import { autoModerateReview } from '../services/review-moderation-service.js';
 
 const r = Router();
 
@@ -45,10 +46,15 @@ r.get('/user/:userId', auth(false), async (req, res, next) => {
     const isAdmin = req.user?.role === 'ADMIN';
     const isOwner = req.user?.id === userId;
     
-    // Ako nije admin ili vlasnik, prikaži samo objavljene review-e
+    // Ako nije admin ili vlasnik, prikaži samo objavljene i odobrene review-e
     const where = { 
       toUserId: userId,
-      ...(includePending === 'true' || isAdmin || isOwner ? {} : { isPublished: true })
+      ...(includePending === 'true' || isAdmin || isOwner 
+        ? {} 
+        : { 
+            isPublished: true,
+            moderationStatus: 'APPROVED' // Samo odobrene review-e
+          })
     };
     
     const [reviews, total] = await Promise.all([
@@ -126,6 +132,9 @@ r.post('/', auth(true), async (req, res, next) => {
       return res.status(400).json({ error: 'Već ste ocijenili ovaj posao' });
     }
     
+    // AI automatska moderacija sadržaja
+    const moderationResult = await autoModerateReview(comment || '', Number(rating));
+    
     // Izračunaj review deadline (7-10 dana od završetka posla ili od trenutka)
     // Ako job ima deadline, koristimo ga; inače koristimo 10 dana od sada
     const reviewDeadlineDays = 10; // 7-10 dana (srednja vrijednost)
@@ -147,8 +156,9 @@ r.post('/', auth(true), async (req, res, next) => {
       }
     });
     
-    // Ako postoji recipročni review, objavi oba odmah
-    const shouldPublish = !!reciprocalReview;
+    // Ako postoji recipročni review i AI je odobrio, objavi oba odmah
+    // Ako AI nije odobrio, ne objavljuj dok admin ne odobri
+    const shouldPublish = !!reciprocalReview && moderationResult.isApproved;
     const now = new Date();
     
     const review = await prisma.review.create({
@@ -160,7 +170,9 @@ r.post('/', auth(true), async (req, res, next) => {
         fromUserId: req.user.id,
         isPublished: shouldPublish,
         publishedAt: shouldPublish ? now : null,
-        reviewDeadline: reviewDeadline
+        reviewDeadline: reviewDeadline,
+        moderationStatus: moderationResult.moderationStatus, // PENDING, APPROVED, ili REJECTED
+        moderationNotes: moderationResult.reason || null // Razlog ako je potrebna moderacija
       },
       include: {
         job: {
@@ -171,25 +183,31 @@ r.post('/', auth(true), async (req, res, next) => {
       }
     });
 
-    // Ako postoji recipročni review, objavi i njega
-    if (reciprocalReview && !reciprocalReview.isPublished) {
-      await prisma.review.update({
-        where: { id: reciprocalReview.id },
-        data: {
-          isPublished: true,
-          publishedAt: now
-        }
-      });
+    // Ako postoji recipročni review i oba su odobrena, objavi oba
+    if (reciprocalReview && !reciprocalReview.isPublished && moderationResult.isApproved) {
+      // Provjeri da li je recipročni review također odobren
+      const reciprocalModerationStatus = reciprocalReview.moderationStatus || 'PENDING';
+      if (reciprocalModerationStatus === 'APPROVED') {
+        await prisma.review.update({
+          where: { id: reciprocalReview.id },
+          data: {
+            isPublished: true,
+            publishedAt: now
+          }
+        });
+      }
     }
 
     // Update aggregates - samo za objavljene review-e i samo za provider profile
-    if (shouldPublish) {
+    // Također provjeri da li je review odobren od strane AI-a
+    if (shouldPublish && moderationResult.isApproved) {
       const toUser = await prisma.user.findUnique({ where: { id: toUserId } });
       if (toUser?.role === 'PROVIDER') {
         const aggr = await prisma.review.aggregate({
           where: { 
             toUserId,
-            isPublished: true // Samo objavljene review-e
+            isPublished: true, // Samo objavljene review-e
+            moderationStatus: 'APPROVED' // Samo odobrene review-e
           },
           _avg: { rating: true },
           _count: { rating: true }
@@ -199,6 +217,27 @@ r.post('/', auth(true), async (req, res, next) => {
           data: { ratingAvg: aggr._avg.rating || 0, ratingCount: aggr._count.rating }
         });
       }
+    }
+
+    // Ako AI nije odobrio, obavijesti korisnika
+    if (!moderationResult.isApproved && moderationResult.needsHumanReview) {
+      await prisma.notification.create({
+        data: {
+          title: 'Recenzija čeka moderaciju',
+          message: 'Vaša recenzija je poslana na moderaciju. Objavljena će biti nakon provjere.',
+          type: 'REVIEW_PENDING',
+          userId: req.user.id
+        }
+      });
+    } else if (!moderationResult.isApproved && !moderationResult.needsHumanReview) {
+      await prisma.notification.create({
+        data: {
+          title: 'Recenzija odbijena',
+          message: `Vaša recenzija je automatski odbijena: ${moderationResult.reason || 'Krši pravila platforme'}`,
+          type: 'REVIEW_REJECTED',
+          userId: req.user.id
+        }
+      });
     }
 
     res.status(201).json(review);
@@ -231,7 +270,7 @@ r.put('/:id', auth(true, ['USER']), async (req, res, next) => {
       }
     });
 
-    // update aggregates - samo za objavljene review-e
+    // update aggregates - samo za objavljene i odobrene review-e
     const toUser = await prisma.user.findUnique({ 
       where: { id: review.toUserId },
       select: { role: true }
@@ -241,7 +280,8 @@ r.put('/:id', auth(true, ['USER']), async (req, res, next) => {
       const aggr = await prisma.review.aggregate({
         where: { 
           toUserId: review.toUserId,
-          isPublished: true // Samo objavljene review-e
+          isPublished: true, // Samo objavljene review-e
+          moderationStatus: 'APPROVED' // Samo odobrene review-e
         },
         _avg: { rating: true },
         _count: { rating: true }
@@ -274,7 +314,7 @@ r.delete('/:id', auth(true, ['USER', 'ADMIN']), async (req, res, next) => {
     
     await prisma.review.delete({ where: { id } });
 
-    // update aggregates - samo za objavljene review-e
+    // update aggregates - samo za objavljene i odobrene review-e
     const toUser = await prisma.user.findUnique({ 
       where: { id: review.toUserId },
       select: { role: true }
@@ -284,7 +324,8 @@ r.delete('/:id', auth(true, ['USER', 'ADMIN']), async (req, res, next) => {
       const aggr = await prisma.review.aggregate({
         where: { 
           toUserId: review.toUserId,
-          isPublished: true // Samo objavljene review-e
+          isPublished: true, // Samo objavljene review-e
+          moderationStatus: 'APPROVED' // Samo odobrene review-e
         },
         _avg: { rating: true },
         _count: { rating: true }
@@ -368,6 +409,67 @@ r.post('/:id/reply', auth(true), async (req, res, next) => {
     res.json(updatedReview);
   } catch (e) {
     console.error('[REVIEWS] Error adding reply to review:', e);
+    next(e);
+  }
+});
+
+// GET /api/reviews/pending - Recenzije koje čekaju moderaciju (admin)
+r.get('/pending', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const { page = 1, limit = 50 } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    
+    const { getPendingModerationReviews } = await import('../services/review-moderation-service.js');
+    const reviews = await getPendingModerationReviews(parseInt(limit), skip);
+    
+    const total = await prisma.review.count({
+      where: { moderationStatus: 'PENDING' }
+    });
+    
+    res.json({
+      reviews,
+      total,
+      page: parseInt(page),
+      limit: parseInt(limit)
+    });
+  } catch (e) {
+    console.error('[REVIEWS] Error fetching pending reviews:', e);
+    next(e);
+  }
+});
+
+// POST /api/reviews/:id/approve - Odobri recenziju (admin)
+r.post('/:id/approve', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { notes } = req.body;
+    
+    const { approveReview } = await import('../services/review-moderation-service.js');
+    const review = await approveReview(id, req.user.id, notes);
+    
+    res.json(review);
+  } catch (e) {
+    console.error('[REVIEWS] Error approving review:', e);
+    next(e);
+  }
+});
+
+// POST /api/reviews/:id/reject - Odbij recenziju (admin)
+r.post('/:id/reject', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { rejectionReason, notes } = req.body;
+    
+    if (!rejectionReason) {
+      return res.status(400).json({ error: 'Razlog odbijanja je obavezan' });
+    }
+    
+    const { rejectReview } = await import('../services/review-moderation-service.js');
+    const review = await rejectReview(id, req.user.id, rejectionReason, notes);
+    
+    res.json(review);
+  } catch (e) {
+    console.error('[REVIEWS] Error rejecting review:', e);
     next(e);
   }
 });

@@ -1,5 +1,6 @@
-// AI Lead Quality Scoring - USLUGAR EXCLUSIVE
-// Evaluira kvalitetu leada na osnovu različitih faktora
+// Lead Quality Scoring - USLUGAR EXCLUSIVE
+// Rule-based scoring algoritam za evaluaciju kvalitete leada (0-100)
+// Napomena: Ovo je rule-based algoritam, ne pravi AI. Može se nadograditi s pravim AI-om u budućnosti.
 
 /**
  * Izračunaj quality score za lead (0-100)

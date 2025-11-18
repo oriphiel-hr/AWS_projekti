@@ -480,7 +480,7 @@ const features = [
         { name: "Odgovor na recenziju (1x dozvoljen)", implemented: true }, // Implementirano: POST /api/reviews/:id/reply endpoint, provjera hasReplied, samo toUserId može odgovoriti, samo na objavljene recenzije
         { name: "Reputation Score izračun (ponderirane komponente)", implemented: true },
         { name: "Utjecaj ocjena na dodjelu leadova", implemented: true },
-        { name: "Moderacija ocjena (AI + ljudska)", implemented: false },
+        { name: "Moderacija ocjena (AI + ljudska)", implemented: true }, // Implementirano: AI automatska provjera sadržaja, ljudska moderacija kroz admin endpoint-e, provjera spam-a, zabranjenih riječi, linkova
         { name: "Prijava lažnih ocjena", implemented: false }
       ]
     },
@@ -868,9 +868,10 @@ const featureDescriptions = {
     },
     "AI score kvalitete leadova": {
       implemented: true,
-      summary: "Svaki lead dobiva AI ocjenu kvalitete od 0-100 koja pokazuje koliko je lead vrijedan.",
+      summary: "Svaki lead dobiva automatsku ocjenu kvalitete od 0-100 koja pokazuje koliko je lead vrijedan. (Rule-based scoring algoritam)",
       details: `**Kako funkcionira**
-- Model procjenjuje leadove (0-100) prema verifikaciji klijenta, budžetu, kvaliteti opisa, prilozima, roku i povijesti korisnika.
+- Rule-based scoring algoritam procjenjuje leadove (0-100) prema verifikaciji klijenta, budžetu, kvaliteti opisa, prilozima, roku i povijesti korisnika.
+- **Napomena**: Ovo je rule-based algoritam (ne pravi AI), ali se može nadograditi s pravim AI-om u budućnosti.
 - Score se grupira u razrede: VRHUNSKI (80-100), DOBAR (60-79), PROSJEČAN (40-59), SLAB (0-39).
 - Filteri i sortiranje omogućuju odabir strategije (konzervativna vs. agresivna kupnja) ovisno o pragu prihvatljivog rizika.
 
@@ -888,9 +889,9 @@ const featureDescriptions = {
 - Graf “Score vs Conversion” u \`PartnerAnalytics\` pokazuje povezanost kvalitete i uspješnosti.
 
 **Backend**
-- \`leadScoringService.calculate(leadId)\` koristi feature pipeline (NLP opis, validirani kontakti, povijest klijenta).
-- Batch job \`scoreLeadsJob\` periodično reevaluira leadove kad stignu nove informacije.
-- Event \`lead.score.updated\` obavještava marketplace, matching i billing module.
+- \`ai-lead-scoring.js\`: \`calculateLeadQualityScore()\` izračunava score na osnovu 10 faktora (rule-based algoritam).
+- \`evaluateAndUpdateJobScore()\` automatski ažurira score pri kreiranju leada.
+- **Napomena**: Ovo je rule-based scoring algoritam, ne pravi AI. Može se nadograditi s pravim AI-om (npr. OpenAI, Google Cloud ML) u budućnosti.
 
 **Baza**
 - \`LeadScore\` (leadId, value, breakdown, tier, calculatedAt) čuva rezultat i komponente.
@@ -898,8 +899,8 @@ const featureDescriptions = {
 - Feature store tablice (npr. \`LeadFeatureSnapshot\`) sadrže normalizirane ulazne podatke.
 
 **Integracije**
-- AI pipeline koristi embeddinge iz NLP servisa (npr. AWS Comprehend/Vertex) i Redis za cacheiranje ulaza.
-- Kafka topic \`lead.features.updated\` pokreće re-score kad se lead dopuni.
+- Trenutno nema integracije s pravim AI servisom (rule-based algoritam).
+- Može se nadograditi s pravim AI-om (npr. OpenAI, Google Cloud ML, AWS Comprehend) u budućnosti.
 
 **API**
 - \`GET /api/leads/:leadId/score\` vraća aktualni score i breakdown.
@@ -1692,9 +1693,10 @@ const featureDescriptions = {
     },
     "AI score kvalitete leadova": {
       implemented: true,
-      summary: "Svaki lead dobiva AI ocjenu kvalitete od 0-100 koja pokazuje koliko je lead vrijedan.",
+      summary: "Svaki lead dobiva automatsku ocjenu kvalitete od 0-100 koja pokazuje koliko je lead vrijedan. (Rule-based scoring algoritam)",
       details: `**Kako funkcionira**
-- AI model ocjenjuje leadove prema verifikaciji klijenta, detaljnosti opisa, budžetu, prilozima, hitnosti, roku i lokaciji.
+- Rule-based scoring algoritam ocjenjuje leadove prema verifikaciji klijenta, detaljnosti opisa, budžetu, prilozima, hitnosti, roku i lokaciji.
+- **Napomena**: Ovo je rule-based algoritam (ne pravi AI), ali se može nadograditi s pravim AI-om u budućnosti.
 - Rezultat (0-100) mapira se na razrede kvalitete (Slab, Prosječan, Dobar, Vrhunski) i determinira cijenu leada.
 - Score se osvježava pri svakoj promjeni podataka i dostupno je filtriranje prema rasponu.
 
@@ -1712,9 +1714,9 @@ const featureDescriptions = {
 - \`PartnerAnalytics\` graf uspoređuje kupljene leadove i uspješnost prema score bucketu.
 
 **Backend**
-- \`leadScoringService\` dohvaća značajke, šalje ih ML servisu i sprema rezultat.
-- \`scoreLeadsJob\` (cron/event-driven) re-scorea leadove kod novih podataka.
-- Event \`lead.score.updated\` ažurira cache, obavještava marketplace i ROI modul.
+- \`ai-lead-scoring.js\`: \`calculateLeadQualityScore()\` izračunava score na osnovu 10 faktora (rule-based algoritam).
+- \`evaluateAndUpdateJobScore()\` automatski ažurira score pri kreiranju leada.
+- **Napomena**: Ovo je rule-based scoring algoritam, ne pravi AI. Može se nadograditi s pravim AI-om (npr. OpenAI, Google Cloud ML) u budućnosti.
 
 **Baza**
 - \`LeadScore\` (leadId, scoreValue, tier, sourceModel, updatedAt).
@@ -12279,6 +12281,73 @@ SMS verifikacija osigurava da vaš telefonski broj pripada vama i povećava povj
 - Samo toUserId može odgovoriti.
 - Odgovor je dozvoljen samo jednom (hasReplied provjera).
 - Odgovor se može poslati samo na objavljene recenzije.
+`
+    },
+    "Moderacija ocjena (AI + ljudska)": {
+      implemented: true,
+      summary: "Automatska AI provjera sadržaja recenzija i ljudska moderacija kroz admin panel. Sprječava spam, neprikladan sadržaj i osigurava kvalitetu recenzija.",
+      details: `**Kako funkcionira**
+- AI automatski provjerava svaku recenziju pri kreiranju (provjera spam-a, zabranjenih riječi, linkova, email-ova, telefona).
+- Recenzije se kategoriziraju u tri kategorije: APPROVED (automatski odobreno), PENDING (zahtijeva ljudsku moderaciju), REJECTED (automatski odbijeno).
+- Admin može pregledati recenzije koje čekaju moderaciju i odobriti/odbijati ih.
+- Samo odobrene recenzije (moderationStatus = 'APPROVED') se prikazuju javno i utječu na aggregate rating.
+
+**Prednosti**
+- Sprječava spam i neprikladan sadržaj.
+- Osigurava kvalitetu recenzija na platformi.
+- Omogućava brzu automatsku provjeru većine recenzija.
+- Ljudska moderacija za slučajeve gdje AI nije siguran.
+
+**Kada koristiti**
+- Automatski pri kreiranju svake recenzije.
+- Admin panel za pregled i moderaciju recenzija koje čekaju provjeru.
+- Za sprječavanje spam-a i neprikladnog sadržaja.
+`,
+      technicalDetails: `**Backend Implementacija**
+- \`services/review-moderation-service.js\`: AI automatska provjera sadržaja (\`autoModerateReview\`).
+- \`routes/reviews.js\`: Integracija AI moderacije u POST /api/reviews endpoint.
+- \`routes/reviews.js\`: Admin endpoint-i za ljudsku moderaciju (GET /api/reviews/pending, POST /api/reviews/:id/approve, POST /api/reviews/:id/reject).
+
+**AI Provjera (OpenAI Moderation API)**
+- **Pravi AI**: Koristi OpenAI Moderation API za provjeru sadržaja (hate, harassment, self-harm, sexual, violence, itd.).
+- **Kategorije koje automatski odbijaju**: hate, hate/threatening, self-harm, sexual/minors, violence/graphic.
+- **Kategorije koje zahtijevaju ljudsku provjeru**: harassment, harassment/threatening, violence.
+- **Fallback provjere** (ako OpenAI nije dostupan):
+  - Provjera zabranjenih riječi (uvredljive riječi, spam fraze).
+  - Detekcija linkova, email-ova, telefona (potencijalni spam).
+  - Provjera ekstremnih ocjena s kratkim komentarima (potencijalni spam).
+  - Provjera dupliciranih riječi (potencijalni spam).
+  - Provjera minimalne/maksimalne duljine komentara.
+- **Confidence score** (0-1): >= 0.7 = APPROVED, 0.5-0.7 = PENDING, < 0.5 = REJECTED.
+- **Environment varijabla**: \`OPENAI_API_KEY\` (opcionalno, ako nije postavljena, koristi se fallback).
+
+**Baza**
+- \`Review\` model polja: \`moderationStatus\` (PENDING, APPROVED, REJECTED), \`moderationReviewedBy\`, \`moderationReviewedAt\`, \`moderationRejectionReason\`, \`moderationNotes\`.
+- Index: \`@@index([moderationStatus])\`.
+
+**Logika**
+- Pri kreiranju review-a, AI automatski provjerava sadržaj.
+- Ako je confidence >= 0.7, review se automatski odobrava (APPROVED).
+- Ako je confidence 0.5-0.7, review se stavlja na čekanje (PENDING) za ljudsku moderaciju.
+- Ako je confidence < 0.5, review se automatski odbija (REJECTED).
+- Samo odobrene recenzije (APPROVED) se prikazuju javno i utječu na aggregate rating.
+
+**API**
+- \`POST /api/reviews\` – automatska AI moderacija pri kreiranju (poziva \`autoModerateReview\`).
+- \`GET /api/reviews/pending\` – lista recenzija koje čekaju moderaciju (admin, paginacija).
+- \`POST /api/reviews/:id/approve\` – odobri recenziju (admin, body: { notes?: string }).
+- \`POST /api/reviews/:id/reject\` – odbij recenziju (admin, body: { rejectionReason: string, notes?: string }).
+- \`GET /api/reviews/user/:userId\` – vraća samo odobrene recenzije (moderationStatus = 'APPROVED').
+
+**Notifikacije**
+- Korisnik dobiva notifikaciju ako je recenzija stavljena na čekanje (PENDING).
+- Korisnik dobiva notifikaciju ako je recenzija automatski odbijena (REJECTED).
+- Korisnik dobiva notifikaciju ako admin odbije recenziju.
+
+**Aggregate Rating**
+- Samo odobrene recenzije (moderationStatus = 'APPROVED') utječu na provider profile ratingAvg i ratingCount.
+- Kada se recenzija odobri ili odbije, aggregate se automatski ažurira.
+- Ako recenzija nije odobrena, ne utječe na provider profile rating.
 `
     },
     "Reputation Score izračun (ponderirane komponente)": {
