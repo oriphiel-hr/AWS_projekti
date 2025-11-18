@@ -84,6 +84,14 @@ r.post('/', auth(true, ['PROVIDER']), async (req, res, next) => {
       // Ne baci grešku - engagement tracking ne smije blokirati slanje ponude
     }
     
+    // Chat-bot trigger - SEND_OFFER
+    try {
+      const { advanceChatbotStep } = await import('../services/chatbot-service.js');
+      await advanceChatbotStep(req.user.id, 'SEND_OFFER');
+    } catch (chatbotError) {
+      console.error('[OFFER] Error advancing chatbot:', chatbotError);
+    }
+    
     // Pošalji notifikaciju vlasniku posla
     await notifyNewOffer(offer, job);
     

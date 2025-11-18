@@ -195,6 +195,14 @@ export const initSocket = (httpServer) => {
           console.error('[SOCKET] Error tracking TRIAL engagement:', engagementError);
           // Ne baci grešku - engagement tracking ne smije blokirati slanje poruke
         }
+        
+        // Chat-bot trigger - SEND_MESSAGE
+        try {
+          const { advanceChatbotStep } = await import('../services/chatbot-service.js');
+          await advanceChatbotStep(socket.userId, 'SEND_MESSAGE');
+        } catch (chatbotError) {
+          console.error('[SOCKET] Error advancing chatbot:', chatbotError);
+        }
 
         // Update thread activity
         const { updateThreadActivity } = await import('../services/thread-locking-service.js');

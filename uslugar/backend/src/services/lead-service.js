@@ -256,6 +256,16 @@ export async function purchaseLead(jobId, providerId, options = {}) {
       console.error('[LEAD] Error tracking TRIAL engagement:', engagementError);
       // Ne baci grešku - engagement tracking ne smije blokirati kupovinu leada
     }
+    
+    // Pokreni chat-bot za prvi lead
+    try {
+      const { createFirstLeadChatbot } = await import('./chatbot-service.js');
+      await createFirstLeadChatbot(providerId, jobId);
+      console.log('[LEAD] Chat-bot started for first lead');
+    } catch (chatbotError) {
+      console.error('[LEAD] Error starting chat-bot:', chatbotError);
+      // Ne baci grešku - chat-bot ne smije blokirati kupovinu leada
+    }
 
     const paymentMethod = stripePaymentIntent ? 'Stripe Payment' : 'Internal Credits';
     console.log(`[LEAD] Provider ${providerId} purchased lead ${jobId} for ${leadPrice} credits (${paymentMethod})`);
@@ -302,6 +312,14 @@ export async function markLeadContacted(purchaseId, providerId) {
 
   if (purchase.status === 'CONTACTED' || purchase.status === 'CONVERTED') {
     return purchase; // Already marked
+  }
+  
+  // Chat-bot trigger - CONTACT_CLIENT
+  try {
+    const { advanceChatbotStep } = await import('./chatbot-service.js');
+    await advanceChatbotStep(providerId, 'CONTACT_CLIENT');
+  } catch (chatbotError) {
+    console.error('[LEAD] Error advancing chatbot:', chatbotError);
   }
 
   const now = new Date();

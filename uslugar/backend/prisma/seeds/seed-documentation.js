@@ -501,7 +501,7 @@ const features = [
       items: [
         { name: "Wizard registracije (odabir kategorija i regija)", implemented: true }, // Implementirano: GET /api/wizard/categories, GET /api/wizard/regions, GET /api/wizard/status, POST /api/wizard/categories, POST /api/wizard/regions, POST /api/wizard/complete
         { name: "Automatska aktivacija TRIAL-a", implemented: true },
-        { name: "Chat-bot vodi za prvi lead", implemented: false },
+        { name: "Chat-bot vodi za prvi lead", implemented: true }, // Implementirano: ChatbotSession model, chatbot-service.js, GET /api/chatbot/session, POST /api/chatbot/advance, POST /api/chatbot/complete, automatski triggeri u lead purchase, chat i offers
         { name: "Automatski email + popust link pri isteku TRIAL-a", implemented: false },
         { name: "Podsjetnici za neaktivnost (>14 dana)", implemented: false },
         { name: "Edukacijski materijali i vodiči", implemented: false }
@@ -13674,6 +13674,67 @@ SMS verifikacija osigurava da vaš telefonski broj pripada vama i povećava povj
   - PRO - IT Dalmacija
   - BASIC - Arhitekti Istra
       `
+    },
+    "Chat-bot vodi za prvi lead": {
+      implemented: true,
+      summary: "Interaktivni chat-bot koji vodi novog korisnika kroz prvi lead - od kupnje do završetka posla.",
+      details: `**Kako funkcionira**
+- Chat-bot se automatski pokreće kada korisnik kupi svoj prvi lead.
+- Vodi korisnika kroz 5 koraka: kupnja leada, kontaktiranje klijenta, slanje poruke, priprema ponude, slanje ponude.
+- Svaki korak ima svoju poruku i akciju koja vodi korisnika dalje.
+- Chat-bot se automatski napreduje na temelju korisnikovih akcija (kupnja leada, slanje poruke, slanje ponude).
+
+**Prednosti**
+- Poboljšava iskustvo novih korisnika vodeći ih kroz prvi lead korak po korak.
+- Smanjuje konfuziju i pomaže korisnicima da brzo počnu raditi s leadovima.
+- Povećava konverziju prvog leada i zadržavanje korisnika.
+
+**Kada koristiti**
+- Automatski se pokreće za sve nove korisnike koji kupuju prvi lead.
+- Korisnik može ručno završiti chat-bot sesiju ako želi.
+`,
+      technicalDetails: `**Backend Implementacija**
+- \`services/chatbot-service.js\`: Servis za upravljanje chat-bot sesijama.
+- \`routes/chatbot.js\`: API endpoint-i za chat-bot interakciju.
+- \`ChatbotSession\` model: Čuva sesiju chat-bota (providerId, jobId, currentStep, status).
+
+**Baza**
+- \`ChatbotSession\` model: \`providerId\`, \`jobId\`, \`currentStep\` (1-5), \`status\` (ACTIVE, COMPLETED, CANCELLED), \`lastTrigger\`, \`lastTriggeredAt\`.
+- \`ChatRoom\` model: \`isBotRoom\` (Boolean) - označava chat-bot sobu.
+- \`ChatMessage\` model: \`isBotMessage\` (Boolean), \`botAction\` (String?) - akcija bot poruke.
+
+**Logika**
+- Chat-bot se pokreće automatski u \`lead-service.js\` kada se kupi prvi lead.
+- Provjerava se da li je ovo prvi lead korisnika (\`isFirstLead\`).
+- Chat-bot se napreduje automatski na temelju triggera:
+  - \`LEAD_PURCHASED\` - kada se kupi lead
+  - \`CONTACT_CLIENT\` - kada se kontaktira klijent
+  - \`SEND_MESSAGE\` - kada se pošalje chat poruka
+  - \`SEND_OFFER\` - kada se pošalje ponuda
+
+**API**
+- \`GET /api/chatbot/session\` – dohvat trenutne chat-bot sesije (auth required, PROVIDER only).
+- \`POST /api/chatbot/advance\` – napredak na sljedeći korak (auth required, PROVIDER only, body: { trigger: string }).
+- \`POST /api/chatbot/complete\` – završetak chat-bot sesije (auth required, PROVIDER only).
+
+**Integracija**
+- \`lead-service.js\`: Pokreće chat-bot nakon kupnje prvog leada.
+- \`socket.js\`: Napreduje chat-bot kada se pošalje chat poruka.
+- \`offers.js\`: Napreduje chat-bot kada se pošalje ponuda.
+- \`lead-service.js\`: Napreduje chat-bot kada se kontaktira klijent.
+
+**Chat-bot koraci**
+1. **LEAD_PURCHASED**: "🎉 Čestitamo! Kupili ste svoj prvi lead..."
+2. **CONTACT_CLIENT**: "💬 Kontaktirajte klijenta putem chat-a..."
+3. **SEND_MESSAGE**: "✅ Odlično! Poslali ste poruku klijentu..."
+4. **PREPARE_OFFER**: "📋 Pripremite detaljnu ponudu..."
+5. **SEND_OFFER**: "🚀 Poslali ste ponudu!..."
+
+**Validacija**
+- Chat-bot se pokreće samo za prvi lead korisnika.
+- Chat-bot se ne pokreće ako već postoji aktivna sesija.
+- Chat-bot se automatski završava nakon 5. koraka.
+`
     }
   };
 

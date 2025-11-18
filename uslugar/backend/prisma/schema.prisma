@@ -145,6 +145,7 @@ model User {
   chatRooms          ChatRoom[]          @relation("participants")
   messageVersions    MessageVersion[]    @relation("messageVersions")
   leadPurchases      LeadPurchase[]
+  chatbotSessions    ChatbotSession[]    @relation("ChatbotSessions")
   providerROI        ProviderROI?
   creditTransactions CreditTransaction[]
   clientVerification ClientVerification?
@@ -355,6 +356,7 @@ model Job {
   notifications         Notification[]
   reviews               Review[] // Recenzije ostavljene na ovom job-u
   auditLogs             AuditLog[]         @relation("JobAuditLogs") // Audit logovi za otkrivanje kontakata
+  chatbotSessions       ChatbotSession[]   @relation("ChatbotJob")
 
   // MODERATION
   moderationStatus          ModerationStatus @default(PENDING) // Status moderacije
@@ -519,6 +521,9 @@ model ChatRoom {
   lockedBy     User?         @relation("LockedThreads", fields: [lockedById], references: [id], onDelete: SetNull)
   lockedById   String?       // ID korisnika koji je zaključao thread (null = automatski)
   
+  // CHAT-BOT
+  isBotRoom    Boolean       @default(false) // Da li je ovo chat-bot soba
+  
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   
@@ -554,11 +559,16 @@ model ChatMessage {
   moderationReviewedAt      DateTime? // Kada je pregledano
   moderationRejectionReason String? // Razlog odbijanja (ako je odbijen)
   moderationNotes           String? // Bilješke moderatora
+  
+  // CHAT-BOT
+  isBotMessage Boolean   @default(false) // Da li je ovo bot poruka
+  botAction    String? // Akcija bot poruke (SHOW_CONTACT_INFO, OPEN_CHAT, itd.)
 
   @@index([roomId, createdAt])
   @@index([status])
   @@index([moderationStatus])
   @@index([isEdited])
+  @@index([isBotMessage])
 }
 
 model MessageVersion {
@@ -1446,4 +1456,25 @@ model MessageSLA {
   @@index([roomId, slaStatus])
   @@index([slaStatus, createdAt])
   @@index([reminderSentAt])
+}
+
+// Chat-bot Session - Vodi korisnika kroz prvi lead
+model ChatbotSession {
+  id              String   @id @default(cuid())
+  provider        User     @relation("ChatbotSessions", fields: [providerId], references: [id], onDelete: Cascade)
+  providerId      String
+  job             Job?     @relation("ChatbotJob", fields: [jobId], references: [id], onDelete: SetNull)
+  jobId           String?
+  currentStep     Int      @default(1) // Trenutni korak u wizardu (1-5)
+  status          String   @default("ACTIVE") // ACTIVE, COMPLETED, CANCELLED
+  lastTrigger     String? // Zadnji trigger (LEAD_PURCHASED, CONTACT_CLIENT, itd.)
+  lastTriggeredAt DateTime? // Kada je zadnji put triggeran
+  startedAt       DateTime @default(now())
+  completedAt     DateTime?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([providerId, status])
+  @@index([status])
 }
