@@ -17,6 +17,7 @@ import { batchAutoVerifyClients } from '../services/auto-verification.js'
 import { lockInactiveThreads, reLockExpiredTemporaryUnlocks } from '../services/thread-locking-service.js';
 import { checkAndSendSLAReminders } from '../services/sla-reminder-service.js';
 import { checkAddonLifecycles, processAutoRenewals, processAddonUpsells } from '../services/addon-lifecycle-service.js';
+import { checkAndDowngradeExpiredSubscriptions } from '../routes/subscriptions.js';
 
 export function startQueueScheduler() {
   console.log('⏰ Starting Queue Scheduler...')
@@ -56,6 +57,12 @@ export function startQueueScheduler() {
       const upsells = await processAddonUpsells()
       if (upsells.upsellsSent > 0) {
         console.log(`✅ Sent ${upsells.upsellsSent} add-on upsell offers`)
+      }
+      
+      // Provjeri i downgrade-uj istekle subscription-e na BASIC (uključujući TRIAL)
+      const downgradeCheck = await checkAndDowngradeExpiredSubscriptions()
+      if (downgradeCheck.downgraded > 0) {
+        console.log(`✅ Downgraded ${downgradeCheck.downgraded} expired subscriptions to BASIC`)
       }
       
       console.log('✅ Scheduled check completed')
@@ -154,6 +161,7 @@ export function startQueueScheduler() {
   console.log('   - Add-on lifecycle check: Every hour at :00')
   console.log('   - Add-on auto-renewal: Every hour at :00')
   console.log('   - Add-on upsell offers: Every hour at :00')
+  console.log('   - Expired subscriptions downgrade (TRIAL→BASIC): Every hour at :00')
   console.log('   - License expiry check: Daily at 09:00')
   console.log('   - License validity check: Daily at 10:00')
   console.log('   - Batch auto-verification: Daily at 11:00')

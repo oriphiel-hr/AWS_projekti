@@ -203,8 +203,13 @@ export async function downgradeToBasic(userId, previousPlan = null) {
       throw new Error('Subscription not found');
     }
 
-    // Ako je već BASIC ili TRIAL, ne treba downgrade
-    if (subscription.plan === 'BASIC' || subscription.plan === 'TRIAL') {
+    // Ako je već BASIC, ne treba downgrade
+    if (subscription.plan === 'BASIC') {
+      return subscription;
+    }
+
+    // Ako je TRIAL i još nije istekao, ne treba downgrade
+    if (subscription.plan === 'TRIAL' && subscription.expiresAt && new Date() < subscription.expiresAt) {
       return subscription;
     }
 
@@ -212,28 +217,41 @@ export async function downgradeToBasic(userId, previousPlan = null) {
     // Ali ipak ćemo postaviti na BASIC ako nije već
     if (subscription.status === 'EXPIRED' || subscription.status === 'CANCELLED') {
       if (subscription.plan !== 'BASIC') {
+        // Ako je TRIAL, postavi BASIC kredite (10 kredita za BASIC plan)
+        const isTrialDowngrade = subscription.plan === 'TRIAL';
+        const basicCredits = 10; // BASIC plan ima 10 kredita mjesečno
+        
+        // Postavi expiresAt na 1 mjesec od sada za BASIC plan
+        const basicExpiresAt = new Date();
+        basicExpiresAt.setMonth(basicExpiresAt.getMonth() + 1);
+        
         // Ažuriraj na BASIC plan
         const updatedSubscription = await prisma.subscription.update({
           where: { userId },
           data: {
             plan: 'BASIC',
             status: 'ACTIVE', // Aktiviraj BASIC plan
-            // Zadržavamo postojeće kredite (creditsBalance ostaje isti)
+            creditsBalance: isTrialDowngrade ? basicCredits : subscription.creditsBalance, // TRIAL dobiva 10 kredita, ostali zadržavaju postojeće
+            expiresAt: basicExpiresAt, // BASIC plan traje 1 mjesec
             // Premium značajke će se automatski deaktivirati jer je plan BASIC
           }
         });
 
         // Kreiraj notifikaciju
+        const notificationMessage = isTrialDowngrade
+          ? `Vaš besplatni TRIAL period je istekao. Automatski ste prebačeni na BASIC plan s ${basicCredits} kredita mjesečno. Nastavite koristiti Uslugar EXCLUSIVE s osnovnim funkcionalnostima!`
+          : `Vaša pretplata (${previousPlan || subscription.plan}) je istekla. Automatski ste vraćeni na BASIC plan s osnovnim funkcionalnostima. Vaši postojeći krediti i povijest leadova su zadržani.`;
+        
         await prisma.notification.create({
           data: {
-            title: 'Pretplata vraćena na BASIC plan',
-            message: `Vaša pretplata (${previousPlan || subscription.plan}) je istekla. Automatski ste vraćeni na BASIC plan s osnovnim funkcionalnostima. Vaši postojeći krediti i povijest leadova su zadržani.`,
+            title: isTrialDowngrade ? 'TRIAL je istekao - Prebačeni ste na BASIC plan' : 'Pretplata vraćena na BASIC plan',
+            message: notificationMessage,
             type: 'SYSTEM',
             userId: userId
           }
         });
 
-        console.log(`[SUBSCRIPTION] User ${userId} downgraded from ${subscription.plan} to BASIC plan`);
+        console.log(`[SUBSCRIPTION] User ${userId} downgraded from ${subscription.plan} to BASIC plan${isTrialDowngrade ? ' (TRIAL expired)' : ''}`);
 
         return updatedSubscription;
       }
@@ -241,27 +259,40 @@ export async function downgradeToBasic(userId, previousPlan = null) {
     }
 
     // Ako je aktivan, ali je istekao, downgrade na BASIC
+    // Ako je TRIAL, postavi BASIC kredite (10 kredita za BASIC plan)
+    const isTrialDowngrade = subscription.plan === 'TRIAL';
+    const basicCredits = 10; // BASIC plan ima 10 kredita mjesečno
+    
+    // Postavi expiresAt na 1 mjesec od sada za BASIC plan
+    const basicExpiresAt = new Date();
+    basicExpiresAt.setMonth(basicExpiresAt.getMonth() + 1);
+    
     const updatedSubscription = await prisma.subscription.update({
       where: { userId },
       data: {
         plan: 'BASIC',
         status: 'ACTIVE', // Aktiviraj BASIC plan
-        // Zadržavamo postojeće kredite (creditsBalance ostaje isti)
+        creditsBalance: isTrialDowngrade ? basicCredits : subscription.creditsBalance, // TRIAL dobiva 10 kredita, ostali zadržavaju postojeće
+        expiresAt: basicExpiresAt, // BASIC plan traje 1 mjesec
         // Premium značajke će se automatski deaktivirati jer je plan BASIC
       }
     });
 
     // Kreiraj notifikaciju
+    const notificationMessage = isTrialDowngrade
+      ? `Vaš besplatni TRIAL period je istekao. Automatski ste prebačeni na BASIC plan s ${basicCredits} kredita mjesečno. Nastavite koristiti Uslugar EXCLUSIVE s osnovnim funkcionalnostima!`
+      : `Vaša pretplata (${previousPlan || subscription.plan}) je istekla. Automatski ste vraćeni na BASIC plan s osnovnim funkcionalnostima. Vaši postojeći krediti i povijest leadova su zadržani.`;
+    
     await prisma.notification.create({
       data: {
-        title: 'Pretplata vraćena na BASIC plan',
-        message: `Vaša pretplata (${previousPlan || subscription.plan}) je istekla. Automatski ste vraćeni na BASIC plan s osnovnim funkcionalnostima. Vaši postojeći krediti i povijest leadova su zadržani.`,
+        title: isTrialDowngrade ? 'TRIAL je istekao - Prebačeni ste na BASIC plan' : 'Pretplata vraćena na BASIC plan',
+        message: notificationMessage,
         type: 'SYSTEM',
         userId: userId
       }
     });
 
-    console.log(`[SUBSCRIPTION] User ${userId} downgraded from ${subscription.plan} to BASIC plan`);
+    console.log(`[SUBSCRIPTION] User ${userId} downgraded from ${subscription.plan} to BASIC plan${isTrialDowngrade ? ' (TRIAL expired)' : ''}`);
 
     return updatedSubscription;
   } catch (error) {
@@ -495,31 +526,9 @@ r.get('/me', auth(true, ['PROVIDER', 'ADMIN', 'USER']), async (req, res, next) =
     if (subscription.expiresAt && new Date() > subscription.expiresAt) {
       const previousPlan = subscription.plan;
       
-      // Ako je TRIAL plan, samo označi kao EXPIRED (ne vraća se na BASIC)
-      if (subscription.plan === 'TRIAL') {
-        if (subscription.status === 'ACTIVE') {
-          subscription = await prisma.subscription.update({
-            where: { userId: req.user.id },
-            data: {
-              status: 'EXPIRED',
-              creditsBalance: 0, // Nema kredita dok ne plate
-              plan: 'TRIAL' // Ostaje TRIAL dok ne plate
-            }
-          });
-          
-          // Notifika o isteku TRIAL-a
-          await prisma.notification.create({
-            data: {
-              title: 'TRIAL je istekao',
-              message: 'Vaš besplatni trial je istekao. Plati we pretplatu da nastaviš koristiti Uslugar EXCLUSIVE.',
-              type: 'SYSTEM',
-              userId: req.user.id
-            }
-          });
-        }
-      } else {
-        // Za sve ostale planove (PREMIUM, PRO), automatski vraćanje na BASIC
-        // Premium značajke će se automatski deaktivirati jer je plan BASIC
+      // Za sve planove (uključujući TRIAL), automatski vraćanje na BASIC
+      // Premium značajke će se automatski deaktivirati jer je plan BASIC
+      if (subscription.status === 'ACTIVE' || subscription.status === 'EXPIRED') {
         subscription = await downgradeToBasic(req.user.id, previousPlan);
       }
     }
@@ -846,23 +855,18 @@ export async function checkAndDowngradeExpiredSubscriptions() {
 
     for (const subscription of expiredSubscriptions) {
       try {
-        // Ako je TRIAL, preskoči (TRIAL se ne vraća na BASIC)
-        if (subscription.plan === 'TRIAL') {
-          skippedCount++;
-          continue;
-        }
-
-        // Downgrade na BASIC
+        // Downgrade na BASIC (uključujući TRIAL)
         await downgradeToBasic(subscription.userId, subscription.plan);
         downgradedCount++;
         
         console.log(`[SUBSCRIPTION] Auto-downgraded user ${subscription.userId} from ${subscription.plan} to BASIC`);
       } catch (error) {
         console.error(`[SUBSCRIPTION] Error downgrading user ${subscription.userId}:`, error);
+        skippedCount++;
       }
     }
 
-    console.log(`[SUBSCRIPTION] Checked expired subscriptions: ${downgradedCount} downgraded, ${skippedCount} skipped (TRIAL)`);
+    console.log(`[SUBSCRIPTION] Checked expired subscriptions: ${downgradedCount} downgraded, ${skippedCount} skipped (errors)`);
 
     return {
       checked: expiredSubscriptions.length,
