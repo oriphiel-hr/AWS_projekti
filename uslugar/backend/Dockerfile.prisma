@@ -15,8 +15,16 @@ ENV PRISMA_GENERATE_SKIP_AUTOINSTALL=1
 ENV PRISMA_OPENSSL_VERSION=3.0.x
 ENV PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
 
-# Generiraj Prisma Client
-RUN npx prisma generate --schema=./prisma/schema.prisma
+# Generiraj Prisma Client s retry logikom (Prisma CDN može biti privremeno nedostupan)
+# Retry do 3 puta s povećanjem vremena između pokušaja (5s, 10s, 15s)
+RUN set -e; \
+    for i in 1 2 3; do \
+        echo "Attempt $i/3: Generating Prisma Client..." && \
+        npx prisma generate --schema=./prisma/schema.prisma && \
+        echo "Prisma Client generated successfully!" && exit 0 || \
+        (echo "Attempt $i/3 failed. Waiting before retry..." && sleep $((i * 5))); \
+    done; \
+    echo "ERROR: All 3 attempts failed. This might be a temporary Prisma CDN issue." && exit 1
 
 # Default: pomoć; u CI/one-off zadatku override-at će se "command"
 CMD ["sh","-lc","npx prisma --help"]
