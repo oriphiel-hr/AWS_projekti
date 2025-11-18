@@ -153,13 +153,160 @@ async function main() {
     }
   ];
 
+  // Seed osnovni planovi (bez segmentacije - categoryId i region su null)
   for (const plan of plans) {
-    await prisma.subscriptionPlan.upsert({
-      where: { name: plan.name },
-      update: plan,
-      create: plan
+    // Prvo provjeri postoji li plan s istim imenom i null segmentacijom
+    const existing = await prisma.subscriptionPlan.findFirst({
+      where: {
+        name: plan.name,
+        categoryId: null,
+        region: null
+      }
     });
-    console.log(`✅ Plan dodan/ažuriran: ${plan.displayName}`);
+
+    if (existing) {
+      await prisma.subscriptionPlan.update({
+        where: { id: existing.id },
+        data: plan
+      });
+    } else {
+      await prisma.subscriptionPlan.create({
+        data: {
+          ...plan,
+          categoryId: null,
+          region: null
+        }
+      });
+    }
+    console.log(`✅ Plan dodan/ažuriran: ${plan.displayName} (osnovni)`);
+  }
+
+  // Seed segmentirani paketi - primjeri po regiji i kategoriji
+  // Napomena: Ovo zahtijeva da kategorije već postoje u bazi
+  console.log('📦 Seeding segmentirani paketi...');
+  
+  // Dohvati kategorije za segmentaciju
+  const gradevinaCategory = await prisma.category.findFirst({
+    where: { name: 'Građevina' }
+  });
+  const itCategory = await prisma.category.findFirst({
+    where: { name: 'IT usluge' }
+  });
+  const arhitektiCategory = await prisma.category.findFirst({
+    where: { name: 'Arhitekti' }
+  });
+
+  // Segmentirani paketi po regiji - Zagreb
+  const segmentedPlans = [];
+  
+  if (gradevinaCategory) {
+    // Građevina Zagreb - Premium paket s popustom
+    segmentedPlans.push({
+      name: 'PREMIUM',
+      displayName: 'Premium - Građevina Zagreb',
+      price: 79, // Popust za Zagreb
+      currency: 'EUR',
+      credits: 25,
+      features: [
+        '25 ekskluzivnih leadova mjesečno',
+        'Specifično za Građevinu u Zagrebu',
+        '1 lead = 1 izvođač (bez konkurencije)',
+        'Refund ako klijent ne odgovori',
+        'AI prioritet - viđeni prvi',
+        'ROI statistika + analitika',
+        'SMS + Email notifikacije',
+        'Prioritetna podrška'
+      ],
+      isPopular: false,
+      displayOrder: 2,
+      isActive: true,
+      savings: 'Ušteda 171€ vs pay-per-lead (Zagreb popust)',
+      categoryId: gradevinaCategory.id,
+      region: 'Zagreb'
+    });
+  }
+
+  if (itCategory) {
+    // IT usluge Dalmacija - PRO paket s popustom
+    segmentedPlans.push({
+      name: 'PRO',
+      displayName: 'Pro - IT Dalmacija',
+      price: 129, // Popust za Dalmaciju
+      currency: 'EUR',
+      credits: 50,
+      features: [
+        '50 ekskluzivnih leadova mjesečno',
+        'Specifično za IT usluge u Dalmaciji',
+        '1 lead = 1 izvođač (bez konkurencije)',
+        'Refund ako klijent ne odgovori',
+        'AI prioritet - viđeni prvi',
+        'Premium kvaliteta leadova (80+ score)',
+        'ROI statistika + napredna analitika',
+        'SMS + Email + Push notifikacije',
+        'VIP podrška 24/7',
+        'Featured profil'
+      ],
+      isPopular: false,
+      displayOrder: 3,
+      isActive: true,
+      savings: 'Ušteda 371€ vs pay-per-lead (Dalmacija popust)',
+      categoryId: itCategory.id,
+      region: 'Dalmacija'
+    });
+  }
+
+  if (arhitektiCategory) {
+    // Arhitekti Istra - Basic paket
+    segmentedPlans.push({
+      name: 'BASIC',
+      displayName: 'Basic - Arhitekti Istra',
+      price: 35, // Popust za Istru
+      currency: 'EUR',
+      credits: 10,
+      features: [
+        '10 ekskluzivnih leadova mjesečno',
+        'Specifično za Arhitekte u Istri',
+        '1 lead = 1 izvođač (bez konkurencije)',
+        'Refund ako klijent ne odgovori',
+        'ROI statistika',
+        'Email notifikacije',
+        'Mini CRM za leadove'
+      ],
+      isPopular: false,
+      displayOrder: 1,
+      isActive: true,
+      savings: 'Ušteda 15€ vs pay-per-lead (Istra popust)',
+      categoryId: arhitektiCategory.id,
+      region: 'Istra'
+    });
+  }
+
+  // Seed segmentirani paketi
+  for (const plan of segmentedPlans) {
+    try {
+      // Prvo provjeri postoji li plan s istom kombinacijom
+      const existing = await prisma.subscriptionPlan.findFirst({
+        where: {
+          name: plan.name,
+          categoryId: plan.categoryId,
+          region: plan.region
+        }
+      });
+
+      if (existing) {
+        await prisma.subscriptionPlan.update({
+          where: { id: existing.id },
+          data: plan
+        });
+      } else {
+        await prisma.subscriptionPlan.create({
+          data: plan
+        });
+      }
+      console.log(`✅ Segmentirani plan dodan/ažuriran: ${plan.displayName}`);
+    } catch (error) {
+      console.warn(`⚠️ Neuspješno dodavanje segmentiranog plana ${plan.displayName}:`, error.message);
+    }
   }
 
   // Seed Original Categories

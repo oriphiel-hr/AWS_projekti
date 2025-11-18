@@ -7,24 +7,58 @@ import { auth } from '../lib/auth.js';
 const r = Router();
 
 // Helper function to get plans from database
-async function getPlansFromDB() {
+// Podržava segmentaciju po regiji i kategoriji
+async function getPlansFromDB(filters = {}) {
+  const { categoryId, region } = filters;
+  
+  // Build where clause for segmentation
+  const where = { isActive: true };
+  
+  // Ako je specificirana kategorija ili regija, filtriraj pakete
+  // null vrijednosti znače "sve kategorije/regije"
+  if (categoryId !== undefined) {
+    where.categoryId = categoryId || null;
+  }
+  if (region !== undefined) {
+    where.region = region || null;
+  }
+  
   const dbPlans = await prisma.subscriptionPlan.findMany({
-    where: { isActive: true },
+    where,
+    include: {
+      category: {
+        select: {
+          id: true,
+          name: true
+        }
+      }
+    },
     orderBy: { displayOrder: 'asc' }
   });
   
   // Transform to legacy format for backward compatibility
+  // Za segmentirane pakete, koristimo kombinaciju name + category + region kao ključ
   const plansObj = {};
   dbPlans.forEach(plan => {
-    plansObj[plan.name] = {
+    const key = plan.categoryId || plan.region 
+      ? `${plan.name}_${plan.categoryId || ''}_${plan.region || ''}` 
+      : plan.name;
+    
+    plansObj[key] = {
+      id: plan.id,
       name: plan.displayName,
+      planName: plan.name,
       price: plan.price,
       credits: plan.credits,
       creditsPerLead: 1,
       avgLeadPrice: plan.price / plan.credits,
       features: plan.features,
       savings: plan.savings,
-      popular: plan.isPopular
+      popular: plan.isPopular,
+      categoryId: plan.categoryId,
+      category: plan.category ? { id: plan.category.id, name: plan.category.name } : null,
+      region: plan.region,
+      description: plan.description
     };
   });
   
@@ -215,10 +249,23 @@ r.get('/me', auth(true, ['PROVIDER', 'ADMIN', 'USER']), async (req, res, next) =
 });
 
 // Get all available plans (from database)
-r.get('/plans', async (req, res) => {
+// Podržava filtriranje po regiji i kategoriji za segmentni model paketa
+// Query params: ?categoryId=xxx&region=Zagreb
+r.get('/plans', async (req, res, next) => {
   try {
-    const { plansObj, dbPlans } = await getPlansFromDB();
-    // Return database format
+    const { categoryId, region } = req.query;
+    
+    const filters = {};
+    if (categoryId !== undefined) {
+      filters.categoryId = categoryId === 'null' || categoryId === '' ? null : categoryId;
+    }
+    if (region !== undefined) {
+      filters.region = region === 'null' || region === '' ? null : region;
+    }
+    
+    const { plansObj, dbPlans } = await getPlansFromDB(filters);
+    
+    // Return database format with category info
     res.json(dbPlans);
   } catch (e) {
     next(e);

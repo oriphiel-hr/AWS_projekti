@@ -287,6 +287,7 @@ model Category {
   children    Category[]        @relation("CategoryHierarchy")
   providers   ProviderProfile[] @relation("ProviderCategories")
   billingPlans BillingPlan[]
+  subscriptionPlans SubscriptionPlan[] // Segmentni paketi po kategoriji
   jobs        Job[]
 
   // USLUGAR EXCLUSIVE - NKD i licence
@@ -590,6 +591,7 @@ model Subscription {
 }
 
 // Subscription Plans - Cjenik planova (za admin upravljanje)
+// Segmentni model paketa - omogućava definiranje različitih paketa prema regijama ili kategorijama
 model SubscriptionPlan {
   id           String   @id @default(cuid())
   name         String // BASIC, PREMIUM, PRO
@@ -603,12 +605,21 @@ model SubscriptionPlan {
   isActive     Boolean  @default(true) // Da li je plan aktivan
   description  String? // Opis plana
   savings      String? // Tekst uštede (npr. "Ušteda 161€ vs pay-per-lead")
+  
+  // SEGMENTNI MODEL PAKETA - Segmentacija po regiji/kategoriji
+  category     Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  categoryId   String? // Kategorija za koju je paket specifičan (null = sve kategorije)
+  region       String? // Regija/grad za koju je paket specifičan (npr. "Zagreb", "Dalmacija", "Istra") - null = sve regije
+  
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  @@unique([name])
+  @@unique([name, categoryId, region]) // Jedinstvena kombinacija name + category + region
   @@index([isActive])
   @@index([displayOrder])
+  @@index([categoryId])
+  @@index([region])
+  @@index([categoryId, region]) // Kompozitni indeks za brže pretraživanje segmentiranih paketa
 }
 
 // Fakture za plaćanja
