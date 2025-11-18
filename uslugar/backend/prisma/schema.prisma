@@ -150,6 +150,7 @@ model User {
   auditLogs          AuditLog[]          @relation("UserAuditLogs")
   billingPlans       BillingPlan[]
   billingAdjustments BillingAdjustment[]
+  featureOwnership   CompanyFeatureOwnership[] @relation("UserFeatureOwnership")
   lockedThreads      ChatRoom[]          @relation("LockedThreads") // Threadovi koje je korisnik zaključao
 
   // Testing runs authored by this user (admin)
@@ -761,6 +762,58 @@ model BillingAdjustment {
   @@index([billingPlanId])
   @@index([periodStart, periodEnd])
   @@index([status])
+}
+
+// Feature Ownership System - Automatska provjera postojećih funkcionalnosti
+model FeatureCatalog {
+  id          String   @id @default(cuid())
+  featureKey  String   @unique // Npr. "CRM", "CHAT", "STATISTICS", "REGION_ZAGREB", "CATEGORY_GRADEVINA"
+  name        String   // Ljudski čitljiv naziv
+  description String?
+  category    String?  // Npr. "MODULE", "REGION", "CATEGORY", "CREDITS"
+  price       Float?   // Cijena funkcionalnosti (opcionalno, ako se naplaćuje odvojeno)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  ownerships CompanyFeatureOwnership[]
+
+  @@index([featureKey])
+  @@index([category])
+  @@index([isActive])
+}
+
+model CompanyFeatureOwnership {
+  id          String   @id @default(cuid())
+  user        User     @relation("UserFeatureOwnership", fields: [userId], references: [id], onDelete: Cascade)
+  userId      String   // ID direktora (direktor je vlasnik tvrtke)
+  feature     FeatureCatalog @relation(fields: [featureKey], references: [featureKey], onDelete: Cascade)
+  featureKey  String
+  grantedAt   DateTime @default(now())
+  grantedBy   String?  // ID admina koji je dodijelio (null = automatski kroz paket)
+  source      String?  // Npr. "PREMIUM_PLAN", "ADDON_REGION", "MANUAL_GRANT"
+  notes       String?
+
+  history     FeatureOwnershipHistory[]
+
+  @@unique([userId, featureKey]) // Jedna tvrtka može imati jednu funkcionalnost samo jednom
+  @@index([userId])
+  @@index([featureKey])
+  @@index([grantedAt])
+}
+
+model FeatureOwnershipHistory {
+  id          String   @id @default(cuid())
+  ownership   CompanyFeatureOwnership @relation(fields: [ownershipId], references: [id], onDelete: Cascade)
+  ownershipId String
+  action      String   // "GRANTED", "REVOKED", "RENEWED"
+  occurredAt  DateTime @default(now())
+  actor       String?  // ID korisnika/admina koji je izvršio akciju
+  reason      String?  // Razlog promjene
+  metadata    Json?    // Dodatni podaci (npr. planCode, addonId)
+
+  @@index([ownershipId])
+  @@index([occurredAt])
 }
 
 enum BillingPeriod {

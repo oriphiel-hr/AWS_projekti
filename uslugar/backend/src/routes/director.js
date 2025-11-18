@@ -9,6 +9,12 @@ import {
   declineCompanyLead
 } from '../services/company-lead-distribution.js';
 import { getDirectorBillingSummary } from '../services/billing-adjustment-service.js';
+import {
+  getOwnedFeatures,
+  checkOwnership,
+  determineDelta,
+  getAvailableFeatures
+} from '../services/feature-ownership-service.js';
 
 const r = Router();
 
@@ -616,6 +622,162 @@ r.post('/lead-queue/add', auth(true, ['PROVIDER']), async (req, res, next) => {
       success: true,
       message: 'Lead dodan u interni queue',
       queueEntry: result
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * GET /api/director/features/owned
+ * Vraća listu svih funkcionalnosti u vlasništvu tvrtke
+ */
+r.get('/features/owned', auth(true), async (req, res, next) => {
+  try {
+    const director = await getDirectorWithTeam(req.user.id);
+    if (!director) {
+      return res.status(403).json({
+        error: 'Nemate pristup',
+        message: 'Samo direktor može pristupiti ovom endpointu.'
+      });
+    }
+
+    const features = await getOwnedFeatures(director.user.id);
+    res.json({ success: true, features });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * POST /api/director/features/check
+ * Provjerava vlasništvo određenih funkcionalnosti
+ */
+r.post('/features/check', auth(true), async (req, res, next) => {
+  try {
+    const director = await getDirectorWithTeam(req.user.id);
+    if (!director) {
+      return res.status(403).json({
+        error: 'Nemate pristup',
+        message: 'Samo direktor može pristupiti ovom endpointu.'
+      });
+    }
+
+    const { featureKeys } = req.body;
+    if (!featureKeys || !Array.isArray(featureKeys)) {
+      return res.status(400).json({
+        error: 'featureKeys je obavezan i mora biti array'
+      });
+    }
+
+    const result = await checkOwnership(director.user.id, featureKeys);
+    res.json({ success: true, ...result });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * GET /api/director/features/available
+ * Vraća katalog svih dostupnih funkcionalnosti s owned statusom
+ */
+r.get('/features/available', auth(true), async (req, res, next) => {
+  try {
+    const director = await getDirectorWithTeam(req.user.id);
+    if (!director) {
+      return res.status(403).json({
+        error: 'Nemate pristup',
+        message: 'Samo direktor može pristupiti ovom endpointu.'
+      });
+    }
+
+    const features = await getAvailableFeatures(director.user.id);
+    res.json({ success: true, features });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * POST /api/director/plans/quote
+ * Izračunava doplatu za novi paket uzimajući u obzir već otkupljene funkcionalnosti
+ */
+r.post('/plans/quote', auth(true), async (req, res, next) => {
+  try {
+    const director = await getDirectorWithTeam(req.user.id);
+    if (!director) {
+      return res.status(403).json({
+        error: 'Nemate pristup',
+        message: 'Samo direktor može pristupiti ovom endpointu.'
+      });
+    }
+
+    const { planCode, requestedFeatures, featurePrices } = req.body;
+
+    if (!planCode && !requestedFeatures) {
+      return res.status(400).json({
+        error: 'planCode ili requestedFeatures je obavezan'
+      });
+    }
+
+    // Ako je planCode, dohvati feature-e iz plana
+    let featuresToCheck = requestedFeatures;
+    if (planCode && !requestedFeatures) {
+      const plan = await prisma.subscriptionPlan.findUnique({
+        where: { name: planCode }
+      });
+      if (!plan) {
+        return res.status(400).json({
+          error: 'Plan ne postoji'
+        });
+      }
+      // Pretpostavljamo da plan ima features array ili možemo koristiti planCode kao feature key
+      featuresToCheck = plan.features || [`PLAN_${planCode}`];
+    }
+
+    const delta = await determineDelta(director.user.id, featuresToCheck, featurePrices || {});
+
+    res.json({
+      success: true,
+      planCode: planCode || null,
+      requestedFeatures: featuresToCheck,
+      ...delta
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * POST /api/director/addons/quote
+ * Izračunava doplatu za novi add-on uzimajući u obzir već otkupljene funkcionalnosti
+ */
+r.post('/addons/quote', auth(true), async (req, res, next) => {
+  try {
+    const director = await getDirectorWithTeam(req.user.id);
+    if (!director) {
+      return res.status(403).json({
+        error: 'Nemate pristup',
+        message: 'Samo direktor može pristupiti ovom endpointu.'
+      });
+    }
+
+    const { addonType, addonScope, requestedFeatures, featurePrices } = req.body;
+
+    if (!requestedFeatures || !Array.isArray(requestedFeatures)) {
+      return res.status(400).json({
+        error: 'requestedFeatures je obavezan i mora biti array'
+      });
+    }
+
+    const delta = await determineDelta(director.user.id, requestedFeatures, featurePrices || {});
+
+    res.json({
+      success: true,
+      addonType,
+      addonScope,
+      requestedFeatures,
+      ...delta
     });
   } catch (e) {
     next(e);

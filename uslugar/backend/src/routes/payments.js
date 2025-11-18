@@ -4,6 +4,7 @@ import { Router } from 'express';
 import Stripe from 'stripe';
 import { prisma } from '../lib/prisma.js';
 import { auth } from '../lib/auth.js';
+import { determineDelta } from '../services/feature-ownership-service.js';
 import { sendPaymentConfirmationEmail } from '../lib/email.js';
 
 const r = Router();
@@ -64,6 +65,42 @@ r.post('/create-checkout', auth(true, ['PROVIDER']), async (req, res, next) => {
 
     if (!planDetails) {
       return res.status(400).json({ error: 'Invalid plan' });
+    }
+
+    // Automatska provjera postojećih funkcionalnosti (samo za direktore)
+    let adjustedPrice = planDetails.price;
+    let ownedFeatures = [];
+    let missingFeatures = [];
+    
+    try {
+      // Provjeri da li je korisnik direktor
+      const providerProfile = await prisma.providerProfile.findUnique({
+        where: { userId: req.user.id },
+        select: { isDirector: true }
+      });
+
+      if (providerProfile?.isDirector) {
+        // Dohvati feature-e iz plana (ako postoje)
+        const planFeatures = planDetails.features || [];
+        
+        if (planFeatures.length > 0) {
+          // Provjeri vlasništvo funkcionalnosti
+          const delta = await determineDelta(req.user.id, planFeatures, {});
+          ownedFeatures = delta.owned;
+          missingFeatures = delta.missing;
+          
+          // Ako korisnik već posjeduje sve funkcionalnosti, možemo prilagoditi cijenu
+          // (za sada samo logiramo, kasnije se može implementirati prilagodba cijene)
+          if (ownedFeatures.length > 0) {
+            console.log(`[CHECKOUT] Korisnik ${req.user.id} već posjeduje ${ownedFeatures.length} funkcionalnosti iz plana ${plan}`);
+            console.log(`[CHECKOUT] Owned features:`, ownedFeatures);
+            console.log(`[CHECKOUT] Missing features:`, missingFeatures);
+          }
+        }
+      }
+    } catch (error) {
+      // Ako provjera ne uspije, nastavi s normalnim checkout procesom
+      console.warn('[CHECKOUT] Greška pri provjeri vlasništva funkcionalnosti:', error.message);
     }
 
     // Log user info for debugging

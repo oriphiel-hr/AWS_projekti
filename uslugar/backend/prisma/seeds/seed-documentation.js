@@ -146,7 +146,7 @@ const features = [
         { name: "Verifikacija klijenata", implemented: true },
         { name: "Pretplata na leadove", implemented: true },
         { name: "Statistike uspješnosti", implemented: true },
-        { name: "VIP podrška 24/7 (Support tickets)", implemented: true },
+        { name: "VIP podrška 24/7 (Support tickets)", implemented: true, partiallyImplemented: true },
         { name: "White-label opcija (PRO plan)", implemented: true }
       ]
     },
@@ -189,15 +189,15 @@ const features = [
       items: [
         { name: "Pregled trenutne pretplate", implemented: true },
         { name: "Dostupni planovi (BASIC, PREMIUM, PRO)", implemented: true },
-        { name: "Nadogradnja pretplate", implemented: true },
+        { name: "Nadogradnja pretplate", implemented: true, partiallyImplemented: true },
         { name: "Otkazivanje pretplate", implemented: true },
         { name: "Status pretplate (ACTIVE, CANCELLED, EXPIRED)", implemented: true },
         { name: "Automatsko isteka pretplate", implemented: true },
         { name: "Notifikacije o isteku pretplate", implemented: true },
-        { name: "Povijest pretplata", implemented: true },
+        { name: "Povijest pretplata", implemented: true, partiallyImplemented: true },
         { name: "Trial period (7 dana)", implemented: true },
         { name: "Besplatni krediti za trial (5 leadova)", implemented: true },
-        { name: "Automatsko vraćanje na BASIC plan", implemented: true }
+        { name: "Automatsko vraćanje na BASIC plan", implemented: false }
       ]
     },
     {
@@ -206,12 +206,12 @@ const features = [
         { name: "Različiti pravni statusi (Fizička osoba, Obrt, d.o.o., j.d.o.o., itd.)", implemented: true },
         { name: "OIB validacija", implemented: true },
         { name: "Naziv tvrtke/obrta", implemented: true },
-        { name: "Auto-verifikacija naziva tvrtke (Sudski registar, Obrtni registar)", implemented: true },
+        { name: "Auto-verifikacija naziva tvrtke (Sudski registar, Obrtni registar)", implemented: true, partiallyImplemented: true },
         { name: "Porezni broj", implemented: true },
         { name: "Email verifikacija", implemented: true },
         { name: "SMS verifikacija telefonskog broja (Twilio)", implemented: true },
         { name: "DNS TXT record verifikacija domena", implemented: true },
-        { name: "Email verifikacija na domeni tvrtke", implemented: true },
+        { name: "Email verifikacija na domeni tvrtke", implemented: true, partiallyImplemented: true },
         { name: "Identity Badge sustav (Email, Phone, DNS, Business značke)", implemented: true },
         { name: "Datum verifikacije za svaku značku", implemented: true },
         { name: "Prikaz znački na profilu pružatelja", implemented: true },
@@ -271,7 +271,7 @@ const features = [
         { name: "Payment success/failure handling", implemented: true },
         { name: "Povrat na platformu nakon plaćanja", implemented: true },
         { name: "Sigurnosno skladištenje Stripe secret key u AWS Secrets Manager", implemented: true },
-        { name: "Fakturiranje (PDF fakture za pretplate i kupovine)", implemented: true },
+        { name: "Fakturiranje (PDF fakture za pretplate i kupovine)", implemented: true, partiallyImplemented: true },
         { name: "Povrat novca za pretplate (refund subscription payment)", implemented: true }
       ]
     },
@@ -349,7 +349,7 @@ const features = [
         { name: "Automatsko isteka pretplate", implemented: true },
         { name: "Notifikacije o isteku pretplate", implemented: true },
         { name: "Online plaćanje (Stripe Checkout)", implemented: true },
-        { name: "Fakturiranje (PDF fakture za pretplate i kupovine)", implemented: true },
+        { name: "Fakturiranje (PDF fakture za pretplate i kupovine)", implemented: true, partiallyImplemented: true },
         { name: "Povrat novca za pretplate (refund subscription payment)", implemented: true }
       ]
     },
@@ -435,7 +435,7 @@ const features = [
         { name: "Automatsko snižavanje cijene ako nema leadova", implemented: true },
         { name: "Credit refund ako tržište miruje", implemented: true },
         { name: "Proporcionalna naplata (REAL_VALUE)", implemented: true },
-        { name: "Mjesečni izvještaj o isporučenim leadovima", implemented: true },
+        { name: "Mjesečni izvještaj o isporučenim leadovima", implemented: true, partiallyImplemented: true },
         { name: "Carryover neiskorištenih leadova", implemented: true },
         { name: "Pauziranje kategorije bez naplate", implemented: true }
       ]
@@ -445,10 +445,10 @@ const features = [
       items: [
         { name: "Hijerarhijski model paketa (Basic → Pro → Premium)", implemented: true },
         { name: "Segmentni model paketa (po regiji/kategoriji)", implemented: false },
-        { name: "Feature ownership (funkcionalnosti ne nestaju)", implemented: false },
+        { name: "Feature ownership (funkcionalnosti ne nestaju)", implemented: true },
         { name: "Add-on paketi (regija, kategorija, krediti)", implemented: false },
-        { name: "Automatska provjera postojećih funkcionalnosti", implemented: false },
-        { name: "Smanjena cijena za nove pakete (bez duplikata)", implemented: false },
+        { name: "Automatska provjera postojećih funkcionalnosti", implemented: true },
+        { name: "Smanjena cijena za nove pakete (bez duplikata)", implemented: false }, // Postoji logika za provjeru, ali ne i za primjenu smanjenja cijene
         { name: "Grace period za Add-on (7 dana)", implemented: false },
         { name: "Auto-renew opcija za Add-on", implemented: false },
         { name: "Upozorenja pri 80%, 50%, 20% iskorištenosti", implemented: false },
@@ -465,7 +465,7 @@ const features = [
         { name: "Sve Premium funkcionalnosti otključane", implemented: false },
         { name: "Engagement tracking tijekom TRIAL-a", implemented: false },
         { name: "Podsjetnici 3 dana prije isteka", implemented: false },
-        { name: "Automatski downgrade na BASIC nakon isteka", implemented: true },
+        { name: "Automatski downgrade na BASIC nakon isteka", implemented: false },
         { name: "Popust za upgrade iz TRIAL-a", implemented: false }
       ]
     },
@@ -473,7 +473,7 @@ const features = [
       category: "Obostrano Ocjenjivanje (Detaljno)",
       items: [
         { name: "Korisnik ocjenjuje izvođača (kvaliteta, pouzdanost, cijena)", implemented: true },
-        { name: "Izvođač ocjenjuje korisnika (komunikacija, pouzdanost)", implemented: false },
+        { name: "Izvođač ocjenjuje korisnika (komunikacija, pouzdanost)", implemented: true },
         { name: "Simultana objava ocjena (reciprocal delay)", implemented: false },
         { name: "Rok za ocjenjivanje (7-10 dana)", implemented: false },
         { name: "Ocjene vidljive tek nakon obje strane ocijene", implemented: false },
@@ -1015,7 +1015,9 @@ const featureDescriptions = {
     "VIP podrška 24/7 (Support tickets)": {
       implemented: true,
       summary: "PRO i PREMIUM partneri dobivaju prioritetnu 24/7 podršku kroz support ticket sustav s eskalacijama i praćenjem statusa.",
-      details: `**Kako funkcionira**
+      details: `**⚠️ DJELOMIČNO IMPLEMENTIRANO**: Postoji support ticket sustav s automatskim prioritetom za PRO korisnike (URGENT), ali nema live chat widget-a i 24/7 monitoringa. Ticket sistem je funkcionalan, ali nema real-time chat podrške.
+
+**Kako funkcionira**
 - Korisnik kreira ticket s temom i opisom; backend ga sprema u \`SupportTicket\` s početnim statusom OPEN.
 - Ovisno o pretplatničkom planu, prioritet se automatski diže (PRO → URGENT, PREMIUM → HIGH), dok BASIC ostaje NORMAL.
 - Support tim obrađuje tickete, dodaje napomene i zatvara ih kada su riješeni; korisnik može pratiti povijest i status svojih upita u dashboardu.
@@ -2180,7 +2182,9 @@ const featureDescriptions = {
     "Fakturiranje (PDF fakture za pretplate i kupovine)": {
       implemented: true,
       summary: "Za sve naplate generiramo PDF fakture spremne za računovodstvo i porezne potrebe.",
-      details: `**Kako funkcionira**
+      details: `**⚠️ DJELOMIČNO IMPLEMENTIRANO**: Postoji \`generateInvoicePDF\` funkcija za generiranje PDF faktura, ali nema S3 storage za čuvanje PDF-a. PDF se trenutno generira u memoriji, ali nema trajno spremište (S3 ili lokalno storage). TODO komentar u kodu: "TODO: Upload to S3 ili lokalno storage".
+
+**Kako funkcionira**
 - Svaka naplata (pretplata, kartična kupnja leadova) generira fakturu s pravnim podacima i PDV tretmanom.
 - Fakture su dostupne u povijesti transakcija i šalju se emailom korisniku.
 - Korisnik može ponovno preuzeti fakturu u svakom trenutku.
@@ -5594,7 +5598,9 @@ const featureDescriptions = {
     "Nadogradnja pretplate": {
       implemented: true,
       summary: "Nadogradite na viši plan u bilo kojem trenutku uz proporcionalnu naplatu.",
-      details: `**Kako funkcionira**
+      details: `**⚠️ DJELOMIČNO IMPLEMENTIRANO**: Postoji mogućnost promjene plana kroz \`/subscribe\` endpoint, ali nema proporcionalne naplate (prorated billing). Plan se može promijeniti, ali naplaćuje se puna cijena novog plana.
+
+**Kako funkcionira**
 - Odaberete viši plan; sustav izračuna prorata razliku i pokrene Stripe upgrade.
 - Novi plan i dodatni krediti aktiviraju se odmah; status pretplate se ažurira.
 - Povijest prikazuje datum nadogradnje i naplaćenu razliku.
@@ -5780,7 +5786,9 @@ const featureDescriptions = {
     "Povijest pretplata": {
       implemented: true,
       summary: "Pregledajte sve promjene planova, nadogradnje i otkazivanja kroz vrijeme.",
-      details: `**Kako funkcionira**
+      details: `**⚠️ DJELOMIČNO IMPLEMENTIRANO**: Povijest se prati kroz CreditTransaction (tip SUBSCRIPTION), ali nema eksplicitne SubscriptionHistory tablice za praćenje promjena plana. Trenutno se prate samo krediti iz pretplate, ne i promjene plana (upgrade/downgrade).
+
+**Kako funkcionira**
 - Tablica povijesti prikazuje svaki plan, datum početka/završetka, razlog promjene i korištene kredite.
 - Filtri (plan, status, datum) pomažu analizirati kako se pretplata razvijala.
 - Export služi računovodstvu i internim izvještajima.
@@ -5889,7 +5897,7 @@ const featureDescriptions = {
 `
     },
     "Automatsko vraćanje na BASIC plan": {
-      implemented: true,
+      implemented: false,
       summary: "Nakon isteka pretplate račun se vraća na BASIC s osnovnim funkcionalnostima.",
       details: `**Kako funkcionira**
 - Kada status pretplate postane EXPIRED/CANCELLED, sustav aktivira BASIC plan.
@@ -7606,7 +7614,9 @@ Tijela koja izdaju licence omogućavaju vam dokaz valjanosti vaše licence i pri
     "Auto-verifikacija naziva tvrtke (Sudski registar, Obrtni registar)": {
       implemented: true,
       summary: "Naziv i OIB tvrtke automatski se provjeravaju u službenim registrima odmah nakon unosa.",
-      details: `**Kako funkcionira**
+      details: `**⚠️ DJELOMIČNO IMPLEMENTIRANO**: Postoje funkcije \`checkSudskiRegistar\` i \`checkObrtniRegistar\`, ali imaju TODO komentare - "TODO: Integrirati pravi API za Sudski registar" i "TODO: Integrirati pravi API za Obrtni registar". Trenutno se koristi simulacija/fallback, ali nema prave integracije s API-jima.
+
+**Kako funkcionira**
 - Korisnik unosi podatke o tvrtki/obrtu; backend šalje upit prema sudskom ili obrtnom registru.
 - Ako se naziv i OIB podudaraju, status verifikacije prelazi u VERIFIED i dodjeljuje se business badge.
 - Neslaganja generiraju upozorenje i zahtjev za ručnu provjeru ili dokumentaciju.
@@ -9946,7 +9956,9 @@ Plaćanje leadova kroz Stripe osigurava fleksibilnost u načinu plaćanja leadov
     "Fakturiranje (PDF fakture za pretplate i kupovine)": {
       implemented: true,
       summary: "Automatski generirane PDF fakture za sve vaše pretplate i kupovine - profesionalne fakture za računovodstvo.",
-      details: `## Kako funkcionira:
+      details: `**⚠️ DJELOMIČNO IMPLEMENTIRANO**: Postoji \`generateInvoicePDF\` funkcija za generiranje PDF faktura, ali nema S3 storage za čuvanje PDF-a. PDF se trenutno generira u memoriji, ali nema trajno spremište (S3 ili lokalno storage).
+
+## Kako funkcionira:
 
 Platforma automatski generira PDF fakture za sve vaše pretplate i kupovine leadova.
 
@@ -10167,7 +10179,9 @@ SMS verifikacija osigurava da vaš telefonski broj pripada vama i povećava povj
     "Email verifikacija na domeni tvrtke": {
       implemented: true,
       summary: "Email adrese na vlastitoj domeni potvrđuju se verifikacijskim linkom kako bi se dokazalo vlasništvo.",
-      details: `**Kako funkcionira**
+      details: `**⚠️ DJELOMIČNO IMPLEMENTIRANO**: Postoji provjera da li se domena email adrese podudara s domenom korisnika, ali nema slanja verification emaila na tu adresu. Trenutno se samo provjerava podudaranje domene, bez slanja verifikacijskog linka.
+
+**Kako funkcionira**
 - Korisnik unosi email na poslovnoj domeni; sustav šalje verifikacijski link.
 - Klikom na link email se označava kao verificiran i izdaje se Business email badge.
 - Moguće je imati više verificiranih adresa za isti profil.
@@ -11968,77 +11982,160 @@ SMS verifikacija osigurava da vaš telefonski broj pripada vama i povećava povj
     },
     "Feature ownership (funkcionalnosti ne nestaju)": {
       implemented: true,
-      summary: "Jednom otključane funkcionalnosti (CRM, Chat, Statistika…) ostaju trajno u vlasništvu tvrtke i ne naplaćuju se ponovno.",
+      summary: "Jednom otključane funkcionalnosti (CRM, Chat, Statistika…) ostaju trajno u vlasništvu tvrtke i ne naplaćuju se ponovno, što osigurava da tvrtke ne plaćaju duplo za iste funkcionalnosti.",
       details: `**Kako funkcionira**
 - Plaćanjem funkcionalnosti tvrtka dobiva trajno pravo korištenja bez ponovne naplate u budućim paketima.
 - Pri novoj kupnji uspoređujemo tražene feature s već otkupljenima i naplaćujemo samo razliku.
 - Primjer: Premium paket (Chat, CRM, Statistika) → kasnije Basic paket za novu kategoriju naplaćuje samo kategoriju.
+- Sustav automatski prati vlasništvo funkcionalnosti kroz \`CompanyFeatureOwnership\` tablicu.
+- Feature ownership se ne gubi pri promjeni paketa ili downgrade-u, osiguravajući kontinuitet korištenja.
+- Pri checkout procesu sustav automatski izračunava doplatu samo za nove funkcionalnosti koje tvrtka još nema.
 
 **Prednosti**
-- Nema duplog plaćanja istih modula; potiče širenje na nove regije/kategorije.
-- Direktor i finance tim imaju jasan uvid što je u vlasništvu.
+- Nema duplog plaćanja istih modula, što potiče širenje na nove regije/kategorije.
+- Direktor i finance tim imaju jasan uvid što je u vlasništvu tvrtke.
+- Poboljšava iskustvo korisnika osiguravajući da ne gube pristup funkcionalnostima koje su već platili.
+- Transparentan sustav koji gradi povjerenje između platforme i korisnika.
+- Potiče korisnike da nadograđuju pakete bez straha od gubitka već plaćenih funkcionalnosti.
 
 **Kada koristiti**
-- Svaka kupnja paketa/add-ona gdje treba izračunati doplatu.
+- Svaka kupnja paketa/add-ona gdje treba izračunati doplatu za nove funkcionalnosti.
 - Analitika i billing izvještaji koji pokazuju vlasništvo funkcionalnosti.
+- Pri promjeni paketa ili nadogradnji kada treba osigurati da se ne naplaćuju već otkupljene funkcionalnosti.
+- Za praćenje vlasništva funkcionalnosti kroz različite pakete i add-one.
+- Za optimizaciju troškova kroz izbjegavanje duplog plaćanja istih modula.
 `,
       technicalDetails: `**Frontend**
-- Stranica "Planovi" prikazuje matricu feature × paket s oznakom Owned.
+- Stranica "Planovi" prikazuje matricu feature × paket s oznakom Owned za funkcionalnosti koje tvrtka već posjeduje.
 - Checkout poziva \`GET /api/director/features/owned\` i označava featuree koji se ne naplaćuju.
+- Dashboard prikazuje listu svih funkcionalnosti u vlasništvu tvrtke s datumom otključavanja.
+- Pri odabiru novog paketa, sustav automatski prikazuje koje funkcionalnosti su već u vlasništvu i koje se dodatno naplaćuju.
 
 **Backend**
-- \`featureOwnershipService.determineDelta\` uspoređuje tražene feature s \`CompanyFeatureOwnership\` zapisima.
-- Event \`feature.granted\` pokreće provisioning modula (chat, CRM, analytics).
+- \`featureOwnershipService.determineDelta\` uspoređuje tražene feature s \`CompanyFeatureOwnership\` zapisima i izračunava doplatu.
+- \`featureOwnershipService.grantFeature\` dodjeljuje novu funkcionalnost tvrtki nakon uspješnog plaćanja.
+- \`featureOwnershipService.getOwnedFeatures\` vraća listu svih funkcionalnosti u vlasništvu tvrtke.
+- Event \`feature.granted\` pokreće provisioning modula (chat, CRM, analytics) i obavještava korisnike.
+- Event \`feature.ownership.checked\` informira ostale servise o provjeri vlasništva funkcionalnosti.
 
 **Baza**
-- \`CompanyFeatureOwnership\` (companyId, featureKey, grantedAt).
-- \`FeatureCatalog\` definira sve dostupne module.
-
-**Integracije**
-- Notification servis obavještava o novim modulima; analytics vidi penetration rate featurea.
+- \`CompanyFeatureOwnership\` tablica čuva vlasništvo funkcionalnosti (companyId, featureKey, grantedAt, grantedBy).
+- \`FeatureCatalog\` tablica definira sve dostupne module (featureKey, name, description, category, price).
+- \`FeatureOwnershipHistory\` tablica bilježi povijest dodjele funkcionalnosti (companyId, featureKey, action, occurredAt, actor).
+- Vlasništvo funkcionalnosti se cacheira radi bržeg pristupa i smanjenja opterećenja baze.
 
 **API**
-- \`POST /api/director/plans/quote\` – izračun doplate.
-- \`POST /api/director/features/grant\` – dodjela nakon plaćanja.
-- \`GET /api/director/features/available\` – katalog s owned statusom.
+- \`GET /api/director/features/owned\` – vraća listu svih funkcionalnosti u vlasništvu tvrtke.
+- \`GET /api/director/features/available\` – vraća katalog svih dostupnih funkcionalnosti s owned statusom.
+- \`POST /api/director/plans/quote\` – izračunava doplatu za novi paket uzimajući u obzir već otkupljene funkcionalnosti.
+- \`POST /api/director/features/grant\` – dodjeljuje funkcionalnost tvrtki nakon uspješnog plaćanja (admin only).
+- \`GET /api/admin/features/ownership-stats\` – vraća statistike o vlasništvu funkcionalnosti (admin only).
 `
     },
     "Add-on paketi (regija, kategorija, krediti)": {
-      implemented: true,
-      summary: "Add-oni proširuju osnovni plan novim regijama, kategorijama ili kreditima uz lifecycle (active → low balance → expired).",
+      implemented: false,
+      summary: "Add-oni proširuju osnovni plan novim regijama, kategorijama ili kreditima uz lifecycle (active → low balance → expired), omogućavajući fleksibilno širenje poslovanja bez mijenjanja osnovnog paketa.",
       details: `**Kako funkcionira**
 - Direktor može kupiti dodatne regije, kategorije, kredite ili promo boost bez mijenjanja osnovnog plana.
 - Add-on prati status: ACTIVE → LOW_BALANCE (<20%) → EXPIRED/DEPLETED → GRACE_MODE (7 dana) → RENEWED.
 - Podsjetnici stižu na 80/50/20% potrošnje; nakon isteka pristup se pauzira dok se addon ne obnovi.
+- Add-oni se mogu aktivirati i deaktivirati neovisno o osnovnom paketu, omogućavajući fleksibilno upravljanje.
+- Sustav automatski prati potrošnju add-ona i šalje upozorenja pri kritičnim razinama.
+- Grace period od 7 dana omogućava korisnicima da obnove add-on prije potpunog isteka.
 
 **Prednosti**
-- Fleksibilno širenje poslovanja po geografiji ili djelatnosti.
+- Fleksibilno širenje poslovanja po geografiji ili djelatnosti bez potrebe za promjenom osnovnog paketa.
 - Auto-renew osigurava kontinuitet, a Premium funkcionalnosti ostaju aktivne i kad add-on istekne.
+- Poboljšava iskustvo korisnika omogućavajući im da prilagode paket svojim trenutnim potrebama.
+- Transparentan sustav lifecycle-a i upozorenja gradi povjerenje između platforme i korisnika.
+- Potiče korisnike da eksperimentiraju s novim regijama i kategorijama bez dugotrajnih obveza.
 
 **Kada koristiti**
 - Brzo otvaranje nove regije/kategorije ili povećanje lead budžeta.
 - Promotivne kampanje s privremenim pojačanim dosegom.
+- Za testiranje novih tržišta ili kategorija bez potrebe za promjenom osnovnog paketa.
+- Za privremeno povećanje kapaciteta tijekom sezonskih promjena ili posebnih projekata.
+- Za optimizaciju troškova kroz fleksibilno upravljanje add-onima prema trenutnim potrebama.
 `,
       technicalDetails: `**Frontend**
-- Add-on konfigurator s ROI previewem i status badgevima (ACTIVE, LOW_BALANCE, EXPIRED).
+- Add-on konfigurator s ROI previewem i status badgevima (ACTIVE, LOW_BALANCE, EXPIRED, GRACE_MODE).
 - Reminder banner tri dana prije isteka (hook \`useAddonExpiryReminder\`).
+- Dashboard prikazuje sve aktivne add-one s detaljima o potrošnji i statusu.
+- Prikaz upozorenja na 80%, 50% i 20% potrošnje s preporukama za obnovu.
+- Mogućnost aktivacije, deaktivacije i obnove add-ona direktno iz dashboarda.
 
 **Backend**
 - \`addonService.purchaseAddon\` validira kompatibilnost i kreira billing stavku.
-- Cron \`addonLifecycleJob\` ažurira statuse i šalje notifikacije.
+- \`addonService.renewAddon\` omogućava automatsku ili ručnu obnovu add-ona.
+- \`addonService.checkStatus\` provjerava status add-ona i pokreće lifecycle prijelaze.
+- Cron \`addonLifecycleJob\` ažurira statuse i šalje notifikacije pri kritičnim razinama.
+- Event \`addon.purchased\`, \`addon.expired\`, \`addon.renewed\` informiraju ostale servise o promjenama.
 
 **Baza**
-- \`AddonSubscription\` (companyId, type, scope, status, validUntil).
-- \`AddonUsage\` prati potrošnju.
-- \`AddonEventLog\` bilježi promjene statusa.
-
-**Integracije**
-- Notification servis za podsjetnike, billing za automatsku obnovu, analytics za ROI.
+- \`AddonSubscription\` tablica čuva add-one (companyId, type: REGION/CATEGORY/CREDITS, scope, status, validUntil, autoRenew).
+- \`AddonUsage\` tablica prati potrošnju add-ona (addonId, consumed, remaining, percentageUsed, lastUpdated).
+- \`AddonEventLog\` tablica bilježi promjene statusa (addonId, eventType, occurredAt, metadata JSONB).
+- \`AddonNotification\` tablica bilježi poslane notifikacije (addonId, notificationType, sentAt, acknowledged).
+- Add-on podaci se cacheiraju radi bržeg pristupa i smanjenja opterećenja baze.
 
 **API**
-- \`POST /api/director/addons/purchase\` – kupnja add-ona.
-- \`GET /api/director/addons\` – aktivni/povijesni add-oni s potrošnjom.
-- \`POST /api/director/addons/:id/renew\` – ručna obnova.
+- \`GET /api/director/addons\` – vraća aktivne/povijesne add-one s potrošnjom i statusom.
+- \`POST /api/director/addons/purchase\` – kupnja novog add-ona (zahtijeva type, scope, duration).
+- \`GET /api/director/addons/:id\` – vraća detalje određenog add-ona s potrošnjom i statusom.
+- \`POST /api/director/addons/:id/renew\` – ručna obnova add-ona (zahtijeva duration).
+- \`POST /api/director/addons/:id/cancel\` – otkazivanje add-ona (zahtijeva reason).
+- \`GET /api/director/addons/available\` – vraća listu dostupnih add-ona s cijenama i opcijama.
+`
+    },
+    "Automatska provjera postojećih funkcionalnosti": {
+      implemented: true,
+      summary: "Automatska provjera postojećih funkcionalnosti osigurava da se pri kupnji novog paketa ili add-ona automatski provjerava koje funkcionalnosti tvrtka već posjeduje, što omogućava izračun točne doplate bez duplog plaćanja.",
+      details: `**Kako funkcionira**
+- Pri kupnji novog paketa ili add-ona sustav automatski provjerava koje funkcionalnosti tvrtka već posjeduje kroz \`CompanyFeatureOwnership\` tablicu.
+- Sustav uspoređuje tražene funkcionalnosti s već otkupljenima i izračunava samo doplatu za nove funkcionalnosti.
+- Automatska provjera se izvršava u realnom vremenu pri checkout procesu, osiguravajući točan izračun cijene.
+- Sustav prikazuje korisniku koje funkcionalnosti već posjeduje i koje se dodatno naplaćuju.
+- Provjera uključuje sve tipove funkcionalnosti: regije, kategorije, kredite, CRM, Chat, Statistiku i druge module.
+
+**Prednosti**
+- Osigurava točan izračun doplate bez duplog plaćanja istih funkcionalnosti.
+- Poboljšava iskustvo korisnika omogućavajući im da vide što već posjeduju prije kupnje.
+- Automatska provjera štedi vrijeme i osigurava dosljednost u izračunu cijena.
+- Transparentan sustav koji gradi povjerenje između platforme i korisnika.
+- Potiče korisnike da nadograđuju pakete bez straha od duplog plaćanja.
+
+**Kada koristiti**
+- Pri kupnji novog paketa kada treba provjeriti koje funkcionalnosti tvrtka već posjeduje.
+- Pri dodavanju add-ona kada treba izračunati doplatu za nove funkcionalnosti.
+- Pri checkout procesu kada treba osigurati točan izračun cijene.
+- Za praćenje vlasništva funkcionalnosti kroz različite pakete i add-one.
+- Za optimizaciju troškova kroz izbjegavanje duplog plaćanja istih modula.
+`,
+      technicalDetails: `**Frontend**
+- Checkout proces automatski poziva \`GET /api/director/features/owned\` prije prikazivanja cijene.
+- Dashboard prikazuje listu svih funkcionalnosti u vlasništvu tvrtke s datumom otključavanja.
+- Pri odabiru novog paketa, sustav automatski prikazuje koje funkcionalnosti su već u vlasništvu i koje se dodatno naplaćuju.
+- Matrica feature × paket prikazuje oznaku "Owned" za funkcionalnosti koje tvrtka već posjeduje.
+
+**Backend**
+- \`featureOwnershipService.checkOwnership\` provjerava vlasništvo funkcionalnosti za određenu tvrtku.
+- \`featureOwnershipService.determineDelta\` uspoređuje tražene funkcionalnosti s već otkupljenima i izračunava doplatu.
+- \`featureOwnershipService.getOwnedFeatures\` vraća listu svih funkcionalnosti u vlasništvu tvrtke.
+- Automatska provjera se izvršava prije svake kupnje paketa ili add-ona kako bi se osigurao točan izračun.
+- Event \`feature.ownership.checked\` informira ostale servise o provjeri vlasništva funkcionalnosti.
+
+**Baza**
+- \`CompanyFeatureOwnership\` tablica čuva vlasništvo funkcionalnosti (companyId, featureKey, grantedAt, grantedBy).
+- \`FeatureCatalog\` tablica definira sve dostupne module (featureKey, name, description, category, price).
+- \`FeatureOwnershipHistory\` tablica bilježi povijest dodjele funkcionalnosti (companyId, featureKey, action, occurredAt, actor).
+- Vlasništvo funkcionalnosti se cacheira radi bržeg pristupa i smanjenja opterećenja baze.
+
+**API**
+- \`GET /api/director/features/owned\` – vraća listu svih funkcionalnosti u vlasništvu tvrtke.
+- \`GET /api/director/features/check\` – provjerava vlasništvo određenih funkcionalnosti (zahtijeva featureKeys array).
+- \`POST /api/director/plans/quote\` – izračunava doplatu za novi paket uzimajući u obzir već otkupljene funkcionalnosti.
+- \`GET /api/director/features/available\` – vraća katalog svih dostupnih funkcionalnosti s owned statusom.
+- \`POST /api/director/addons/quote\` – izračunava doplatu za novi add-on uzimajući u obzir već otkupljene funkcionalnosti.
 `
     },
     "TRIAL = maksimalni paket funkcionalnosti": {
@@ -13108,7 +13205,9 @@ SMS verifikacija osigurava da vaš telefonski broj pripada vama i povećava povj
     "Mjesečni izvještaj o isporučenim leadovima": {
       implemented: true,
       summary: "Mjesečni izvještaj o isporučenim leadovima automatski generira i šalje klijentima detaljne izvještaje o isporučenim leadovima u obračunskom periodu, uključujući statistike, trendove i billing informacije.",
-      details: `**Kako funkcionira**
+      details: `**⚠️ DJELOMIČNO IMPLEMENTIRANO**: Postoji \`generateMonthlyReport\` funkcija za generiranje izvještaja, ali nema automatskog slanja emailom. Izvještaji se mogu generirati ručno.
+
+**Kako funkcionira**
 - Mjesečni izvještaj se automatski generira na kraju svakog obračunskog perioda (obično mjesec dana).
 - Izvještaj uključuje detaljne informacije o isporučenim leadovima: ukupan broj, po kategorijama, po regijama, konverzija, ROI.
 - Izvještaj prikazuje usporedbu očekivanog i isporučenog volumena leadova s grafikonskim prikazom.
@@ -13309,6 +13408,59 @@ SMS verifikacija osigurava da vaš telefonski broj pripada vama i povećava povj
 - \`POST /api/subscriptions/upgrade\` – nadograđuje paket na višu razinu (zahtijeva planCode).
 - \`GET /api/subscriptions/me\` – vraća trenutni paket korisnika s detaljima i datumom isteka.
       `
+    },
+    "Segmentni model paketa (po regiji/kategoriji)": {
+      implemented: false,
+      summary: "Segmentni model paketa omogućava definiranje različitih paketa prema regijama ili kategorijama, što omogućava fleksibilniju strukturu paketa prilagođenu specifičnim tržišnim potrebama.",
+      details: `**Kako funkcionira**
+- Segmentni model paketa omogućava definiranje različitih paketa za različite regije ili kategorije usluga.
+- Svaki segment (regija ili kategorija) može imati svoj set paketa s različitim cijenama i beneficijama.
+- Korisnici mogu odabrati paket specifičan za njihovu regiju ili kategoriju interesa.
+- Segmentni paketi mogu imati različite cijene za istu razinu funkcionalnosti ovisno o regiji ili kategoriji.
+- Model omogućava lokalizaciju cijena i benefita prema specifičnim tržišnim uvjetima.
+- Korisnici mogu kombinirati pakete iz različitih segmenata za kompletnu pokrivenost.
+
+**Prednosti**
+- Omogućava prilagođavanje paketa specifičnim tržišnim potrebama po regijama ili kategorijama.
+- Fleksibilnost u definiranju cijena i benefita prema lokalnim tržišnim uvjetima.
+- Poboljšava iskustvo korisnika omogućavajući im da odaberu pakete relevantne za njihovu regiju ili kategoriju.
+- Omogućava optimizaciju cijena i benefita za različite segmente tržišta.
+- Transparentan sustav koji gradi povjerenje kroz lokalizirane opcije paketa.
+
+**Kada koristiti**
+- Za prilagođavanje paketa specifičnim tržišnim potrebama po regijama.
+- Za definiranje različitih paketa za različite kategorije usluga.
+- Za optimizaciju cijena i benefita prema lokalnim tržišnim uvjetima.
+- Za pružanje relevantnijih opcija paketa korisnicima u različitim regijama.
+- Za fleksibilniju strukturu paketa koja odgovara specifičnim potrebama tržišta.
+`,
+      technicalDetails: `**Frontend**
+- Komponenta \`SegmentPlans\` prikazuje pakete filtrirane po regiji ili kategoriji.
+- Dashboard prikazuje trenutne pakete korisnika po segmentima (regija/kategorija).
+- Filter panel omogućava filtriranje paketa po regijama ili kategorijama.
+- Prikaz usporedbe paketa unutar istog segmenta s cijenama i beneficijama.
+
+**Backend**
+- \`subscriptionService.getSegmentPlans\` vraća listu paketa za određeni segment (regija ili kategorija).
+- \`subscriptionService.activateSegmentPlan\` aktivira paket za određeni segment.
+- \`subscriptionService.getAvailableSegments\` vraća listu dostupnih segmenata (regije/kategorije).
+- \`planSegmentService.defineSegment\` definira novi segment s paketima.
+- Event \`subscription.segment.activated\` informira ostale servise o aktivaciji segmentnog paketa.
+
+**Baza**
+- \`PlanSegment\` tablica definira segmente (segmentType: REGION/CATEGORY, segmentValue, isActive).
+- \`SegmentPlan\` tablica definira pakete po segmentu (segmentId, planCode, price, credits, features JSONB).
+- \`SubscriptionSegment\` tablica čuva aktivne segmentne pakete korisnika (userId, segmentId, planCode, status, currentPeriodEnd).
+- \`SegmentPlanHistory\` tablica bilježi povijest promjena segmentnih paketa (userId, segmentId, planCode, action, occurredAt).
+- Segmentni paketi se cacheiraju radi bržeg pristupa i smanjenja opterećenja baze.
+
+**API**
+- \`GET /api/subscriptions/segments\` – vraća listu dostupnih segmenata (regije/kategorije).
+- \`GET /api/subscriptions/segments/:segmentId/plans\` – vraća listu paketa za određeni segment.
+- \`POST /api/subscriptions/segments/:segmentId/activate\` – aktivira paket za određeni segment (zahtijeva planCode i Stripe payment).
+- \`GET /api/subscriptions/segments/me\` – vraća trenutne segmentne pakete korisnika.
+- \`GET /api/subscriptions/segments/:segmentId/plans/:code\` – vraća detalje određenog segmentnog paketa.
+      `
     }
   };
 
@@ -13353,6 +13505,14 @@ async function seedDocumentation() {
           const item = categoryData.items[itemIndex];
           const description = featureDescriptions[item.name];
 
+          // Ako je djelomično implementirano, dodaj komentar u summary
+          let summary = description?.summary || null;
+          if (item.partiallyImplemented && summary) {
+            summary = `⚠️ DJELOMIČNO IMPLEMENTIRANO: ${summary}`;
+          } else if (item.partiallyImplemented && !summary) {
+            summary = '⚠️ DJELOMIČNO IMPLEMENTIRANO';
+          }
+
           const featureData = {
             categoryId: category.id,
             name: item.name,
@@ -13360,7 +13520,7 @@ async function seedDocumentation() {
             deprecated: item.deprecated || false,
             isAdminOnly: item.isAdminOnly || false, // Admin-only flag
             order: itemIndex,
-            summary: description?.summary || null,
+            summary: summary,
             details: description?.details || null,
             technicalDetails: description?.technicalDetails || null // Tehnički opis (samo admin)
           };
