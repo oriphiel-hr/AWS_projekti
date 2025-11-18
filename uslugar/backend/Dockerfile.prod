@@ -19,8 +19,16 @@ COPY prisma ./prisma
 # Ako tvoj schema.ts referencira codegen iz src/, odkomentiraj sljedeću liniju:
 # COPY src ./src
 
-# 3) generate
-RUN npx prisma generate
+# 3) generate s retry logikom (Prisma CDN može biti privremeno nedostupan)
+# Retry do 3 puta s povećanjem vremena između pokušaja (5s, 10s, 15s)
+RUN set -e; \
+    for i in 1 2 3; do \
+        echo "Attempt $i/3: Generating Prisma Client..." && \
+        npx prisma generate && \
+        echo "Prisma Client generated successfully!" && exit 0 || \
+        (echo "Attempt $i/3 failed. Waiting before retry..." && sleep $((i * 5))); \
+    done; \
+    echo "ERROR: All 3 attempts failed. This might be a temporary Prisma CDN issue." && exit 1
 # --------------------------------------------------------------------------------------
 
 # ------------------------------- RUNTIME (production) --------------------------------
