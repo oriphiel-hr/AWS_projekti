@@ -45,20 +45,20 @@ enum ReportStatus {
 }
 
 enum AuditActionType {
-  MESSAGE_CREATED      // Poruka kreirana
-  MESSAGE_EDITED       // Poruka uređena
-  MESSAGE_DELETED      // Poruka obrisana
-  ATTACHMENT_UPLOADED  // Privitak uploadan
-  ATTACHMENT_DELETED   // Privitak obrisan
-  CONTACT_REVEALED     // Kontakt otkriven
-  CONTACT_MASKED       // Kontakt maskiran
-  ROOM_CREATED         // Chat room kreiran
-  ROOM_DELETED         // Chat room obrisan
+  MESSAGE_CREATED // Poruka kreirana
+  MESSAGE_EDITED // Poruka uređena
+  MESSAGE_DELETED // Poruka obrisana
+  ATTACHMENT_UPLOADED // Privitak uploadan
+  ATTACHMENT_DELETED // Privitak obrisan
+  CONTACT_REVEALED // Kontakt otkriven
+  CONTACT_MASKED // Kontakt maskiran
+  ROOM_CREATED // Chat room kreiran
+  ROOM_DELETED // Chat room obrisan
 }
 
 enum SLASStatus {
-  PENDING  // Čeka odgovor
-  MET      // SLA ispunjen (odgovoreno unutar vremena)
+  PENDING // Čeka odgovor
+  MET // SLA ispunjen (odgovoreno unutar vremena)
   BREACHED // SLA prekoračen (nije odgovoreno unutar vremena)
 }
 
@@ -135,33 +135,33 @@ model User {
   updatedAt                 DateTime     @updatedAt
 
   providerProfile    ProviderProfile?
-  jobs               Job[]               @relation("UserJobs")
-  assignedJobs       Job[]               @relation("AssignedJobs")
+  jobs               Job[]                     @relation("UserJobs")
+  assignedJobs       Job[]                     @relation("AssignedJobs")
   offers             Offer[]
-  reviewsGiven       Review[]            @relation("reviewsGiven")
-  reviewsReceived    Review[]            @relation("reviewsReceived")
+  reviewsGiven       Review[]                  @relation("reviewsGiven")
+  reviewsReceived    Review[]                  @relation("reviewsReceived")
   notifications      Notification[]
-  chatMessages       ChatMessage[]       @relation("senderMessages")
-  chatRooms          ChatRoom[]          @relation("participants")
-  messageVersions    MessageVersion[]    @relation("messageVersions")
+  chatMessages       ChatMessage[]             @relation("senderMessages")
+  chatRooms          ChatRoom[]                @relation("participants")
+  messageVersions    MessageVersion[]          @relation("messageVersions")
   leadPurchases      LeadPurchase[]
-  chatbotSessions    ChatbotSession[]    @relation("ChatbotSessions")
+  chatbotSessions    ChatbotSession[]          @relation("ChatbotSessions")
   providerROI        ProviderROI?
   creditTransactions CreditTransaction[]
   clientVerification ClientVerification?
   subscriptions      Subscription[]
-  trialEngagement   TrialEngagement?
+  trialEngagement    TrialEngagement?
   invoices           Invoice[]
-  supportTickets     SupportTicket[]     @relation("UserSupportTickets")
-  whiteLabel         WhiteLabel?         @relation("UserWhiteLabel")
-  smsLogs            SmsLog[]            @relation("UserSmsLogs")
-  pushSubscriptions  PushSubscription[]  @relation("UserPushSubscriptions")
-  auditLogs          AuditLog[]          @relation("UserAuditLogs")
+  supportTickets     SupportTicket[]           @relation("UserSupportTickets")
+  whiteLabel         WhiteLabel?               @relation("UserWhiteLabel")
+  smsLogs            SmsLog[]                  @relation("UserSmsLogs")
+  pushSubscriptions  PushSubscription[]        @relation("UserPushSubscriptions")
+  auditLogs          AuditLog[]                @relation("UserAuditLogs")
   billingPlans       BillingPlan[]
   billingAdjustments BillingAdjustment[]
   featureOwnership   CompanyFeatureOwnership[] @relation("UserFeatureOwnership")
-  lockedThreads      ChatRoom[]          @relation("LockedThreads") // Threadovi koje je korisnik zaključao
-  addonSubscriptions  AddonSubscription[] // Add-on paketi korisnika
+  lockedThreads      ChatRoom[]                @relation("LockedThreads") // Threadovi koje je korisnik zaključao
+  addonSubscriptions AddonSubscription[] // Add-on paketi korisnika
 
   // Testing runs authored by this user (admin)
   testRuns TestRun[] @relation("TestRunAuthor")
@@ -241,13 +241,13 @@ model ProviderProfile {
   teamLocations ProviderTeamLocation[]
 
   // DIRECTOR & TEAM MANAGEMENT
-  isDirector Boolean @default(false) // Da li je direktor/administrator profila tvrtke
-  companyId  String? // ID tvrtke (ako je član tima, povezuje se s direktorom)
-  company    ProviderProfile? @relation("CompanyMembers", fields: [companyId], references: [id], onDelete: SetNull)
+  isDirector  Boolean           @default(false) // Da li je direktor/administrator profila tvrtke
+  companyId   String? // ID tvrtke (ako je član tima, povezuje se s direktorom)
+  company     ProviderProfile?  @relation("CompanyMembers", fields: [companyId], references: [id], onDelete: SetNull)
   teamMembers ProviderProfile[] @relation("CompanyMembers") // Članovi tima (ako je direktor)
-  
+
   // INTERNA DISTRIBUCIJA LEADOVA
-  directorLeads CompanyLeadQueue[] @relation("DirectorLeads") // Leadovi koje je direktor primio
+  directorLeads   CompanyLeadQueue[] @relation("DirectorLeads") // Leadovi koje je direktor primio
   teamMemberLeads CompanyLeadQueue[] @relation("TeamMemberLeads") // Leadovi dodijeljeni tim članu
 }
 
@@ -289,17 +289,17 @@ model ProviderTeamLocation {
 }
 
 model Category {
-  id          String            @id @default(cuid())
-  name        String            @unique
-  description String?
-  parentId    String? // Za hijerarhijske kategorije
-  parent      Category?         @relation("CategoryHierarchy", fields: [parentId], references: [id])
-  children    Category[]        @relation("CategoryHierarchy")
-  providers   ProviderProfile[] @relation("ProviderCategories")
-  billingPlans BillingPlan[]
-  subscriptionPlans SubscriptionPlan[] // Segmentni paketi po kategoriji
+  id                 String              @id @default(cuid())
+  name               String              @unique
+  description        String?
+  parentId           String? // Za hijerarhijske kategorije
+  parent             Category?           @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children           Category[]          @relation("CategoryHierarchy")
+  providers          ProviderProfile[]   @relation("ProviderCategories")
+  billingPlans       BillingPlan[]
+  subscriptionPlans  SubscriptionPlan[] // Segmentni paketi po kategoriji
   addonSubscriptions AddonSubscription[] // Add-on paketi po kategoriji
-  jobs        Job[]
+  jobs               Job[]
 
   // USLUGAR EXCLUSIVE - NKD i licence
   nkdCode          String? // NKD kod djelatnosti (npr. "43.21" za električne instalacije)
@@ -355,8 +355,8 @@ model Job {
   companyLeadQueue      CompanyLeadQueue[]  @relation("CompanyJobQueue")
   notifications         Notification[]
   reviews               Review[] // Recenzije ostavljene na ovom job-u
-  auditLogs             AuditLog[]         @relation("JobAuditLogs") // Audit logovi za otkrivanje kontakata
-  chatbotSessions       ChatbotSession[]   @relation("ChatbotJob")
+  auditLogs             AuditLog[]          @relation("JobAuditLogs") // Audit logovi za otkrivanje kontakata
+  chatbotSessions       ChatbotSession[]    @relation("ChatbotJob")
 
   // MODERATION
   moderationStatus          ModerationStatus @default(PENDING) // Status moderacije
@@ -404,14 +404,14 @@ model Review {
   createdAt  DateTime @default(now())
 
   // RECIPROCAL DELAY - Simultana objava ocjena
-  isPublished   Boolean   @default(false) // Da li je review objavljen (vidljiv javno)
-  publishedAt   DateTime? // Kada je review objavljen
+  isPublished    Boolean   @default(false) // Da li je review objavljen (vidljiv javno)
+  publishedAt    DateTime? // Kada je review objavljen
   reviewDeadline DateTime? // Rok za ocjenjivanje (7-10 dana od završetka posla)
 
   // REPLY - Odgovor na recenziju (1x dozvoljen)
-  replyText     String? // Tekst odgovora na recenziju
-  repliedAt     DateTime? // Kada je odgovor poslan
-  hasReplied    Boolean   @default(false) // Da li je već odgovoreno (sprječava višestruke odgovore)
+  replyText  String? // Tekst odgovora na recenziju
+  repliedAt  DateTime? // Kada je odgovor poslan
+  hasReplied Boolean   @default(false) // Da li je već odgovoreno (sprječava višestruke odgovore)
 
   // MODERATION
   moderationStatus          ModerationStatus @default(PENDING) // Status moderacije
@@ -421,14 +421,14 @@ model Review {
   moderationNotes           String? // Bilješke moderatora
 
   // REPORT - Prijava lažnih ocjena
-  isReported                Boolean   @default(false) // Da li je recenzija prijavljena kao lažna
-  reportedBy                String? // ID korisnika koji je prijavio
-  reportedAt                DateTime? // Kada je prijavljeno
-  reportReason              String? // Razlog prijave (npr. "Lažna ocjena", "Neprikladan sadržaj", "Osveta")
-  reportStatus              ReportStatus? // Status prijave (PENDING, REVIEWED, DISMISSED, ACCEPTED)
-  reportReviewedBy          String? // ID admina koji je pregledao prijavu
-  reportReviewedAt          DateTime? // Kada je prijava pregledana
-  reportReviewNotes         String? // Bilješke admina o prijavi
+  isReported        Boolean       @default(false) // Da li je recenzija prijavljena kao lažna
+  reportedBy        String? // ID korisnika koji je prijavio
+  reportedAt        DateTime? // Kada je prijavljeno
+  reportReason      String? // Razlog prijave (npr. "Lažna ocjena", "Neprikladan sadržaj", "Osveta")
+  reportStatus      ReportStatus? // Status prijave (PENDING, REVIEWED, DISMISSED, ACCEPTED)
+  reportReviewedBy  String? // ID admina koji je pregledao prijavu
+  reportReviewedAt  DateTime? // Kada je prijava pregledana
+  reportReviewNotes String? // Bilješke admina o prijavi
 
   @@unique([jobId, fromUserId]) // Jedna recenzija po job-u od svake strane
   @@index([jobId])
@@ -509,24 +509,24 @@ model ChatRoom {
   jobId        String?
   participants User[]        @relation("participants")
   messages     ChatMessage[]
-  auditLogs    AuditLog[]    // Audit logovi za ovaj room
-  slaTrackings MessageSLA[]  // SLA tracking za poruke u ovom roomu
-  
+  auditLogs    AuditLog[] // Audit logovi za ovaj room
+  slaTrackings MessageSLA[] // SLA tracking za poruke u ovom roomu
+
   // THREAD LOCKING
-  isLocked     Boolean       @default(false) // Da li je thread zaključan (read-only)
-  lockedAt     DateTime?     // Kada je thread zaključan
-  lockedReason String?        // Razlog zaključavanja (JOB_COMPLETED, INACTIVITY, MANUAL)
-  unlockedUntil DateTime?     // Privremeno otključan do (null = trajno zaključan)
-  lastActivityAt DateTime?    // Zadnja aktivnost u threadu (za automatsko zaključavanje)
-  lockedBy     User?         @relation("LockedThreads", fields: [lockedById], references: [id], onDelete: SetNull)
-  lockedById   String?       // ID korisnika koji je zaključao thread (null = automatski)
-  
+  isLocked       Boolean   @default(false) // Da li je thread zaključan (read-only)
+  lockedAt       DateTime? // Kada je thread zaključan
+  lockedReason   String? // Razlog zaključavanja (JOB_COMPLETED, INACTIVITY, MANUAL)
+  unlockedUntil  DateTime? // Privremeno otključan do (null = trajno zaključan)
+  lastActivityAt DateTime? // Zadnja aktivnost u threadu (za automatsko zaključavanje)
+  lockedBy       User?     @relation("LockedThreads", fields: [lockedById], references: [id], onDelete: SetNull)
+  lockedById     String? // ID korisnika koji je zaključao thread (null = automatski)
+
   // CHAT-BOT
-  isBotRoom    Boolean       @default(false) // Da li je ovo chat-bot soba
-  
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  
+  isBotRoom Boolean @default(false) // Da li je ovo chat-bot soba
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([isLocked])
   @@index([lastActivityAt])
 }
@@ -546,10 +546,10 @@ model ChatMessage {
 
   // VERSIONING
   versions    MessageVersion[] // Povijest verzija poruke
-  isEdited   Boolean         @default(false) // Da li je poruka ikad uređena
-  editedAt   DateTime? // Kada je poruka zadnji put uređena
-  auditLogs  AuditLog[]     // Audit logovi za ovu poruku
-  slaTracking MessageSLA?    // SLA tracking za ovu poruku
+  isEdited    Boolean          @default(false) // Da li je poruka ikad uređena
+  editedAt    DateTime? // Kada je poruka zadnji put uređena
+  auditLogs   AuditLog[] // Audit logovi za ovu poruku
+  slaTracking MessageSLA? // SLA tracking za ovu poruku
 
   // MODERATION (samo za poruke koje su prijavljene)
   moderationStatus          ModerationStatus? // Status moderacije (null = nije prijavljeno)
@@ -559,9 +559,9 @@ model ChatMessage {
   moderationReviewedAt      DateTime? // Kada je pregledano
   moderationRejectionReason String? // Razlog odbijanja (ako je odbijen)
   moderationNotes           String? // Bilješke moderatora
-  
+
   // CHAT-BOT
-  isBotMessage Boolean   @default(false) // Da li je ovo bot poruka
+  isBotMessage Boolean @default(false) // Da li je ovo bot poruka
   botAction    String? // Akcija bot poruke (SHOW_CONTACT_INFO, OPEN_CHAT, itd.)
 
   @@index([roomId, createdAt])
@@ -589,20 +589,20 @@ model MessageVersion {
 
 // Audit Log za sve akcije vezane uz poruke
 model AuditLog {
-  id          String          @id @default(cuid())
-  action      AuditActionType // Tip akcije
-  actor       User            @relation("UserAuditLogs", fields: [actorId], references: [id], onDelete: Cascade)
-  actorId     String          // ID korisnika koji je izvršio akciju
-  message     ChatMessage?    @relation(fields: [messageId], references: [id], onDelete: Cascade)
-  messageId   String?         // ID poruke (ako je akcija vezana uz poruku)
-  room        ChatRoom?       @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  roomId      String?         // ID chat rooma (ako je akcija vezana uz room)
-  job         Job?            @relation("JobAuditLogs", fields: [jobId], references: [id], onDelete: Cascade)
-  jobId       String?         // ID posla (za otkrivanje kontakata)
-  metadata    Json?           // Dodatni podaci (npr. stara/nova verzija, razlog, itd.)
-  ipAddress   String?         // IP adresa korisnika
-  userAgent   String?         // User agent korisnika
-  createdAt   DateTime        @default(now())
+  id        String          @id @default(cuid())
+  action    AuditActionType // Tip akcije
+  actor     User            @relation("UserAuditLogs", fields: [actorId], references: [id], onDelete: Cascade)
+  actorId   String // ID korisnika koji je izvršio akciju
+  message   ChatMessage?    @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  messageId String? // ID poruke (ako je akcija vezana uz poruku)
+  room      ChatRoom?       @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  roomId    String? // ID chat rooma (ako je akcija vezana uz room)
+  job       Job?            @relation("JobAuditLogs", fields: [jobId], references: [id], onDelete: Cascade)
+  jobId     String? // ID posla (za otkrivanje kontakata)
+  metadata  Json? // Dodatni podaci (npr. stara/nova verzija, razlog, itd.)
+  ipAddress String? // IP adresa korisnika
+  userAgent String? // User agent korisnika
+  createdAt DateTime        @default(now())
 
   @@index([actorId, createdAt])
   @@index([messageId, createdAt])
@@ -628,8 +628,8 @@ model Subscription {
   createdAt              DateTime           @default(now())
   updatedAt              DateTime           @updatedAt
 
-  invoices         Invoice[]
-  trialEngagement  TrialEngagement?
+  invoices        Invoice[]
+  trialEngagement TrialEngagement?
 
   @@index([userId])
   @@index([status])
@@ -637,25 +637,25 @@ model Subscription {
 
 // Engagement tracking tijekom TRIAL-a
 model TrialEngagement {
-  id                    String       @id @default(cuid())
-  user                  User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId                String       @unique // Jedan engagement zapis po korisniku
-  subscription          Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
-  subscriptionId        String       @unique // Veza na TRIAL subscription
-  
+  id             String       @id @default(cuid())
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         String       @unique // Jedan engagement zapis po korisniku
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  subscriptionId String       @unique // Veza na TRIAL subscription
+
   // Engagement metrike
-  leadsPurchased        Int          @default(0) // Broj kupljenih leadova tijekom TRIAL-a
-  leadsConverted        Int          @default(0) // Broj konvertiranih leadova (uspešno završeni poslovi)
-  offersSent            Int          @default(0) // Broj poslanih ponuda
-  chatMessagesSent      Int          @default(0) // Broj poslanih chat poruka
-  loginsCount           Int          @default(0) // Broj login-a tijekom TRIAL-a
-  lastLoginAt           DateTime?    // Zadnji login
-  totalTimeSpentMinutes Int          @default(0) // Ukupno vrijeme provedeno na platformi (u minutama)
-  lastActivityAt        DateTime?    // Zadnja aktivnost
-  
+  leadsPurchased        Int       @default(0) // Broj kupljenih leadova tijekom TRIAL-a
+  leadsConverted        Int       @default(0) // Broj konvertiranih leadova (uspešno završeni poslovi)
+  offersSent            Int       @default(0) // Broj poslanih ponuda
+  chatMessagesSent      Int       @default(0) // Broj poslanih chat poruka
+  loginsCount           Int       @default(0) // Broj login-a tijekom TRIAL-a
+  lastLoginAt           DateTime? // Zadnji login
+  totalTimeSpentMinutes Int       @default(0) // Ukupno vrijeme provedeno na platformi (u minutama)
+  lastActivityAt        DateTime? // Zadnja aktivnost
+
   // Metapodaci
-  createdAt             DateTime     @default(now())
-  updatedAt             DateTime     @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId])
   @@index([subscriptionId])
@@ -665,51 +665,51 @@ model TrialEngagement {
 // Add-on paketi - proširenje osnovnog plana s regijama, kategorijama ili kreditima
 // Lifecycle: ACTIVE → LOW_BALANCE → EXPIRED/DEPLETED → GRACE_MODE → RENEWED
 model AddonSubscription {
-  id          String      @id @default(cuid())
-  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId      String      // ID direktora (direktor je vlasnik tvrtke)
-  
-  type        AddonType   // REGION, CATEGORY, CREDITS
-  scope       String      // Vrijednost: regija (npr. "Zagreb"), categoryId, ili broj kredita
-  displayName String      // Ljudski čitljiv naziv (npr. "Dalmacija Add-on", "Građevina Add-on", "50 Extra Credits")
-  
+  id     String @id @default(cuid())
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String // ID direktora (direktor je vlasnik tvrtke)
+
+  type        AddonType // REGION, CATEGORY, CREDITS
+  scope       String // Vrijednost: regija (npr. "Zagreb"), categoryId, ili broj kredita
+  displayName String // Ljudski čitljiv naziv (npr. "Dalmacija Add-on", "Građevina Add-on", "50 Extra Credits")
+
   // Za REGION i CATEGORY add-one
-  category    Category?   @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  categoryId  String?     // Ako je type CATEGORY, ovo je categoryId
-  
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  categoryId String? // Ako je type CATEGORY, ovo je categoryId
+
   // Za CREDITS add-one
-  creditsAmount Int?      // Broj kredita ako je type CREDITS
-  
+  creditsAmount Int? // Broj kredita ako je type CREDITS
+
   // Status i lifecycle
-  status      AddonStatus @default(ACTIVE)
-  autoRenew   Boolean     @default(false) // Automatska obnova nakon isteka
-  
+  status    AddonStatus @default(ACTIVE)
+  autoRenew Boolean     @default(false) // Automatska obnova nakon isteka
+
   // Vremenski periodi
-  validFrom   DateTime    @default(now())
-  validUntil  DateTime    // Datum isteka
-  graceUntil  DateTime?   // Kraj grace perioda (7 dana nakon validUntil)
-  
+  validFrom  DateTime  @default(now())
+  validUntil DateTime // Datum isteka
+  graceUntil DateTime? // Kraj grace perioda (7 dana nakon validUntil)
+
   // Cijena i naplata
-  price       Float       // Cijena u EUR
-  currency    String      @default("EUR")
-  
+  price    Float // Cijena u EUR
+  currency String @default("EUR")
+
   // Stripe povezanost
   stripeSubscriptionId String? // Stripe Subscription ID za auto-renew
-  stripePriceId       String? // Stripe Price ID
-  
+  stripePriceId        String? // Stripe Price ID
+
   // Metapodaci
-  notes       String?
-  cancelledAt DateTime?   // Kada je otkazan
+  notes           String?
+  cancelledAt     DateTime? // Kada je otkazan
   cancelledReason String? // Razlog otkazivanja
-  
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   // Relacije
-  usage       AddonUsage?
-  eventLogs   AddonEventLog[]
-  invoices    Invoice[]    @relation("AddonInvoices")
-  
+  usage     AddonUsage?
+  eventLogs AddonEventLog[]
+  invoices  Invoice[]       @relation("AddonInvoices")
+
   @@unique([userId, type, scope]) // Jedan korisnik može imati jedan add-on po tipu i scope-u
   @@index([userId])
   @@index([type])
@@ -720,46 +720,46 @@ model AddonSubscription {
 
 // Praćenje potrošnje Add-on paketa
 model AddonUsage {
-  id              String            @id @default(cuid())
-  addon           AddonSubscription @relation(fields: [addonId], references: [id], onDelete: Cascade)
-  addonId         String            @unique // Jedan usage zapis po add-onu
-  
+  id      String            @id @default(cuid())
+  addon   AddonSubscription @relation(fields: [addonId], references: [id], onDelete: Cascade)
+  addonId String            @unique // Jedan usage zapis po add-onu
+
   // Za CREDITS add-one
-  consumed        Int               @default(0) // Potrošeno kredita
-  remaining       Int               // Preostalo kredita
-  percentageUsed  Float             @default(0.0) // Postotak potrošnje (0-100)
-  
+  consumed       Int   @default(0) // Potrošeno kredita
+  remaining      Int // Preostalo kredita
+  percentageUsed Float @default(0.0) // Postotak potrošnje (0-100)
+
   // Za REGION i CATEGORY add-one (broj leadova)
-  leadsReceived   Int               @default(0) // Broj leadova primljenih kroz ovaj add-on
-  leadsConverted  Int               @default(0) // Broj konvertiranih leadova
-  
+  leadsReceived  Int @default(0) // Broj leadova primljenih kroz ovaj add-on
+  leadsConverted Int @default(0) // Broj konvertiranih leadova
+
   // Notifikacije
-  notifiedAt80    DateTime?         // Kada je poslana notifikacija na 80%
-  notifiedAt50    DateTime?         // Kada je poslana notifikacija na 50%
-  notifiedAt20    DateTime?         // Kada je poslana notifikacija na 20%
-  notifiedExpiring DateTime?         // Kada je poslana notifikacija o isteku (3 dana prije)
-  
-  lastUpdated     DateTime           @default(now())
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
-  
+  notifiedAt80     DateTime? // Kada je poslana notifikacija na 80%
+  notifiedAt50     DateTime? // Kada je poslana notifikacija na 50%
+  notifiedAt20     DateTime? // Kada je poslana notifikacija na 20%
+  notifiedExpiring DateTime? // Kada je poslana notifikacija o isteku (3 dana prije)
+
+  lastUpdated DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
   @@index([addonId])
   @@index([percentageUsed])
 }
 
 // Event log za Add-on pakete (povijest promjena statusa)
 model AddonEventLog {
-  id          String            @id @default(cuid())
-  addon       AddonSubscription @relation(fields: [addonId], references: [id], onDelete: Cascade)
-  addonId     String
-  
-  eventType   String            // "PURCHASED", "RENEWED", "EXPIRED", "DEPLETED", "LOW_BALANCE", "GRACE_STARTED", "CANCELLED"
-  oldStatus   AddonStatus?      // Prethodni status
-  newStatus   AddonStatus?      // Novi status
-  metadata    Json?             // Dodatni podaci (npr. consumed, remaining, reason)
-  
-  occurredAt  DateTime          @default(now())
-  
+  id      String            @id @default(cuid())
+  addon   AddonSubscription @relation(fields: [addonId], references: [id], onDelete: Cascade)
+  addonId String
+
+  eventType String // "PURCHASED", "RENEWED", "EXPIRED", "DEPLETED", "LOW_BALANCE", "GRACE_STARTED", "CANCELLED"
+  oldStatus AddonStatus? // Prethodni status
+  newStatus AddonStatus? // Novi status
+  metadata  Json? // Dodatni podaci (npr. consumed, remaining, reason)
+
+  occurredAt DateTime @default(now())
+
   @@index([addonId])
   @@index([eventType])
   @@index([occurredAt])
@@ -780,14 +780,14 @@ model SubscriptionPlan {
   isActive     Boolean  @default(true) // Da li je plan aktivan
   description  String? // Opis plana
   savings      String? // Tekst uštede (npr. "Ušteda 161€ vs pay-per-lead")
-  
+
   // SEGMENTNI MODEL PAKETA - Segmentacija po regiji/kategoriji
-  category     Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  categoryId   String? // Kategorija za koju je paket specifičan (null = sve kategorije)
-  region       String? // Regija/grad za koju je paket specifičan (npr. "Zagreb", "Dalmacija", "Istra") - null = sve regije
-  
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  categoryId String? // Kategorija za koju je paket specifičan (null = sve kategorije)
+  region     String? // Regija/grad za koju je paket specifičan (npr. "Zagreb", "Dalmacija", "Istra") - null = sve regije
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([name, categoryId, region]) // Jedinstvena kombinacija name + category + region
   @@index([isActive])
@@ -811,9 +811,9 @@ model Invoice {
   totalAmount   Int // Ukupno (amount + taxAmount)
 
   // Povezano sa transakcijama
-  subscription   Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  subscription   Subscription?      @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
   subscriptionId String?
-  leadPurchase   LeadPurchase? @relation(fields: [leadPurchaseId], references: [id], onDelete: SetNull)
+  leadPurchase   LeadPurchase?      @relation(fields: [leadPurchaseId], references: [id], onDelete: SetNull)
   leadPurchaseId String?
   addon          AddonSubscription? @relation("AddonInvoices", fields: [addonId], references: [id], onDelete: SetNull)
   addonId        String?
@@ -896,30 +896,30 @@ model LeadPurchase {
 
 /// Billing plan definiran po korisniku, kategoriji i/ili regiji, s očekivanim volumenom leadova po periodu
 model BillingPlan {
-  id                  String        @id @default(cuid())
-  user                User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId              String
-  name                String        // Npr. "Građevina Zagreb - Basic"
-  category            Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  categoryId          String?
-  region              String?       // Npr. grad ili regija (Zagreb, Dalmacija...)
-  expectedLeads       Int           // Očekivani broj leadova po periodu
-  period              BillingPeriod @default(MONTHLY) // Obračunski period
-  isActive            Boolean       @default(true)
-  isPaused            Boolean       @default(false) // Ako je true, plan je pauziran i ne naplaćuje se
+  id            String        @id @default(cuid())
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String
+  name          String // Npr. "Građevina Zagreb - Basic"
+  category      Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  categoryId    String?
+  region        String? // Npr. grad ili regija (Zagreb, Dalmacija...)
+  expectedLeads Int // Očekivani broj leadova po periodu
+  period        BillingPeriod @default(MONTHLY) // Obračunski period
+  isActive      Boolean       @default(true)
+  isPaused      Boolean       @default(false) // Ako je true, plan je pauziran i ne naplaćuje se
 
   // Garancija minimalnog broja leadova
-  guaranteeEnabled    Boolean       @default(false) // Je li uključen guarantee za ovaj plan
-  guaranteedMinLeads  Int?                      // Ako je null, koristi expectedLeads kao garantirani minimum
+  guaranteeEnabled   Boolean @default(false) // Je li uključen guarantee za ovaj plan
+  guaranteedMinLeads Int? // Ako je null, koristi expectedLeads kao garantirani minimum
 
   // Carryover neiskorištenih leadova
-  carryoverEnabled    Boolean       @default(false) // Je li uključen carryover za ovaj plan
-  carryoverLeads      Int           @default(0)     // Neiskorišteni leadovi preneseni u sljedeći period
+  carryoverEnabled Boolean @default(false) // Je li uključen carryover za ovaj plan
+  carryoverLeads   Int     @default(0) // Neiskorišteni leadovi preneseni u sljedeći period
 
-  createdAt           DateTime      @default(now())
-  updatedAt           DateTime      @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  adjustments   BillingAdjustment[]
+  adjustments BillingAdjustment[]
 
   @@index([userId])
   @@index([categoryId])
@@ -929,22 +929,22 @@ model BillingPlan {
 
 /// Korekcija billing-a na temelju usporedbe očekivanog i isporučenog volumena leadova
 model BillingAdjustment {
-  id             String                 @id @default(cuid())
-  billingPlan    BillingPlan            @relation(fields: [billingPlanId], references: [id], onDelete: Cascade)
-  billingPlanId  String
-  user           User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId         String
-  periodStart    DateTime
-  periodEnd      DateTime
-  expectedLeads  Int
-  deliveredLeads Int
-  realValueFactor Float?                // deliveredLeads / expectedLeads (proporcionalna naplata REAL_VALUE)
-  adjustmentType BillingAdjustmentType
-  adjustmentCredits Int                 // Pozitivno: broj kredita za korekciju (bilo da su kredit ili surcharge)
-  status         BillingAdjustmentStatus @default(PENDING)
-  notes          String?
-  createdAt      DateTime               @default(now())
-  appliedAt      DateTime?
+  id                String                  @id @default(cuid())
+  billingPlan       BillingPlan             @relation(fields: [billingPlanId], references: [id], onDelete: Cascade)
+  billingPlanId     String
+  user              User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId            String
+  periodStart       DateTime
+  periodEnd         DateTime
+  expectedLeads     Int
+  deliveredLeads    Int
+  realValueFactor   Float? // deliveredLeads / expectedLeads (proporcionalna naplata REAL_VALUE)
+  adjustmentType    BillingAdjustmentType
+  adjustmentCredits Int // Pozitivno: broj kredita za korekciju (bilo da su kredit ili surcharge)
+  status            BillingAdjustmentStatus @default(PENDING)
+  notes             String?
+  createdAt         DateTime                @default(now())
+  appliedAt         DateTime?
 
   @@index([userId])
   @@index([billingPlanId])
@@ -956,10 +956,10 @@ model BillingAdjustment {
 model FeatureCatalog {
   id          String   @id @default(cuid())
   featureKey  String   @unique // Npr. "CRM", "CHAT", "STATISTICS", "REGION_ZAGREB", "CATEGORY_GRADEVINA"
-  name        String   // Ljudski čitljiv naziv
+  name        String // Ljudski čitljiv naziv
   description String?
-  category    String?  // Npr. "MODULE", "REGION", "CATEGORY", "CREDITS"
-  price       Float?   // Cijena funkcionalnosti (opcionalno, ako se naplaćuje odvojeno)
+  category    String? // Npr. "MODULE", "REGION", "CATEGORY", "CREDITS"
+  price       Float? // Cijena funkcionalnosti (opcionalno, ako se naplaćuje odvojeno)
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -972,17 +972,17 @@ model FeatureCatalog {
 }
 
 model CompanyFeatureOwnership {
-  id          String   @id @default(cuid())
-  user        User     @relation("UserFeatureOwnership", fields: [userId], references: [id], onDelete: Cascade)
-  userId      String   // ID direktora (direktor je vlasnik tvrtke)
-  feature     FeatureCatalog @relation(fields: [featureKey], references: [featureKey], onDelete: Cascade)
-  featureKey  String
-  grantedAt   DateTime @default(now())
-  grantedBy   String?  // ID admina koji je dodijelio (null = automatski kroz paket)
-  source      String?  // Npr. "PREMIUM_PLAN", "ADDON_REGION", "MANUAL_GRANT"
-  notes       String?
+  id         String         @id @default(cuid())
+  user       User           @relation("UserFeatureOwnership", fields: [userId], references: [id], onDelete: Cascade)
+  userId     String // ID direktora (direktor je vlasnik tvrtke)
+  feature    FeatureCatalog @relation(fields: [featureKey], references: [featureKey], onDelete: Cascade)
+  featureKey String
+  grantedAt  DateTime       @default(now())
+  grantedBy  String? // ID admina koji je dodijelio (null = automatski kroz paket)
+  source     String? // Npr. "PREMIUM_PLAN", "ADDON_REGION", "MANUAL_GRANT"
+  notes      String?
 
-  history     FeatureOwnershipHistory[]
+  history FeatureOwnershipHistory[]
 
   @@unique([userId, featureKey]) // Jedna tvrtka može imati jednu funkcionalnost samo jednom
   @@index([userId])
@@ -991,14 +991,14 @@ model CompanyFeatureOwnership {
 }
 
 model FeatureOwnershipHistory {
-  id          String   @id @default(cuid())
+  id          String                  @id @default(cuid())
   ownership   CompanyFeatureOwnership @relation(fields: [ownershipId], references: [id], onDelete: Cascade)
   ownershipId String
-  action      String   // "GRANTED", "REVOKED", "RENEWED"
-  occurredAt  DateTime @default(now())
-  actor       String?  // ID korisnika/admina koji je izvršio akciju
-  reason      String?  // Razlog promjene
-  metadata    Json?    // Dodatni podaci (npr. planCode, addonId)
+  action      String // "GRANTED", "REVOKED", "RENEWED"
+  occurredAt  DateTime                @default(now())
+  actor       String? // ID korisnika/admina koji je izvršio akciju
+  reason      String? // Razlog promjene
+  metadata    Json? // Dodatni podaci (npr. planCode, addonId)
 
   @@index([ownershipId])
   @@index([occurredAt])
@@ -1010,9 +1010,9 @@ enum BillingPeriod {
 }
 
 enum BillingAdjustmentType {
-  CREDIT     // Klijentu se odobravaju dodatni krediti / popust
-  SURCHARGE  // Dodatna naplata zbog većeg volumena od očekivanog
-  NONE       // Bez korekcije (zapis za transparentnost)
+  CREDIT // Klijentu se odobravaju dodatni krediti / popust
+  SURCHARGE // Dodatna naplata zbog većeg volumena od očekivanog
+  NONE // Bez korekcije (zapis za transparentnost)
 }
 
 enum BillingAdjustmentStatus {
@@ -1121,22 +1121,22 @@ model LeadQueue {
 
 // Interni queue leadova unutar tvrtke (direktor → tim članovi)
 model CompanyLeadQueue {
-  id          String                @id @default(cuid())
-  job         Job                   @relation("CompanyJobQueue", fields: [jobId], references: [id], onDelete: Cascade)
-  jobId       String
-  director    ProviderProfile       @relation("DirectorLeads", fields: [directorId], references: [id], onDelete: Cascade)
-  directorId  String // Direktor tvrtke koji je primio lead
-  assignedTo  ProviderProfile?      @relation("TeamMemberLeads", fields: [assignedToId], references: [id], onDelete: SetNull)
-  assignedToId String? // Tim član kojem je dodijeljen (null = čeka dodjelu)
-  position    Int // Pozicija u internom queueu (1, 2, 3...)
-  status      CompanyLeadQueueStatus @default(PENDING) // PENDING, ASSIGNED, IN_PROGRESS, COMPLETED, DECLINED
+  id             String                     @id @default(cuid())
+  job            Job                        @relation("CompanyJobQueue", fields: [jobId], references: [id], onDelete: Cascade)
+  jobId          String
+  director       ProviderProfile            @relation("DirectorLeads", fields: [directorId], references: [id], onDelete: Cascade)
+  directorId     String // Direktor tvrtke koji je primio lead
+  assignedTo     ProviderProfile?           @relation("TeamMemberLeads", fields: [assignedToId], references: [id], onDelete: SetNull)
+  assignedToId   String? // Tim član kojem je dodijeljen (null = čeka dodjelu)
+  position       Int // Pozicija u internom queueu (1, 2, 3...)
+  status         CompanyLeadQueueStatus     @default(PENDING) // PENDING, ASSIGNED, IN_PROGRESS, COMPLETED, DECLINED
   assignmentType CompanyLeadAssignmentType? // MANUAL, AUTO
-  assignedAt  DateTime? // Kada je dodijeljen
-  startedAt   DateTime? // Kada je tim član počeo raditi
-  completedAt DateTime? // Kada je završen
-  notes       String? // Bilješke direktora
-  createdAt   DateTime              @default(now())
-  updatedAt   DateTime              @updatedAt
+  assignedAt     DateTime? // Kada je dodijeljen
+  startedAt      DateTime? // Kada je tim član počeo raditi
+  completedAt    DateTime? // Kada je završen
+  notes          String? // Bilješke direktora
+  createdAt      DateTime                   @default(now())
+  updatedAt      DateTime                   @updatedAt
 
   @@unique([jobId, directorId]) // Jedan lead može biti samo jednom u queue tvrtke
   @@index([directorId, status])
@@ -1225,24 +1225,24 @@ enum SubscriptionStatus {
 
 // Add-on paketi - proširenje osnovnog plana
 enum AddonType {
-  REGION    // Add-on za dodatnu regiju
-  CATEGORY  // Add-on za dodatnu kategoriju
-  CREDITS   // Add-on za dodatne kredite
+  REGION // Add-on za dodatnu regiju
+  CATEGORY // Add-on za dodatnu kategoriju
+  CREDITS // Add-on za dodatne kredite
 }
 
 enum AddonStatus {
-  ACTIVE      // Aktivni add-on
+  ACTIVE // Aktivni add-on
   LOW_BALANCE // Niska potrošnja (<20% preostalo)
-  EXPIRED     // Istekao (vrijeme)
-  DEPLETED    // Potrošen (krediti)
-  GRACE_MODE  // Grace period (7 dana nakon isteka)
-  CANCELLED   // Otkazan od strane korisnika
+  EXPIRED // Istekao (vrijeme)
+  DEPLETED // Potrošen (krediti)
+  GRACE_MODE // Grace period (7 dana nakon isteka)
+  CANCELLED // Otkazan od strane korisnika
 }
 
 enum InvoiceType {
   SUBSCRIPTION // Faktura za pretplatu
   LEAD_PURCHASE // Faktura za kupovinu leada
-  ADDON        // Faktura za add-on paket
+  ADDON // Faktura za add-on paket
 }
 
 enum InvoiceStatus {
@@ -1365,18 +1365,18 @@ model DocumentationCategory {
 }
 
 model DocumentationFeature {
-  id              String   @id @default(cuid())
-  categoryId      String
-  name            String // "Registracija korisnika usluge"
-  summary         String? // Kratak opis
-  details         String? // Detaljni opis (markdown)
+  id               String   @id @default(cuid())
+  categoryId       String
+  name             String // "Registracija korisnika usluge"
+  summary          String? // Kratak opis
+  details          String? // Detaljni opis (markdown)
   technicalDetails String? // Tehnički opis (frontend, backend, baza, API poziv) - samo admin
-  implemented     Boolean  @default(true)
-  deprecated      Boolean  @default(false)
-  isAdminOnly     Boolean  @default(false) // Samo za admin dokumentaciju
-  order           Int      @default(0) // Redoslijed unutar kategorije
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  implemented      Boolean  @default(true)
+  deprecated       Boolean  @default(false)
+  isAdminOnly      Boolean  @default(false) // Samo za admin dokumentaciju
+  order            Int      @default(0) // Redoslijed unutar kategorije
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   category DocumentationCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
@@ -1389,17 +1389,17 @@ model DocumentationFeature {
 
 // SMS Log - Pregled svih poslanih SMS-ova (admin)
 model SmsLog {
-  id          String   @id @default(cuid())
-  phone       String   // Broj telefona (format: +385XXXXXXXXX)
-  message     String   // Sadržaj poruke
-  type        String   // Tip poruke: VERIFICATION, LEAD_NOTIFICATION, REFUND, URGENT, OTHER
-  status      String   // Status: SUCCESS, FAILED, PENDING
-  mode        String   // Mode: twilio, simulation, twilio_error
-  twilioSid   String?  // Twilio SID (ako je poslano preko Twilio)
-  error       String?  // Error poruka (ako je neuspješno)
-  userId      String?  // ID korisnika (ako je vezano za korisnika)
-  metadata    Json?    // Dodatni podaci (npr. leadId, jobId, itd.)
-  createdAt   DateTime @default(now())
+  id        String   @id @default(cuid())
+  phone     String // Broj telefona (format: +385XXXXXXXXX)
+  message   String // Sadržaj poruke
+  type      String // Tip poruke: VERIFICATION, LEAD_NOTIFICATION, REFUND, URGENT, OTHER
+  status    String // Status: SUCCESS, FAILED, PENDING
+  mode      String // Mode: twilio, simulation, twilio_error
+  twilioSid String? // Twilio SID (ako je poslano preko Twilio)
+  error     String? // Error poruka (ako je neuspješno)
+  userId    String? // ID korisnika (ako je vezano za korisnika)
+  metadata  Json? // Dodatni podaci (npr. leadId, jobId, itd.)
+  createdAt DateTime @default(now())
 
   user User? @relation("UserSmsLogs", fields: [userId], references: [id], onDelete: SetNull)
 
@@ -1412,23 +1412,23 @@ model SmsLog {
 
 // Push Notification Subscription - Browser push notifications
 model PushSubscription {
-  id          String   @id @default(cuid())
-  user        User     @relation("UserPushSubscriptions", fields: [userId], references: [id], onDelete: Cascade)
-  userId      String
-  
+  id     String @id @default(cuid())
+  user   User   @relation("UserPushSubscriptions", fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+
   // Web Push API subscription data
-  endpoint    String   // Push service endpoint URL
-  p256dh      String   // User public key (base64)
-  auth        String   // Authentication secret (base64)
-  
+  endpoint String // Push service endpoint URL
+  p256dh   String // User public key (base64)
+  auth     String // Authentication secret (base64)
+
   // Metadata
-  userAgent   String?  // Browser user agent
-  isActive    Boolean  @default(true) // Subscription aktivna
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  lastUsedAt  DateTime? // Kada je zadnji put korištena za slanje
-  
+  userAgent String? // Browser user agent
+  isActive  Boolean @default(true) // Subscription aktivna
+
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  lastUsedAt DateTime? // Kada je zadnji put korištena za slanje
+
   @@unique([userId, endpoint]) // Jedan korisnik može imati više uređaja
   @@index([userId])
   @@index([isActive])
@@ -1436,22 +1436,22 @@ model PushSubscription {
 }
 
 model MessageSLA {
-  id              String      @id @default(cuid())
-  message         ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
-  messageId       String      @unique // Jedan SLA tracking po poruci
-  room            ChatRoom    @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  roomId          String
-  expectedResponseMinutes Int  @default(240) // SLA: 4 sata (240 minuta) default
-  respondedAt     DateTime?   // Kada je odgovoreno (null = nije odgovoreno)
-  responseTimeMinutes Int?     // Vrijeme odgovora u minutama (izračunato kada se odgovori)
-  slaStatus       SLASStatus  @default(PENDING) // PENDING, MET, BREACHED
-  breachedAt      DateTime?   // Kada je SLA prekoračen
-  reminderSentAt  DateTime?   // Kada je poslana podsjetnica
-  reminderCount   Int         @default(0) // Broj poslanih podsjetnica
-  lastReminderAt  DateTime?   // Kada je poslana zadnja podsjetnica
-  
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  id                      String      @id @default(cuid())
+  message                 ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  messageId               String      @unique // Jedan SLA tracking po poruci
+  room                    ChatRoom    @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  roomId                  String
+  expectedResponseMinutes Int         @default(240) // SLA: 4 sata (240 minuta) default
+  respondedAt             DateTime? // Kada je odgovoreno (null = nije odgovoreno)
+  responseTimeMinutes     Int? // Vrijeme odgovora u minutama (izračunato kada se odgovori)
+  slaStatus               SLASStatus  @default(PENDING) // PENDING, MET, BREACHED
+  breachedAt              DateTime? // Kada je SLA prekoračen
+  reminderSentAt          DateTime? // Kada je poslana podsjetnica
+  reminderCount           Int         @default(0) // Broj poslanih podsjetnica
+  lastReminderAt          DateTime? // Kada je poslana zadnja podsjetnica
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([roomId, slaStatus])
   @@index([slaStatus, createdAt])
@@ -1460,21 +1460,21 @@ model MessageSLA {
 
 // Chat-bot Session - Vodi korisnika kroz prvi lead
 model ChatbotSession {
-  id              String   @id @default(cuid())
-  provider        User     @relation("ChatbotSessions", fields: [providerId], references: [id], onDelete: Cascade)
+  id              String    @id @default(cuid())
+  provider        User      @relation("ChatbotSessions", fields: [providerId], references: [id], onDelete: Cascade)
   providerId      String
-  job             Job?     @relation("ChatbotJob", fields: [jobId], references: [id], onDelete: SetNull)
+  job             Job?      @relation("ChatbotJob", fields: [jobId], references: [id], onDelete: SetNull)
   jobId           String?
-  currentStep     Int      @default(1) // Trenutni korak u wizardu (1-5)
-  status          String   @default("ACTIVE") // ACTIVE, COMPLETED, CANCELLED
+  currentStep     Int       @default(1) // Trenutni korak u wizardu (1-5)
+  status          String    @default("ACTIVE") // ACTIVE, COMPLETED, CANCELLED
   lastTrigger     String? // Zadnji trigger (LEAD_PURCHASED, CONTACT_CLIENT, itd.)
   lastTriggeredAt DateTime? // Kada je zadnji put triggeran
-  startedAt       DateTime @default(now())
+  startedAt       DateTime  @default(now())
   completedAt     DateTime?
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([providerId, status])
   @@index([status])
 }
