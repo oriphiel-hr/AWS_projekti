@@ -888,6 +888,15 @@ export async function checkAndDowngradeExpiredSubscriptions() {
   try {
     const now = new Date();
     
+    // Prvo provjeri i pošalji email-ove za istekle TRIAL pretplate (prije downgrade-a)
+    try {
+      const { checkExpiredTrials } = await import('../lib/subscription-reminder.js');
+      await checkExpiredTrials();
+    } catch (trialEmailError) {
+      console.error('[SUBSCRIPTION] Error checking expired TRIAL emails:', trialEmailError);
+      // Ne baci grešku - email ne smije blokirati downgrade
+    }
+    
     // Pronađi sve pretplate koje su istekle, ali još nisu downgrade-ane na BASIC
     const expiredSubscriptions = await prisma.subscription.findMany({
       where: {

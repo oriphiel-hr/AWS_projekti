@@ -24,6 +24,16 @@ export default function SubscriptionPlans() {
       }, 1000);
     }
     
+    // Check for trial_expired query parameter in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const trialExpired = urlParams.get('trial_expired');
+    if (trialExpired === 'true') {
+      // Show special message for trial expired users
+      showToast('🎁 Specijalna ponuda: 20% popust na prvu pretplatu!', 'success');
+      // Store flag for checkout
+      sessionStorage.setItem('trial_expired_discount', 'true');
+    }
+    
     // Listen for hash changes to refresh data after payment success
     const hashChangeHandler = () => {
       if (window.location.hash === '#subscription') {

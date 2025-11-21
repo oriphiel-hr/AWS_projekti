@@ -502,7 +502,7 @@ const features = [
         { name: "Wizard registracije (odabir kategorija i regija)", implemented: true }, // Implementirano: GET /api/wizard/categories, GET /api/wizard/regions, GET /api/wizard/status, POST /api/wizard/categories, POST /api/wizard/regions, POST /api/wizard/complete
         { name: "Automatska aktivacija TRIAL-a", implemented: true },
         { name: "Chat-bot vodi za prvi lead", implemented: true }, // Implementirano: ChatbotSession model, chatbot-service.js, GET /api/chatbot/session, POST /api/chatbot/advance, POST /api/chatbot/complete, automatski triggeri u lead purchase, chat i offers
-        { name: "Automatski email + popust link pri isteku TRIAL-a", implemented: false },
+        { name: "Automatski email + popust link pri isteku TRIAL-a", implemented: true }, // Implementirano: checkExpiredTrials() u subscription-reminder.js, automatski email s 20% popust linkom, cron job provjera svaki sat, frontend podrška za trial_expired query parametar
         { name: "Podsjetnici za neaktivnost (>14 dana)", implemented: false },
         { name: "Edukacijski materijali i vodiči", implemented: false }
       ]
@@ -12397,12 +12397,100 @@ SMS verifikacija osigurava da vaš telefonski broj pripada vama i povećava povj
 - Admini dobivaju notifikaciju kada se prijavi nova lažna ocjena.
 - Korisnik koji je dao recenziju dobiva notifikaciju ako je prijava prihvaćena (recenzija uklonjena).
 - Korisnik koji je prijavio dobiva notifikaciju ako je prijava odbijena (recenzija ostaje objavljena).
+`,
+      technicalDetails: `**Backend Implementacija**
+- \`lib/subscription-reminder.js\`: \`sendTrialExpiredEmail()\` funkcija za slanje email-a s popust linkom.
+- \`lib/subscription-reminder.js\`: \`checkExpiredTrials()\` funkcija za provjeru isteklih TRIAL pretplata.
+- \`routes/subscriptions.js\`: \`checkAndDowngradeExpiredSubscriptions()\` poziva \`checkExpiredTrials()\` prije downgrade-a.
+- \`lib/queueScheduler.js\`: Cron job svaki sat poziva \`checkAndDowngradeExpiredSubscriptions()\`.
+- \`routes/payments.js\`: Provjera EXPIRED TRIAL pretplata (u zadnja 7 dana) za automatski popust pri checkout-u.
+
+**Email Template**
+- HTML email s detaljnim informacijama o isteku TRIAL-a.
+- Popust link: \`${process.env.FRONTEND_URL}/#subscription?trial_expired=true&user_id={userId}\`.
+- Prikazuje 20% popust na PREMIUM (89€ → 71.20€) i PRO (149€ → 119.20€) planove.
+- Uključuje in-app notifikaciju za korisnika.
+
+**Cron Job**
+- Provjera se izvršava svaki sat (0 * * * *) kroz \`checkAndDowngradeExpiredSubscriptions()\`.
+- Pronalazi TRIAL pretplate koje su istekle danas (u zadnja 24h).
+- Sprječava duplikate provjerom notifikacija u zadnja 24h.
+
+**Frontend Podrška**
+- \`pages/SubscriptionPlans.jsx\`: Provjera \`trial_expired\` query parametra u URL-u.
+- Automatski prikazuje toast poruku s informacijom o popustu.
+- Backend automatski primjenjuje 20% popust za EXPIRED TRIAL pretplate (u zadnja 7 dana).
+
+**Popust Logika**
+- 20% popust za upgrade iz TRIAL-a (ACTIVE ili EXPIRED u zadnja 7 dana).
+- Prioritet: TRIAL upgrade popust ima prednost nad new user popustom.
+- Popust se automatski primjenjuje pri checkout-u ako je korisnik na EXPIRED TRIAL planu.
+
+**API**
+- Automatski poziv kroz cron job (nema direktnog API endpointa).
+- Email se šalje putem SMTP (nodemailer).
+- In-app notifikacija se kreira u bazi (\`Notification\` model).
 
 **Validacija**
 - reason ne može biti prazan.
 - Samo toUserId može prijaviti recenziju.
 - Prijava je dozvoljena samo jednom po recenziji (sprječava duplikate).
 - Admin može prihvatiti (accept) ili odbiti (dismiss) prijavu.
+`
+    },
+    "Automatski email + popust link pri isteku TRIAL-a": {
+      implemented: true,
+      summary: "Automatski email s popust linkom se šalje korisnicima čiji je TRIAL period istekao. Email uključuje 20% popust na prvu pretplatu.",
+      details: `**Kako funkcionira**
+- Cron job provjerava svaki sat TRIAL pretplate koje su istekle danas (u zadnja 24h).
+- Korisnik dobiva HTML email s detaljnim informacijama o isteku TRIAL-a.
+- Email uključuje popust link koji automatski primjenjuje 20% popust pri checkout-u.
+- Popust link: \`/#subscription?trial_expired=true&user_id={userId}\`.
+- Frontend automatski detektira \`trial_expired\` parametar i prikazuje toast poruku.
+- Backend automatski primjenjuje 20% popust za EXPIRED TRIAL pretplate (u zadnja 7 dana).
+
+**Prednosti**
+- Povećava konverziju isteklih TRIAL korisnika u plaćene pretplate.
+- Olakšava upgrade proces s automatskim popustom.
+- Poboljšava korisničko iskustvo s jasnom komunikacijom o isteku.
+
+**Kada koristiti**
+- Automatski se izvršava svaki sat kroz cron job.
+- Email se šalje samo jednom po korisniku (sprječava duplikate).
+- Popust vrijedi 7 dana nakon isteka TRIAL-a.
+`,
+      technicalDetails: `**Backend Implementacija**
+- \`lib/subscription-reminder.js\`: \`sendTrialExpiredEmail()\` funkcija za slanje email-a s popust linkom.
+- \`lib/subscription-reminder.js\`: \`checkExpiredTrials()\` funkcija za provjeru isteklih TRIAL pretplata.
+- \`routes/subscriptions.js\`: \`checkAndDowngradeExpiredSubscriptions()\` poziva \`checkExpiredTrials()\` prije downgrade-a.
+- \`lib/queueScheduler.js\`: Cron job svaki sat poziva \`checkAndDowngradeExpiredSubscriptions()\`.
+- \`routes/payments.js\`: Provjera EXPIRED TRIAL pretplata (u zadnja 7 dana) za automatski popust pri checkout-u.
+
+**Email Template**
+- HTML email s detaljnim informacijama o isteku TRIAL-a.
+- Popust link: \`${process.env.FRONTEND_URL}/#subscription?trial_expired=true&user_id={userId}\`.
+- Prikazuje 20% popust na PREMIUM (89€ → 71.20€) i PRO (149€ → 119.20€) planove.
+- Uključuje in-app notifikaciju za korisnika.
+
+**Cron Job**
+- Provjera se izvršava svaki sat (0 * * * *) kroz \`checkAndDowngradeExpiredSubscriptions()\`.
+- Pronalazi TRIAL pretplate koje su istekle danas (u zadnja 24h).
+- Sprječava duplikate provjerom notifikacija u zadnja 24h.
+
+**Frontend Podrška**
+- \`pages/SubscriptionPlans.jsx\`: Provjera \`trial_expired\` query parametra u URL-u.
+- Automatski prikazuje toast poruku s informacijom o popustu.
+- Backend automatski primjenjuje 20% popust za EXPIRED TRIAL pretplate (u zadnja 7 dana).
+
+**Popust Logika**
+- 20% popust za upgrade iz TRIAL-a (ACTIVE ili EXPIRED u zadnja 7 dana).
+- Prioritet: TRIAL upgrade popust ima prednost nad new user popustom.
+- Popust se automatski primjenjuje pri checkout-u ako je korisnik na EXPIRED TRIAL planu.
+
+**API**
+- Automatski poziv kroz cron job (nema direktnog API endpointa).
+- Email se šalje putem SMTP (nodemailer).
+- In-app notifikacija se kreira u bazi (\`Notification\` model).
 `
     },
     "Reputation Score izračun (ponderirane komponente)": {
@@ -13734,7 +13822,7 @@ SMS verifikacija osigurava da vaš telefonski broj pripada vama i povećava povj
 - Chat-bot se pokreće samo za prvi lead korisnika.
 - Chat-bot se ne pokreće ako već postoji aktivna sesija.
 - Chat-bot se automatski završava nakon 5. koraka.
-`
+      `
     }
   };
 

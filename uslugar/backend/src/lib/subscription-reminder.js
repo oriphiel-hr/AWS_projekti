@@ -298,3 +298,174 @@ export async function checkExpiringSubscriptions() {
   }
 }
 
+/**
+ * Pošalji email pri isteku TRIAL-a s popust linkom
+ */
+export async function sendTrialExpiredEmail(subscription, user) {
+  if (!transporter) {
+    console.log('SMTP not configured, skipping trial expired email');
+    return;
+  }
+
+  // Generiraj popust link - frontend će automatski primijeniti 20% popust
+  const discountLink = `${process.env.FRONTEND_URL || 'https://uslugar.oriph.io'}/#subscription?trial_expired=true&user_id=${user.id}`;
+  
+  const subject = '🎁 Vaš TRIAL je istekao - Specijalna ponuda za vas!';
+  
+  const message = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
+      <div style="background-color: #dc2626; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+        <h1 style="color: white; margin: 0; font-size: 28px;">USLUGAR</h1>
+      </div>
+      <div style="background-color: white; padding: 40px; border-radius: 0 0 10px 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h2 style="color: #333; margin-top: 0; font-size: 24px;">⏰ Vaš TRIAL period je istekao</h2>
+        <p style="color: #666; font-size: 16px; line-height: 1.6;">Poštovani/na <strong>${user.fullName}</strong>,</p>
+        <p style="color: #666; font-size: 16px; line-height: 1.6;">Vaš besplatni 14-dnevni probni period za Uslugar EXCLUSIVE je istekao (${new Date(subscription.expiresAt).toLocaleDateString('hr-HR')}).</p>
+        
+        <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); padding: 25px; border-radius: 8px; margin: 30px 0; border: 3px solid #f59e0b; text-align: center;">
+          <h3 style="color: #92400e; margin-top: 0; font-size: 22px;">🎁 Specijalna ponuda samo za vas!</h3>
+          <p style="font-size: 20px; color: #92400e; font-weight: bold; margin: 15px 0;">20% POPUST na prvu pretplatu!</p>
+          <p style="color: #78350f; font-size: 14px; margin: 10px 0;">Kliknite na link ispod da automatski primijenite popust pri nadogradnji.</p>
+        </div>
+        
+        <div style="background-color: #f9f9f9; padding: 20px; border-radius: 8px; margin: 30px 0; border-left: 4px solid #dc2626;">
+          <h3 style="color: #333; margin-top: 0;">Što ste dobili s TRIAL-om?</h3>
+          <ul style="color: #666; font-size: 14px; line-height: 1.8;">
+            <li>✅ 8 besplatnih leadova</li>
+            <li>✅ Sve Premium funkcionalnosti (AI prioritet, SMS notifikacije, CSV export, napredna analitika)</li>
+            <li>✅ 2 kategorije i 1 regija (add-on paketi)</li>
+            <li>✅ Ekskluzivni leadovi (1:1, bez konkurencije)</li>
+            <li>✅ ROI statistika i refund ako klijent ne odgovori</li>
+          </ul>
+        </div>
+        
+        <p style="color: #333; font-size: 16px; font-weight: bold; margin-top: 30px;">Nadogradite sada i uštedite 20%:</p>
+        
+        <div style="background: #f0f9ff; padding: 20px; border-radius: 8px; margin: 20px 0; border: 2px solid #4CAF50;">
+          <h3 style="color: #059669; margin-top: 0;">⭐ PREMIUM - 89€/mj</h3>
+          <p style="font-size: 18px; color: #16a34a; font-weight: bold;">25 leadova mjesečno</p>
+          <p style="color: #666; font-size: 14px;">✅ CSV export • SMS notifikacije • AI prioritet • Prioritetna podrška • Napredna analitika</p>
+          <p style="margin-top: 10px; color: #dc2626; font-weight: bold;">S popustom: <span style="text-decoration: line-through;">89€</span> <span style="font-size: 20px; color: #16a34a;">71.20€/mj</span> (20% popust!)</p>
+        </div>
+        
+        <div style="background: #fff7ed; padding: 20px; border-radius: 8px; margin: 20px 0; border: 2px solid #f59e0b;">
+          <h3 style="color: #d97706; margin-top: 0;">🚀 PRO - 149€/mj</h3>
+          <p style="font-size: 18px; color: #f59e0b; font-weight: bold;">50 leadova mjesečno</p>
+          <p style="color: #666; font-size: 14px;">✅ Sve iz Premium + Premium kvaliteta leadova (80+ score) • VIP podrška 24/7 • Featured profil</p>
+          <p style="margin-top: 10px; color: #dc2626; font-weight: bold;">S popustom: <span style="text-decoration: line-through;">149€</span> <span style="font-size: 20px; color: #16a34a;">119.20€/mj</span> (20% popust!)</p>
+        </div>
+        
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${discountLink}" 
+             style="background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%); color: white; padding: 18px 40px; text-decoration: none; border-radius: 8px; display: inline-block; font-size: 18px; font-weight: bold; box-shadow: 0 4px 6px rgba(220, 38, 38, 0.3);">
+            🎁 Nadogradi s 20% Popustom →
+          </a>
+        </div>
+        
+        <p style="margin-top: 20px; color: #999; font-size: 12px; text-align: center; line-height: 1.6;">
+          ⚠️ Ova ponuda vrijedi ograničeno vrijeme. Kliknite na gumb iznad da automatski primijenite popust pri checkout-u.
+        </p>
+        
+        <p style="margin-top: 30px; color: #999; font-size: 14px; line-height: 1.6;">
+          Pitanja? Kontaktirajte nas na <a href="mailto:support@uslugar.hr" style="color: #4CAF50; text-decoration: none;">support@uslugar.hr</a>
+        </p>
+      </div>
+      <div style="text-align: center; margin-top: 20px; color: #999; font-size: 12px;">
+        <p>© ${new Date().getFullYear()} Uslugar. Sva prava pridržana.</p>
+      </div>
+    </body>
+    </html>
+  `;
+
+  try {
+    await transporter.sendMail({
+      from: `"Uslugar" <${process.env.SMTP_USER}>`,
+      to: user.email,
+      subject: subject,
+      html: message
+    });
+    
+    console.log(`📧 Trial expired email sent to ${user.email} with discount link`);
+  } catch (error) {
+    console.error('Error sending trial expired email:', error);
+  }
+}
+
+/**
+ * Provjeri i pošalji email-ove za istekle TRIAL pretplate
+ */
+export async function checkExpiredTrials() {
+  try {
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
+    
+    // Pronađi TRIAL pretplate koje su istekle danas (u zadnja 24h)
+    const expiredTrials = await prisma.subscription.findMany({
+      where: {
+        plan: 'TRIAL',
+        status: {
+          in: ['ACTIVE', 'EXPIRED']
+        },
+        expiresAt: {
+          gte: startOfDay,
+          lt: endOfDay
+        }
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            fullName: true
+          }
+        }
+      }
+    });
+
+    for (const subscription of expiredTrials) {
+      // Provjeri da li je već poslan email (izbjegni duplikate)
+      const recentNotification = await prisma.notification.findFirst({
+        where: {
+          userId: subscription.user.id,
+          type: 'SYSTEM',
+          title: {
+            contains: 'TRIAL je istekao'
+          },
+          createdAt: {
+            gte: new Date(now.getTime() - 24 * 60 * 60 * 1000) // U zadnja 24h
+          }
+        }
+      });
+
+      if (!recentNotification) {
+        await sendTrialExpiredEmail(subscription, subscription.user);
+        
+        // Kreiraj in-app notifikaciju
+        await prisma.notification.create({
+          data: {
+            title: 'TRIAL je istekao - Specijalna ponuda!',
+            message: `Vaš besplatni TRIAL period je istekao. Nadogradite sada i uštedite 20% na prvu pretplatu!`,
+            type: 'SYSTEM',
+            userId: subscription.user.id
+          }
+        });
+        
+        console.log(`📧 Trial expired email sent to ${subscription.user.email}`);
+      }
+    }
+
+    console.log(`📧 Checked expired TRIAL subscriptions: ${expiredTrials.length} found`);
+    return { checked: expiredTrials.length };
+  } catch (error) {
+    console.error('Error checking expired TRIAL subscriptions:', error);
+    throw error;
+  }
+}
+

@@ -90,16 +90,24 @@ r.post('/create-checkout', auth(true, ['PROVIDER']), async (req, res, next) => {
       
       isUserNew = !paidSubscriptions;
       
-      // Provjeri da li je korisnik na TRIAL planu
+      // Provjeri da li je korisnik na TRIAL planu (ACTIVE ili EXPIRED - i jedno i drugo dobiva popust)
       const subscription = await prisma.subscription.findUnique({
         where: { userId: req.user.id },
         select: {
           plan: true,
-          status: true
+          status: true,
+          expiresAt: true
         }
       });
       
-      isUserTrial = subscription?.plan === 'TRIAL' && subscription?.status === 'ACTIVE';
+      // Korisnik je na TRIAL-u ako je plan TRIAL i (ACTIVE ili EXPIRED u zadnja 7 dana)
+      const isTrialPlan = subscription?.plan === 'TRIAL';
+      const isTrialActive = subscription?.status === 'ACTIVE';
+      const isTrialRecentlyExpired = subscription?.status === 'EXPIRED' && 
+        subscription?.expiresAt && 
+        new Date(subscription.expiresAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000); // Istečeno u zadnja 7 dana
+      
+      isUserTrial = isTrialPlan && (isTrialActive || isTrialRecentlyExpired);
       
       // Prioritet: TRIAL upgrade popust ima prednost nad new user popustom
       if (isUserTrial && plan !== 'TRIAL' && planDetails.price > 0) {
