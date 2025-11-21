@@ -160,6 +160,26 @@ export function startQueueScheduler() {
     
     console.log('='.repeat(50) + '\n')
   })
+  
+  // Inactivity reminders - provjerava neaktivne korisnike svaki dan u 8:00
+  cron.schedule('0 8 * * *', async () => {
+    console.log(`\n${'='.repeat(50)}`)
+    console.log(`📧 Inactivity Reminders Check: ${new Date().toISOString()}`)
+    console.log('='.repeat(50))
+    
+    try {
+      const { checkInactiveUsers } = await import('./subscription-reminder.js');
+      const result = await checkInactiveUsers();
+      if (result.remindersSent > 0) {
+        console.log(`✅ Sent ${result.remindersSent} inactivity reminders`);
+      }
+      console.log(`✅ Inactivity check completed: ${result.checked} checked, ${result.remindersSent} sent, ${result.skipped} skipped`)
+    } catch (error) {
+      console.error('❌ Inactivity check failed:', error)
+    }
+    
+    console.log('='.repeat(50) + '\n')
+  })
 
   console.log('✅ Queue Scheduler started successfully')
   console.log('   - Expired offers check: Every hour at :00')
@@ -174,6 +194,7 @@ export function startQueueScheduler() {
   console.log('   - License validity check: Daily at 10:00')
   console.log('   - Batch auto-verification: Daily at 11:00')
   console.log('   - Thread locking check: Daily at 02:00')
+  console.log('   - Inactivity reminders (>14 days): Daily at 08:00')
   console.log('   - Monitor heartbeat: Every 15 minutes')
 }
 

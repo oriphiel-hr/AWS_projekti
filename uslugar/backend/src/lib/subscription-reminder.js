@@ -469,3 +469,233 @@ export async function checkExpiredTrials() {
   }
 }
 
+/**
+ * Pošalji email podsjetnik za neaktivne korisnike (>14 dana)
+ */
+export async function sendInactivityReminderEmail(user, daysInactive) {
+  if (!transporter) {
+    console.log('SMTP not configured, skipping inactivity reminder');
+    return;
+  }
+
+  const subject = '👋 Niste bili aktivni neko vrijeme - Vratite se na Uslugar!';
+  
+  const message = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
+      <div style="background-color: #3B82F6; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+        <h1 style="color: white; margin: 0; font-size: 28px;">USLUGAR</h1>
+      </div>
+      <div style="background-color: white; padding: 40px; border-radius: 0 0 10px 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h2 style="color: #333; margin-top: 0; font-size: 24px;">👋 Niste bili aktivni ${daysInactive} dana</h2>
+        <p style="color: #666; font-size: 16px; line-height: 1.6;">Poštovani/na <strong>${user.fullName}</strong>,</p>
+        <p style="color: #666; font-size: 16px; line-height: 1.6;">Primijetili smo da niste bili aktivni na Uslugar platformi već <strong>${daysInactive} dana</strong>.</p>
+        
+        <div style="background-color: #f0f9ff; padding: 20px; border-radius: 8px; margin: 30px 0; border-left: 4px solid #3B82F6;">
+          <h3 style="color: #333; margin-top: 0;">Što možete raditi na Uslugar-u?</h3>
+          <ul style="color: #666; font-size: 14px; line-height: 1.8;">
+            <li>✅ Pregledajte nove ekskluzivne leadove u vašoj kategoriji</li>
+            <li>✅ Kontaktirajte klijente i pošaljite profesionalne ponude</li>
+            <li>✅ Pratite svoju ROI statistiku i konverzije</li>
+            <li>✅ Upravljajte svojim profilom i dodajte portfolio</li>
+            <li>✅ Komunicirajte s klijentima putem chat-a</li>
+          </ul>
+        </div>
+        
+        <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); padding: 25px; border-radius: 8px; margin: 30px 0; border: 3px solid #f59e0b; text-align: center;">
+          <h3 style="color: #92400e; margin-top: 0; font-size: 22px;">💡 Ne propustite nove prilike!</h3>
+          <p style="color: #78350f; font-size: 14px; margin: 10px 0;">Novi leadovi se dodaju svakodnevno. Vratite se i pronađite svoj sljedeći posao!</p>
+        </div>
+        
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${process.env.FRONTEND_URL || 'https://uslugar.oriph.io'}/#dashboard" 
+             style="background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%); color: white; padding: 18px 40px; text-decoration: none; border-radius: 8px; display: inline-block; font-size: 18px; font-weight: bold; box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3);">
+            🚀 Otvori Dashboard →
+          </a>
+        </div>
+        
+        <div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin: 30px 0;">
+          <h3 style="color: #333; margin-top: 0; font-size: 18px;">Potrebna pomoć?</h3>
+          <p style="color: #666; font-size: 14px; line-height: 1.6;">
+            Ako imate pitanja ili trebate pomoć, kontaktirajte nas na <a href="mailto:support@uslugar.hr" style="color: #3B82F6; text-decoration: none;">support@uslugar.hr</a>
+          </p>
+        </div>
+        
+        <p style="margin-top: 30px; color: #999; font-size: 12px; text-align: center; line-height: 1.6;">
+          Ako ne želite više primati ove email-ove, možete se odjaviti u postavkama profila.
+        </p>
+      </div>
+      <div style="text-align: center; margin-top: 20px; color: #999; font-size: 12px;">
+        <p>© ${new Date().getFullYear()} Uslugar. Sva prava pridržana.</p>
+      </div>
+    </body>
+    </html>
+  `;
+
+  try {
+    await transporter.sendMail({
+      from: `"Uslugar" <${process.env.SMTP_USER}>`,
+      to: user.email,
+      subject: subject,
+      html: message
+    });
+    
+    console.log(`📧 Inactivity reminder sent to ${user.email} (${daysInactive} days inactive)`);
+  } catch (error) {
+    console.error('Error sending inactivity reminder:', error);
+  }
+}
+
+/**
+ * Provjeri i pošalji podsjetnike za neaktivne korisnike (>14 dana)
+ */
+export async function checkInactiveUsers() {
+  try {
+    const now = new Date();
+    const cutoffDate = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000); // 14 dana unazad
+    
+    // Pronađi korisnike koji nisu bili aktivni >14 dana
+    // Koristimo kombinaciju: updatedAt iz User modela + zadnje aktivnosti (login, lead purchase, chat, offers)
+    const inactiveUsers = await prisma.user.findMany({
+      where: {
+        role: 'PROVIDER', // Samo providere
+        updatedAt: {
+          lt: cutoffDate // Nisu ažurirani u zadnja 14 dana
+        },
+        // Ne uključi korisnike koji su se registrirali u zadnja 14 dana (novi korisnici)
+        createdAt: {
+          lt: cutoffDate
+        }
+      },
+      include: {
+        subscription: {
+          select: {
+            plan: true,
+            status: true
+          }
+        },
+        trialEngagement: {
+          select: {
+            lastActivityAt: true,
+            lastLoginAt: true
+          }
+        }
+      }
+    });
+
+    let remindersSent = 0;
+    let skippedCount = 0;
+
+    for (const user of inactiveUsers) {
+      try {
+        // Provjeri zadnju aktivnost iz različitih izvora
+        let lastActivity = user.updatedAt;
+        
+        // Provjeri TrialEngagement ako postoji
+        if (user.trialEngagement?.lastActivityAt) {
+          const trialActivity = new Date(user.trialEngagement.lastActivityAt);
+          if (trialActivity > lastActivity) {
+            lastActivity = trialActivity;
+          }
+        }
+        
+        if (user.trialEngagement?.lastLoginAt) {
+          const trialLogin = new Date(user.trialEngagement.lastLoginAt);
+          if (trialLogin > lastActivity) {
+            lastActivity = trialLogin;
+          }
+        }
+        
+        // Provjeri zadnji login iz LeadPurchase, ChatMessage, Offer, itd.
+        const [lastLeadPurchase, lastChatMessage, lastOffer] = await Promise.all([
+          prisma.leadPurchase.findFirst({
+            where: { providerId: user.id },
+            orderBy: { createdAt: 'desc' },
+            select: { createdAt: true }
+          }),
+          prisma.chatMessage.findFirst({
+            where: { senderId: user.id },
+            orderBy: { createdAt: 'desc' },
+            select: { createdAt: true }
+          }),
+          prisma.offer.findFirst({
+            where: { userId: user.id },
+            orderBy: { createdAt: 'desc' },
+            select: { createdAt: true }
+          })
+        ]);
+        
+        // Pronađi najnoviju aktivnost
+        const activities = [
+          lastActivity,
+          lastLeadPurchase?.createdAt,
+          lastChatMessage?.createdAt,
+          lastOffer?.createdAt
+        ].filter(Boolean).map(d => new Date(d));
+        
+        const mostRecentActivity = activities.length > 0 
+          ? new Date(Math.max(...activities.map(d => d.getTime())))
+          : user.updatedAt;
+        
+        // Provjeri da li je stvarno neaktivan >14 dana
+        const daysInactive = Math.floor((now.getTime() - mostRecentActivity.getTime()) / (1000 * 60 * 60 * 24));
+        
+        if (daysInactive < 14) {
+          continue; // Nije neaktivan dovoljno dugo
+        }
+        
+        // Provjeri da li je već poslan podsjetnik (izbjegni duplikate)
+        const recentNotification = await prisma.notification.findFirst({
+          where: {
+            userId: user.id,
+            type: 'SYSTEM',
+            title: {
+              contains: 'Neaktivnost'
+            },
+            createdAt: {
+              gte: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000) // U zadnja 7 dana
+            }
+          }
+        });
+
+        if (!recentNotification) {
+          await sendInactivityReminderEmail(user, daysInactive);
+          
+          // Kreiraj in-app notifikaciju
+          await prisma.notification.create({
+            data: {
+              title: `Niste bili aktivni ${daysInactive} dana`,
+              message: `Niste bili aktivni na Uslugar platformi već ${daysInactive} dana. Vratite se i pronađite nove prilike!`,
+              type: 'SYSTEM',
+              userId: user.id
+            }
+          });
+          
+          remindersSent++;
+          console.log(`📧 Inactivity reminder sent to ${user.email} (${daysInactive} days inactive)`);
+        } else {
+          skippedCount++;
+        }
+      } catch (error) {
+        console.error(`[INACTIVITY] Error processing user ${user.id}:`, error);
+        skippedCount++;
+      }
+    }
+
+    console.log(`📧 Checked inactive users: ${remindersSent} reminders sent, ${skippedCount} skipped`);
+    return { 
+      checked: inactiveUsers.length,
+      remindersSent,
+      skipped: skippedCount
+    };
+  } catch (error) {
+    console.error('Error checking inactive users:', error);
+    throw error;
+  }
+}
+

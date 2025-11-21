@@ -503,7 +503,7 @@ const features = [
         { name: "Automatska aktivacija TRIAL-a", implemented: true },
         { name: "Chat-bot vodi za prvi lead", implemented: true }, // Implementirano: ChatbotSession model, chatbot-service.js, GET /api/chatbot/session, POST /api/chatbot/advance, POST /api/chatbot/complete, automatski triggeri u lead purchase, chat i offers
         { name: "Automatski email + popust link pri isteku TRIAL-a", implemented: true }, // Implementirano: checkExpiredTrials() u subscription-reminder.js, automatski email s 20% popust linkom, cron job provjera svaki sat, frontend podrška za trial_expired query parametar
-        { name: "Podsjetnici za neaktivnost (>14 dana)", implemented: false },
+        { name: "Podsjetnici za neaktivnost (>14 dana)", implemented: true }, // Implementirano: checkInactiveUsers() u subscription-reminder.js, automatski email podsjetnik, cron job provjera svaki dan u 8:00, provjera kombinacije aktivnosti (login, lead purchase, chat, offers)
         { name: "Edukacijski materijali i vodiči", implemented: false }
       ]
     }
@@ -12486,6 +12486,63 @@ SMS verifikacija osigurava da vaš telefonski broj pripada vama i povećava povj
 - 20% popust za upgrade iz TRIAL-a (ACTIVE ili EXPIRED u zadnja 7 dana).
 - Prioritet: TRIAL upgrade popust ima prednost nad new user popustom.
 - Popust se automatski primjenjuje pri checkout-u ako je korisnik na EXPIRED TRIAL planu.
+
+**API**
+- Automatski poziv kroz cron job (nema direktnog API endpointa).
+- Email se šalje putem SMTP (nodemailer).
+- In-app notifikacija se kreira u bazi (\`Notification\` model).
+`
+    },
+    "Podsjetnici za neaktivnost (>14 dana)": {
+      implemented: true,
+      summary: "Automatski email podsjetnici se šalju korisnicima koji nisu bili aktivni više od 14 dana. Email uključuje poziv na povratak i link na dashboard.",
+      details: `**Kako funkcionira**
+- Cron job provjerava svaki dan u 8:00 korisnike koji nisu bili aktivni >14 dana.
+- Provjerava se kombinacija aktivnosti: login, lead purchase, chat poruke, ponude, i updatedAt iz User modela.
+- Korisnik dobiva HTML email s pozivom na povratak i linkom na dashboard.
+- Email se šalje samo jednom po korisniku (sprječava duplikate - provjera u zadnja 7 dana).
+- Uključuje in-app notifikaciju za korisnika.
+
+**Prednosti**
+- Povećava re-engagement neaktivnih korisnika.
+- Poboljšava retention rate.
+- Pomaže korisnicima da se vrate na platformu i pronađu nove prilike.
+
+**Kada koristiti**
+- Automatski se izvršava svaki dan u 8:00 kroz cron job.
+- Email se šalje samo providere (role: PROVIDER).
+- Ne uključuje nove korisnike (registrirane u zadnja 14 dana).
+`,
+      technicalDetails: `**Backend Implementacija**
+- \`lib/subscription-reminder.js\`: \`sendInactivityReminderEmail()\` funkcija za slanje email-a.
+- \`lib/subscription-reminder.js\`: \`checkInactiveUsers()\` funkcija za provjeru neaktivnih korisnika.
+- \`lib/queueScheduler.js\`: Cron job svaki dan u 8:00 poziva \`checkInactiveUsers()\`.
+
+**Email Template**
+- HTML email s detaljnim informacijama o neaktivnosti.
+- Link na dashboard: \`${process.env.FRONTEND_URL}/#dashboard\`.
+- Uključuje popis mogućnosti na platformi (leadovi, chat, ROI statistika, itd.).
+- Uključuje in-app notifikaciju za korisnika.
+
+**Cron Job**
+- Provjera se izvršava svaki dan u 8:00 (0 8 * * *).
+- Pronalazi providere koji nisu bili aktivni >14 dana.
+- Sprječava duplikate provjerom notifikacija u zadnja 7 dana.
+
+**Provjera Aktivnosti**
+- Kombinacija različitih izvora aktivnosti:
+  - \`User.updatedAt\` - zadnje ažuriranje korisnika
+  - \`TrialEngagement.lastActivityAt\` - zadnja aktivnost za TRIAL korisnike
+  - \`TrialEngagement.lastLoginAt\` - zadnji login za TRIAL korisnike
+  - \`LeadPurchase.createdAt\` - zadnja kupovina leada
+  - \`ChatMessage.createdAt\` - zadnja chat poruka
+  - \`Offer.createdAt\` - zadnja ponuda
+- Koristi se najnovija aktivnost iz svih izvora.
+
+**Filtri**
+- Samo providere (role: PROVIDER).
+- Ne uključuje nove korisnike (registrirane u zadnja 14 dana).
+- Ne uključuje korisnike koji su dobili podsjetnik u zadnja 7 dana.
 
 **API**
 - Automatski poziv kroz cron job (nema direktnog API endpointa).
