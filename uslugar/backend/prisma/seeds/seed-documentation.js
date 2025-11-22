@@ -147,7 +147,7 @@ const features = [
         { name: "Verifikacija klijenata", implemented: true },
         { name: "Pretplata na leadove", implemented: true },
         { name: "Statistike uspješnosti", implemented: true },
-        { name: "VIP podrška 24/7 (Support tickets)", implemented: true, partiallyImplemented: true },
+        { name: "VIP podrška 24/7 (Support tickets)", implemented: true }, // Implementirano: Support ticket sustav, live chat widget (PRO korisnici), 24/7 monitoring, automatski routing VIP ticketa, real-time chat podrška kroz Socket.io
         { name: "White-label opcija (PRO plan)", implemented: true }
       ]
     },
@@ -1029,13 +1029,14 @@ const featureDescriptions = {
     },
     "VIP podrška 24/7 (Support tickets)": {
       implemented: true,
-      summary: "PRO i PREMIUM partneri dobivaju prioritetnu 24/7 podršku kroz support ticket sustav s eskalacijama i praćenjem statusa.",
-      details: `**⚠️ DJELOMIČNO IMPLEMENTIRANO**: Postoji support ticket sustav s automatskim prioritetom za PRO korisnike (URGENT), ali nema live chat widget-a i 24/7 monitoringa. Ticket sistem je funkcionalan, ali nema real-time chat podrške.
+      summary: "PRO i PREMIUM partneri dobivaju prioritetnu 24/7 podršku kroz support ticket sustav i live chat widget. Uključuje automatski routing, 24/7 monitoring i real-time chat podršku.",
+      details: `**✅ POTPUNO IMPLEMENTIRANO**: Support ticket sustav s automatskim prioritetom, live chat widget za PRO korisnike, 24/7 monitoring, automatski routing VIP ticketa na prioritetne agente i real-time chat podrška kroz Socket.io.
 
 **Kako funkcionira**
-- Korisnik kreira ticket s temom i opisom; backend ga sprema u \`SupportTicket\` s početnim statusom OPEN.
-- Ovisno o pretplatničkom planu, prioritet se automatski diže (PRO → URGENT, PREMIUM → HIGH), dok BASIC ostaje NORMAL.
-- Support tim obrađuje tickete, dodaje napomene i zatvara ih kada su riješeni; korisnik može pratiti povijest i status svojih upita u dashboardu.
+- **Support Tickets**: Korisnik kreira ticket s temom i opisom; backend ga sprema u \`SupportTicket\` s početnim statusom OPEN. Ovisno o pretplatničkom planu, prioritet se automatski diže (PRO → URGENT, PREMIUM → HIGH), dok BASIC ostaje NORMAL. VIP ticket-e (URGENT) automatski se dodjeljuju agentu s najmanje aktivnih ticket-a.
+- **Live Chat Widget**: PRO korisnici mogu pokrenuti live chat putem \`POST /api/support/chat/start\`. Automatski se kreira support chat soba s dostupnim agentom. Real-time komunikacija kroz Socket.io.
+- **24/7 Monitoring**: \`GET /api/support/availability\` provjerava dostupnost support tima, broj aktivnih agenata, aktivne support chat sobe i URGENT ticket-e. Prikazuje prosječno vrijeme odgovora.
+- **Automatski Routing**: VIP ticket-e (URGENT) automatski se dodjeljuju agentu s najmanje aktivnih ticket-a i chat-ova. Support chat sobe se također automatski dodjeljuju agentu s najmanje aktivnih support chat-ova.
 
 **Prednosti**
 - PRO i PREMIUM partneri dobivaju garantiran brži odgovor i eskalaciju na kritične probleme (billing, leadovi, tehnički problemi).
@@ -1045,23 +1046,42 @@ const featureDescriptions = {
 - Kod blokirajućih problema (npr. nemogućnost kupnje leadova, greške u billing-u, sumnja na bug).
 - Za VIP/PRO korisnike koji očekuju SLA razinu podrške i brzu reakciju 24/7.`,
       technicalDetails: `**Frontend**
-- Ekran “Podrška” prikazuje listu mojih ticket-a s filterima po statusu i prioritetu.
+- Ekran "Podrška" prikazuje listu mojih ticket-a s filterima po statusu i prioritetu.
 - Forma za kreiranje ticket-a (subject, category, opis) prilagođena je za mobilne korisnike i PRO/PREMIUM badgeve.
+- Live chat widget za PRO korisnike (poziva \`POST /api/support/chat/start\`).
 
 **Backend**
-- \`support-service.js\`:
+- \`routes/support.js\`:
+  - \`POST /api/support/tickets\` - Kreira support ticket s automatskim prioritetom.
+  - \`GET /api/support/tickets\` - Dohvati sve ticket-e korisnika.
+  - \`GET /api/support/tickets/:id\` - Dohvati pojedinačni ticket.
+  - \`POST /api/support/tickets/:id/resolve\` - Označi ticket kao resolved.
+  - \`POST /api/support/chat/start\` - Pokreni live chat (samo PRO korisnici).
+  - \`GET /api/support/chat/room\` - Dohvati support chat sobu.
+  - \`GET /api/support/availability\` - Provjeri dostupnost 24/7 support tima.
+- \`services/support-service.js\`:
   - \`createSupportTicket(userId, subject, message, priority, category)\` automatski postavlja prioritet prema \`subscription.plan\` (PRO → URGENT, PREMIUM → HIGH).
   - \`getMySupportTickets(userId)\` vraća listu ticket-a sortiranu po \`createdAt desc\`.
   - \`getSupportTicket(ticketId, userId)\` osigurava da korisnik vidi samo vlastite ticket-e.
   - \`resolveTicket(ticketId, userId)\` mijenja status u RESOLVED i postavlja \`resolvedAt\`.
-- Admin panel (ili skripte) koriste \`addTicketNote(ticketId, notes)\` za internu komunikaciju i audit trag.
+  - \`addTicketNote(ticketId, notes)\` za internu komunikaciju i audit trag.
+  - \`getOrCreateSupportChatRoom(userId)\` kreira ili dohvaća support chat sobu (samo PRO korisnici).
+  - \`checkSupportAvailability()\` provjerava dostupnost support tima, broj aktivnih agenata i prosječno vrijeme odgovora.
+  - \`assignTicketToAgent(ticketId)\` automatski dodjeljuje VIP ticket-e (URGENT) agentu s najmanje aktivnih ticket-a.
 
 **Baza**
-- Model \`SupportTicket\` (id, userId, subject, message, priority, category, status, notes, createdAt, resolvedAt).
+- Model \`SupportTicket\` (id, userId, subject, message, priority, category, status, assignedTo, notes, createdAt, resolvedAt).
+- Model \`ChatRoom\` s \`isSupportRoom\` flagom za support chat sobe.
 - Povezanost s \`User\` modelom omogućuje segmentaciju po planu (BASIC/PREMIUM/PRO) i povijest komunikacije po partneru.
 
+**Socket.io**
+- Real-time chat podrška kroz postojeći Socket.io sustav.
+- Support chat sobe koriste isti mehanizam kao obične chat sobe, ali s \`isSupportRoom: true\` flagom.
+
 **Integracije**
-- Notifikacijski sustav može slati email/SMS obavijesti kod novih ticket-a ili promjene statusa za VIP korisnike.`
+- Notifikacijski sustav može slati email/SMS obavijesti kod novih ticket-a ili promjene statusa za VIP korisnike.
+- Automatski routing VIP ticketa na prioritetne agente.
+- 24/7 monitoring dostupnosti support tima.`
     },
     "White-label opcija (PRO plan)": {
       implemented: true,

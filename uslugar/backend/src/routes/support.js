@@ -2,12 +2,16 @@
 import { Router } from 'express';
 import { auth } from '../lib/auth.js';
 import { requirePlan } from '../lib/subscription-auth.js';
+import { prisma } from '../lib/prisma.js';
 import { 
   createSupportTicket, 
   getMySupportTickets, 
   getSupportTicket, 
   resolveTicket,
-  addTicketNote 
+  addTicketNote,
+  getOrCreateSupportChatRoom,
+  checkSupportAvailability,
+  assignTicketToAgent
 } from '../services/support-service.js';
 
 const r = Router();
@@ -28,11 +32,22 @@ r.post('/tickets', auth(true, ['PROVIDER', 'USER']), async (req, res, next) => {
       'NORMAL', // Automatski povišava na HIGH/URGENT za PREMIUM/PRO
       category || 'OTHER'
     );
+
+    // Automatski dodijeli VIP ticket agentu
+    if (ticket.priority === 'URGENT') {
+      try {
+        await assignTicketToAgent(ticket.id);
+      } catch (error) {
+        console.error('Error assigning ticket to agent:', error);
+      }
+    }
     
     res.status(201).json({
       success: true,
       ticket,
-      message: 'Support ticket kreiran. Odgovorit ćemo u roku od 24 sata.'
+      message: ticket.priority === 'URGENT' 
+        ? 'VIP ticket kreiran. Odgovorit ćemo u roku od 1 sata.' 
+        : 'Support ticket kreiran. Odgovorit ćemo u roku od 24 sata.'
     });
   } catch (e) {
     next(e);
@@ -90,6 +105,87 @@ r.post('/tickets/:id/note', auth(true, ['ADMIN']), async (req, res, next) => {
       success: true,
       ticket
     });
+  } catch (e) {
+    next(e);
+  }
+});
+
+// GET /api/support/availability - Provjeri dostupnost 24/7 support tima
+r.get('/availability', async (req, res, next) => {
+  try {
+    const availability = await checkSupportAvailability();
+    res.json(availability);
+  } catch (e) {
+    next(e);
+  }
+});
+
+// POST /api/support/chat/start - Pokreni live chat (samo PRO korisnici)
+r.post('/chat/start', auth(true, ['PROVIDER', 'USER']), async (req, res, next) => {
+  try {
+    const room = await getOrCreateSupportChatRoom(req.user.id);
+    
+    res.json({
+      success: true,
+      room,
+      message: 'Live chat pokrenut. Support agent će vam uskoro odgovoriti.'
+    });
+  } catch (e) {
+    if (e.message.includes('dostupna samo za PRO')) {
+      return res.status(403).json({
+        error: 'Live chat podrška dostupna samo za PRO korisnike',
+        message: 'Nadogradite na PRO plan za pristup 24/7 live chat podršci'
+      });
+    }
+    next(e);
+  }
+});
+
+// GET /api/support/chat/room - Dohvati support chat sobu
+r.get('/chat/room', auth(true, ['PROVIDER', 'USER']), async (req, res, next) => {
+  try {
+    const room = await prisma.chatRoom.findFirst({
+      where: {
+        participants: {
+          some: { id: req.user.id }
+        },
+        isSupportRoom: true,
+        isLocked: false
+      },
+      include: {
+        participants: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            role: true
+          }
+        },
+        messages: {
+          orderBy: { createdAt: 'asc' },
+          take: 50,
+          include: {
+            sender: {
+              select: {
+                id: true,
+                fullName: true,
+                email: true,
+                role: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!room) {
+      return res.status(404).json({
+        error: 'Support chat soba nije pronađena',
+        message: 'Pokrenite live chat putem POST /api/support/chat/start'
+      });
+    }
+
+    res.json(room);
   } catch (e) {
     next(e);
   }

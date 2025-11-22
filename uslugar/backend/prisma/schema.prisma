@@ -524,6 +524,9 @@ model ChatRoom {
   // CHAT-BOT
   isBotRoom Boolean @default(false) // Da li je ovo chat-bot soba
 
+  // SUPPORT CHAT
+  isSupportRoom Boolean @default(false) // Da li je ovo support chat soba (VIP podrška 24/7)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
