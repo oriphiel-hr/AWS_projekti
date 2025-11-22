@@ -10324,7 +10324,7 @@ SMS verifikacija osigurava da vaš telefonski broj pripada vama i povećava povj
 - \`lib/email.js\`:
   - \`sendCompanyEmailVerification(toEmail, fullName, verificationToken, companyName)\`: 
     - Šalje profesionalni HTML email s verifikacijskim linkom
-    - Link: \`${FRONTEND_URL}/#verify-company-email?token={token}\`
+    - Link: \`\${FRONTEND_URL}/#verify-company-email?token={token}\` (FRONTEND_URL se uzima iz environment varijable)
     - Token vrijedi 24 sata
 
 **Baza**
