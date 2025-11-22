@@ -212,7 +212,7 @@ const features = [
         { name: "Email verifikacija", implemented: true },
         { name: "SMS verifikacija telefonskog broja (Twilio)", implemented: true },
         { name: "DNS TXT record verifikacija domena", implemented: true },
-        { name: "Email verifikacija na domeni tvrtke", implemented: true, partiallyImplemented: true },
+        { name: "Email verifikacija na domeni tvrtke", implemented: true }, // Implementirano: Slanje verifikacijskog emaila na company email adresu, verifikacijski token, endpoint za verifikaciju i resend
         { name: "Identity Badge sustav (Email, Phone, DNS, Business značke)", implemented: true },
         { name: "Datum verifikacije za svaku značku", implemented: true },
         { name: "Prikaz znački na profilu pružatelja", implemented: true },
@@ -10280,33 +10280,60 @@ SMS verifikacija osigurava da vaš telefonski broj pripada vama i povećava povj
     },
     "Email verifikacija na domeni tvrtke": {
       implemented: true,
-      summary: "Email adrese na vlastitoj domeni potvrđuju se verifikacijskim linkom kako bi se dokazalo vlasništvo.",
-      details: `**⚠️ DJELOMIČNO IMPLEMENTIRANO**: Postoji provjera da li se domena email adrese podudara s domenom korisnika, ali nema slanja verification emaila na tu adresu. Trenutno se samo provjerava podudaranje domene, bez slanja verifikacijskog linka.
+      summary: "Email adrese na vlastitoj domeni potvrđuju se verifikacijskim linkom kako bi se dokazalo vlasništvo. Sustav automatski šalje verifikacijski email s linkom koji vrijedi 24 sata.",
+      details: `**✅ POTPUNO IMPLEMENTIRANO**: Slanje verifikacijskog emaila na company email adresu, verifikacijski token, endpoint za verifikaciju i resend funkcionalnost.
 
 **Kako funkcionira**
-- Korisnik unosi email na poslovnoj domeni; sustav šalje verifikacijski link.
-- Klikom na link email se označava kao verificiran i izdaje se Business email badge.
-- Moguće je imati više verificiranih adresa za isti profil.
+- Korisnik unosi email na poslovnoj domeni preko \`POST /api/kyc/verify-identity\` endpointa (type: 'email').
+- Sustav provjerava da li se domena email adrese podudara s domenom korisnika.
+- Generira se verifikacijski token (32-byte hex, unique) koji vrijedi 24 sata.
+- Verifikacijski email se šalje na company email adresu s linkom za verifikaciju.
+- Klikom na link u emailu (\`GET /api/kyc/verify-company-email?token=...\`), email se označava kao verificiran i postavlja se \`identityEmailVerified: true\`.
+- Moguće je zatražiti ponovno slanje verifikacijskog emaila preko \`POST /api/kyc/resend-company-email-verification\`.
 
 **Prednosti**
 - Povećava kredibilitet i profesionalnost profila.
 - Smanjuje rizik od phishinga i lažnih predstavljanja.
+- Dokazuje vlasništvo nad domenom tvrtke.
 
 **Kada koristiti**
 - Kad provider koristi poslovnu domenu (npr. @firma.hr).
 - Kod onboardinga većih timova ili dodavanja dodatnih kontakata.
+- Za dobivanje Business Email Badge-a.
 `,
       technicalDetails: `**Frontend**
 - Forma za dodavanje emaila + status (Pending/Verified/Failed).
 - Informativni banner o prednostima poslovnih emailova.
+- Stranica za verifikaciju: \`/#verify-company-email?token=...\` (može koristiti istu komponentu kao \`VerifyEmail.jsx\`).
 
 **Backend**
-- \`emailVerificationService.request\` kreira token i šalje transactional email.
-- \`emailVerificationService.confirm\` validira token i označava email verificiranim.
+- \`routes/kyc.js\`:
+  - \`POST /api/kyc/verify-identity\` (type: 'email'): 
+    - Provjerava podudaranje domene
+    - Generira verifikacijski token (32-byte hex)
+    - Sprema token u \`ProviderProfile.identityEmailToken\`
+    - Šalje verifikacijski email preko \`sendCompanyEmailVerification\`
+  - \`GET /api/kyc/verify-company-email?token=...\`: 
+    - Validira token i expiration
+    - Provjerava podudaranje domene
+    - Postavlja \`identityEmailVerified: true\`
+    - Briše token nakon verifikacije
+  - \`POST /api/kyc/resend-company-email-verification\`: 
+    - Generira novi token
+    - Šalje ponovno verifikacijski email
+- \`lib/email.js\`:
+  - \`sendCompanyEmailVerification(toEmail, fullName, verificationToken, companyName)\`: 
+    - Šalje profesionalni HTML email s verifikacijskim linkom
+    - Link: \`${FRONTEND_URL}/#verify-company-email?token={token}\`
+    - Token vrijedi 24 sata
 
 **Baza**
-- \`EmailVerification\` (userId, email, tokenHash, expiresAt, verifiedAt).
-- \`ProviderEmail\` tabela s flagom \`isVerified\`.
+- \`ProviderProfile\` polja:
+  - \`identityEmailAddress\`: Email adresa na domeni tvrtke za verifikaciju
+  - \`identityEmailToken\`: Verifikacijski token (unique)
+  - \`identityEmailTokenExpiresAt\`: Istek tokena (24 sata)
+  - \`identityEmailVerified\`: Status verifikacije (true/false)
+  - \`identityEmailVerifiedAt\`: Datum verifikacije
 
 **Integracije**
 - Email sending servis (SES/Mailgun), audit log za compliance.

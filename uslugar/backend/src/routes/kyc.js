@@ -1028,21 +1028,63 @@ r.post('/verify-identity', auth(true), async (req, res, next) => {
     
     switch (type) {
       case 'email':
-        // Verify email domain matches company domain
+        // Provjeri da li se domena email adrese podudara s domenom korisnika
         const companyEmailDomain = value.split('@')[1];
         const userEmailDomain = user.email.split('@')[1];
         
         if (companyEmailDomain !== userEmailDomain) {
           return res.status(400).json({ 
-            error: 'Email domena se ne podudara s domenom tvrtke' 
+            error: 'Email domena se ne podudara s domenom tvrtke',
+            message: 'Email adresa mora biti na istoj domeni kao vaš registracijski email.'
           });
         }
         
-        updateData = {
-          identityEmailVerified: true,
-          identityEmailVerifiedAt: new Date()
+        // Generiraj verifikacijski token
+        const { randomBytes } = await import('crypto');
+        const verificationToken = randomBytes(32).toString('hex');
+        const tokenExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 sata
+        
+        // Spremi email adresu i token u ProviderProfile (ne postavljaj verified još)
+        const emailUpdateData = {
+          identityEmailAddress: value,
+          identityEmailToken: verificationToken,
+          identityEmailTokenExpiresAt: tokenExpiresAt,
+          identityEmailVerified: false, // Ne postavljaj verified dok se ne klikne link
+          identityEmailVerifiedAt: null
         };
-        break;
+        
+        // Spremi token u bazu prije slanja emaila
+        await prisma.providerProfile.update({
+          where: { userId: user.id },
+          data: emailUpdateData
+        });
+        
+        // Pošalji verifikacijski email
+        try {
+          const { sendCompanyEmailVerification } = await import('../lib/email.js');
+          const companyName = providerProfile.companyName || user.companyName || null;
+          await sendCompanyEmailVerification(value, user.fullName || user.email, verificationToken, companyName);
+          console.log(`[KYC] Company email verification sent to: ${value}`);
+        } catch (emailError) {
+          console.error('[KYC] Error sending company email verification:', emailError);
+          // Ne baci grešku - token je spremljen, korisnik može zatražiti ponovno slanje
+          return res.status(500).json({
+            error: 'Greška pri slanju verifikacijskog emaila',
+            message: 'Token je generiran, ali email nije poslan. Pokušajte ponovno zatražiti verifikaciju.',
+            tokenSaved: true
+          });
+        }
+        
+        // Vrati poruku da je email poslan
+        return res.json({
+          success: true,
+          message: 'Verifikacijski email je poslan na vašu email adresu. Provjerite inbox i kliknite na link za verifikaciju.',
+          emailSent: true,
+          emailAddress: value
+        });
+        
+      // Ne postavi updateData za email - već smo vratili response
+      // break; // Ne treba break jer već return-amo
         
       case 'phone':
         // Provjeri da li je telefon već verificiran preko SMS verifikacije
@@ -1113,6 +1155,11 @@ r.post('/verify-identity', auth(true), async (req, res, next) => {
         return res.status(400).json({ 
           error: 'Invalid verification type' 
         });
+    }
+    
+    // Ako je email verifikacija, već smo vratili response gore
+    if (type === 'email') {
+      return; // Već smo vratili response u switch case-u
     }
     
     // Update provider profile
@@ -1188,6 +1235,194 @@ r.post('/upload-safety-badge', auth(true), uploadDocument.single('document'), as
     
   } catch (err) {
     console.error('[KYC] Safety badge upload error:', err);
+    next(err);
+  }
+});
+
+/**
+ * GET /api/kyc/verify-company-email
+ * Verify company email address using token from email link
+ * 
+ * Query params:
+ * - token: string (verification token from email)
+ */
+r.get('/verify-company-email', async (req, res, next) => {
+  try {
+    const { token } = req.query;
+    
+    if (!token) {
+      return res.status(400).json({
+        error: 'Verifikacijski token je obavezan',
+        message: 'Molimo koristite link iz emaila koji ste primili.'
+      });
+    }
+    
+    // Pronađi ProviderProfile s ovim tokenom
+    const providerProfile = await prisma.providerProfile.findFirst({
+      where: {
+        identityEmailToken: token,
+        identityEmailTokenExpiresAt: {
+          gt: new Date() // Token još nije istekao
+        }
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            fullName: true
+          }
+        }
+      }
+    });
+    
+    if (!providerProfile) {
+      return res.status(400).json({
+        error: 'Nevažeći ili istekao token',
+        message: 'Verifikacijski link je nevažeći ili je istekao. Molimo zatražite novi verifikacijski email.'
+      });
+    }
+    
+    // Provjeri da li je email adresa još uvijek na istoj domeni
+    if (!providerProfile.identityEmailAddress) {
+      return res.status(400).json({
+        error: 'Email adresa nije pronađena',
+        message: 'Email adresa za verifikaciju nije pronađena. Molimo zatražite novu verifikaciju.'
+      });
+    }
+    
+    const companyEmailDomain = providerProfile.identityEmailAddress.split('@')[1];
+    const userEmailDomain = providerProfile.user.email.split('@')[1];
+    
+    if (companyEmailDomain !== userEmailDomain) {
+      return res.status(400).json({
+        error: 'Domena se ne podudara',
+        message: 'Email adresa više nije na istoj domeni kao vaš registracijski email. Molimo zatražite novu verifikaciju.'
+      });
+    }
+    
+    // Verificiraj email
+    const updatedProfile = await prisma.providerProfile.update({
+      where: { userId: providerProfile.userId },
+      data: {
+        identityEmailVerified: true,
+        identityEmailVerifiedAt: new Date(),
+        identityEmailToken: null, // Obriši token nakon verifikacije
+        identityEmailTokenExpiresAt: null
+      }
+    });
+    
+    console.log(`[KYC] Company email verified for user ${providerProfile.userId}: ${providerProfile.identityEmailAddress}`);
+    
+    res.json({
+      success: true,
+      message: 'Email adresa je uspješno verificirana!',
+      data: {
+        emailAddress: providerProfile.identityEmailAddress,
+        verifiedAt: updatedProfile.identityEmailVerifiedAt
+      }
+    });
+    
+  } catch (err) {
+    console.error('[KYC] Company email verification error:', err);
+    next(err);
+  }
+});
+
+/**
+ * POST /api/kyc/resend-company-email-verification
+ * Resend company email verification email
+ * 
+ * Body: (optional - koristi se email iz ProviderProfile ako nije specificiran)
+ * - email: string (optional)
+ */
+r.post('/resend-company-email-verification', auth(true), async (req, res, next) => {
+  try {
+    const user = req.user;
+    const { email } = req.body;
+    
+    // Dohvati ProviderProfile
+    const providerProfile = await prisma.providerProfile.findUnique({
+      where: { userId: user.id }
+    });
+    
+    if (!providerProfile) {
+      return res.status(404).json({
+        error: 'Provider profile not found',
+        message: 'Nemate provider profil. Ova funkcionalnost je dostupna samo za pružatelje usluga.'
+      });
+    }
+    
+    // Koristi email iz body-a ili iz ProviderProfile
+    const emailToVerify = email || providerProfile.identityEmailAddress;
+    
+    if (!emailToVerify) {
+      return res.status(400).json({
+        error: 'Email adresa nije specificirana',
+        message: 'Molimo unesite email adresu za verifikaciju ili prvo zatražite verifikaciju preko /api/kyc/verify-identity endpointa.'
+      });
+    }
+    
+    // Provjeri da li se domena podudara
+    const companyEmailDomain = emailToVerify.split('@')[1];
+    const userEmailDomain = user.email.split('@')[1];
+    
+    if (companyEmailDomain !== userEmailDomain) {
+      return res.status(400).json({
+        error: 'Email domena se ne podudara s domenom tvrtke',
+        message: 'Email adresa mora biti na istoj domeni kao vaš registracijski email.'
+      });
+    }
+    
+    // Provjeri da li je već verificiran
+    if (providerProfile.identityEmailVerified && providerProfile.identityEmailAddress === emailToVerify) {
+      return res.json({
+        success: true,
+        message: 'Email adresa je već verificirana.',
+        alreadyVerified: true
+      });
+    }
+    
+    // Generiraj novi verifikacijski token
+    const { randomBytes } = await import('crypto');
+    const verificationToken = randomBytes(32).toString('hex');
+    const tokenExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 sata
+    
+    // Ažuriraj ProviderProfile s novim tokenom
+    await prisma.providerProfile.update({
+      where: { userId: user.id },
+      data: {
+        identityEmailAddress: emailToVerify,
+        identityEmailToken: verificationToken,
+        identityEmailTokenExpiresAt: tokenExpiresAt,
+        identityEmailVerified: false, // Reset verified status ako se mijenja email
+        identityEmailVerifiedAt: null
+      }
+    });
+    
+    // Pošalji verifikacijski email
+    try {
+      const { sendCompanyEmailVerification } = await import('../lib/email.js');
+      const companyName = providerProfile.companyName || user.companyName || null;
+      await sendCompanyEmailVerification(emailToVerify, user.fullName || user.email, verificationToken, companyName);
+      console.log(`[KYC] Company email verification resent to: ${emailToVerify}`);
+    } catch (emailError) {
+      console.error('[KYC] Error resending company email verification:', emailError);
+      return res.status(500).json({
+        error: 'Greška pri slanju verifikacijskog emaila',
+        message: 'Token je generiran, ali email nije poslan. Pokušajte ponovno.'
+      });
+    }
+    
+    res.json({
+      success: true,
+      message: 'Verifikacijski email je ponovno poslan na vašu email adresu.',
+      emailSent: true,
+      emailAddress: emailToVerify
+    });
+    
+  } catch (err) {
+    console.error('[KYC] Resend company email verification error:', err);
     next(err);
   }
 });

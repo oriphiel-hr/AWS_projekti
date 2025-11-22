@@ -265,6 +265,93 @@ export const sendVerificationEmail = async (toEmail, fullName, verificationToken
   }
 };
 
+/**
+ * Send company email verification email
+ * @param {string} toEmail - Company email address to verify
+ * @param {string} fullName - Full name of the user
+ * @param {string} verificationToken - Verification token
+ * @param {string} companyName - Company name (optional)
+ */
+export const sendCompanyEmailVerification = async (toEmail, fullName, verificationToken, companyName = null) => {
+  if (!transporter) {
+    const error = new Error('SMTP nije konfiguriran. Email verifikacija zahtijeva SMTP postavke.');
+    console.error('SMTP not configured - cannot send company email verification to:', toEmail);
+    throw error;
+  }
+
+  const verificationUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/#verify-company-email?token=${verificationToken}`;
+
+  try {
+    await transporter.sendMail({
+      from: `"Uslugar" <${process.env.SMTP_USER || 'uslugar@uslugar.oriph.io'}>`,
+      to: toEmail,
+      subject: 'Potvrdite email adresu na domeni tvrtke - Uslugar',
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+        </head>
+        <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background-color: #f8f9fa; padding: 30px; border-radius: 10px;">
+            <h1 style="color: #333; margin-bottom: 20px;">Verifikacija email adrese na domeni tvrtke</h1>
+            
+            <p style="font-size: 16px; color: #555;">Poštovani/a <strong>${fullName}</strong>,</p>
+            
+            ${companyName ? `<p style="font-size: 16px; color: #555; line-height: 1.6;">
+              Primili smo zahtjev za verifikaciju email adrese na domeni vaše tvrtke <strong>${companyName}</strong>.
+            </p>` : ''}
+            
+            <p style="font-size: 16px; color: #555; line-height: 1.6;">
+              Da biste potvrdili vlasništvo nad email adresom <strong>${toEmail}</strong> i dobili Business Email Badge, 
+              molimo kliknite na button ispod.
+            </p>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${verificationUrl}" 
+                 style="background-color: #4CAF50; 
+                        color: white; 
+                        padding: 15px 40px; 
+                        text-decoration: none; 
+                        border-radius: 5px; 
+                        display: inline-block;
+                        font-size: 16px;
+                        font-weight: bold;">
+                Potvrdi email adresu
+              </a>
+            </div>
+            
+            <p style="font-size: 14px; color: #888; line-height: 1.6;">
+              Ili kopirajte i zalijepite ovaj link u vaš browser:<br>
+              <a href="${verificationUrl}" style="color: #4CAF50; word-break: break-all;">${verificationUrl}</a>
+            </p>
+            
+            <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 4px;">
+              <p style="margin: 0; font-size: 14px; color: #856404;">
+                <strong>⚠️ Važno:</strong> Ovaj link istječe za 24 sata. Ako link istekne, možete zatražiti novi verifikacijski email.
+              </p>
+            </div>
+            
+            <p style="font-size: 14px; color: #888; line-height: 1.6; margin-top: 30px;">
+              Ako niste zatražili verifikaciju email adrese, možete sigurno ignorirati ovaj email.
+            </p>
+            
+            <p style="font-size: 14px; color: #888; line-height: 1.6; margin-top: 20px;">
+              Hvala vam na povjerenju!<br>
+              <strong>Uslugar tim</strong>
+            </p>
+          </div>
+        </body>
+        </html>
+      `
+    });
+    console.log('[OK] Company email verification sent to:', toEmail);
+  } catch (error) {
+    console.error('Error sending company email verification:', error);
+    throw error;
+  }
+};
+
 export const sendPasswordResetEmail = async (toEmail, fullName, resetToken) => {
   if (!transporter) {
     const error = new Error('SMTP nije konfiguriran. Password reset zahtijeva SMTP postavke.');
