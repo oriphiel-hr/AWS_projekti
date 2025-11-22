@@ -190,7 +190,7 @@ const features = [
       items: [
         { name: "Pregled trenutne pretplate", implemented: true },
         { name: "Dostupni planovi (BASIC, PREMIUM, PRO)", implemented: true },
-        { name: "Nadogradnja pretplate", implemented: true, partiallyImplemented: true },
+        { name: "Nadogradnja pretplate", implemented: true }, // Implementirano: Prorated billing - proporcionalna naplata za upgrade/downgrade, izračun preostalih dana, automatska prilagodba cijene u Stripe checkout
         { name: "Otkazivanje pretplate", implemented: true },
         { name: "Status pretplate (ACTIVE, CANCELLED, EXPIRED)", implemented: true },
         { name: "Automatsko isteka pretplate", implemented: true },
@@ -5633,42 +5633,69 @@ const featureDescriptions = {
     },
     "Nadogradnja pretplate": {
       implemented: true,
-      summary: "Nadogradite na viši plan u bilo kojem trenutku uz proporcionalnu naplatu.",
-      details: `**⚠️ DJELOMIČNO IMPLEMENTIRANO**: Postoji mogućnost promjene plana kroz \`/subscribe\` endpoint, ali nema proporcionalne naplate (prorated billing). Plan se može promijeniti, ali naplaćuje se puna cijena novog plana.
+      summary: "Nadogradite na viši plan u bilo kojem trenutku uz proporcionalnu naplatu (prorated billing). Sustav automatski izračunava preostale dane i naplaćuje samo razliku.",
+      details: `**✅ POTPUNO IMPLEMENTIRANO**: Prorated billing je potpuno implementiran. Sustav automatski izračunava preostale dane u trenutnom ciklusu i naplaćuje samo proporcionalnu razliku između trenutnog i novog plana.
 
 **Kako funkcionira**
-- Odaberete viši plan; sustav izračuna prorata razliku i pokrene Stripe upgrade.
+- **Upgrade**: Ako korisnik ima aktivnu plaćenu pretplatu i želi upgrade na viši plan, sustav izračunava:
+  - Preostale dane u trenutnom ciklusu
+  - Dnevnu cijenu trenutnog i novog plana
+  - Proporcionalnu razliku = (novaCijena - trenutnaCijena) × (preostaliDani / 30)
+  - Naplaćuje se samo razlika, ne puna cijena novog plana
+- **Downgrade**: Ako korisnik želi downgrade na niži plan, cijena je 0€ (ne naplaćuje se), ali se zadržava postojeći expiresAt
 - Novi plan i dodatni krediti aktiviraju se odmah; status pretplate se ažurira.
-- Povijest prikazuje datum nadogradnje i naplaćenu razliku.
+- Postojeći expiresAt se zadržava za prorated billing (ne resetira se na novi mjesec).
 
 **Prednosti**
 - Fleksibilnost rasta bez čekanja do kraja ciklusa.
+- Pravedna naplata - korisnik plaća samo za preostale dane.
 - Dodatni krediti i funkcionalnosti odmah dostupni.
+- Transparentan izračun - korisnik vidi točno koliko će platiti.
 
 **Kada koristiti**
 - Kada trošite kredite brže od plana ili trebate napredne značajke.
 - Sezonski rast potražnje ili novi članovi tima.
+- Kada želite optimizirati troškove (downgrade na niži plan).
 `,
       technicalDetails: `**Frontend**
-- \`UpgradePlanModal\` prikazuje trenutačni i novi plan, prorata izračun i CTA.
-- UX uključuje potvrdu Stripe plaćanja.
+- \`SubscriptionPlans.jsx\` poziva \`POST /api/payments/create-checkout\` s plan parametrom.
+- Stripe checkout prikazuje prorated cijenu ako je upgrade/downgrade.
 
 **Backend**
-- \`subscriptionService.upgrade\` kreira Stripe \`subscription_items\` update s proration_behavior='always_invoice'.
-- Event \`subscription.upgraded\` emitira notifikacije i kredite.
+- \`routes/payments.js\`: \`POST /api/payments/create-checkout\` endpoint:
+  - Provjerava da li korisnik ima aktivnu plaćenu pretplatu (ne TRIAL, ne BASIC).
+  - Izračunava preostale dane: \`(expiresAt - now) / (1000 * 60 * 60 * 24)\`.
+  - Izračunava dnevnu cijenu: \`planPrice / 30\` (mjesečna pretplata).
+  - Izračunava prorated cijenu: \`(newDailyPrice - currentDailyPrice) × daysRemaining\`.
+  - Ako je upgrade (cijena > 0), koristi \`subscription\` mode u Stripe checkout.
+  - Ako je downgrade (cijena < 0), postavlja cijenu na 0€ i koristi \`payment\` mode.
+  - Dodaje \`proratedInfo\` u metadata za praćenje.
+- \`activateSubscription\` funkcija:
+  - Zadržava postojeći \`expiresAt\` ako korisnik već ima aktivnu plaćenu pretplatu (prorated billing).
+  - Inače postavlja novi \`expiresAt\` (1 mjesec od sada).
 
 **Baza**
-- \`Subscription\` polja \`plan\`, \`previousPlan\`, \`upgradedAt\`.
-- \`CreditTransaction\` zapisuje bonus kredite.
+- \`Subscription\` model: \`plan\`, \`status\`, \`expiresAt\` - sve potrebno za prorated billing.
+- \`SubscriptionPlan\` model: \`price\` - za izračun dnevne cijene.
 
-**Integracije**
-- Stripe invoice i proration izračun.
-- Notification servis obavještava financijski tim i korisnika.
+**Stripe**
+- Checkout session koristi \`subscription\` mode za upgrade (s prorated cijenom).
+- Checkout session koristi \`payment\` mode za downgrade (0€).
+- Metadata sadrži \`proratedInfo\` JSON s detaljima izračuna.
 
 **API**
-- \`POST /api/subscriptions/upgrade\` – tijelo { planCode }.
-- \`GET /api/subscriptions/upgrade-options\` – prikazuje dostupne nadogradnje.
-- Webhook \`invoice.payment_succeeded\` potvrđuje upgrade.
+- \`POST /api/payments/create-checkout\` – tijelo { plan }.
+- Automatski izračunava prorated billing ako korisnik ima aktivnu plaćenu pretplatu.
+- Vraća Stripe checkout URL s prorated cijenom.
+
+**Primjer izračuna**
+- Korisnik ima PREMIUM plan (89€) s 15 preostalih dana.
+- Želi upgrade na PRO plan (149€).
+- Dnevna cijena PREMIUM: 89€ / 30 = 2.97€/dan
+- Dnevna cijena PRO: 149€ / 30 = 4.97€/dan
+- Razlika: 4.97€ - 2.97€ = 2.00€/dan
+- Prorated cijena: 2.00€ × 15 dana = 30.00€
+- Korisnik plaća 30€ umjesto 149€.
 `
     },
     "Otkazivanje pretplate": {

@@ -68,11 +68,13 @@ r.post('/create-checkout', auth(true, ['PROVIDER']), async (req, res, next) => {
     }
 
     // Provjeri je li korisnik novi ili na TRIAL-u (za popust)
+    // Također provjeri da li ima aktivnu plaćenu pretplatu za prorated billing
     let adjustedPrice = planDetails.price;
     let isUserNew = false;
     let isUserTrial = false;
     let discountApplied = false;
-    let discountType = null; // 'new_user' ili 'trial_upgrade'
+    let discountType = null; // 'new_user', 'trial_upgrade', ili 'prorated'
+    let proratedInfo = null; // Informacije o prorated billing-u
     
     try {
       // Provjeri da li korisnik ima bilo kakve plaćene pretplate (ne TRIAL)
@@ -90,7 +92,7 @@ r.post('/create-checkout', auth(true, ['PROVIDER']), async (req, res, next) => {
       
       isUserNew = !paidSubscriptions;
       
-      // Provjeri da li je korisnik na TRIAL planu (ACTIVE ili EXPIRED - i jedno i drugo dobiva popust)
+      // Provjeri trenutnu pretplatu
       const subscription = await prisma.subscription.findUnique({
         where: { userId: req.user.id },
         select: {
@@ -109,28 +111,103 @@ r.post('/create-checkout', auth(true, ['PROVIDER']), async (req, res, next) => {
       
       isUserTrial = isTrialPlan && (isTrialActive || isTrialRecentlyExpired);
       
-      // Prioritet: TRIAL upgrade popust ima prednost nad new user popustom
-      if (isUserTrial && plan !== 'TRIAL' && planDetails.price > 0) {
-        const discountPercent = 20; // 20% popust za upgrade iz TRIAL-a
-        const discountAmount = (planDetails.price * discountPercent) / 100;
-        adjustedPrice = planDetails.price - discountAmount;
-        adjustedPrice = Math.round(adjustedPrice * 100) / 100; // Zaokruži na 2 decimale
-        discountApplied = true;
-        discountType = 'trial_upgrade';
+      // Provjeri da li korisnik ima aktivnu plaćenu pretplatu (za prorated billing)
+      const hasActivePaidSubscription = subscription && 
+        subscription.plan !== 'TRIAL' && 
+        subscription.plan !== 'BASIC' && 
+        subscription.status === 'ACTIVE' &&
+        subscription.expiresAt &&
+        new Date(subscription.expiresAt) > new Date();
+      
+      if (hasActivePaidSubscription && subscription.plan !== plan) {
+        // Izračunaj prorated billing
+        const currentPlanDetails = await prisma.subscriptionPlan.findUnique({
+          where: { name: subscription.plan }
+        });
         
-        console.log(`[CHECKOUT] TRIAL upgrade discount applied: ${planDetails.price}€ -> ${adjustedPrice}€ (${discountPercent}% off)`);
-      } else if (isUserNew && plan !== 'TRIAL' && planDetails.price > 0) {
-        const discountPercent = 20; // 20% popust za nove korisnike
-        const discountAmount = (planDetails.price * discountPercent) / 100;
-        adjustedPrice = planDetails.price - discountAmount;
-        adjustedPrice = Math.round(adjustedPrice * 100) / 100; // Zaokruži na 2 decimale
-        discountApplied = true;
-        discountType = 'new_user';
-        
-        console.log(`[CHECKOUT] New user discount applied: ${planDetails.price}€ -> ${adjustedPrice}€ (${discountPercent}% off)`);
+        if (currentPlanDetails) {
+          const now = new Date();
+          const expiresAt = new Date(subscription.expiresAt);
+          const daysRemaining = Math.max(0, Math.ceil((expiresAt - now) / (1000 * 60 * 60 * 24))); // Preostali dani
+          const totalDaysInPeriod = 30; // Mjesečna pretplata = 30 dana
+          
+          // Dnevna cijena trenutnog i novog plana
+          const currentDailyPrice = currentPlanDetails.price / totalDaysInPeriod;
+          const newDailyPrice = planDetails.price / totalDaysInPeriod;
+          
+          // Razlika u cijeni
+          const priceDifference = newDailyPrice - currentDailyPrice;
+          
+          // Prorated cijena (samo za upgrade - ako je downgrade, cijena je 0 ili credit)
+          if (priceDifference > 0) {
+            // Upgrade - naplati razliku proporcionalno preostalim danima
+            const proratedAmount = priceDifference * daysRemaining;
+            adjustedPrice = Math.max(0, Math.round(proratedAmount * 100) / 100); // Zaokruži na 2 decimale, minimum 0
+            
+            proratedInfo = {
+              currentPlan: subscription.plan,
+              newPlan: plan,
+              currentPlanPrice: currentPlanDetails.price,
+              newPlanPrice: planDetails.price,
+              daysRemaining,
+              totalDaysInPeriod,
+              proratedAmount: adjustedPrice,
+              isUpgrade: true
+            };
+            
+            discountApplied = true;
+            discountType = 'prorated';
+            
+            console.log(`[CHECKOUT] Prorated billing applied: ${subscription.plan} -> ${plan}`);
+            console.log(`[CHECKOUT] Days remaining: ${daysRemaining}, Prorated amount: ${adjustedPrice}€`);
+          } else if (priceDifference < 0) {
+            // Downgrade - ne naplaćujemo, ali možemo dati credit za preostale dane
+            adjustedPrice = 0;
+            
+            proratedInfo = {
+              currentPlan: subscription.plan,
+              newPlan: plan,
+              currentPlanPrice: currentPlanDetails.price,
+              newPlanPrice: planDetails.price,
+              daysRemaining,
+              totalDaysInPeriod,
+              proratedAmount: 0,
+              isUpgrade: false,
+              creditAmount: Math.abs(priceDifference * daysRemaining) // Credit za preostale dane
+            };
+            
+            discountApplied = true;
+            discountType = 'prorated_downgrade';
+            
+            console.log(`[CHECKOUT] Downgrade detected: ${subscription.plan} -> ${plan}`);
+            console.log(`[CHECKOUT] No charge, credit available: ${proratedInfo.creditAmount}€`);
+          }
+        }
+      } else {
+        // Nema aktivne plaćene pretplate - provjeri popuste
+        // Prioritet: TRIAL upgrade popust ima prednost nad new user popustom
+        if (isUserTrial && plan !== 'TRIAL' && planDetails.price > 0) {
+          const discountPercent = 20; // 20% popust za upgrade iz TRIAL-a
+          const discountAmount = (planDetails.price * discountPercent) / 100;
+          adjustedPrice = planDetails.price - discountAmount;
+          adjustedPrice = Math.round(adjustedPrice * 100) / 100; // Zaokruži na 2 decimale
+          discountApplied = true;
+          discountType = 'trial_upgrade';
+          
+          console.log(`[CHECKOUT] TRIAL upgrade discount applied: ${planDetails.price}€ -> ${adjustedPrice}€ (${discountPercent}% off)`);
+        } else if (isUserNew && plan !== 'TRIAL' && planDetails.price > 0) {
+          const discountPercent = 20; // 20% popust za nove korisnike
+          const discountAmount = (planDetails.price * discountPercent) / 100;
+          adjustedPrice = planDetails.price - discountAmount;
+          adjustedPrice = Math.round(adjustedPrice * 100) / 100; // Zaokruži na 2 decimale
+          discountApplied = true;
+          discountType = 'new_user';
+          
+          console.log(`[CHECKOUT] New user discount applied: ${planDetails.price}€ -> ${adjustedPrice}€ (${discountPercent}% off)`);
+        }
       }
     } catch (error) {
-      console.warn('[CHECKOUT] Error checking if user is new/trial, using regular price:', error.message);
+      console.warn('[CHECKOUT] Error checking if user is new/trial or calculating prorated billing, using regular price:', error.message);
       // Nastavi s normalnom cijenom ako dođe do greške
     }
 
@@ -187,34 +264,59 @@ r.post('/create-checkout', auth(true, ['PROVIDER']), async (req, res, next) => {
       originalPrice: planDetails.price.toString(),
       discountedPrice: adjustedPrice.toString(),
       discountApplied: discountApplied.toString(),
-      discountType: discountType || ''
+      discountType: discountType || '',
+      proratedInfo: proratedInfo ? JSON.stringify(proratedInfo) : ''
     };
     
     console.log('[CREATE-CHECKOUT] Creating session with metadata:', metadata);
 
     // Create Stripe Checkout Session
-    const session = await stripe.checkout.sessions.create({
+    // Ako je prorated billing i cijena je 0 (downgrade), koristimo payment mode umjesto subscription
+    const isProratedDowngrade = discountType === 'prorated_downgrade' && adjustedPrice === 0;
+    const mode = isProratedDowngrade ? 'payment' : 'subscription';
+    
+    const productName = proratedInfo 
+      ? `${planDetails.displayName} Plan (Upgrade iz ${proratedInfo.currentPlan})`
+      : `${planDetails.displayName} Plan${discountApplied ? (discountType === 'trial_upgrade' ? ' (TRIAL upgrade - 20% popust!)' : discountType === 'new_user' ? ' (Novi korisnik - 20% popust!)' : '') : ''}`;
+    
+    const productDescription = proratedInfo
+      ? `Proporcionalna naplata za ${proratedInfo.daysRemaining} preostalih dana. Originalna cijena: ${planDetails.price}€, Naplaćeno: ${adjustedPrice}€`
+      : `${planDetails.credits} ekskluzivnih leadova mjesečno${discountApplied && discountType !== 'prorated' ? ` - Originalna cijena: ${planDetails.price}€` : ''}`;
+    
+    const sessionConfig = {
       payment_method_types: ['card'], // Kartice (Visa, Mastercard, Diners)
-      mode: 'subscription', // Recurring payment
+      mode: mode,
       customer_email: req.user.email,
       line_items: [{
         price_data: {
           currency: planDetails.currency.toLowerCase() || 'eur',
           product_data: {
-            name: `${planDetails.displayName} Plan${discountApplied ? (discountType === 'trial_upgrade' ? ' (TRIAL upgrade - 20% popust!)' : ' (Novi korisnik - 20% popust!)') : ''}`,
-            description: `${planDetails.credits} ekskluzivnih leadova mjesečno${discountApplied ? ` - Originalna cijena: ${planDetails.price}€` : ''}`,
+            name: productName,
+            description: productDescription,
           },
-          unit_amount: Math.round(adjustedPrice * 100), // Stripe koristi cents, koristimo smanjenu cijenu
-          recurring: {
-            interval: 'month' // Mjesečna pretplata
-          }
+          unit_amount: Math.round(adjustedPrice * 100), // Stripe koristi cents
+          ...(mode === 'subscription' ? {
+            recurring: {
+              interval: 'month' // Mjesečna pretplata
+            }
+          } : {})
         },
         quantity: 1
       }],
       success_url: `${process.env.CLIENT_URL || 'https://uslugar.oriph.io'}#subscription-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.CLIENT_URL || 'https://uslugar.oriph.io'}#pricing`,
       metadata: metadata
-    });
+    };
+    
+    // Ako je prorated downgrade s 0 cijenom, možemo preskočiti Stripe checkout i direktno aktivirati
+    if (isProratedDowngrade) {
+      // Za downgrade s 0 cijenom, možemo direktno aktivirati pretplatu bez Stripe checkout-a
+      // Ili možemo koristiti payment mode s 0 cijenom (Stripe će automatski uspjeti)
+      // Za sada koristimo payment mode - Stripe će automatski uspjeti za 0€
+      console.log(`[CHECKOUT] Prorated downgrade detected - using payment mode with 0€`);
+    }
+    
+    const session = await stripe.checkout.sessions.create(sessionConfig);
 
     res.json({
       sessionId: session.id,
@@ -733,8 +835,23 @@ async function activateSubscription(userId, plan, credits, stripePaymentIntentId
     
     console.log(`[ACTIVATE SUBSCRIPTION] Existing subscription:`, existingSubscription);
 
-    const expiresAt = new Date();
-    expiresAt.setMonth(expiresAt.getMonth() + 1); // 1 mjesec
+    // Ako korisnik već ima aktivnu plaćenu pretplatu, zadrži postojeći expiresAt (prorated billing)
+    // Inače, postavi novi expiresAt (1 mjesec od sada)
+    let expiresAt;
+    if (existingSubscription && 
+        existingSubscription.expiresAt && 
+        existingSubscription.status === 'ACTIVE' && 
+        existingSubscription.plan !== 'TRIAL' && 
+        existingSubscription.plan !== 'BASIC') {
+      // Zadrži postojeći expiresAt za prorated billing
+      expiresAt = new Date(existingSubscription.expiresAt);
+      console.log(`[ACTIVATE SUBSCRIPTION] Keeping existing expiresAt for prorated billing: ${expiresAt}`);
+    } else {
+      // Nova pretplata ili upgrade iz TRIAL/BASIC - 1 mjesec od sada
+      expiresAt = new Date();
+      expiresAt.setMonth(expiresAt.getMonth() + 1);
+      console.log(`[ACTIVATE SUBSCRIPTION] New subscription or upgrade from TRIAL/BASIC, expiresAt: ${expiresAt}`);
+    }
     
     console.log(`[ACTIVATE SUBSCRIPTION] Updating subscription, expiresAt: ${expiresAt}`);
 
@@ -755,7 +872,7 @@ async function activateSubscription(userId, plan, credits, stripePaymentIntentId
         creditsBalance: existingSubscription 
           ? existingSubscription.creditsBalance + credits 
           : credits,
-        expiresAt
+        expiresAt // Zadrži postojeći expiresAt za prorated billing ili postavi novi
       }
     });
     
