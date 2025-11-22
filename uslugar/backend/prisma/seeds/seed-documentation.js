@@ -207,7 +207,7 @@ const features = [
         { name: "Različiti pravni statusi (Fizička osoba, Obrt, d.o.o., j.d.o.o., itd.)", implemented: true },
         { name: "OIB validacija", implemented: true },
         { name: "Naziv tvrtke/obrta", implemented: true },
-        { name: "Auto-verifikacija naziva tvrtke (Sudski registar, Obrtni registar)", implemented: true, partiallyImplemented: true },
+        { name: "Auto-verifikacija naziva tvrtke (Sudski registar, Obrtni registar)", implemented: true }, // Implementirano: Prava integracija s Sudskim registrom API (OAuth), scraping Obrtnog registra, automatska provjera pri registraciji
         { name: "Porezni broj", implemented: true },
         { name: "Email verifikacija", implemented: true },
         { name: "SMS verifikacija telefonskog broja (Twilio)", implemented: true },
@@ -7683,33 +7683,65 @@ Tijela koja izdaju licence omogućavaju vam dokaz valjanosti vaše licence i pri
     },
     "Auto-verifikacija naziva tvrtke (Sudski registar, Obrtni registar)": {
       implemented: true,
-      summary: "Naziv i OIB tvrtke automatski se provjeravaju u službenim registrima odmah nakon unosa.",
-      details: `**⚠️ DJELOMIČNO IMPLEMENTIRANO**: Postoje funkcije \`checkSudskiRegistar\` i \`checkObrtniRegistar\`, ali imaju TODO komentare - "TODO: Integrirati pravi API za Sudski registar" i "TODO: Integrirati pravi API za Obrtni registar". Trenutno se koristi simulacija/fallback, ali nema prave integracije s API-jima.
+      summary: "Naziv i OIB tvrtke automatski se provjeravaju u službenim registrima odmah nakon unosa. Prava integracija s Sudskim registrom API i scraping Obrtnog registra.",
+      details: `**✅ POTPUNO IMPLEMENTIRANO**: Prava integracija s Sudskim registrom API (OAuth autentifikacija) i scraping Obrtnog registra. Automatska provjera se izvršava pri registraciji i ažuriranju profila.
 
 **Kako funkcionira**
-- Korisnik unosi podatke o tvrtki/obrtu; backend šalje upit prema sudskom ili obrtnom registru.
+- **Sudski registar (d.o.o., j.d.o.o.)**: 
+  - Koristi službeni API na https://sudreg-data.gov.hr/api/
+  - OAuth 2.0 autentifikacija s Client ID i Client Secret
+  - Provjera aktivnosti tvrtke (status = 1 = aktivna)
+  - Automatski izvlači službeni naziv tvrtke iz registra
+- **Obrtni registar (Obrt, Paušalni obrt)**:
+  - Scraping sa https://pretrazivac-obrta.gov.hr/pretraga
+  - Provjera postojanja obrta preko OIB-a vlasnika
+  - Detekcija WAF zaštite i fallback na dokument upload
 - Ako se naziv i OIB podudaraju, status verifikacije prelazi u VERIFIED i dodjeljuje se business badge.
 - Neslaganja generiraju upozorenje i zahtjev za ručnu provjeru ili dokumentaciju.
 
 **Prednosti**
 - Eliminira ručne provjere i ubrzava onboarding.
 - Smanjuje rizik od lažnih profila i čuva reputaciju marketplacea.
+- Automatska provjera pri registraciji - korisnik ne mora čekati.
 
 **Kada koristiti**
 - Tijekom inicijalnog unosa poslovnih podataka ili kasnije promjene naziva.
 - Kod periodične revizije pravnog statusa.
+- Automatski se poziva pri registraciji PROVIDER-a s OIB-om i nazivom tvrtke.
 `,
       technicalDetails: `**Frontend**
 - Forma prikazuje realtime status (Provjera u tijeku, Verificirano, Upozorenje) i CTA za upload dokumenata ako provjera padne.
 - Tooltip objašnjava iz kojih registara dolaze podaci.
+- \`ProviderRegister.jsx\` poziva \`POST /api/kyc/verify-company-name\` za realtime provjeru.
 
 **Backend**
-- \`businessVerificationService.autoVerify\` orkestrira pozive prema registrima i interpretira odgovore.
-- Fallback na ručnu provjeru (queue + admin dashboard) ako API nije dostupan.
+- \`lib/kyc-verification.js\`:
+  - \`checkSudskiRegistar(oib, companyName)\`: Prava integracija s Sudskim registrom API
+    - OAuth 2.0 token request: \`POST https://sudreg-data.gov.hr/api/oauth/token\`
+    - Company lookup: \`GET https://sudreg-data.gov.hr/api/javni/detalji_subjekta?tip_identifikatora=oib&identifikator={oib}\`
+    - Retry logika za 503 greške (3 pokušaja)
+    - Vraća \`verified: true\`, \`active: true/false\`, službeni naziv, adresu, status
+  - \`checkObrtniRegistar(oib, companyName)\`: Scraping Obrtnog registra
+    - GET forma sa https://pretrazivac-obrta.gov.hr/pretraga
+    - POST pretraga s OIB-om vlasnika
+    - Parsiranje HTML rezultata s Cheerio
+    - Detekcija WAF zaštite (F5 Big-IP)
+    - Vraća \`verified: true\` ako je OIB pronađen u rezultatima
+- \`routes/kyc.js\`:
+  - \`POST /api/kyc/verify-company-name\`: Provjera naziva tvrtke (realtime)
+  - \`POST /api/kyc/auto-verify\`: Automatska provjera pri registraciji
+- \`routes/auth.js\`: Automatska provjera pri registraciji PROVIDER-a (linija 120-195)
+  - Poziva \`checkSudskiRegistar\` ili \`checkObrtniRegistar\` ovisno o pravnom statusu
+  - Automatski dodjeljuje business badge ako je verificiran
 
 **Baza**
-- \`BusinessVerification\` (companyId, registrySource, status, checkedAt, mismatchReason).
-- Log tablica čuva response payload radi audita.
+- \`ProviderProfile\` polja \`kycObrtnRegChecked\`, \`kycKamaraChecked\` za praćenje provjera.
+- \`badgeData\` JSON polje za spremanje badge informacija (BUSINESS badge s source: SUDSKI_REGISTAR ili OBRTNI_REGISTAR).
+
+**Environment Variables**
+- \`SUDREG_CLIENT_ID\`: Client ID za Sudski registar API
+- \`SUDREG_CLIENT_SECRET\`: Client Secret za Sudski registar API
+- Ako nisu postavljeni, Sudski registar provjera vraća \`verified: false\` s porukom da treba postaviti credentials
 
 **Integracije**
 - Sudski/Obrtni registar (REST/SOAP scraping), cache sloj (Redis) za throttling.

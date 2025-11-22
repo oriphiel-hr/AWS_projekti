@@ -297,39 +297,145 @@ export async function checkSudskiRegistar(oib, companyName) {
   try {
     console.log('[Sudski Registar] Checking for OIB:', oib, 'Company:', companyName);
     
-    // TODO: Integrirati pravi API za Sudski registar
-    // Example: https://sudreg.pravosudje.hr/SudregApi/
-    // Ili scraping sa https://sudreg.pravosudje.hr/
+    // Provjeri da li su postavljeni API credentials
+    const clientId = process.env.SUDREG_CLIENT_ID;
+    const clientSecret = process.env.SUDREG_CLIENT_SECRET;
     
-    // Simulacija - u produkciji bi koristili pravi API
-    const response = await fetch(`https://sudreg.pravosudje.hr/api/company?oib=${oib}`, {
-      headers: { 'Accept': 'application/json' }
-    }).catch(() => ({ status: 404 }));
-    
-    if (response.status === 200) {
-      const data = await response.json();
+    if (!clientId || !clientSecret) {
+      console.log('[Sudski Registar] API credentials not configured');
       return {
-        verified: true,
-        active: data.status === 'AKTIVAN',
-        data: {
-          oib: data.oib,
-          name: data.name,
-          address: data.address,
-          status: data.status,
-          registrationNumber: data.registrationNumber,
-          taxNumber: data.taxNumber
-        }
+        verified: false,
+        active: false,
+        data: null,
+        note: 'API credentials not configured. Set SUDREG_CLIENT_ID and SUDREG_CLIENT_SECRET environment variables.'
       };
     }
     
-    // Fallback: nemoguće provjeriti
-    console.log('[Sudski Registar] Not found or API unavailable');
-    return {
-      verified: false,
-      active: false,
-      data: null,
-      note: 'API unavailable'
-    };
+    try {
+      // Get OAuth token
+      const axios = (await import('axios')).default;
+      const tokenResponse = await axios.post(
+        'https://sudreg-data.gov.hr/api/oauth/token',
+        'grant_type=client_credentials',
+        {
+          auth: {
+            username: clientId,
+            password: clientSecret
+          },
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          timeout: 10000
+        }
+      );
+      
+      if (!tokenResponse?.data?.access_token) {
+        console.log('[Sudski Registar] Failed to get OAuth token');
+        return {
+          verified: false,
+          active: false,
+          data: null,
+          note: 'Failed to authenticate with Sudski registar API'
+        };
+      }
+      
+      const accessToken = tokenResponse.data.access_token;
+      
+      // Get company data with retry logic
+      let sudResponse = null;
+      let lastError = null;
+      
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          sudResponse = await axios.get(
+            'https://sudreg-data.gov.hr/api/javni/detalji_subjekta',
+            {
+              params: {
+                tip_identifikatora: 'oib',
+                identifikator: oib
+              },
+              headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Accept': 'application/json'
+              },
+              timeout: 10000
+            }
+          );
+          
+          // Success - break out of retry loop
+          break;
+        } catch (err) {
+          lastError = err;
+          // If 503 (Service Unavailable), retry after delay
+          if (err.response?.status === 503 && attempt < 3) {
+            console.log(`[Sudski Registar] Service unavailable, retrying in 2 seconds (attempt ${attempt}/3)...`);
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            continue;
+          }
+          break;
+        }
+      }
+      
+      if (!sudResponse && lastError) {
+        throw lastError;
+      }
+      
+      if (sudResponse?.status === 200 && sudResponse.data) {
+        const sudData = sudResponse.data;
+        const status = sudData.status; // 1 = aktivna, 0 = neaktivna
+        
+        if (status === 1) {
+          const officialName = sudData.skracena_tvrtka?.ime || sudData.tvrtka?.ime || companyName;
+          
+          console.log('[Sudski Registar] Company found and active:', officialName);
+          
+          return {
+            verified: true,
+            active: true,
+            data: {
+              oib: sudData.oib || oib,
+              name: officialName,
+              address: sudData.sjediste?.adresa || sudData.adresa || null,
+              status: 'AKTIVAN',
+              registrationNumber: sudData.maticni_broj || null,
+              taxNumber: sudData.porezni_broj || null,
+              source: 'SUDSKI_REGISTAR'
+            }
+          };
+        } else {
+          console.log('[Sudski Registar] Company found but not active, status:', status);
+          return {
+            verified: true,
+            active: false,
+            data: {
+              oib: sudData.oib || oib,
+              name: sudData.skracena_tvrtka?.ime || sudData.tvrtka?.ime || companyName,
+              status: 'NEAKTIVAN',
+              source: 'SUDSKI_REGISTAR'
+            }
+          };
+        }
+      }
+      
+      // Not found
+      console.log('[Sudski Registar] Company not found in registry');
+      return {
+        verified: false,
+        active: false,
+        data: null,
+        note: 'Company not found in Sudski registar'
+      };
+      
+    } catch (apiError) {
+      console.error('[Sudski Registar] API error:', apiError.message);
+      return {
+        verified: false,
+        active: false,
+        data: null,
+        error: apiError.message,
+        note: 'API request failed'
+      };
+    }
     
   } catch (error) {
     console.error('[Sudski Registar] Error:', error);
@@ -347,45 +453,236 @@ export async function checkObrtniRegistar(oib, companyName) {
   try {
     console.log('[Obrtni Registar] Checking for OIB:', oib, 'Company:', companyName);
     
-    // TODO: Integrirati pravi API za Obrtni registar
-    // Example: https://api.obrt.hr/v1/obrt?oib={oib}
-    // Ili scraping sa https://www.obrti.hr/
-    
-    // Za sada: simulacija
-    const response = await fetch(`https://api.obrt.hr/v1/obrt?oib=${oib}`, {
-      headers: {
-        'Accept': 'application/json'
+    // Provjeri da li već postoji verificirani profil u našoj bazi
+    const { prisma } = await import('./prisma.js');
+    const existingOIB = await prisma.user.findFirst({
+      where: {
+        taxId: oib,
+        role: 'PROVIDER'
+      },
+      include: {
+        providerProfile: true
       }
-    }).catch(() => ({ status: 404 }));
+    });
     
-    if (response.status === 200) {
-      const data = await response.json();
+    if (existingOIB && existingOIB.providerProfile?.kycVerified) {
+      console.log('[Obrtni Registar] OIB već verificiran u našoj bazi');
       return {
-        exists: true,
+        verified: true,
+        active: true,
         data: {
-          oib: data.oib,
-          name: data.name,
-          address: data.address,
-          status: data.status,
-          registrationDate: data.registrationDate
+          oib: oib,
+          name: companyName,
+          source: 'INTERNAL_DATABASE',
+          note: 'Verified via existing KYC verification in our database'
         }
       };
     }
     
-    // Fallback: simulacija
-    console.log('[Obrtni Registar] Not found or API unavailable');
-    return {
-      exists: true, // Pretpostavljamo da postoji ako ima OIB u Rješenju
-      data: {
-        oib: oib,
-        companyName: companyName,
-        note: 'Verified via RPO document'
+    // Pokušaj scraping sa Pretraživač obrta (https://pretrazivac-obrta.gov.hr)
+    try {
+      const axios = (await import('axios')).default;
+      const cheerio = (await import('cheerio')).default;
+      
+      const baseUrl = 'https://pretrazivac-obrta.gov.hr/pretraga';
+      
+      // KORAK 1: Dobij formu (GET) - čuvaj cookies za session
+      console.log('[Obrtni Registar] Step 1: Getting form page...');
+      const axiosInstance = axios.create({
+        timeout: 15000,
+        maxRedirects: 5,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+          'Accept-Language': 'hr,en;q=0.9',
+          'Accept-Encoding': 'gzip, deflate, br'
+        }
+      });
+      
+      let formPage = null;
+      let cookies = '';
+      
+      try {
+        formPage = await axiosInstance.get(baseUrl);
+        if (formPage.headers['set-cookie']) {
+          cookies = formPage.headers['set-cookie'].map(c => c.split(';')[0]).join('; ');
+        }
+      } catch (err) {
+        console.log('[Obrtni Registar] Failed to get form page:', err.response?.status);
+        // Provjeri da li je WAF blokada
+        if (err.response?.data && typeof err.response.data === 'string') {
+          if (err.response.data.includes('URL was rejected') || 
+              err.response.data.includes('support ID')) {
+            console.log('[Obrtni Registar] 🚫 WAF/CSP zaštita blokira pristup');
+            return {
+              verified: false,
+              active: false,
+              data: null,
+              note: 'Obrtni registar je zaštićen WAF-om. Automatska provjera nije moguća. Molimo uploadajte službeni izvadak.'
+            };
+          }
+        }
+        throw err;
       }
-    };
+      
+      if (!formPage || !formPage.data) {
+        throw new Error('Failed to load form page');
+      }
+      
+      console.log('[Obrtni Registar] ✅ Form page loaded');
+      
+      // KORAK 2: Kreiraj payload za pretragu
+      console.log('[Obrtni Registar] Step 2: Building search payload...');
+      const formData = new URLSearchParams();
+      formData.append('vlasnikOib', oib);
+      formData.append('_pretraziVlasnikaUPasivi', 'on');
+      formData.append('obrtStanjeURadu', 'true');
+      formData.append('_obrtStanjeURadu', 'on');
+      formData.append('obrtStanjePrivObust', 'true');
+      formData.append('_obrtStanjePrivObust', 'on');
+      formData.append('obrtStanjeMirovanje', 'true');
+      formData.append('_obrtStanjeMirovanje', 'on');
+      formData.append('obrtStanjeBezPocetka', 'true');
+      formData.append('_obrtStanjeBezPocetka', 'on');
+      formData.append('obrtStanjeOdjava', 'true');
+      formData.append('_obrtStanjeOdjava', 'on');
+      formData.append('obrtStanjePreseljen', 'true');
+      formData.append('_obrtStanjePreseljen', 'on');
+      formData.append('obrtNaziv', '');
+      formData.append('obrtMbo', '');
+      formData.append('obrtTduId', '');
+      formData.append('vlasnikImePrezime', '');
+      formData.append('djelatnost2025Id', '');
+      formData.append('_pretezitaDjelatnost2025', 'on');
+      formData.append('djelatnostId', '');
+      formData.append('_pretezitaDjelatnost', 'on');
+      formData.append('recaptchaToken', '');
+      formData.append('action', 'validate_captcha');
+      formData.append('trazi', 'Traži');
+      
+      // KORAK 3: Pošalji POST zahtjev
+      console.log('[Obrtni Registar] Step 3: Submitting search POST...');
+      const searchResponse = await axiosInstance.post(baseUrl, formData.toString(), {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Referer': baseUrl,
+          'Origin': 'https://pretrazivac-obrta.gov.hr',
+          'Cookie': cookies,
+          'Sec-Fetch-Dest': 'document',
+          'Sec-Fetch-Mode': 'navigate',
+          'Sec-Fetch-Site': 'same-origin',
+          'Sec-Fetch-User': '?1',
+          'Upgrade-Insecure-Requests': '1'
+        }
+      });
+      
+      const resultsHTML = searchResponse.data;
+      
+      // Provjeri da li je WAF challenge stranica
+      const isWAFChallenge = resultsHTML.includes('window["bobcmn"]') ||
+                            resultsHTML.includes('window["failureConfig"]') ||
+                            resultsHTML.includes('TSPD_101') ||
+                            resultsHTML.includes('something went wrong') ||
+                            resultsHTML.includes('support id');
+      
+      if (isWAFChallenge) {
+        console.log('[Obrtni Registar] 🚫 WAF challenge detected');
+        return {
+          verified: false,
+          active: false,
+          data: null,
+          note: 'Obrtni registar je zaštićen WAF-om. Automatska provjera nije moguća. Molimo uploadajte službeni izvadak.'
+        };
+      }
+      
+      // KORAK 4: Parse rezultate
+      const $ = cheerio.load(resultsHTML);
+      const resultsText = $('body').text();
+      
+      // Provjeri da li postoji poruka "nema rezultata"
+      const htmlLower = resultsHTML.toLowerCase();
+      const nemaRezultata = htmlLower.includes('nema rezultata') ||
+                           htmlLower.includes('nema podataka') ||
+                           htmlLower.includes('pretraga nije dala rezultata') ||
+                           htmlLower.includes('nijedan obrt') ||
+                           htmlLower.includes('0 rezultata');
+      
+      // Provjeri da li OIB postoji u rezultatima (ne u formi)
+      const resultsTable = $('table.results, table.pretraga, #rezultati, .rezultati-pretrage').first();
+      const tableHTML = resultsTable.html() || '';
+      const tableText = resultsTable.text() || '';
+      
+      let hasOIBinResults = false;
+      
+      if (resultsTable.length > 0 && tableHTML.length > 0) {
+        const tableContainsOIB = tableHTML.includes(oib) || tableText.includes(oib);
+        if (tableContainsOIB) {
+          hasOIBinResults = true;
+        }
+      }
+      
+      // Ako nema tablice, provjeri u čistom tekstu (bez forme)
+      if (!hasOIBinResults) {
+        const $clean = cheerio.load(resultsHTML);
+        $clean('form, input, select, button, script, style').remove();
+        const cleanText = $clean('body').text().trim();
+        const significantContent = cleanText.length > 200;
+        const oibInCleanText = cleanText.includes(oib);
+        hasOIBinResults = significantContent && oibInCleanText;
+      }
+      
+      // Ako je OIB pronađen u rezultatima i nema poruke "nema rezultata"
+      if (hasOIBinResults && !nemaRezultata && resultsHTML.length > 5000) {
+        console.log('[Obrtni Registar] ✅ Obrt pronađen u rezultatima pretrage');
+        
+        // Pokušaj ekstrahirati naziv obrta iz rezultata
+        let extractedName = companyName;
+        const nameElements = $('td, .result-name, .company-name').filter((i, el) => {
+          const text = $(el).text().trim();
+          return text.length > 5 && text.length < 200 && !text.includes(oib);
+        });
+        
+        if (nameElements.length > 0) {
+          extractedName = $(nameElements[0]).text().trim();
+        }
+        
+        return {
+          verified: true,
+          active: true,
+          data: {
+            oib: oib,
+            name: extractedName,
+            source: 'OBRTNI_REGISTAR',
+            note: 'Verified via Pretraživač obrta scraping'
+          }
+        };
+      } else {
+        console.log('[Obrtni Registar] ⚠️ Obrt nije pronađen u rezultatima');
+        return {
+          verified: false,
+          active: false,
+          data: null,
+          note: 'Obrt nije pronađen u Obrtnom registru. Provjerite točnost OIB-a ili uploadajte službeni izvadak.'
+        };
+      }
+      
+    } catch (scrapingError) {
+      console.error('[Obrtni Registar] Scraping error:', scrapingError.message);
+      
+      // Fallback: ako ima OIB u Rješenju Porezne uprave, možemo pretpostaviti da postoji
+      // Ali ne vraćamo verified: true jer nismo potvrdili u registru
+      return {
+        verified: false,
+        active: false,
+        data: null,
+        error: scrapingError.message,
+        note: 'Automatska provjera Obrtnog registra nije dostupna. Molimo uploadajte službeni izvadak iz Obrtnog registra.'
+      };
+    }
     
   } catch (error) {
     console.error('[Obrtni Registar] Error:', error);
-    return { exists: false, data: null, error: error.message };
+    return { verified: false, active: false, data: null, error: error.message };
   }
 }
 
