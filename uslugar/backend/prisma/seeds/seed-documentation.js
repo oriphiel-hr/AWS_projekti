@@ -504,7 +504,20 @@ const features = [
         { name: "Chat-bot vodi za prvi lead", implemented: true }, // Implementirano: ChatbotSession model, chatbot-service.js, GET /api/chatbot/session, POST /api/chatbot/advance, POST /api/chatbot/complete, automatski triggeri u lead purchase, chat i offers
         { name: "Automatski email + popust link pri isteku TRIAL-a", implemented: true }, // Implementirano: checkExpiredTrials() u subscription-reminder.js, automatski email s 20% popust linkom, cron job provjera svaki sat, frontend podrška za trial_expired query parametar
         { name: "Podsjetnici za neaktivnost (>14 dana)", implemented: true }, // Implementirano: checkInactiveUsers() u subscription-reminder.js, automatski email podsjetnik, cron job provjera svaki dan u 8:00, provjera kombinacije aktivnosti (login, lead purchase, chat, offers)
-        { name: "Edukacijski materijali i vodiči", implemented: false }
+        { name: "Edukacijski materijali i vodiči", implemented: true } // Implementirano: GET /api/documentation/guides, GET /api/documentation/guides/:id, kategorija "Edukacijski materijali i vodiči" u DocumentationCategory, vodiči kao DocumentationFeature
+      ]
+    },
+    {
+      category: "Edukacijski materijali i vodiči",
+      items: [
+        { name: "Kako kupiti prvi lead", implemented: true },
+        { name: "Kako napraviti profesionalnu ponudu", implemented: true },
+        { name: "Kako optimizirati profil", implemented: true },
+        { name: "Kako komunicirati s klijentima", implemented: true },
+        { name: "Kako pratiti ROI", implemented: true },
+        { name: "Kako koristiti TRIAL period", implemented: true },
+        { name: "Vodič za refund proces", implemented: true },
+        { name: "Best practices za konverziju leadova", implemented: true }
       ]
     }
   ];
@@ -12548,6 +12561,229 @@ SMS verifikacija osigurava da vaš telefonski broj pripada vama i povećava povj
 - Automatski poziv kroz cron job (nema direktnog API endpointa).
 - Email se šalje putem SMTP (nodemailer).
 - In-app notifikacija se kreira u bazi (\`Notification\` model).
+`
+    },
+    "Edukacijski materijali i vodiči": {
+      implemented: true,
+      summary: "Edukacijski materijali i vodiči pomažu korisnicima da nauče kako koristiti Uslugar platformu. Uključuje vodiče za kupovinu leadova, slanje ponuda, komunikaciju s klijentima i optimizaciju profila.",
+      details: `**Kako funkcionira**
+- Korisnici mogu pristupiti edukacijskim materijalima kroz API endpoint \`/api/documentation/guides\`.
+- Vodiči su organizirani u kategoriju "Edukacijski materijali i vodiči" u DocumentationCategory modelu.
+- Svaki vodič sadrži naslov, sažetak, detaljni sadržaj i redoslijed prikaza.
+- Vodiči se prikazuju na frontendu u posebnoj sekciji ili stranici.
+
+**Prednosti**
+- Pomaže novim korisnicima da brzo nauče kako koristiti platformu.
+- Smanjuje broj pitanja za podršku.
+- Poboljšava korisničko iskustvo s jasnim uputama.
+- Povećava engagement i konverziju.
+
+**Kada koristiti**
+- Novi korisnici prilikom registracije.
+- Korisnici koji imaju pitanja o funkcionalnostima.
+- Kroz onboarding proces.
+- Kao referenca za napredne korisnike.
+`,
+      technicalDetails: `**Backend Implementacija**
+- \`routes/documentation.js\`: GET /api/documentation/guides endpoint za dohvat svih vodiča.
+- \`routes/documentation.js\`: GET /api/documentation/guides/:id endpoint za dohvat pojedinačnog vodiča.
+- Koristi postojeći \`DocumentationCategory\` i \`DocumentationFeature\` model.
+
+**Baza**
+- \`DocumentationCategory\` model: kategorija "Edukacijski materijali i vodiči".
+- \`DocumentationFeature\` model: svaki vodič je feature u toj kategoriji.
+- Polja: \`name\` (naslov vodiča), \`summary\` (sažetak), \`details\` (detaljni sadržaj), \`order\` (redoslijed).
+
+**API**
+- \`GET /api/documentation/guides\` – lista svih edukacijskih vodiča.
+- \`GET /api/documentation/guides/:id\` – pojedinačni vodič po ID-u.
+
+**Frontend**
+- Frontend može prikazati vodiče na posebnoj stranici ili sekciji.
+- Vodiči se mogu prikazati kao expandable kartice ili kao lista s linkovima.
+- Mogu se filtrirati po kategorijama ili pretraživati.
+
+**Primjeri Vodiča**
+- "Kako kupiti prvi lead" – vodič kroz proces kupovine leada.
+- "Kako napraviti profesionalnu ponudu" – savjeti za kreiranje uspješnih ponuda.
+- "Kako optimizirati profil" – kako privući više klijenata.
+- "Kako komunicirati s klijentima" – best practices za chat komunikaciju.
+- "Kako pratiti ROI" – kako koristiti ROI dashboard.
+- "Kako koristiti TRIAL period" – vodič za TRIAL korisnike.
+`
+    },
+    "Kako kupiti prvi lead": {
+      implemented: true,
+      summary: "Vodič kroz proces kupovine prvog leada na Uslugar platformi. Objašnjava kako pronaći kvalitetne leadove, procijeniti AI score i kupiti lead.",
+      details: `**Kako funkcionira**
+- Pregledajte dostupne leadove u vašoj kategoriji i regiji.
+- Provjerite AI quality score (0-100) - viši score = kvalitetniji lead.
+- Pročitajte detalje posla (budžet, lokacija, opis).
+- Kupite lead klikom na "Kupiti Lead" gumb.
+- Kontaktirajte klijenta putem chat-a unutar 48h.
+
+**Prednosti**
+- Ekskluzivni leadovi (1:1, bez konkurencije).
+- Refund garancija ako klijent ne odgovori.
+- AI scoring pomaže odabrati kvalitetne leadove.
+- ROI tracking prati profitabilnost.
+
+**Kada koristiti**
+- Prilikom prve kupovine leada.
+- Kada želite naučiti kako funkcionira proces.
+- Kada trebate podsjetnik na korake.
+`
+    },
+    "Kako napraviti profesionalnu ponudu": {
+      implemented: true,
+      summary: "Savjeti za kreiranje uspješnih ponuda koje privlače klijente. Uključuje strukturu ponude, cijene, rokovi i komunikaciju.",
+      details: `**Kako funkcionira**
+- Detaljno opišite što ćete napraviti.
+- Postavite realnu cijenu koja odgovara tržištu.
+- Navedite rok izvršenja posla.
+- Uključite relevantne informacije o iskustvu.
+- Budite profesionalni i odgovorni.
+
+**Prednosti**
+- Povećava šanse da klijent prihvati ponudu.
+- Gradi povjerenje s klijentima.
+- Poboljšava reputaciju na platformi.
+- Vodi do više konverzija.
+
+**Kada koristiti**
+- Prilikom slanja ponude za posao.
+- Kada želite poboljšati stopu prihvaćanja ponuda.
+- Kada trebate savjete za profesionalnu komunikaciju.
+`
+    },
+    "Kako optimizirati profil": {
+      implemented: true,
+      summary: "Vodič za optimizaciju provider profila kako bi privukli više klijenata. Uključuje bio, portfolio, kategorije, regije i verifikacije.",
+      details: `**Kako funkcionira**
+- Dodajte detaljan bio s iskustvom i kvalifikacijama.
+- Uključite portfolio slika prethodnih radova.
+- Odaberite relevantne kategorije i regije.
+- Verificirajte OIB i IBAN za "Verified Partner" oznaku.
+- Ažurirajte dostupnost i kontakt informacije.
+
+**Prednosti**
+- Privlači više klijenata.
+- Povećava povjerenje klijenata.
+- Poboljšava pozicioniranje u pretraživanju.
+- Vodi do više leadova i konverzija.
+
+**Kada koristiti**
+- Prilikom registracije.
+- Kada želite poboljšati vidljivost profila.
+- Kada trebate savjete za profesionalni profil.
+`
+    },
+    "Kako komunicirati s klijentima": {
+      implemented: true,
+      summary: "Best practices za chat komunikaciju s klijentima. Uključuje profesionalnu komunikaciju, odgovaranje na pitanja i upravljanje očekivanjima.",
+      details: `**Kako funkcionira**
+- Odgovarajte brzo (unutar 24h).
+- Budite profesionalni i ljubazni.
+- Jasno komunicirajte o cijenama i rokovima.
+- Postavljajte realna očekivanja.
+- Pratite komunikaciju kroz chat sustav.
+
+**Prednosti**
+- Gradi povjerenje s klijentima.
+- Povećava šanse za prihvaćanje ponude.
+- Poboljšava korisničko iskustvo.
+- Vodi do više pozitivnih recenzija.
+
+**Kada koristiti**
+- Prilikom prve komunikacije s klijentom.
+- Kada trebate savjete za profesionalnu komunikaciju.
+- Kada želite poboljšati stopu konverzije.
+`
+    },
+    "Kako pratiti ROI": {
+      implemented: true,
+      summary: "Vodič za korištenje ROI dashboarda. Objašnjava kako pratiti profitabilnost, analizirati statistike i optimizirati performanse.",
+      details: `**Kako funkcionira**
+- Otvorite ROI dashboard u profilu.
+- Pregledajte statistike (leadovi kupljeni, konverzije, prihodi).
+- Analizirajte trendove kroz različite periode.
+- Filtrirajte po kategorijama i regijama.
+- Exportujte podatke u CSV za detaljnu analizu.
+
+**Prednosti**
+- Pomaže razumjeti profitabilnost.
+- Identificira najbolje performirajuće kategorije.
+- Optimizira strategiju kupovine leadova.
+- Poboljšava poslovne odluke.
+
+**Kada koristiti**
+- Redovito za praćenje performansi.
+- Kada želite optimizirati strategiju.
+- Kada trebate analizirati trendove.
+`
+    },
+    "Kako koristiti TRIAL period": {
+      implemented: true,
+      summary: "Vodič za TRIAL korisnike. Objašnjava što dobivate s TRIAL-om, kako koristiti kredite i kako nadograditi na plaćenu pretplatu.",
+      details: `**Kako funkcionira**
+- TRIAL traje 14 dana i uključuje 8 besplatnih leadova.
+- Dobivate sve Premium funkcionalnosti (AI prioritet, SMS notifikacije, CSV export).
+- Automatski dobivate 2 kategorije i 1 regiju (add-on paketi).
+- Nakon isteka, možete nadograditi na PREMIUM ili PRO s 20% popustom.
+
+**Prednosti**
+- Besplatno isprobavanje platforme.
+- Pristup svim Premium funkcionalnostima.
+- Ekskluzivni leadovi (1:1, bez konkurencije).
+- 20% popust na upgrade.
+
+**Kada koristiti**
+- Prilikom registracije kao novi provider.
+- Kada želite isprobati platformu prije plaćanja.
+- Kada trebate razumjeti TRIAL benefite.
+`
+    },
+    "Vodič za refund proces": {
+      implemented: true,
+      summary: "Objašnjava kako zatražiti refund za neaktivne leadove. Uključuje uvjete za refund, proces traženja i automatski refund.",
+      details: `**Kako funkcionira**
+- Ako klijent ne odgovori unutar 48h, možete zatražiti refund.
+- Automatski refund se aktivira ako niste kontaktirali klijenta unutar 48h.
+- Refund vraća kredite na vaš račun.
+- Možete ponovno koristiti kredite za druge leadove.
+
+**Prednosti**
+- Zaštita od neaktivnih klijenata.
+- Povrat kredita za neuspješne leadove.
+- Smanjuje rizik za providere.
+- Poboljšava ROI.
+
+**Kada koristiti**
+- Kada klijent ne odgovori unutar 48h.
+- Kada lead nije kvalitetan.
+- Kada trebate razumjeti refund proces.
+`
+    },
+    "Best practices za konverziju leadova": {
+      implemented: true,
+      summary: "Savjeti za povećanje stope konverzije leadova u uspješne poslove. Uključuje strategije za komunikaciju, ponude i follow-up.",
+      details: `**Kako funkcionira**
+- Odgovarajte brzo na leadove (unutar 24h).
+- Kreirajte profesionalne i detaljne ponude.
+- Komunicirajte jasno o cijenama i rokovima.
+- Pratite up komunikaciju s klijentima.
+- Tražite feedback i recenzije nakon završetka posla.
+
+**Prednosti**
+- Povećava stopu konverzije.
+- Poboljšava ROI.
+- Gradi reputaciju na platformi.
+- Vodi do više pozitivnih recenzija.
+
+**Kada koristiti**
+- Kada želite poboljšati performanse.
+- Kada trebate savjete za konverziju.
+- Kada želite optimizirati strategiju.
 `
     },
     "Reputation Score izračun (ponderirane komponente)": {

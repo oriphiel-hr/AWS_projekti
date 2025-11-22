@@ -322,5 +322,94 @@ r.get('/admin', async (req, res, next) => {
   }
 });
 
+// GET /api/documentation/guides - Dohvati edukacijske materijale i vodiče
+r.get('/guides', async (req, res, next) => {
+  try {
+    // Pronađi kategoriju "Edukacijski materijali i vodiči"
+    const guidesCategory = await prisma.documentationCategory.findFirst({
+      where: {
+        name: 'Edukacijski materijali i vodiči',
+        isActive: true
+      },
+      include: {
+        features: {
+          where: {
+            deprecated: false,
+            isAdminOnly: false
+          },
+          orderBy: {
+            order: 'asc'
+          }
+        }
+      }
+    });
+
+    if (!guidesCategory || guidesCategory.features.length === 0) {
+      return res.json({
+        guides: [],
+        message: 'Edukacijski materijali još nisu dodani'
+      });
+    }
+
+    // Transformiraj u format za frontend
+    const guides = guidesCategory.features.map(f => ({
+      id: f.id,
+      title: f.name,
+      summary: f.summary || '',
+      content: f.details || '',
+      order: f.order
+    }));
+
+    res.json({
+      guides,
+      category: guidesCategory.name
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+// GET /api/documentation/guides/:id - Dohvati pojedinačni vodič
+r.get('/guides/:id', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const guide = await prisma.documentationFeature.findFirst({
+      where: {
+        id,
+        deprecated: false,
+        isAdminOnly: false,
+        category: {
+          name: 'Edukacijski materijali i vodiči',
+          isActive: true
+        }
+      },
+      include: {
+        category: {
+          select: {
+            name: true
+          }
+        }
+      }
+    });
+
+    if (!guide) {
+      return res.status(404).json({ error: 'Vodič nije pronađen' });
+    }
+
+    res.json({
+      id: guide.id,
+      title: guide.name,
+      summary: guide.summary || '',
+      content: guide.details || '',
+      technicalDetails: guide.technicalDetails || null, // Može biti null za javne vodiče
+      category: guide.category.name,
+      order: guide.order
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
 export default r;
 
