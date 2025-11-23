@@ -134,6 +134,8 @@ jobs:
           local-dir: ${{ env.FRONTEND_DIR }}/${{ steps.detect.outputs.dir }}/
           server-dir: ${{ env.SERVER_DIR }}
           dangerous-clean-slate: true
+          timeout: 300000
+          dry-run: false
           exclude: |
             **/.git*
             **/.git*/**
