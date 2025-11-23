@@ -190,6 +190,43 @@ const AdminApiReference = () => {
                               </div>
                             </div>
                           )}
+                          {route.security && (
+                            <div className="mt-3 pt-3 border-t">
+                              <span className="font-semibold text-gray-700 block mb-2">🔒 Sigurnost:</span>
+                              <div className="space-y-2">
+                                {route.security.authRequired ? (
+                                  <div className="flex items-center gap-2">
+                                    <span className="px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-semibold">
+                                      Auth Required
+                                    </span>
+                                    {route.security.roles && route.security.roles.length > 0 && (
+                                      <div className="flex flex-wrap gap-1">
+                                        {route.security.roles.map((role, idx) => (
+                                          <span key={idx} className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-mono">
+                                            {role}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-semibold">
+                                    Javni endpoint
+                                  </span>
+                                )}
+                                {route.security.additionalChecks && route.security.additionalChecks.length > 0 && (
+                                  <div className="mt-2">
+                                    <span className="text-xs font-semibold text-gray-600 block mb-1">Dodatni uvjeti:</span>
+                                    <ul className="list-disc list-inside text-xs text-gray-700 space-y-1">
+                                      {route.security.additionalChecks.map((check, idx) => (
+                                        <li key={idx}>{check}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
                           {route.handler && route.handler !== 'anonymous' && (
                             <div>
                               <span className="font-semibold text-gray-700">Handler:</span>
@@ -267,6 +304,43 @@ const AdminApiReference = () => {
                                     :{param}
                                   </span>
                                 ))}
+                              </div>
+                            </div>
+                          )}
+                          {route.security && (
+                            <div className="mt-3 pt-3 border-t">
+                              <span className="font-semibold text-gray-700 block mb-2">🔒 Sigurnost:</span>
+                              <div className="space-y-2">
+                                {route.security.authRequired ? (
+                                  <div className="flex items-center gap-2">
+                                    <span className="px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-semibold">
+                                      Auth Required
+                                    </span>
+                                    {route.security.roles && route.security.roles.length > 0 && (
+                                      <div className="flex flex-wrap gap-1">
+                                        {route.security.roles.map((role, idx) => (
+                                          <span key={idx} className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-mono">
+                                            {role}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-semibold">
+                                    Javni endpoint
+                                  </span>
+                                )}
+                                {route.security.additionalChecks && route.security.additionalChecks.length > 0 && (
+                                  <div className="mt-2">
+                                    <span className="text-xs font-semibold text-gray-600 block mb-1">Dodatni uvjeti:</span>
+                                    <ul className="list-disc list-inside text-xs text-gray-700 space-y-1">
+                                      {route.security.additionalChecks.map((check, idx) => (
+                                        <li key={idx}>{check}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           )}

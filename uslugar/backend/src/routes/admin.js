@@ -2808,6 +2808,120 @@ r.get('/api-reference', auth(true, ['ADMIN']), async (req, res, next) => {
     // Dohvati sve rute iz Express app instance
     const allRoutes = getRoutes(app._router?.stack || []);
     
+    // Funkcija za određivanje sigurnosnih zahtjeva na temelju path-a i metode
+    const getSecurityInfo = (fullPath, method) => {
+      const security = {
+        authRequired: false,
+        roles: [],
+        additionalChecks: []
+      };
+      
+      // Admin rute - zahtijevaju ADMIN role
+      if (fullPath.startsWith('/api/admin')) {
+        security.authRequired = true;
+        security.roles = ['ADMIN'];
+        security.additionalChecks.push('Samo ADMIN korisnici');
+      }
+      // Auth rute - javne ili zahtijevaju autentikaciju
+      else if (fullPath.startsWith('/api/auth')) {
+        if (fullPath.includes('/me') || fullPath.includes('/logout')) {
+          security.authRequired = true;
+          security.roles = ['USER', 'PROVIDER', 'ADMIN'];
+        } else {
+          security.authRequired = false; // Login/register su javni
+        }
+      }
+      // Invoices - zahtijevaju autentikaciju i ownership check
+      else if (fullPath.startsWith('/api/invoices')) {
+        security.authRequired = true;
+        security.roles = ['PROVIDER', 'ADMIN', 'USER'];
+        security.additionalChecks.push('Ownership check: korisnik može pristupiti samo svojim fakturima (osim ADMIN)');
+      }
+      // Chat - zahtijevaju autentikaciju i ownership/participant check
+      else if (fullPath.startsWith('/api/chat')) {
+        security.authRequired = true;
+        security.roles = ['USER', 'PROVIDER', 'ADMIN'];
+        security.additionalChecks.push('Participant check: korisnik mora biti sudionik chat sobe');
+        if (fullPath.includes('/internal')) {
+          security.additionalChecks.push('INTERNAL chat: samo PROVIDER role, direktor za kreiranje grupnih soba');
+        }
+      }
+      // Jobs - zahtijevaju autentikaciju, ownership check za edit/delete
+      else if (fullPath.startsWith('/api/jobs')) {
+        security.authRequired = true;
+        security.roles = ['USER', 'PROVIDER', 'ADMIN'];
+        if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(method)) {
+          security.additionalChecks.push('Ownership check: samo vlasnik posla može editirati/brisati');
+        }
+      }
+      // Offers - zahtijevaju autentikaciju, ownership check
+      else if (fullPath.startsWith('/api/offers')) {
+        security.authRequired = true;
+        security.roles = ['PROVIDER', 'ADMIN'];
+        security.additionalChecks.push('Ownership check: samo vlasnik ponude može editirati');
+      }
+      // Providers - zahtijevaju autentikaciju, ownership check
+      else if (fullPath.startsWith('/api/providers')) {
+        security.authRequired = true;
+        security.roles = ['PROVIDER', 'ADMIN'];
+        if (['PUT', 'PATCH', 'DELETE'].includes(method)) {
+          security.additionalChecks.push('Ownership check: samo vlasnik profila može editirati');
+        }
+      }
+      // Subscriptions - zahtijevaju autentikaciju
+      else if (fullPath.startsWith('/api/subscriptions')) {
+        security.authRequired = true;
+        security.roles = ['USER', 'PROVIDER', 'ADMIN'];
+        security.additionalChecks.push('Ownership check: korisnik može pristupiti samo svojoj pretplati');
+      }
+      // Payments - zahtijevaju autentikaciju
+      else if (fullPath.startsWith('/api/payments')) {
+        security.authRequired = true;
+        security.roles = ['USER', 'PROVIDER', 'ADMIN'];
+        security.additionalChecks.push('Ownership check: korisnik može pristupiti samo svojim transakcijama');
+      }
+      // KYC - zahtijevaju autentikaciju i PROVIDER role
+      else if (fullPath.startsWith('/api/kyc')) {
+        security.authRequired = true;
+        security.roles = ['PROVIDER', 'ADMIN'];
+        security.additionalChecks.push('Samo PROVIDER role može uploadati KYC dokumente');
+      }
+      // Whitelabel - zahtijevaju autentikaciju, PROVIDER role i PRO plan
+      else if (fullPath.startsWith('/api/whitelabel')) {
+        security.authRequired = true;
+        security.roles = ['PROVIDER'];
+        security.additionalChecks.push('Subscription check: zahtijeva PRO plan');
+      }
+      // Exclusive leads - zahtijevaju autentikaciju i PROVIDER role
+      else if (fullPath.startsWith('/api/exclusive')) {
+        security.authRequired = true;
+        security.roles = ['PROVIDER', 'ADMIN'];
+        security.additionalChecks.push('Subscription check: može zahtijevati određeni subscription plan');
+      }
+      // Lead queue - zahtijevaju autentikaciju i PROVIDER role
+      else if (fullPath.startsWith('/api/lead-queue')) {
+        security.authRequired = true;
+        security.roles = ['PROVIDER', 'ADMIN'];
+      }
+      // Public rute - javne
+      else if (fullPath.startsWith('/api/public')) {
+        security.authRequired = false;
+      }
+      // Ostale rute - pretpostavljamo da zahtijevaju autentikaciju
+      else {
+        security.authRequired = true;
+        security.roles = ['USER', 'PROVIDER', 'ADMIN'];
+      }
+      
+      return security;
+    };
+    
+    // Dodaj sigurnosne informacije svakoj ruti
+    allRoutes.forEach(route => {
+      const security = getSecurityInfo(route.fullPath, route.method);
+      route.security = security;
+    });
+    
     // Grupiraj po base path-u (prvi segment nakon /api)
     const groupedRoutes = {};
     allRoutes.forEach(route => {
