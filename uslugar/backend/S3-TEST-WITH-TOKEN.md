@@ -19,8 +19,9 @@ chmod +x get-jwt-token.sh
 ./get-jwt-token.sh
 ```
 
-### Opcija C: Ručno preko curl
+### Opcija C: Ručno preko curl (Linux/Mac) ili PowerShell (Windows)
 
+**Linux/Mac (Bash)**:
 ```bash
 curl -X POST https://uslugar.api.oriph.io/api/auth/login \
   -H "Content-Type: application/json" \
@@ -28,6 +29,28 @@ curl -X POST https://uslugar.api.oriph.io/api/auth/login \
     "email": "your-email@example.com",
     "password": "your-password"
   }'
+```
+
+**Windows (PowerShell)**:
+```powershell
+$body = @{
+    email = "your-email@example.com"
+    password = "your-password"
+} | ConvertTo-Json
+
+$response = Invoke-RestMethod -Uri "https://uslugar.api.oriph.io/api/auth/login" `
+    -Method POST `
+    -ContentType "application/json" `
+    -Body $body
+
+$response.token
+```
+
+**Ili koristi curl.exe** (ako je instaliran):
+```powershell
+curl.exe -X POST https://uslugar.api.oriph.io/api/auth/login `
+    -H "Content-Type: application/json" `
+    -d '{\"email\":\"your-email@example.com\",\"password\":\"your-password\"}'
 ```
 
 **Response**:
@@ -70,15 +93,23 @@ export JWT_TOKEN=$(cat .jwt-token)
 
 ### 2. Dohvati Fakture
 
+**Linux/Mac (Bash)**:
 ```bash
 curl -X GET https://uslugar.api.oriph.io/api/invoices \
   -H "Authorization: Bearer $JWT_TOKEN" | jq '.'
 ```
 
-**Ili bez jq**:
-```bash
-curl -X GET https://uslugar.api.oriph.io/api/invoices \
-  -H "Authorization: Bearer $JWT_TOKEN"
+**Windows (PowerShell)**:
+```powershell
+$headers = @{
+    "Authorization" = "Bearer $env:JWT_TOKEN"
+}
+
+$response = Invoke-RestMethod -Uri "https://uslugar.api.oriph.io/api/invoices" `
+    -Method GET `
+    -Headers $headers
+
+$response | ConvertTo-Json -Depth 10
 ```
 
 **Očekivani response**:
@@ -127,19 +158,28 @@ aws s3 ls s3://uslugar-invoices/invoices/INVOICE_NUMBER.pdf --region eu-north-1
 
 ### 4. Preuzmi PDF
 
-**Dohvati invoice ID prvo**:
+**Linux/Mac (Bash)**:
 ```bash
+# Dohvati invoice ID
 INVOICE_ID=$(curl -s -X GET https://uslugar.api.oriph.io/api/invoices \
   -H "Authorization: Bearer $JWT_TOKEN" | jq -r '.invoices[0].id')
 
-echo "Invoice ID: $INVOICE_ID"
-```
-
-**Preuzmi PDF**:
-```bash
+# Preuzmi PDF
 curl -X GET "https://uslugar.api.oriph.io/api/invoices/$INVOICE_ID/pdf" \
   -H "Authorization: Bearer $JWT_TOKEN" \
   -o invoice.pdf
+```
+
+**Windows (PowerShell)**:
+```powershell
+# Dohvati invoice ID
+$invoiceId = $response.invoices[0].id
+Write-Host "Invoice ID: $invoiceId"
+
+# Preuzmi PDF
+Invoke-WebRequest -Uri "https://uslugar.api.oriph.io/api/invoices/$invoiceId/pdf" `
+    -Headers $headers `
+    -OutFile "invoice.pdf"
 ```
 
 **Provjeri da PDF postoji i nije prazan**:
@@ -191,6 +231,7 @@ export JWT_TOKEN="your-token-here"
 
 ## 📋 Quick Reference
 
+### Linux/Mac (Bash):
 ```bash
 # 1. Login i dohvati token
 TOKEN=$(curl -s -X POST https://uslugar.api.oriph.io/api/auth/login \
@@ -210,6 +251,25 @@ INVOICE_ID=$(curl -s -X GET https://uslugar.api.oriph.io/api/invoices \
 
 curl -X GET "https://uslugar.api.oriph.io/api/invoices/$INVOICE_ID/pdf" \
   -H "Authorization: Bearer $TOKEN" -o invoice.pdf
+```
+
+### Windows (PowerShell):
+```powershell
+# 1. Login i dohvati token
+$body = @{email="your@email.com";password="pass"} | ConvertTo-Json
+$r = Invoke-RestMethod -Uri "https://uslugar.api.oriph.io/api/auth/login" -Method POST -ContentType "application/json" -Body $body
+$env:JWT_TOKEN = $r.token
+
+# 2. Dohvati fakture
+$h = @{Authorization="Bearer $env:JWT_TOKEN"}
+$invoices = Invoke-RestMethod -Uri "https://uslugar.api.oriph.io/api/invoices" -Method GET -Headers $h
+$invoices.invoices[0].pdfUrl
+
+# 3. Provjeri S3
+aws s3 ls s3://uslugar-invoices/invoices/ --region eu-north-1
+
+# 4. Preuzmi PDF
+Invoke-WebRequest -Uri "https://uslugar.api.oriph.io/api/invoices/$($invoices.invoices[0].id)/pdf" -Headers $h -OutFile "invoice.pdf"
 ```
 
 ---
