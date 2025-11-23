@@ -113,7 +113,7 @@ jobs:
             .containerDefinitions = (.containerDefinitions | map(
               if .name == $NAME then 
                 .image = $IMG |
-                .environment = (.environment + [
+                .environment = ((.environment // []) + [
                   {
                     "name": "CORS_ORIGINS",
                     "value": "https://uslugar.oriph.io,http://localhost:5173,http://localhost:3000"
@@ -125,6 +125,14 @@ jobs:
                   {
                     "name": "SUDREG_CLIENT_SECRET",
                     "value": "-TX-7q_UfffSEaRmGIP4bA.."
+                  },
+                  {
+                    "name": "AWS_S3_BUCKET_NAME",
+                    "value": "uslugar-invoices"
+                  },
+                  {
+                    "name": "AWS_REGION",
+                    "value": "eu-north-1"
                   }
                 ])
               else . end
