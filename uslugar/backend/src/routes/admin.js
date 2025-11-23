@@ -183,8 +183,8 @@ r.post('/cleanup/non-master', auth(true, ['ADMIN']), async (req, res, next) => {
     result.deleted.subscriptions = await prisma.subscription.deleteMany({});
 
     // 5) Provider profiles (disconnect categories per profile to clear m2m)
-    const providers = await prisma.providerProfile.findMany({ select: { id: true, userId: true } });
-    for (const p of providers) {
+    const providerList = await prisma.providerProfile.findMany({ select: { id: true, userId: true } });
+    for (const p of providerList) {
       await prisma.providerProfile.update({
         where: { id: p.id },
         data: { categories: { set: [] } }
