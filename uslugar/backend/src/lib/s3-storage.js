@@ -136,7 +136,7 @@ export async function downloadInvoicePDF(invoiceNumber) {
  */
 export async function deleteInvoicePDF(invoiceNumber) {
   try {
-    if (!BUCKET_NAME || BUCKET_NAME === 'uslugar-invoices') {
+    if (!BUCKET_NAME) {
       return false;
     }
 
@@ -163,6 +163,6 @@ export async function deleteInvoicePDF(invoiceNumber) {
  * @returns {Boolean} - true ako je S3 konfiguriran
  */
 export function isS3Configured() {
-  return !!(BUCKET_NAME && BUCKET_NAME !== 'uslugar-invoices');
+  return !!BUCKET_NAME;
 }
 
