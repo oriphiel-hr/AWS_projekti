@@ -14,7 +14,7 @@ const s3Client = new S3Client({
   } : undefined // Ako nema credentials, koristi IAM role (za ECS)
 });
 
-const BUCKET_NAME = process.env.AWS_S3_BUCKET_NAME || 'uslugar-invoices';
+const BUCKET_NAME = process.env.AWS_S3_BUCKET_NAME;
 const INVOICES_PREFIX = 'invoices/'; // Prefix za fakture u S3 bucketu
 
 /**
@@ -163,9 +163,11 @@ export async function deleteInvoicePDF(invoiceNumber) {
  * @returns {Boolean} - true ako je S3 konfiguriran
  */
 export function isS3Configured() {
-  const configured = !!BUCKET_NAME;
+  const configured = !!BUCKET_NAME && BUCKET_NAME !== 'uslugar-invoices' || (!!BUCKET_NAME && BUCKET_NAME === 'uslugar-invoices' && !!process.env.AWS_REGION);
   if (!configured) {
-    console.log('[S3] S3 not configured - BUCKET_NAME:', BUCKET_NAME, 'AWS_REGION:', process.env.AWS_REGION);
+    console.log('[S3] S3 not configured - BUCKET_NAME:', BUCKET_NAME, 'AWS_REGION:', process.env.AWS_REGION, 'process.env.AWS_S3_BUCKET_NAME:', process.env.AWS_S3_BUCKET_NAME);
+  } else {
+    console.log('[S3] S3 configured - BUCKET_NAME:', BUCKET_NAME, 'AWS_REGION:', process.env.AWS_REGION);
   }
   return configured;
 }
