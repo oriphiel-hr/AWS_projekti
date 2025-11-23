@@ -14411,7 +14411,8 @@ async function seedDocumentation() {
           { name: "Admin odobravanje refund-a", implemented: true, isAdminOnly: true },
           { name: "Admin upravljanje queue sustavom", implemented: true, isAdminOnly: true },
           { name: "Upravljanje ROI statistikama", implemented: true, isAdminOnly: true },
-          { name: "Upravljanje PDF faktura i S3 storage", implemented: true, isAdminOnly: true }
+          { name: "Upravljanje PDF faktura i S3 storage", implemented: true, isAdminOnly: true },
+          { name: "Database Editor - Vizualni pristup bazi podataka", implemented: true, isAdminOnly: true }
         ]
       },
       {
