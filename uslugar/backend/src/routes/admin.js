@@ -2516,4 +2516,232 @@ r.get('/migration-status', auth(true, ['ADMIN']), async (req, res, next) => {
 });
 
 console.log('🔍 Admin router loaded, total routes:', r.stack?.length || 'unknown');
+/**
+ * GET /api/admin/database/tables
+ * Dohvati listu svih tablica u bazi
+ */
+r.get('/database/tables', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const tables = await prisma.$queryRaw`
+      SELECT table_name, table_type
+      FROM information_schema.tables
+      WHERE table_schema = 'public'
+        AND table_type = 'BASE TABLE'
+        AND table_name NOT LIKE '_prisma%'
+      ORDER BY table_name
+    `;
+    
+    res.json({ success: true, tables });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * GET /api/admin/database/table/:tableName
+ * Dohvati podatke iz tablice s paginacijom
+ */
+r.get('/database/table/:tableName', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const { tableName } = req.params;
+    const { page = 1, limit = 50, orderBy, order = 'asc' } = req.query;
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+    
+    // Provjeri da li tablica postoji
+    const tableExists = await prisma.$queryRaw`
+      SELECT EXISTS (
+        SELECT 1 FROM information_schema.tables
+        WHERE table_schema = 'public' AND table_name = ${tableName}
+      )
+    `;
+    
+    if (!tableExists[0].exists) {
+      return res.status(404).json({ error: 'Tablica nije pronađena' });
+    }
+    
+    // Dohvati kolone
+    const columns = await prisma.$queryRawUnsafe(`
+      SELECT column_name, data_type, is_nullable, column_default
+      FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name = $1
+      ORDER BY ordinal_position
+    `, tableName);
+    
+    // Dohvati podatke
+    const orderByClause = orderBy 
+      ? `ORDER BY "${orderBy}" ${order.toUpperCase()}`
+      : '';
+    
+    const data = await prisma.$queryRawUnsafe(`
+      SELECT * FROM "${tableName}"
+      ${orderByClause}
+      LIMIT $1 OFFSET $2
+    `, parseInt(limit), offset);
+    
+    // Dohvati ukupan broj redaka
+    const count = await prisma.$queryRawUnsafe(`
+      SELECT COUNT(*) as total FROM "${tableName}"
+    `);
+    
+    res.json({
+      success: true,
+      tableName,
+      columns,
+      data,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total: parseInt(count[0].total),
+        totalPages: Math.ceil(parseInt(count[0].total) / parseInt(limit))
+      }
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * GET /api/admin/database/table/:tableName/structure
+ * Dohvati strukturu tablice (kolone, tipovi, indeksi)
+ */
+r.get('/database/table/:tableName/structure', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const { tableName } = req.params;
+    
+    // Dohvati kolone s detaljima
+    const columns = await prisma.$queryRawUnsafe(`
+      SELECT 
+        column_name,
+        data_type,
+        character_maximum_length,
+        numeric_precision,
+        numeric_scale,
+        is_nullable,
+        column_default,
+        ordinal_position
+      FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name = $1
+      ORDER BY ordinal_position
+    `, tableName);
+    
+    // Dohvati indekse
+    const indexes = await prisma.$queryRawUnsafe(`
+      SELECT
+        i.indexname,
+        i.indexdef,
+        a.attname as column_name
+      FROM pg_indexes i
+      JOIN pg_class c ON c.relname = i.tablename
+      JOIN pg_index idx ON idx.indexrelid = (
+        SELECT oid FROM pg_class WHERE relname = i.indexname
+      )
+      JOIN pg_attribute a ON a.attrelid = c.oid AND a.attnum = ANY(idx.indkey)
+      WHERE i.schemaname = 'public' AND i.tablename = $1
+      ORDER BY i.indexname, a.attnum
+    `, tableName);
+    
+    // Dohvati foreign keys
+    const foreignKeys = await prisma.$queryRawUnsafe(`
+      SELECT
+        tc.constraint_name,
+        kcu.column_name,
+        ccu.table_name AS foreign_table_name,
+        ccu.column_name AS foreign_column_name
+      FROM information_schema.table_constraints AS tc
+      JOIN information_schema.key_column_usage AS kcu
+        ON tc.constraint_name = kcu.constraint_name
+      JOIN information_schema.constraint_column_usage AS ccu
+        ON ccu.constraint_name = tc.constraint_name
+      WHERE tc.constraint_type = 'FOREIGN KEY'
+        AND tc.table_schema = 'public'
+        AND tc.table_name = $1
+    `, tableName);
+    
+    res.json({
+      success: true,
+      tableName,
+      columns,
+      indexes,
+      foreignKeys
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * POST /api/admin/database/query
+ * Izvrši SQL query (samo SELECT za sigurnost)
+ */
+r.post('/database/query', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const { query } = req.body;
+    
+    if (!query || typeof query !== 'string') {
+      return res.status(400).json({ error: 'Query je obavezan' });
+    }
+    
+    // Provjeri da li je SELECT query (za sigurnost)
+    const trimmedQuery = query.trim().toUpperCase();
+    if (!trimmedQuery.startsWith('SELECT')) {
+      return res.status(400).json({ error: 'Samo SELECT queries su dozvoljene' });
+    }
+    
+    // Izvrši query
+    const result = await prisma.$queryRawUnsafe(query);
+    
+    res.json({
+      success: true,
+      result,
+      rowCount: Array.isArray(result) ? result.length : 0
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * PATCH /api/admin/database/table/:tableName/cell
+ * Update pojedinačne ćelije
+ */
+r.patch('/database/table/:tableName/cell', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const { tableName } = req.params;
+    const { id, idColumn = 'id', column, value } = req.body;
+    
+    if (!id || !column || value === undefined) {
+      return res.status(400).json({ error: 'id, column i value su obavezni' });
+    }
+    
+    // Provjeri da li kolona postoji
+    const columnExists = await prisma.$queryRawUnsafe(`
+      SELECT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public' 
+          AND table_name = $1 
+          AND column_name = $2
+      )
+    `, tableName, column);
+    
+    if (!columnExists[0].exists) {
+      return res.status(400).json({ error: 'Kolona ne postoji' });
+    }
+    
+    // Update ćelije
+    const result = await prisma.$queryRawUnsafe(`
+      UPDATE "${tableName}"
+      SET "${column}" = $1
+      WHERE "${idColumn}" = $2
+      RETURNING *
+    `, value, id);
+    
+    res.json({
+      success: true,
+      updated: result[0]
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
 export default r;
