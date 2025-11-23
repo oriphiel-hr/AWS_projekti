@@ -123,19 +123,20 @@ jobs:
           echo "dir=$found" >> "$GITHUB_OUTPUT"
           echo "Using: $found"
 
-      - name: Deploy via FTPS
+      - name: Deploy via FTP/FTPS
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
           server: ${{ secrets.HOSTINGER_HOST }}
           username: ${{ secrets.HOSTINGER_USERNAME }}
           password: ${{ secrets.HOSTINGER_PASSWORD }}
-          protocol: ftps
-          port: 21
+          protocol: ${{ secrets.HOSTINGER_FTP_PROTOCOL || 'ftp' }}
+          port: ${{ secrets.HOSTINGER_FTP_PORT || 21 }}
           local-dir: ${{ env.FRONTEND_DIR }}/${{ steps.detect.outputs.dir }}/
           server-dir: ${{ env.SERVER_DIR }}
           dangerous-clean-slate: true
           timeout: 300000
           dry-run: false
+          log-level: verbose
           exclude: |
             **/.git*
             **/.git*/**
