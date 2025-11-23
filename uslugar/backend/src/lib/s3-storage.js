@@ -163,6 +163,10 @@ export async function deleteInvoicePDF(invoiceNumber) {
  * @returns {Boolean} - true ako je S3 konfiguriran
  */
 export function isS3Configured() {
-  return !!BUCKET_NAME;
+  const configured = !!BUCKET_NAME;
+  if (!configured) {
+    console.log('[S3] S3 not configured - BUCKET_NAME:', BUCKET_NAME, 'AWS_REGION:', process.env.AWS_REGION);
+  }
+  return configured;
 }
 
