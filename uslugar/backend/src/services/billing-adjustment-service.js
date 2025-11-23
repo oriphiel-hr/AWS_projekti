@@ -86,9 +86,6 @@ export async function calculateAdjustmentForPlan(plan, periodStart, periodEnd) {
     adjustmentCredits = expectedLeads; // puni credit za cijelu kvotu
     notes = `Automatsko snižavanje cijene i credit refund: u ovom obračunskom periodu tržište je mirno (0/${expectedLeads} leadova). Klijentu se odobrava ${adjustmentCredits} kredita (pun povrat kvote).`;
   } else if (diff === 0 && (!plan.guaranteeEnabled || guaranteeDiff === 0)) {
-  if (deliveredLeads === 0) {
-    // već postavljeno gore
-  } else if (diff === 0 && (!plan.guaranteeEnabled || guaranteeDiff === 0)) {
     adjustmentType = 'NONE';
     notes = 'Isporučen volumen odgovara očekivanom / garantiranim kvotama.';
   } else if (diff < 0 || (plan.guaranteeEnabled && guaranteeDiff < 0)) {
