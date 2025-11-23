@@ -15329,6 +15329,40 @@ async function seedDocumentation() {
 **S3 Bucket struktura**
 - \`invoices/{invoiceNumber}.pdf\`: PDF fakture
 - Automatsko brisanje pri delete operacijama
+
+## Pristup bazi podataka
+
+**Prisma Studio - Vizualni database editor (PREPORUČENO)**
+- Pokreni lokalno: \`npx prisma studio\`
+- Otvara se na: \`http://localhost:5555\`
+- Omogućava:
+  - ✅ Pregled svih tablica i podataka
+  - ✅ CRUD operacije (Create, Read, Update, Delete)
+  - ✅ Direktan edit ćelija (klik na ćeliju → edit → save)
+  - ✅ Pregled relacija između tablica
+  - ✅ Pregled indeksa i strukture tablica
+  - ✅ SQL query execution
+  - ✅ Filtriranje i pretraživanje podataka
+- **Kako koristiti:**
+  1. Otvori terminal u \`uslugar/backend\` direktoriju
+  2. Postavi \`DATABASE_URL\` environment varijablu (ako nije već postavljena)
+  3. Pokreni: \`npx prisma studio\`
+  4. Otvori browser na \`http://localhost:5555\`
+  5. Odaberi tablicu (npr. \`Invoice\`) → klikni na red → edit ćelije → save
+
+**AWS RDS Query Editor (Alternativa)**
+- Link: https://eu-north-1.console.aws.amazon.com/rds/
+- Navigacija: RDS → Databases → \`uslugar-db\` → Query Editor
+- **Napomena:** Zahtijeva IAM autentifikaciju (može ne raditi za obični RDS PostgreSQL)
+- Omogućava SQL query execution, ali ne vizualni edit ćelija
+
+**ECS Execute Command + psql (Za napredne)**
+- Link: https://console.aws.amazon.com/ecs/v2/clusters/apps-cluster/services/uslugar-service-2gk1f1mv/tasks
+- Navigacija: Running task → Connect → Execute Command
+- Pokreni: \`psql $DATABASE_URL\`
+- Omogućava direktan SQL pristup, ali bez vizualnog editora
+
+**Preporuka:** Koristi **Prisma Studio** za najbolje iskustvo - vizualni editor s CRUD operacijama i direktnim editom ćelija.
 `
       },
       "Upravljanje ROI statistikama": {
