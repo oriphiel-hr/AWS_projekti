@@ -15219,6 +15219,118 @@ async function seedDocumentation() {
 - \`PUT /api/admin/queue/:id\` - Ažuriranje pozicije ili statusa
       `
       },
+      "Upravljanje PDF faktura i S3 storage": {
+        summary: "Kompletan sustav za upravljanje PDF faktura s AWS S3 storage integracijom, filtriranjem, masovnim operacijama i automatskim uploadom",
+        details: `## Kako funkcionira:
+
+**Pregled funkcionalnosti**
+- Filtriranje faktura po S3 statusu (Na S3 / Nije na S3)
+- Masovno uploadanje PDF faktura na S3
+- Masovno brisanje PDF faktura s S3
+- Automatsko uploadanje svih nedostajućih faktura na S3
+- Automatsko brisanje svih faktura s S3
+- Pregled S3 statusa za svaku fakturu
+- Ručno uploadanje/brisanje pojedinačnih faktura
+
+**Admin panel - Fakture**
+- Tablica faktura s S3 status kolonom (☁️ Na S3 / ⚡ Generira se)
+- Checkbox za odabir faktura
+- "Odaberi sve" funkcionalnost
+- Masovne operacije gumbovi:
+  - ⬆️ Upload odabrane na S3
+  - 🗑️ Obriši odabrane s S3
+  - ⬆️ Upload sve nedostajuće na S3
+  - 🗑️ Obriši sve s S3
+
+**Filteri**
+- S3 Status filter: Svi / Na S3 / Nije na S3
+- Kombinacija s postojećim filterima (status, tip, korisnik, datum)
+
+**Masovne operacije**
+- Bulk upload: Uploada sve odabrane fakture koje nisu na S3
+- Bulk delete: Briše sve odabrane fakture s S3
+- Upload all missing: Pronalazi sve fakture bez pdfUrl i uploada ih na S3
+- Delete all: Briše sve fakture s S3 (s dvostrukom potvrdom)
+
+**Sigurnost**
+- Sve operacije zahtijevaju ADMIN role
+- "Obriši sve s S3" ima dvostruku potvrdu
+- Bulk operacije vraćaju detaljne rezultate (uspješno/neuspješno)
+`,
+        technicalDetails: `## Backend API
+
+**Filter endpoint**
+- \`GET /api/admin/invoices?hasS3=true|false\`
+  - \`hasS3=true\`: Fakture s pdfUrl (na S3)
+  - \`hasS3=false\`: Fakture bez pdfUrl (nije na S3)
+
+**Masovne operacije**
+- \`POST /api/invoices/bulk/upload-to-s3\`
+  - Body: \`{ invoiceIds: string[] }\`
+  - Uploada sve odabrane fakture koje nisu na S3
+  - Vraća: \`{ uploaded: number, total: number, errors?: [] }\`
+
+- \`POST /api/invoices/bulk/delete-from-s3\`
+  - Body: \`{ invoiceIds: string[] }\`
+  - Briše sve odabrane fakture s S3
+  - Vraća: \`{ deleted: number, total: number, errors?: [] }\`
+
+- \`POST /api/invoices/bulk/upload-all-missing-to-s3\`
+  - Uploada sve fakture koje nemaju pdfUrl
+  - Vraća: \`{ uploaded: number, total: number, errors?: [] }\`
+
+- \`POST /api/invoices/bulk/delete-all-from-s3\`
+  - Briše sve fakture s S3
+  - Vraća: \`{ deleted: number, total: number, errors?: [] }\`
+
+**Pojedinačne operacije**
+- \`POST /api/invoices/:invoiceId/upload-to-s3\`
+  - Generira PDF, uploada na S3, ažurira pdfUrl
+
+- \`DELETE /api/invoices/:invoiceId/pdf-s3\`
+  - Briše PDF s S3, uklanja pdfUrl iz baze
+
+**S3 Storage**
+- \`s3-storage.js\`:
+  - \`uploadInvoicePDF(pdfBuffer, invoiceNumber)\`: Uploada PDF u S3
+  - \`deleteInvoicePDF(invoiceNumber)\`: Briše PDF iz S3
+  - \`isS3Configured()\`: Provjerava S3 konfiguraciju
+
+**Invoice Service**
+- \`invoice-service.js\`:
+  - \`generateInvoicePDF(invoice)\`: Generira PDF fakturu
+  - \`saveInvoicePDF(invoice, pdfBuffer)\`: Uploada PDF u S3 i ažurira pdfUrl
+
+## Frontend
+
+**AdminInvoices.jsx**
+- State management:
+  - \`filters.hasS3\`: Filter po S3 statusu
+  - \`selectedInvoices\`: Set odabranih faktura
+  - \`bulkLoading\`: Loading state za masovne operacije
+
+- Funkcije:
+  - \`bulkUploadToS3()\`: Upload odabranih faktura
+  - \`bulkDeleteFromS3()\`: Brisanje odabranih faktura
+  - \`uploadAllMissingToS3()\`: Upload svih nedostajućih
+  - \`deleteAllFromS3()\`: Brisanje svih s S3
+
+- UI komponente:
+  - Checkbox u headeru tablice ("Odaberi sve")
+  - Checkbox u svakom redu (odabir pojedinačne fakture)
+  - S3 status badge (☁️ Na S3 / ⚡ Generira se)
+  - Masovne operacije toolbar
+  - S3 Status filter dropdown
+
+**Baza podataka**
+- \`Invoice.pdfUrl\`: S3 URL fakture (null ako nije na S3)
+- Automatsko ažuriranje pdfUrl pri uploadu/brisanju
+
+**S3 Bucket struktura**
+- \`invoices/{invoiceNumber}.pdf\`: PDF fakture
+- Automatsko brisanje pri delete operacijama
+`
+      },
       "Upravljanje ROI statistikama": {
         summary: "Pregled i upravljanje ROI metrikama za pružatelje",
         details: `## Kako funkcionira:
