@@ -195,7 +195,7 @@ const features = [
         { name: "Status pretplate (ACTIVE, CANCELLED, EXPIRED)", implemented: true },
         { name: "Automatsko isteka pretplate", implemented: true },
         { name: "Notifikacije o isteku pretplate", implemented: true },
-        { name: "Povijest pretplata", implemented: true, partiallyImplemented: true },
+        { name: "Povijest pretplata", implemented: true },
         { name: "Trial period (7 dana)", implemented: true },
         { name: "Besplatni krediti za trial (5 leadova)", implemented: true },
         { name: "Automatsko vraćanje na BASIC plan", implemented: true }
@@ -5849,34 +5849,51 @@ const featureDescriptions = {
     "Povijest pretplata": {
       implemented: true,
       summary: "Pregledajte sve promjene planova, nadogradnje i otkazivanja kroz vrijeme.",
-      details: `**⚠️ DJELOMIČNO IMPLEMENTIRANO**: Povijest se prati kroz CreditTransaction (tip SUBSCRIPTION), ali nema eksplicitne SubscriptionHistory tablice za praćenje promjena plana. Trenutno se prate samo krediti iz pretplate, ne i promjene plana (upgrade/downgrade).
+      details: `**Implementirano**: Kompletan sustav za praćenje povijesti pretplata s eksplicitnom SubscriptionHistory tablicom koja bilježi sve promjene plana, nadogradnje, otkazivanja i obnove.
 
 **Kako funkcionira**
 - Tablica povijesti prikazuje svaki plan, datum početka/završetka, razlog promjene i korištene kredite.
-- Filtri (plan, status, datum) pomažu analizirati kako se pretplata razvijala.
-- Export služi računovodstvu i internim izvještajima.
+- Filtri (plan, status, datum, akcija) pomažu analizirati kako se pretplata razvijala.
+- Automatsko logiranje svih promjena: CREATED, UPGRADED, DOWNGRADED, RENEWED, CANCELLED, EXPIRED, REACTIVATED, PRORATED.
+- Praćenje financijskih podataka: cijena, prorated iznosi, popusti, krediti prije/nakon promjene.
 
 **Prednosti**
 - Transparentan audit trail pretplatničkih aktivnosti.
 - Korisno za analizu ARPU, churn i planiranje rasta.
+- Potpuna povijest svih promjena pretplate s razlozima i metapodacima.
 
 **Kada koristiti**
 - Tijekom financijskih revizija ili support upita.
 - Kod migracije planova i povijesti kupaca.
+- Analiza ponašanja korisnika i optimizacija pretplatničkih planova.
 `,
-      technicalDetails: `**Frontend**
-- \`SubscriptionHistoryTable\` (paginated) s filterima i exportom.
+      technicalDetails: `**Backend**
+- \`GET /api/subscriptions/history\`: Endpoint za dohvat povijesti pretplata s filterima (action, plan, startDate, endDate, limit, offset).
+- \`subscription-history-service.js\`: Servis za logiranje i dohvat povijesti pretplata.
+  - \`logSubscriptionChange()\`: Logira promjene pretplate (CREATED, UPGRADED, DOWNGRADED, RENEWED, CANCELLED, EXPIRED, REACTIVATED, PRORATED).
+  - \`getSubscriptionHistory()\`: Dohvaća povijest pretplata za korisnika s filterima.
+  - \`getSubscriptionHistoryBySubscription()\`: Dohvaća povijest za specifičnu pretplatu.
 
-**Backend**
-- \`subscriptionService.listHistory\` spaja povijest iz \`Subscription\`, \`SubscriptionEvent\`, \`CreditAllocation\`.
-- Aggregations po planu i statusu.
+**Integracija**
+- \`activateSubscription()\` u \`routes/payments.js\`: Automatski logira CREATED, UPGRADED, DOWNGRADED ili RENEWED akcije.
+- \`downgradeToBasic()\` u \`routes/subscriptions.js\`: Logira DOWNGRADED ili EXPIRED akcije.
+- \`POST /api/subscriptions/cancel\`: Logira CANCELLED akciju.
+- \`POST /api/payments/cancel-subscription\`: Logira CANCELLED akciju.
 
 **Baza**
-- \`SubscriptionHistory\` (plan, action, occurredAt, actor).
-- \`CreditAllocation\` povezuje dodijeljene kredite po ciklusu.
+- \`SubscriptionHistory\` model:
+  - \`action\`: SubscriptionHistoryAction enum (CREATED, UPGRADED, DOWNGRADED, RENEWED, CANCELLED, EXPIRED, REACTIVATED, PRORATED).
+  - \`previousPlan\`, \`newPlan\`: Prethodni i novi plan.
+  - \`previousStatus\`, \`newStatus\`: Prethodni i novi status.
+  - \`price\`, \`proratedAmount\`, \`discountAmount\`, \`discountType\`: Financijski podaci.
+  - \`creditsAdded\`, \`creditsBefore\`, \`creditsAfter\`: Promjene kredita.
+  - \`validFrom\`, \`validUntil\`, \`previousExpiresAt\`: Vremenski periodi.
+  - \`reason\`, \`notes\`, \`metadata\`: Razlog i dodatni podaci.
+  - \`changedBy\`, \`ipAddress\`: Audit informacije.
+- Indeksi: \`subscriptionId + createdAt\`, \`userId + createdAt\`, \`action + createdAt\`, \`createdAt\`.
 
-**Integracije**
-- Analytics koristi podatke za churn rate.
+**Migracija**
+- \`20251121000000_add_subscription_history/migration.sql\`: Kreira SubscriptionHistory tablicu i SubscriptionHistoryAction enum.
 - Export u CSV/PDF za financijski tim.
 
 **API**

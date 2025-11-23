@@ -470,6 +470,29 @@ r.post('/cancel-subscription', auth(true, ['PROVIDER']), async (req, res, next) 
       }
     });
 
+    // Log to subscription history
+    try {
+      const { logSubscriptionChange } = await import('../services/subscription-history-service.js');
+      await logSubscriptionChange({
+        subscriptionId: subscription.id,
+        userId: req.user.id,
+        action: 'CANCELLED',
+        previousPlan: subscription.plan,
+        newPlan: subscription.plan, // Plan ostaje isti, samo se status mijenja
+        previousStatus: subscription.status,
+        newStatus: 'CANCELLED',
+        options: {
+          creditsBefore: subscription.creditsBalance || 0,
+          creditsAfter: updatedSubscription.creditsBalance || 0,
+          reason: 'User requested cancellation',
+          changedBy: req.user.id,
+          ipAddress: req.ip || req.connection?.remoteAddress || null
+        }
+      });
+    } catch (historyError) {
+      console.error('[CANCEL SUBSCRIPTION] Error logging to history:', historyError);
+    }
+
     // Create notification
     await prisma.notification.create({
       data: {
@@ -855,6 +878,38 @@ async function activateSubscription(userId, plan, credits, stripePaymentIntentId
     
     console.log(`[ACTIVATE SUBSCRIPTION] Updating subscription, expiresAt: ${expiresAt}`);
 
+    // Determine action type and previous values
+    let action = 'CREATED';
+    let previousPlan = null;
+    let previousStatus = null;
+    let creditsBefore = 0;
+    let previousExpiresAt = null;
+    
+    if (existingSubscription) {
+      // Upgrade or renewal
+      if (existingSubscription.plan !== plan) {
+        // Determine if upgrade or downgrade
+        const planHierarchy = { 'TRIAL': 0, 'BASIC': 1, 'PREMIUM': 2, 'PRO': 3 };
+        const oldTier = planHierarchy[existingSubscription.plan] || 0;
+        const newTier = planHierarchy[plan] || 0;
+        
+        if (newTier > oldTier) {
+          action = 'UPGRADED';
+        } else if (newTier < oldTier) {
+          action = 'DOWNGRADED';
+        } else {
+          action = 'RENEWED';
+        }
+      } else {
+        action = 'RENEWED';
+      }
+      
+      previousPlan = existingSubscription.plan;
+      previousStatus = existingSubscription.status;
+      creditsBefore = existingSubscription.creditsBalance || 0;
+      previousExpiresAt = existingSubscription.expiresAt;
+    }
+    
     // Create or update subscription
     const subscription = await prisma.subscription.upsert({
       where: { userId: userIdStr },
@@ -877,6 +932,49 @@ async function activateSubscription(userId, plan, credits, stripePaymentIntentId
     });
     
     console.log(`[ACTIVATE SUBSCRIPTION] Subscription upserted successfully:`, subscription);
+    
+    // Log to subscription history
+    try {
+      const { logSubscriptionChange } = await import('../services/subscription-history-service.js');
+      const planDetails = await prisma.subscriptionPlan.findUnique({
+        where: { name: plan }
+      });
+      const planPrice = planDetails?.price || 0;
+      
+      await logSubscriptionChange({
+        subscriptionId: subscription.id,
+        userId: userIdStr,
+        action,
+        previousPlan,
+        newPlan: plan,
+        previousStatus,
+        newStatus: 'ACTIVE',
+        options: {
+          price: planPrice,
+          proratedAmount: null, // Prorated info se može proslijediti kroz metadata ako je potrebno
+          discountAmount: null, // Discount info se može proslijediti kroz metadata ako je potrebno
+          discountType: null,
+          creditsAdded: credits,
+          creditsBefore,
+          creditsAfter: subscription.creditsBalance,
+          validFrom: new Date(),
+          validUntil: expiresAt,
+          previousExpiresAt,
+          reason: action === 'CREATED' ? 'New subscription created' : 
+                  action === 'UPGRADED' ? 'Subscription upgraded' :
+                  action === 'DOWNGRADED' ? 'Subscription downgraded' :
+                  'Subscription renewed',
+          metadata: {
+            stripePaymentIntentId: stripePaymentIntentId || null
+          },
+          changedBy: null, // Automatska aktivacija, nema korisnika
+          ipAddress: null
+        }
+      });
+    } catch (historyError) {
+      console.error('[ACTIVATE SUBSCRIPTION] Error logging to history:', historyError);
+      // Ne baci grešku - history logging ne smije blokirati subscription aktivaciju
+    }
 
     // Create credit transaction
     const transaction = await prisma.creditTransaction.create({

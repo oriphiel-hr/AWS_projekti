@@ -150,6 +150,7 @@ model User {
   creditTransactions CreditTransaction[]
   clientVerification ClientVerification?
   subscriptions      Subscription[]
+  subscriptionHistory SubscriptionHistory[] @relation("UserSubscriptionHistory")
   trialEngagement    TrialEngagement?
   invoices           Invoice[]
   supportTickets     SupportTicket[]           @relation("UserSupportTickets")
@@ -636,6 +637,7 @@ model Subscription {
 
   invoices        Invoice[]
   trialEngagement TrialEngagement?
+  history         SubscriptionHistory[] // Povijest promjena pretplate
 
   @@index([userId])
   @@index([status])
@@ -666,6 +668,54 @@ model TrialEngagement {
   @@index([userId])
   @@index([subscriptionId])
   @@index([lastActivityAt])
+}
+
+// Povijest pretplata - praćenje svih promjena plana, nadogradnje i otkazivanja
+model SubscriptionHistory {
+  id             String   @id @default(cuid())
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  subscriptionId String
+  user           User     @relation("UserSubscriptionHistory", fields: [userId], references: [id], onDelete: Cascade)
+  userId         String   // Za brže query-e bez join-a
+  
+  // Informacije o promjeni
+  action         SubscriptionHistoryAction // CREATED, UPGRADED, DOWNGRADED, RENEWED, CANCELLED, EXPIRED, REACTIVATED
+  previousPlan   String? // Prethodni plan (null ako je CREATED)
+  newPlan        String // Novi plan
+  previousStatus SubscriptionStatus? // Prethodni status
+  newStatus      SubscriptionStatus // Novi status
+  
+  // Financijski podaci
+  price          Float? // Cijena pretplate (EUR)
+  proratedAmount Float? // Prorated iznos (za upgrade/downgrade)
+  discountAmount Float? // Iznos popusta
+  discountType   String? // Tip popusta (new_user, trial_upgrade, prorated, itd.)
+  
+  // Krediti
+  creditsAdded   Int? // Broj dodanih kredita
+  creditsBefore  Int? // Stanje kredita prije promjene
+  creditsAfter   Int? // Stanje kredita nakon promjene
+  
+  // Vremenski periodi
+  validFrom      DateTime? // Početak valjanosti (za novu pretplatu)
+  validUntil     DateTime? // Kraj valjanosti (za novu pretplatu)
+  previousExpiresAt DateTime? // Prethodni expiresAt (za upgrade/downgrade)
+  
+  // Razlog i metapodaci
+  reason         String? // Razlog promjene (npr. "User requested upgrade", "Automatic downgrade after expiration")
+  notes          String? // Dodatne bilješke
+  metadata       Json? // Dodatni podaci (npr. Stripe payment intent ID, invoice ID, itd.)
+  
+  // Audit informacije
+  changedBy      String? // ID korisnika/admina koji je izvršio promjenu (null = automatski)
+  ipAddress      String? // IP adresa (ako je promjena izvršena preko API-ja)
+  
+  createdAt      DateTime @default(now())
+  
+  @@index([subscriptionId, createdAt])
+  @@index([userId, createdAt])
+  @@index([action, createdAt])
+  @@index([createdAt])
 }
 
 // Add-on paketi - proširenje osnovnog plana s regijama, kategorijama ili kreditima
@@ -1227,6 +1277,17 @@ enum SubscriptionStatus {
   ACTIVE // Aktivna pretplata
   CANCELLED // Otkazana
   EXPIRED // Istekla
+}
+
+enum SubscriptionHistoryAction {
+  CREATED      // Nova pretplata kreirana
+  UPGRADED     // Nadogradnja na viši plan
+  DOWNGRADED   // Smanjenje na niži plan
+  RENEWED      // Obnova postojeće pretplate
+  CANCELLED    // Otkazivanje pretplate
+  EXPIRED      // Automatski istek pretplate
+  REACTIVATED  // Ponovna aktivacija otkazane pretplate
+  PRORATED     // Prorated billing (upgrade/downgrade)
 }
 
 // Add-on paketi - proširenje osnovnog plana

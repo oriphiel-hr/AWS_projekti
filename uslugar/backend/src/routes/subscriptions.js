@@ -277,6 +277,12 @@ export async function downgradeToBasic(userId, previousPlan = null) {
 
     // Ako je već EXPIRED ili CANCELLED, možda je već downgrade-ano
     // Ali ipak ćemo postaviti na BASIC ako nije već
+    
+    // Store previous values for history
+    const previousPlanValue = previousPlan || subscription.plan;
+    const previousStatus = subscription.status;
+    const creditsBefore = subscription.creditsBalance || 0;
+    const previousExpiresAt = subscription.expiresAt;
     if (subscription.status === 'EXPIRED' || subscription.status === 'CANCELLED') {
       if (subscription.plan !== 'BASIC') {
         // Ako je TRIAL, postavi BASIC kredite (10 kredita za BASIC plan)
@@ -314,6 +320,31 @@ export async function downgradeToBasic(userId, previousPlan = null) {
         });
 
         console.log(`[SUBSCRIPTION] User ${userId} downgraded from ${subscription.plan} to BASIC plan${isTrialDowngrade ? ' (TRIAL expired)' : ''}`);
+
+        // Log to subscription history
+        try {
+          const { logSubscriptionChange } = await import('../services/subscription-history-service.js');
+          await logSubscriptionChange({
+            subscriptionId: subscription.id,
+            userId: userId,
+            action: subscription.status === 'EXPIRED' ? 'EXPIRED' : 'DOWNGRADED',
+            previousPlan: previousPlanValue,
+            newPlan: 'BASIC',
+            previousStatus: previousStatus,
+            newStatus: 'ACTIVE',
+            options: {
+              creditsBefore: creditsBefore,
+              creditsAfter: updatedSubscription.creditsBalance || 0,
+              validFrom: new Date(),
+              validUntil: basicExpiresAt,
+              previousExpiresAt: previousExpiresAt,
+              reason: isTrialDowngrade ? 'TRIAL expired - automatic downgrade to BASIC' : 'Subscription expired - automatic downgrade to BASIC',
+              notes: isTrialDowngrade ? 'TRIAL period ended' : 'Subscription period ended'
+            }
+          });
+        } catch (historyError) {
+          console.error('[DOWNGRADE] Error logging to history:', historyError);
+        }
 
         return updatedSubscription;
       }
@@ -355,6 +386,31 @@ export async function downgradeToBasic(userId, previousPlan = null) {
     });
 
     console.log(`[SUBSCRIPTION] User ${userId} downgraded from ${subscription.plan} to BASIC plan${isTrialDowngrade ? ' (TRIAL expired)' : ''}`);
+
+    // Log to subscription history
+    try {
+      const { logSubscriptionChange } = await import('../services/subscription-history-service.js');
+      await logSubscriptionChange({
+        subscriptionId: subscription.id,
+        userId: userId,
+        action: 'DOWNGRADED',
+        previousPlan: previousPlanValue,
+        newPlan: 'BASIC',
+        previousStatus: previousStatus,
+        newStatus: 'ACTIVE',
+        options: {
+          creditsBefore: creditsBefore,
+          creditsAfter: updatedSubscription.creditsBalance || 0,
+          validFrom: new Date(),
+          validUntil: basicExpiresAt,
+          previousExpiresAt: previousExpiresAt,
+          reason: isTrialDowngrade ? 'TRIAL expired - automatic downgrade to BASIC' : 'Subscription expired - automatic downgrade to BASIC',
+          notes: isTrialDowngrade ? 'TRIAL period ended' : 'Subscription period ended'
+        }
+      });
+    } catch (historyError) {
+      console.error('[DOWNGRADE] Error logging to history:', historyError);
+    }
 
     return updatedSubscription;
   } catch (error) {
@@ -781,6 +837,29 @@ r.post('/cancel', auth(true, ['PROVIDER']), async (req, res, next) => {
         }
       });
 
+      // Log to subscription history (downgradeToBasic already logs DOWNGRADED, but we also need CANCELLED)
+      try {
+        const { logSubscriptionChange } = await import('../services/subscription-history-service.js');
+        await logSubscriptionChange({
+          subscriptionId: existingSubscription.id,
+          userId: req.user.id,
+          action: 'CANCELLED',
+          previousPlan: previousPlan,
+          newPlan: 'BASIC',
+          previousStatus: existingSubscription.status,
+          newStatus: 'ACTIVE', // BASIC plan je aktiviran
+          options: {
+            creditsBefore: existingSubscription.creditsBalance || 0,
+            creditsAfter: subscription.creditsBalance || 0,
+            reason: 'User requested cancellation - downgraded to BASIC',
+            changedBy: req.user.id,
+            ipAddress: req.ip || req.connection?.remoteAddress || null
+          }
+        });
+      } catch (historyError) {
+        console.error('[CANCEL SUBSCRIPTION] Error logging to history:', historyError);
+      }
+
       console.log(`[SUBSCRIPTION] User ${req.user.id} cancelled ${previousPlan} subscription, downgraded to BASIC`);
 
       return res.json({ 
@@ -797,6 +876,29 @@ r.post('/cancel', auth(true, ['PROVIDER']), async (req, res, next) => {
           cancelledAt: new Date()
         }
       });
+
+      // Log to subscription history
+      try {
+        const { logSubscriptionChange } = await import('../services/subscription-history-service.js');
+        await logSubscriptionChange({
+          subscriptionId: existingSubscription.id,
+          userId: req.user.id,
+          action: 'CANCELLED',
+          previousPlan: existingSubscription.plan,
+          newPlan: existingSubscription.plan, // Plan ostaje isti, samo se status mijenja
+          previousStatus: existingSubscription.status,
+          newStatus: 'CANCELLED',
+          options: {
+            creditsBefore: existingSubscription.creditsBalance || 0,
+            creditsAfter: subscription.creditsBalance || 0,
+            reason: 'User requested cancellation (TRIAL)',
+            changedBy: req.user.id,
+            ipAddress: req.ip || req.connection?.remoteAddress || null
+          }
+        });
+      } catch (historyError) {
+        console.error('[CANCEL SUBSCRIPTION] Error logging to history:', historyError);
+      }
 
       // Create notification
       await prisma.notification.create({
@@ -949,6 +1051,47 @@ export async function checkAndDowngradeExpiredSubscriptions() {
     throw error;
   }
 }
+
+/**
+ * Get subscription history for current user
+ * GET /api/subscriptions/history
+ */
+r.get('/history', auth(true, ['PROVIDER', 'ADMIN']), async (req, res, next) => {
+  try {
+    const userId = req.user.role === 'ADMIN' && req.query.userId ? req.query.userId : req.user.id;
+    
+    const {
+      limit = 50,
+      offset = 0,
+      action = null,
+      plan = null,
+      startDate = null,
+      endDate = null
+    } = req.query;
+
+    const { getSubscriptionHistory } = await import('../services/subscription-history-service.js');
+    
+    const history = await getSubscriptionHistory(userId, {
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+      action: action || null,
+      plan: plan || null,
+      startDate: startDate || null,
+      endDate: endDate || null
+    });
+
+    res.json({
+      success: true,
+      history,
+      total: history.length,
+      limit: parseInt(limit),
+      offset: parseInt(offset)
+    });
+  } catch (error) {
+    console.error('[SUBSCRIPTION HISTORY] Error fetching history:', error);
+    next(error);
+  }
+});
 
 export default r;
 
