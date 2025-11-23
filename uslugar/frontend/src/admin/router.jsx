@@ -17,6 +17,7 @@ import AdminSmsLogs from '../pages/AdminSmsLogs'
 import AdminInvoices from '../pages/AdminInvoices'
 import AdminUsersOverview from '../pages/AdminUsersOverview'
 import AdminDatabaseEditor from '../pages/AdminDatabaseEditor'
+import AdminApiReference from '../pages/AdminApiReference'
 import api from '../api'
 
 // Model nazivi u PascalCase kako backend očekuje
@@ -113,6 +114,7 @@ export default function AdminRouter(){
           <Route path="/admin/cleanup" element={<AdminDataCleanup />} />
           <Route path="/admin/testing" element={<AdminTesting />} />
           <Route path="/admin/database" element={<AdminDatabaseEditor />} />
+          <Route path="/admin/api-reference" element={<AdminApiReference />} />
         </Route>
       </Routes>
     </BrowserRouter>

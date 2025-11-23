@@ -2744,4 +2744,97 @@ r.patch('/database/table/:tableName/cell', auth(true, ['ADMIN']), async (req, re
   }
 });
 
+/**
+ * GET /api/admin/api-reference
+ * Dohvati sve API endpointe s detaljima
+ */
+r.get('/api-reference', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    // Koristi Express app instance iz req.app
+    const app = req.app;
+    
+    // Funkcija za rekurzivno dohvaćanje ruta
+    const getRoutes = (stack, basePath = '') => {
+      const routes = [];
+      
+      if (!stack || !Array.isArray(stack)) {
+        return routes;
+      }
+      
+      for (const layer of stack) {
+        if (layer.route) {
+          // Direktna ruta
+          const path = basePath + layer.route.path;
+          const methods = Object.keys(layer.route.methods).filter(m => m !== '_all' && layer.route.methods[m]);
+          methods.forEach(method => {
+            const handler = layer.route.stack[0];
+            routes.push({
+              method: method.toUpperCase(),
+              path: path,
+              fullPath: path.startsWith('/api') ? path : `/api${path}`,
+              handler: handler?.name || 'anonymous',
+              middleware: handler?.name || null
+            });
+          });
+        } else if (layer.name === 'router' && layer.handle?.stack) {
+          // Nested router - pokušaj izvući path iz regexp-a
+          let routerPath = '';
+          if (layer.regexp) {
+            const regexStr = layer.regexp.toString();
+            // Pojednostavljena ekstrakcija path-a iz regexp-a
+            const match = regexStr.match(/\^\\?\/?([^\\$]*)/);
+            if (match && match[1]) {
+              routerPath = '/' + match[1].replace(/\\\//g, '/').replace(/\\\./g, '.').replace(/\\\?/g, '?');
+            }
+          }
+          
+          const nestedBasePath = basePath + routerPath;
+          routes.push(...getRoutes(layer.handle.stack, nestedBasePath));
+        }
+      }
+      
+      return routes;
+    };
+    
+    // Dohvati sve rute iz Express app instance
+    const allRoutes = getRoutes(app._router?.stack || []);
+    
+    // Grupiraj po base path-u (prvi segment nakon /api)
+    const groupedRoutes = {};
+    allRoutes.forEach(route => {
+      const pathParts = route.fullPath.replace('/api/', '').split('/');
+      const basePath = pathParts[0] || 'root';
+      if (!groupedRoutes[basePath]) {
+        groupedRoutes[basePath] = [];
+      }
+      groupedRoutes[basePath].push(route);
+    });
+    
+    // Sortiraj rute unutar svake grupe
+    Object.keys(groupedRoutes).forEach(key => {
+      groupedRoutes[key].sort((a, b) => {
+        if (a.path < b.path) return -1;
+        if (a.path > b.path) return 1;
+        const methodOrder = { 'GET': 1, 'POST': 2, 'PUT': 3, 'PATCH': 4, 'DELETE': 5 };
+        return (methodOrder[a.method] || 99) - (methodOrder[b.method] || 99);
+      });
+    });
+    
+    res.json({
+      success: true,
+      totalRoutes: allRoutes.length,
+      routes: groupedRoutes,
+      allRoutes: allRoutes.sort((a, b) => {
+        if (a.fullPath < b.fullPath) return -1;
+        if (a.fullPath > b.fullPath) return 1;
+        const methodOrder = { 'GET': 1, 'POST': 2, 'PUT': 3, 'PATCH': 4, 'DELETE': 5 };
+        return (methodOrder[a.method] || 99) - (methodOrder[b.method] || 99);
+      })
+    });
+  } catch (e) {
+    console.error('Error getting API reference:', e);
+    next(e);
+  }
+});
+
 export default r;
