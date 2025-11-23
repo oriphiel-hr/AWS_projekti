@@ -2762,10 +2762,33 @@ r.get('/api-reference', auth(true, ['ADMIN']), async (req, res, next) => {
       }
       
       for (const layer of stack) {
+        // Preskoči middleware koji nisu rute (npr. error handleri, CORS, itd.)
+        if (layer.name && ['query', 'expressInit', 'jsonParser', 'urlencodedParser', 'cors'].includes(layer.name)) {
+          continue;
+        }
+        
         if (layer.route) {
           // Direktna ruta
           const path = basePath + layer.route.path;
+          
+          // Preskoči rute koje su vjerojatno middleware ili error handleri
+          // (path je samo "/" ili prazan, i nema smislenog handlera)
+          if ((path === '/' || path === '' || path === basePath) && basePath === '') {
+            // Provjeri da li je to stvarno ruta ili samo middleware
+            const handler = layer.route.stack[0];
+            const handlerName = handler?.name || '';
+            // Ako je anonymous i path je samo "/", vjerojatno je middleware
+            if (handlerName === '' || handlerName === 'anonymous') {
+              continue;
+            }
+          }
+          
           const methods = Object.keys(layer.route.methods).filter(m => m !== '_all' && layer.route.methods[m]);
+          
+          // Preskoči ako nema metoda
+          if (methods.length === 0) {
+            continue;
+          }
           
           // Izvuci parametre iz path-a (npr. :id, :licenseId)
           const params = [];
@@ -2776,10 +2799,17 @@ r.get('/api-reference', auth(true, ['ADMIN']), async (req, res, next) => {
           
           methods.forEach(method => {
             const handler = layer.route.stack[0];
+            const fullPath = path.startsWith('/api') ? path : (path.startsWith('/') ? `/api${path}` : `/api/${path}`);
+            
+            // Preskoči ako je path samo "/api/" bez dodatnog path-a
+            if (fullPath === '/api/' || fullPath === '/api') {
+              return; // continue u forEach-u
+            }
+            
             routes.push({
               method: method.toUpperCase(),
               path: path,
-              fullPath: path.startsWith('/api') ? path : `/api${path}`,
+              fullPath: fullPath,
               handler: handler?.name || 'anonymous',
               middleware: handler?.name || null,
               params: params.length > 0 ? params : null
@@ -2922,11 +2952,41 @@ r.get('/api-reference', auth(true, ['ADMIN']), async (req, res, next) => {
       route.security = security;
     });
     
+    // Filtriraj rute koje su vjerojatno lažne (middleware, error handleri)
+    const validRoutes = allRoutes.filter(route => {
+      // Preskoči rute s path-om koji je samo "/api/" ili "/api"
+      if (route.fullPath === '/api/' || route.fullPath === '/api') {
+        return false;
+      }
+      // Preskoči rute koje nemaju smislen path (samo "/")
+      if (route.path === '/' && route.handler === 'anonymous') {
+        return false;
+      }
+      return true;
+    });
+    
     // Grupiraj po base path-u (prvi segment nakon /api)
     const groupedRoutes = {};
-    allRoutes.forEach(route => {
-      const pathParts = route.fullPath.replace('/api/', '').split('/');
+    validRoutes.forEach(route => {
+      // Ekstraktiraj base path (prvi segment nakon /api/)
+      const pathWithoutApi = route.fullPath.replace(/^\/api\/?/, '');
+      const pathParts = pathWithoutApi.split('/').filter(p => p);
       const basePath = pathParts[0] || 'root';
+      
+      // Ako je basePath "root", možda je to stvarno root ruta ili greška
+      if (basePath === 'root' && route.fullPath !== '/api/') {
+        // Pokušaj izvući iz path-a direktno
+        const directPath = route.path.split('/').filter(p => p)[0];
+        if (directPath) {
+          const finalBasePath = directPath;
+          if (!groupedRoutes[finalBasePath]) {
+            groupedRoutes[finalBasePath] = [];
+          }
+          groupedRoutes[finalBasePath].push(route);
+          return;
+        }
+      }
+      
       if (!groupedRoutes[basePath]) {
         groupedRoutes[basePath] = [];
       }
@@ -2945,9 +3005,9 @@ r.get('/api-reference', auth(true, ['ADMIN']), async (req, res, next) => {
     
     res.json({
       success: true,
-      totalRoutes: allRoutes.length,
+      totalRoutes: validRoutes.length,
       routes: groupedRoutes,
-      allRoutes: allRoutes.sort((a, b) => {
+      allRoutes: validRoutes.sort((a, b) => {
         if (a.fullPath < b.fullPath) return -1;
         if (a.fullPath > b.fullPath) return 1;
         const methodOrder = { 'GET': 1, 'POST': 2, 'PUT': 3, 'PATCH': 4, 'DELETE': 5 };
