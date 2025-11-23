@@ -14412,7 +14412,8 @@ async function seedDocumentation() {
           { name: "Admin upravljanje queue sustavom", implemented: true, isAdminOnly: true },
           { name: "Upravljanje ROI statistikama", implemented: true, isAdminOnly: true },
           { name: "Upravljanje PDF faktura i S3 storage", implemented: true, isAdminOnly: true },
-          { name: "Database Editor - Vizualni pristup bazi podataka", implemented: true, isAdminOnly: true }
+          { name: "Database Editor - Vizualni pristup bazi podataka", implemented: true, isAdminOnly: true },
+          { name: "API Reference - Popis svih API endpointa", implemented: true, isAdminOnly: true }
         ]
       },
       {
@@ -15463,6 +15464,140 @@ async function seedDocumentation() {
 - Sve endpointi zahtijevaju \`auth(true, ['ADMIN'])\`
 - SQL Query Editor provjerava da query počinje s \`SELECT\`
 - Update operacije validiraju da kolona postoji prije update-a
+`
+      },
+      "API Reference - Popis svih API endpointa": {
+        summary: "Kompletan popis svih API endpointa s detaljima o metodama, parametrima i handler funkcijama",
+        details: `## Kako funkcionira:
+
+**Pregled funkcionalnosti**
+- Dinamički dohvat svih Express ruta iz aplikacije
+- Grupiranje ruta po modulima (auth, admin, invoices, itd.)
+- Prikaz HTTP metoda (GET, POST, PUT, DELETE, PATCH)
+- Detekcija parametara u path-u (npr. \`:id\`, \`:invoiceId\`)
+- Prikaz handler funkcija i middleware-a
+- Pretraga po path-u, metodi ili handler-u
+- Filtriranje po grupi (modulu)
+
+**Admin panel - API Reference**
+- **Link:** https://uslugar.oriph.io/admin/api-reference
+- **Dostupno:** Samo za ADMIN korisnike
+- **Lokacija:** Admin panel → 📚 API Reference (u sidebaru)
+
+**Funkcionalnosti**
+- 📊 **Grupirani prikaz:** Rute grupirane po modulima (auth, admin, invoices, itd.)
+- 🔍 **Pretraga:** Pretraživanje po path-u, HTTP metodi ili handler funkciji
+- 🎯 **Filteri:** Filtriranje po grupi (modulu)
+- 📝 **Detalji:** Proširivanje/sažimanje detalja za svaki endpoint
+- 🎨 **Bojno označavanje:** HTTP metode imaju različite boje (GET=plava, POST=zelena, DELETE=crvena, itd.)
+- 📋 **Parametri:** Prikaz parametara u path-u (npr. \`:id\`, \`:invoiceId\`)
+
+**Kako koristiti**
+1. Prijavi se kao ADMIN na https://uslugar.oriph.io/admin
+2. Klikni na **📚 API Reference** u sidebaru
+3. Pregledaj sve API endpointe grupirane po modulima
+4. Koristi pretragu za brzo pronalaženje specifičnog endpointa
+5. Klikni na endpoint za proširenje detalja (metoda, path, parametri, handler)
+6. Koristi filter za prikaz samo određene grupe endpointa
+
+**Sigurnost**
+- Sve operacije zahtijevaju ADMIN role
+- Endpoint dinamički dohvaća rute iz Express aplikacije
+- Nema mogućnosti izmjene ruta, samo pregled
+`,
+        technicalDetails: `## Backend API
+
+**API Reference endpoint**
+- \`GET /api/admin/api-reference\`
+  - Dinamički dohvaća sve Express rute iz aplikacije
+  - Koristi \`req.app._router.stack\` za dohvat registriranih ruta
+  - Rekurzivno parsira nested routere
+  - Izvlači HTTP metode, path-ove, parametre i handler funkcije
+  - Vraća: \`{ success: true, totalRoutes: number, routes: {...}, allRoutes: [...] }\`
+
+**Parsiranje ruta**
+- Funkcija \`getRoutes(stack, basePath)\` rekurzivno prolazi kroz Express router stack
+- Detektira direktne rute (\`layer.route\`) i nested routere (\`layer.name === 'router'\`)
+- Izvlači HTTP metode iz \`layer.route.methods\`
+- Ekstrahira parametre iz path-a koristeći regex (\`:paramName\`)
+- Grupira rute po base path-u (prvi segment nakon \`/api\`)
+
+**Struktura odgovora**
+\`\`\`json
+{
+  "success": true,
+  "totalRoutes": 150,
+  "routes": {
+    "auth": [
+      {
+        "method": "POST",
+        "path": "/login",
+        "fullPath": "/api/auth/login",
+        "handler": "loginHandler",
+        "params": null
+      }
+    ],
+    "admin": [
+      {
+        "method": "GET",
+        "path": "/users",
+        "fullPath": "/api/admin/users",
+        "handler": "getUsers",
+        "params": null
+      },
+      {
+        "method": "GET",
+        "path": "/users/:id",
+        "fullPath": "/api/admin/users/:id",
+        "handler": "getUser",
+        "params": ["id"]
+      }
+    ]
+  },
+  "allRoutes": [...]
+}
+\`\`\`
+
+## Frontend
+
+**AdminApiReference.jsx**
+- **Route:** \`/admin/api-reference\`
+- **Komponente:**
+  - Header s ukupnim brojem endpointa
+  - Search bar za pretragu
+  - Filter dropdown za grupe
+  - Grupirani prikaz ruta po modulima
+  - Expandable/collapsible detalji za svaki endpoint
+  - Flat view za rezultate pretrage
+
+- **State management:**
+  - \`apiData\`: Podaci o rutama (grupe i sve rute)
+  - \`searchTerm\`: Tekst za pretragu
+  - \`selectedGroup\`: Odabrana grupa za filtriranje
+  - \`expandedRoutes\`: Set proširenih endpointa
+
+- **Funkcionalnosti:**
+  - \`loadApiReference()\`: Učitaj sve API endpointe
+  - \`toggleRoute()\`: Proširi/sažmi detalje endpointa
+  - \`getMethodColor()\`: Vrati boju za HTTP metodu
+  - \`filteredRoutes\`: Filtrirane rute po grupi i pretrazi
+  - \`filteredAllRoutes\`: Svi filtrirani rezultati pretrage
+
+- **UI komponente:**
+  - Method badge (GET, POST, PUT, DELETE, PATCH) s bojama
+  - Path prikaz (code format)
+  - Parametri badge (purple) za path parametre
+  - Handler prikaz (ako nije anonymous)
+  - Expand/collapse ikone
+
+**Baza podataka**
+- Nema baze podataka - sve se dinamički dohvaća iz Express aplikacije
+- Podaci se generiraju na zahtjev iz runtime Express router stack-a
+
+**Sigurnost**
+- Endpoint zahtijeva \`auth(true, ['ADMIN'])\`
+- Samo pregled ruta, nema mogućnosti izmjene
+- Dinamički dohvat osigurava da se prikazuju samo aktualne rute
 `
       },
       "Upravljanje ROI statistikama": {
