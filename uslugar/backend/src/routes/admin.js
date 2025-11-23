@@ -3176,6 +3176,11 @@ r.get('/api-reference', auth(true, ['ADMIN']), async (req, res, next) => {
       if (security.businessRules && security.businessRules.length > 0) {
         console.log(`[API-REF] Route with businessRules: ${route.method} ${route.fullPath}`, security.businessRules);
       }
+      // Debug: loguj rute koje bi trebale imati businessRules ali nemaju
+      if ((route.fullPath.includes('/my-offers') || route.fullPath.includes('/my-queue')) && 
+          (!security.businessRules || security.businessRules.length === 0)) {
+        console.log(`[API-REF] WARNING: Route ${route.method} ${route.fullPath} should have businessRules but doesn't`);
+      }
     });
     
     // Filtriraj rute koje su vjerojatno lažne (middleware, error handleri)

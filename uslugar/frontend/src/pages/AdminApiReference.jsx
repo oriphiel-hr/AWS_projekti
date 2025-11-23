@@ -16,10 +16,27 @@ const AdminApiReference = () => {
   const loadApiReference = async () => {
     try {
       setLoading(true);
+      setError('');
       const response = await api.get('/admin/api-reference');
       setApiData(response.data);
     } catch (err) {
-      setError(err.response?.data?.error || 'Greška pri učitavanju API reference');
+      console.error('Error loading API reference:', err);
+      if (err.response) {
+        // Server responded with error
+        if (err.response.status === 404) {
+          setError('Endpoint nije pronađen. Provjerite da li je backend server pokrenut i da li je endpoint deployan.');
+        } else if (err.response.status === 401 || err.response.status === 403) {
+          setError('Nemate pristup. Morate biti ulogirani kao ADMIN.');
+        } else {
+          setError(err.response?.data?.error || `Greška pri učitavanju API reference (${err.response.status})`);
+        }
+      } else if (err.request) {
+        // Request was made but no response received
+        setError('Backend server nije dostupan. Provjerite da li je server pokrenut.');
+      } else {
+        // Something else happened
+        setError(err.message || 'Greška pri učitavanju API reference');
+      }
     } finally {
       setLoading(false);
     }
