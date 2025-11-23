@@ -71,7 +71,7 @@ export async function uploadInvoicePDF(pdfBuffer, invoiceNumber) {
  */
 export async function getInvoicePDFPresignedUrl(invoiceNumber, expiresIn = 3600) {
   try {
-    if (!BUCKET_NAME || BUCKET_NAME === 'uslugar-invoices') {
+    if (!BUCKET_NAME) {
       return null;
     }
 
@@ -98,7 +98,7 @@ export async function getInvoicePDFPresignedUrl(invoiceNumber, expiresIn = 3600)
  */
 export async function downloadInvoicePDF(invoiceNumber) {
   try {
-    if (!BUCKET_NAME || BUCKET_NAME === 'uslugar-invoices') {
+    if (!BUCKET_NAME) {
       return null;
     }
 
