@@ -2992,6 +2992,10 @@ r.get('/api-reference', auth(true, ['ADMIN']), async (req, res, next) => {
     allRoutes.forEach(route => {
       const security = getSecurityInfo(route.fullPath, route.method);
       route.security = security;
+      // Debug: loguj rute s businessRules
+      if (security.businessRules && security.businessRules.length > 0) {
+        console.log(`[API-REF] Route with businessRules: ${route.method} ${route.fullPath}`, security.businessRules);
+      }
     });
     
     // Filtriraj rute koje su vjerojatno lažne (middleware, error handleri)
