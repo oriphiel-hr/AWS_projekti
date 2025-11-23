@@ -225,9 +225,9 @@ export async function findTopProviders(job, limit = 5) {
   });
 
   // Vrati samo provider objekte (bez dodatnih polja)
-  const providers = providersWithScores.map(({ combinedMatchScore, hasTeamMatch, bestTeamMember, ...provider }) => provider);
+  const filteredProviders = providersWithScores.map(({ combinedMatchScore, hasTeamMatch, bestTeamMember, ...provider }) => provider);
   
-  const topProviders = providers.slice(0, limit)
+  const topProviders = filteredProviders.slice(0, limit)
   console.log(`✅ Top ${topProviders.length} providera odabrano`)
   
   return topProviders
