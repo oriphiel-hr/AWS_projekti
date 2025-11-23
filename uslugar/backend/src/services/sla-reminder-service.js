@@ -5,9 +5,13 @@
  */
 
 import { prisma } from '../lib/prisma.js';
-import { Prisma } from '@prisma/client';
 
-const { SLASStatus } = Prisma;
+// SLASStatus enum values
+const SLASStatus = {
+  PENDING: 'PENDING',
+  MET: 'MET',
+  BREACHED: 'BREACHED'
+};
 
 // Default SLA: 4 sata (240 minuta)
 const DEFAULT_SLA_MINUTES = 240;
