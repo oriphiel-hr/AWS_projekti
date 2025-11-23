@@ -15,8 +15,11 @@ export default function AdminInvoices() {
     type: '',
     userId: '',
     startDate: '',
-    endDate: ''
+    endDate: '',
+    hasS3: '' // 'true', 'false', or ''
   });
+  const [selectedInvoices, setSelectedInvoices] = useState(new Set());
+  const [bulkLoading, setBulkLoading] = useState(false);
   const [pagination, setPagination] = useState({
     limit: 50,
     offset: 0,
@@ -196,6 +199,94 @@ export default function AdminInvoices() {
     }
   };
 
+  const bulkUploadToS3 = async () => {
+    const selected = Array.from(selectedInvoices);
+    if (selected.length === 0) {
+      alert('Odaberite barem jednu fakturu');
+      return;
+    }
+
+    if (!confirm(`Uploadati ${selected.length} faktura na S3?`)) {
+      return;
+    }
+
+    setBulkLoading(true);
+    try {
+      const response = await api.post('/invoices/bulk/upload-to-s3', { invoiceIds: selected });
+      alert(`Uspješno uploadano ${response.data.uploaded} faktura na S3`);
+      setSelectedInvoices(new Set());
+      await loadInvoices();
+    } catch (err) {
+      alert(err.response?.data?.error || 'Greška pri masovnom uploadu');
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
+  const bulkDeleteFromS3 = async () => {
+    const selected = Array.from(selectedInvoices);
+    if (selected.length === 0) {
+      alert('Odaberite barem jednu fakturu');
+      return;
+    }
+
+    if (!confirm(`Obrisati ${selected.length} faktura s S3?`)) {
+      return;
+    }
+
+    setBulkLoading(true);
+    try {
+      const response = await api.post('/invoices/bulk/delete-from-s3', { invoiceIds: selected });
+      alert(`Uspješno obrisano ${response.data.deleted} faktura s S3`);
+      setSelectedInvoices(new Set());
+      await loadInvoices();
+    } catch (err) {
+      alert(err.response?.data?.error || 'Greška pri masovnom brisanju');
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
+  const uploadAllMissingToS3 = async () => {
+    if (!confirm('Uploadati sve fakture koje nisu na S3? Ova operacija može potrajati.')) {
+      return;
+    }
+
+    setBulkLoading(true);
+    try {
+      const response = await api.post('/invoices/bulk/upload-all-missing-to-s3');
+      alert(`Uspješno uploadano ${response.data.uploaded} faktura na S3`);
+      setSelectedInvoices(new Set());
+      await loadInvoices();
+    } catch (err) {
+      alert(err.response?.data?.error || 'Greška pri uploadu svih faktura');
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
+  const deleteAllFromS3 = async () => {
+    if (!confirm('Obrisati SVE fakture s S3? Ova operacija je nepovratna!')) {
+      return;
+    }
+
+    if (!confirm('Jeste li SIGURNI da želite obrisati SVE fakture s S3?')) {
+      return;
+    }
+
+    setBulkLoading(true);
+    try {
+      const response = await api.post('/invoices/bulk/delete-all-from-s3');
+      alert(`Uspješno obrisano ${response.data.deleted} faktura s S3`);
+      setSelectedInvoices(new Set());
+      await loadInvoices();
+    } catch (err) {
+      alert(err.response?.data?.error || 'Greška pri brisanju svih faktura');
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-6">
@@ -246,9 +337,64 @@ export default function AdminInvoices() {
         </div>
       )}
 
+      {/* Masovne operacije */}
+      <div className="bg-white p-4 rounded-lg shadow mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-4">
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={selectedInvoices.size === invoices.length && invoices.length > 0}
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    setSelectedInvoices(new Set(invoices.map(inv => inv.id)));
+                  } else {
+                    setSelectedInvoices(new Set());
+                  }
+                }}
+                className="rounded"
+              />
+              <span className="text-sm text-gray-700">
+                Odaberi sve ({selectedInvoices.size} odabrano)
+              </span>
+            </label>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={bulkUploadToS3}
+              disabled={bulkLoading || selectedInvoices.size === 0}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+            >
+              {bulkLoading ? '⏳' : '⬆️'} Upload odabrane na S3
+            </button>
+            <button
+              onClick={bulkDeleteFromS3}
+              disabled={bulkLoading || selectedInvoices.size === 0}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+            >
+              {bulkLoading ? '⏳' : '🗑️'} Obriši odabrane s S3
+            </button>
+            <button
+              onClick={uploadAllMissingToS3}
+              disabled={bulkLoading}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+            >
+              {bulkLoading ? '⏳' : '⬆️'} Upload sve nedostajuće na S3
+            </button>
+            <button
+              onClick={deleteAllFromS3}
+              disabled={bulkLoading}
+              className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+            >
+              {bulkLoading ? '⏳' : '🗑️'} Obriši sve s S3
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Filteri */}
       <div className="bg-white p-4 rounded-lg shadow mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
             <select
@@ -303,6 +449,18 @@ export default function AdminInvoices() {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
             />
           </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">S3 Status</label>
+            <select
+              value={filters.hasS3}
+              onChange={(e) => handleFilterChange('hasS3', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+            >
+              <option value="">Svi</option>
+              <option value="true">Na S3</option>
+              <option value="false">Nije na S3</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -323,6 +481,20 @@ export default function AdminInvoices() {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-12">
+                      <input
+                        type="checkbox"
+                        checked={selectedInvoices.size === invoices.length && invoices.length > 0}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedInvoices(new Set(invoices.map(inv => inv.id)));
+                          } else {
+                            setSelectedInvoices(new Set());
+                          }
+                        }}
+                        className="rounded"
+                      />
+                    </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Broj</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Korisnik</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tip</th>
@@ -336,6 +508,22 @@ export default function AdminInvoices() {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {invoices.map((invoice) => (
                     <tr key={invoice.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <input
+                          type="checkbox"
+                          checked={selectedInvoices.has(invoice.id)}
+                          onChange={(e) => {
+                            const newSelected = new Set(selectedInvoices);
+                            if (e.target.checked) {
+                              newSelected.add(invoice.id);
+                            } else {
+                              newSelected.delete(invoice.id);
+                            }
+                            setSelectedInvoices(newSelected);
+                          }}
+                          className="rounded"
+                        />
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">{invoice.invoiceNumber}</div>
                       </td>

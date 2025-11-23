@@ -2027,7 +2027,7 @@ r.post('/sms-logs/sync-from-twilio', auth(true, ['ADMIN']), async (req, res, nex
  */
 r.get('/invoices', auth(true, ['ADMIN']), async (req, res, next) => {
   try {
-    const { status, type, userId, limit = 50, offset = 0, startDate, endDate } = req.query;
+    const { status, type, userId, limit = 50, offset = 0, startDate, endDate, hasS3 } = req.query;
     
     const where = {};
     
@@ -2041,6 +2041,12 @@ r.get('/invoices', auth(true, ['ADMIN']), async (req, res, next) => {
     
     if (userId) {
       where.userId = userId;
+    }
+    
+    if (hasS3 === 'true') {
+      where.pdfUrl = { not: null };
+    } else if (hasS3 === 'false') {
+      where.pdfUrl = null;
     }
     
     if (startDate || endDate) {

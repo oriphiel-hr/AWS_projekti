@@ -297,6 +297,290 @@ r.post('/:invoiceId/fiscalize', auth(true, ['ADMIN', 'PROVIDER', 'USER']), async
 });
 
 /**
+ * POST /api/invoices/bulk/upload-to-s3
+ * Masovno uploadaj PDF fakture na S3 (samo admin)
+ */
+r.post('/bulk/upload-to-s3', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const { invoiceIds } = req.body;
+    
+    if (!Array.isArray(invoiceIds) || invoiceIds.length === 0) {
+      return res.status(400).json({ error: 'invoiceIds mora biti array s barem jednim ID-om' });
+    }
+
+    const { isS3Configured } = await import('../lib/s3-storage.js');
+    if (!isS3Configured()) {
+      return res.status(503).json({ error: 'S3 nije konfiguriran' });
+    }
+
+    const { generateInvoicePDF, saveInvoicePDF } = await import('../services/invoice-service.js');
+    let uploaded = 0;
+    let errors = [];
+
+    for (const invoiceId of invoiceIds) {
+      try {
+        const invoice = await prisma.invoice.findUnique({
+          where: { id: invoiceId },
+          include: {
+            user: {
+              select: {
+                id: true,
+                fullName: true,
+                email: true,
+                companyName: true,
+                taxId: true,
+                city: true
+              }
+            },
+            subscription: {
+              select: {
+                plan: true
+              }
+            },
+            leadPurchase: {
+              include: {
+                job: {
+                  select: {
+                    title: true
+                  }
+                }
+              }
+            }
+          }
+        });
+
+        if (!invoice) {
+          errors.push({ invoiceId, error: 'Faktura nije pronađena' });
+          continue;
+        }
+
+        if (invoice.pdfUrl) {
+          continue; // Već je na S3
+        }
+
+        // Generiraj PDF
+        const pdfBuffer = await generateInvoicePDF(invoice);
+        
+        // Upload na S3
+        const s3Url = await saveInvoicePDF(invoice, pdfBuffer);
+        
+        if (s3Url) {
+          uploaded++;
+        } else {
+          errors.push({ invoiceId, error: 'Upload neuspješan' });
+        }
+      } catch (error) {
+        errors.push({ invoiceId, error: error.message });
+      }
+    }
+
+    res.json({
+      success: true,
+      uploaded,
+      total: invoiceIds.length,
+      errors: errors.length > 0 ? errors : undefined
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * POST /api/invoices/bulk/delete-from-s3
+ * Masovno obriši PDF fakture s S3 (samo admin)
+ */
+r.post('/bulk/delete-from-s3', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const { invoiceIds } = req.body;
+    
+    if (!Array.isArray(invoiceIds) || invoiceIds.length === 0) {
+      return res.status(400).json({ error: 'invoiceIds mora biti array s barem jednim ID-om' });
+    }
+
+    const { deleteInvoicePDF } = await import('../lib/s3-storage.js');
+    let deleted = 0;
+    let errors = [];
+
+    for (const invoiceId of invoiceIds) {
+      try {
+        const invoice = await prisma.invoice.findUnique({
+          where: { id: invoiceId },
+          select: {
+            id: true,
+            invoiceNumber: true,
+            pdfUrl: true
+          }
+        });
+
+        if (!invoice) {
+          errors.push({ invoiceId, error: 'Faktura nije pronađena' });
+          continue;
+        }
+
+        if (!invoice.pdfUrl) {
+          continue; // Nije na S3
+        }
+
+        // Obriši PDF s S3
+        const success = await deleteInvoicePDF(invoice.invoiceNumber);
+        
+        if (success) {
+          // Ažuriraj fakturu - ukloni pdfUrl
+          await prisma.invoice.update({
+            where: { id: invoiceId },
+            data: { pdfUrl: null }
+          });
+          deleted++;
+        } else {
+          errors.push({ invoiceId, error: 'Brisanje neuspješno' });
+        }
+      } catch (error) {
+        errors.push({ invoiceId, error: error.message });
+      }
+    }
+
+    res.json({
+      success: true,
+      deleted,
+      total: invoiceIds.length,
+      errors: errors.length > 0 ? errors : undefined
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * POST /api/invoices/bulk/upload-all-missing-to-s3
+ * Uploadaj sve fakture koje nisu na S3 (samo admin)
+ */
+r.post('/bulk/upload-all-missing-to-s3', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const { isS3Configured } = await import('../lib/s3-storage.js');
+    if (!isS3Configured()) {
+      return res.status(503).json({ error: 'S3 nije konfiguriran' });
+    }
+
+    // Pronađi sve fakture koje nemaju pdfUrl
+    const invoices = await prisma.invoice.findMany({
+      where: {
+        pdfUrl: null
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            companyName: true,
+            taxId: true,
+            city: true
+          }
+        },
+        subscription: {
+          select: {
+            plan: true
+          }
+        },
+        leadPurchase: {
+          include: {
+            job: {
+              select: {
+                title: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    const { generateInvoicePDF, saveInvoicePDF } = await import('../services/invoice-service.js');
+    let uploaded = 0;
+    let errors = [];
+
+    for (const invoice of invoices) {
+      try {
+        // Generiraj PDF
+        const pdfBuffer = await generateInvoicePDF(invoice);
+        
+        // Upload na S3
+        const s3Url = await saveInvoicePDF(invoice, pdfBuffer);
+        
+        if (s3Url) {
+          uploaded++;
+        } else {
+          errors.push({ invoiceId: invoice.id, invoiceNumber: invoice.invoiceNumber, error: 'Upload neuspješan' });
+        }
+      } catch (error) {
+        errors.push({ invoiceId: invoice.id, invoiceNumber: invoice.invoiceNumber, error: error.message });
+      }
+    }
+
+    res.json({
+      success: true,
+      uploaded,
+      total: invoices.length,
+      errors: errors.length > 0 ? errors : undefined
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * POST /api/invoices/bulk/delete-all-from-s3
+ * Obriši sve fakture s S3 (samo admin)
+ */
+r.post('/bulk/delete-all-from-s3', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    // Pronađi sve fakture koje imaju pdfUrl
+    const invoices = await prisma.invoice.findMany({
+      where: {
+        pdfUrl: { not: null }
+      },
+      select: {
+        id: true,
+        invoiceNumber: true,
+        pdfUrl: true
+      }
+    });
+
+    const { deleteInvoicePDF } = await import('../lib/s3-storage.js');
+    let deleted = 0;
+    let errors = [];
+
+    for (const invoice of invoices) {
+      try {
+        // Obriši PDF s S3
+        const success = await deleteInvoicePDF(invoice.invoiceNumber);
+        
+        if (success) {
+          // Ažuriraj fakturu - ukloni pdfUrl
+          await prisma.invoice.update({
+            where: { id: invoice.id },
+            data: { pdfUrl: null }
+          });
+          deleted++;
+        } else {
+          errors.push({ invoiceId: invoice.id, invoiceNumber: invoice.invoiceNumber, error: 'Brisanje neuspješno' });
+        }
+      } catch (error) {
+        errors.push({ invoiceId: invoice.id, invoiceNumber: invoice.invoiceNumber, error: error.message });
+      }
+    }
+
+    res.json({
+      success: true,
+      deleted,
+      total: invoices.length,
+      errors: errors.length > 0 ? errors : undefined
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
  * POST /api/invoices/:invoiceId/upload-to-s3
  * Uploadaj PDF fakture na S3 (samo admin)
  */
