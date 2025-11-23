@@ -25,7 +25,7 @@ const INVOICES_PREFIX = 'invoices/'; // Prefix za fakture u S3 bucketu
  */
 export async function uploadInvoicePDF(pdfBuffer, invoiceNumber) {
   try {
-    if (!BUCKET_NAME || BUCKET_NAME === 'uslugar-invoices') {
+    if (!BUCKET_NAME) {
       console.warn('[S3] AWS_S3_BUCKET_NAME not configured, skipping S3 upload');
       return null;
     }
