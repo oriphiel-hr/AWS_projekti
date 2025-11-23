@@ -2827,6 +2827,13 @@ r.get('/api-reference', auth(true, ['ADMIN']), async (req, res, next) => {
             }
           }
           
+          // Ako nismo uspjeli izvući iz regexp-a, pokušaj iz route path-a
+          if (!routerPath && layer.route && layer.route.path) {
+            routerPath = layer.route.path;
+          }
+          
+          // Ako još uvijek nema path-a, pokušaj iz app mount path-a
+          // (ovo je fallback - Express često ne eksponira mount path direktno)
           const nestedBasePath = basePath + routerPath;
           routes.push(...getRoutes(layer.handle.stack, nestedBasePath));
         }
@@ -2958,9 +2965,21 @@ r.get('/api-reference', auth(true, ['ADMIN']), async (req, res, next) => {
         security.additionalChecks.push('Subscription check: može zahtijevati određeni subscription plan');
       }
       // Lead queue - zahtijevaju autentikaciju i PROVIDER role
-      else if (fullPath.startsWith('/api/lead-queue')) {
+      else if (fullPath.startsWith('/api/lead-queue') || fullPath.includes('/my-offers') || fullPath.includes('/my-queue')) {
         security.authRequired = true;
         security.roles = ['PROVIDER', 'ADMIN'];
+        if (fullPath.includes('/my-offers') || fullPath === '/api/my-offers') {
+          security.businessRules.push('Vraća samo aktivne ponude (status: OFFERED, expiresAt > now)');
+          security.businessRules.push('Samo PROVIDER može vidjeti svoje ponude');
+        }
+        if (fullPath.includes('/my-queue') || fullPath === '/api/my-queue') {
+          security.businessRules.push('Vraća sve queue stavke za providera (povijest)');
+          security.businessRules.push('Samo PROVIDER može vidjeti svoju queue povijest');
+        }
+        if (fullPath.includes('/respond') && method === 'POST') {
+          security.businessRules.push('Ponuda mora biti aktivna (status: OFFERED, expiresAt > now)');
+          security.businessRules.push('Samo provider koji je dobio ponudu može odgovoriti');
+        }
       }
       // Reviews - zahtijevaju autentikaciju
       else if (fullPath.startsWith('/api/reviews')) {
@@ -2969,10 +2988,171 @@ r.get('/api-reference', auth(true, ['ADMIN']), async (req, res, next) => {
         if (method === 'POST') {
           security.businessRules.push('Posao mora biti COMPLETED status');
           security.businessRules.push('Ne možeš ocjenjivati ako već imaš recenziju za taj posao');
+          security.businessRules.push('Korisnici moraju biti povezani preko job-a (vlasnik posla ↔ assigned provider)');
+          security.businessRules.push('AI automatska moderacija sadržaja (komentar i ocjena)');
         }
         if (fullPath.includes('/reply') && method === 'POST') {
           security.businessRules.push('Možeš odgovoriti samo jednom na recenziju');
           security.businessRules.push('Samo toUserId može odgovoriti na recenziju');
+          security.businessRules.push('Recenzija mora biti objavljena (isPublished: true)');
+        }
+        if (fullPath.includes('/user/') && method === 'GET') {
+          security.businessRules.push('Vraća samo objavljene i odobrene review-e (osim admin/vlasnik)');
+        }
+      }
+      // Exclusive leads - zahtijevaju autentikaciju i PROVIDER role
+      else if (fullPath.startsWith('/api/exclusive')) {
+        security.authRequired = true;
+        security.roles = ['PROVIDER', 'ADMIN'];
+        security.additionalChecks.push('Subscription check: može zahtijevati određeni subscription plan');
+        if (fullPath.includes('/purchase') && method === 'POST') {
+          security.businessRules.push('Lead mora biti AVAILABLE (leadStatus: AVAILABLE, assignedProviderId: null)');
+          security.businessRules.push('Zahtijeva kredite ili Stripe Payment Intent (osim PRO plan koji ima unlimited)');
+          security.businessRules.push('Ne možeš kupiti lead koji si već kupio');
+        }
+        if (fullPath.includes('/create-payment-intent') && method === 'POST') {
+          security.businessRules.push('Lead mora biti AVAILABLE');
+          security.businessRules.push('Stripe mora biti konfiguriran');
+        }
+        if (fullPath.includes('/contacted') && method === 'POST') {
+          security.businessRules.push('Samo provider koji je kupio lead može označiti kao contacted');
+        }
+        if (fullPath.includes('/converted') && method === 'POST') {
+          security.businessRules.push('Samo provider koji je kupio lead može označiti kao converted');
+        }
+        if (fullPath.includes('/refund') && method === 'POST') {
+          security.businessRules.push('Samo provider koji je kupio lead može zatražiti refund');
+          security.businessRules.push('Refund zahtijeva admin odobrenje');
+        }
+      }
+      // Payments - dodatna poslovna ograničenja
+      else if (fullPath.startsWith('/api/payments')) {
+        security.authRequired = true;
+        security.roles = ['USER', 'PROVIDER', 'ADMIN'];
+        security.additionalChecks.push('Ownership check: korisnik može pristupiti samo svojim transakcijama');
+        if (fullPath.includes('/create-checkout') && method === 'POST') {
+          security.businessRules.push('Stripe mora biti konfiguriran');
+          security.businessRules.push('Novi korisnici dobivaju 20% popust');
+          security.businessRules.push('TRIAL korisnici dobivaju 20% popust pri upgrade-u');
+          security.businessRules.push('Prorated billing za upgrade/downgrade postojećih pretplata');
+        }
+        if (fullPath.includes('/webhook') && method === 'POST') {
+          security.authRequired = false; // Webhook ne zahtijeva auth (Stripe signature verification)
+          security.businessRules.push('Stripe webhook signature verification');
+        }
+      }
+      // Subscriptions - dodatna poslovna ograničenja
+      else if (fullPath.startsWith('/api/subscriptions')) {
+        security.authRequired = true;
+        security.roles = ['USER', 'PROVIDER', 'ADMIN'];
+        security.additionalChecks.push('Ownership check: korisnik može pristupiti samo svojoj pretplati');
+        if (fullPath.includes('/subscribe') && method === 'POST') {
+          security.businessRules.push('Zahtijeva Stripe Payment Intent ili postojeće kredite');
+          security.businessRules.push('Automatski downgrade na BASIC nakon isteka pretplate');
+        }
+        if (fullPath.includes('/cancel') && method === 'POST') {
+          security.businessRules.push('Pretplata se ne može otkazati prije isteka (samo se neće obnoviti)');
+        }
+      }
+      // Jobs - dodatna poslovna ograničenja
+      else if (fullPath.startsWith('/api/jobs')) {
+        security.authRequired = true;
+        security.roles = ['USER', 'PROVIDER', 'ADMIN'];
+        if (method === 'POST') {
+          security.businessRules.push('Kategorija mora postojati i biti aktivna');
+          security.businessRules.push('Geolokacija se automatski generira iz city-a (ako nije specificirana)');
+        }
+        if (fullPath.includes('/for-provider') && method === 'GET') {
+          security.businessRules.push('Vraća samo poslove u kategorijama providera (uključujući subkategorije)');
+          security.businessRules.push('Filtrira po udaljenosti ako su specificirane koordinate');
+        }
+      }
+      // Providers - dodatna poslovna ograničenja
+      else if (fullPath.startsWith('/api/providers')) {
+        security.authRequired = true;
+        security.roles = ['PROVIDER', 'ADMIN'];
+        if (method === 'POST') {
+          security.businessRules.push('Korisnik mora imati PROVIDER role');
+          security.businessRules.push('Pravni status mora postojati i biti aktivan');
+        }
+        if (['PUT', 'PATCH'].includes(method)) {
+          security.additionalChecks.push('Ownership check: samo vlasnik profila može editirati');
+          security.businessRules.push('Kategorije moraju postojati i biti aktivne');
+        }
+      }
+      // Users - dodatna poslovna ograničenja
+      else if (fullPath.startsWith('/api/users')) {
+        security.authRequired = true;
+        security.roles = ['USER', 'PROVIDER', 'ADMIN'];
+        if (fullPath.includes('/me') && method === 'PUT') {
+          security.businessRules.push('Korisnik može ažurirati samo svoje podatke');
+        }
+      }
+      // Chat - dodatna poslovna ograničenja
+      else if (fullPath.startsWith('/api/chat')) {
+        security.authRequired = true;
+        security.roles = ['USER', 'PROVIDER', 'ADMIN'];
+        security.additionalChecks.push('Participant check: korisnik mora biti sudionik chat sobe');
+        if (fullPath.includes('/rooms') && method === 'POST') {
+          security.businessRules.push('Posao mora imati ACCEPTED offer prije kreiranja chat sobe');
+          security.businessRules.push('Korisnik mora biti vlasnik posla ili provider s prihvaćenom ponudom');
+          security.businessRules.push('Provjera da soba već ne postoji');
+        }
+        if (fullPath.includes('/messages') && method === 'POST') {
+          security.businessRules.push('Korisnik mora biti sudionik chat sobe');
+          security.businessRules.push('Chat soba ne smije biti zaključana');
+        }
+        if (fullPath.includes('/read') && method === 'POST') {
+          security.businessRules.push('Ne možeš označiti svoju poruku kao pročitanu');
+        }
+      }
+      // KYC - dodatna poslovna ograničenja
+      else if (fullPath.startsWith('/api/kyc')) {
+        security.authRequired = true;
+        security.roles = ['PROVIDER', 'ADMIN'];
+        security.additionalChecks.push('Samo PROVIDER role može uploadati KYC dokumente');
+        if (fullPath.includes('/upload-document') && method === 'POST') {
+          security.businessRules.push('Dokument mora biti PDF, JPG ili PNG format');
+          security.businessRules.push('Automatska verifikacija OIB-a i naziva tvrtke (Sudski registar, Obrtni registar)');
+          security.businessRules.push('Public consent je obavezan');
+        }
+      }
+      // Support - dodatna poslovna ograničenja
+      else if (fullPath.startsWith('/api/support')) {
+        security.authRequired = true;
+        security.roles = ['USER', 'PROVIDER', 'ADMIN'];
+        if (method === 'POST') {
+          security.businessRules.push('Korisnik može kreirati ticket samo za sebe');
+        }
+        if (fullPath.includes('/reply') && method === 'POST') {
+          security.businessRules.push('Samo admin ili vlasnik ticket-a može odgovoriti');
+        }
+      }
+      // Notifications - dodatna poslovna ograničenja
+      else if (fullPath.startsWith('/api/notifications')) {
+        security.authRequired = true;
+        security.roles = ['USER', 'PROVIDER', 'ADMIN'];
+        security.additionalChecks.push('Ownership check: korisnik može pristupiti samo svojim notifikacijama');
+        if (fullPath.includes('/read') && method === 'POST') {
+          security.businessRules.push('Korisnik može označiti samo svoje notifikacije kao pročitane');
+        }
+      }
+      // Wizard - dodatna poslovna ograničenja
+      else if (fullPath.startsWith('/api/wizard')) {
+        security.authRequired = true;
+        security.roles = ['PROVIDER'];
+        if (fullPath.includes('/complete') && method === 'POST') {
+          security.businessRules.push('Korisnik mora odabrati barem jednu kategoriju');
+          security.businessRules.push('Korisnik mora odabrati barem jednu regiju');
+        }
+      }
+      // Chatbot - dodatna poslovna ograničenja
+      else if (fullPath.startsWith('/api/chatbot')) {
+        security.authRequired = true;
+        security.roles = ['PROVIDER'];
+        if (fullPath.includes('/advance') && method === 'POST') {
+          security.businessRules.push('Chatbot session mora biti aktivan');
+          security.businessRules.push('Korisnik mora biti na određenom koraku');
         }
       }
       // Public rute - javne
