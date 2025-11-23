@@ -15368,6 +15368,103 @@ async function seedDocumentation() {
 **Preporuka:** Koristi **Database Editor u admin panelu** (\`/admin/database\`) za najbolje iskustvo - dostupno direktno iz browsera, bez lokalne instalacije!
 `
       },
+      "Database Editor - Vizualni pristup bazi podataka": {
+        summary: "Vizualni database editor u admin panelu za direktan pristup bazi podataka, CRUD operacije, SQL queries i edit ćelija",
+        details: `## Kako funkcionira:
+
+**Pristup**
+- **Link:** https://uslugar.oriph.io/admin/database
+- **Dostupno:** Samo za ADMIN korisnike
+- **Lokacija:** Admin panel → 🗄️ Database Editor (u sidebaru)
+
+**Funkcionalnosti**
+- 📊 **Pregled podataka:** Lista svih tablica u bazi, pregled podataka s paginacijom (50 redaka po stranici)
+- ✏️ **Direktan edit ćelija:** Double-click na ćeliju → edit → Enter za save, Escape za cancel
+- 🏗️ **Struktura tablice:** Pregled kolona, tipova podataka, nullable, default vrijednosti, indeksa i foreign keys
+- 🔍 **SQL Query Editor:** Izvršavanje SELECT queries s prikazom rezultata u tabličnom formatu
+- 🔄 **Paginacija:** Navigacija kroz velike tablice (prethodna/sljedeća stranica)
+
+**Kako koristiti**
+1. Prijavi se kao ADMIN na https://uslugar.oriph.io/admin
+2. Klikni na **🗄️ Database Editor** u sidebaru
+3. Odaberi tablicu za pregled (npr. \`Invoice\`, \`User\`, \`ProviderProfile\`)
+4. **Pregled podataka:** Automatski se učitavaju podaci s paginacijom
+5. **Edit ćelije:** Double-click na ćeliju → unesi novu vrijednost → Enter za save
+6. **Struktura:** Klikni na "🏗️ Struktura" tab za detalje o tablici
+7. **SQL Query:** Klikni na "🔍 SQL Query" tab za SELECT queries
+
+**Sigurnost**
+- Sve operacije zahtijevaju ADMIN role
+- SQL Query Editor dozvoljava samo SELECT queries (za sigurnost)
+- Update operacije se logiraju
+`,
+        technicalDetails: `## Backend API
+
+**Lista tablica**
+- \`GET /api/admin/database/tables\`
+  - Vraća listu svih tablica u bazi (bez Prisma internih tablica)
+
+**Pregled podataka**
+- \`GET /api/admin/database/table/:tableName?page=1&limit=50&orderBy=id&order=asc\`
+  - Dohvati podatke iz tablice s paginacijom
+  - Vraća: \`{ tableName, columns, data, pagination: { page, limit, total, totalPages } }\`
+
+**Struktura tablice**
+- \`GET /api/admin/database/table/:tableName/structure\`
+  - Dohvati strukturu tablice (kolone, indeksi, foreign keys)
+  - Vraća: \`{ tableName, columns, indexes, foreignKeys }\`
+
+**SQL Query**
+- \`POST /api/admin/database/query\`
+  - Body: \`{ query: "SELECT * FROM ..." }\`
+  - Izvršava samo SELECT queries (za sigurnost)
+  - Vraća: \`{ success: true, result: [], rowCount: number }\`
+
+**Update ćelije**
+- \`PATCH /api/admin/database/table/:tableName/cell\`
+  - Body: \`{ id, idColumn, column, value }\`
+  - Update pojedinačne ćelije u tablici
+  - Vraća: \`{ success: true, updated: {...} }\`
+
+## Frontend
+
+**AdminDatabaseEditor.jsx**
+- **Route:** \`/admin/database\`
+- **Komponente:**
+  - Sidebar s listom tablica
+  - Tablični prikaz podataka s paginacijom
+  - Edit modal za ćelije (inline editing)
+  - Struktura tablice (kolone, indeksi, foreign keys)
+  - SQL Query Editor s rezultatima
+
+- **State management:**
+  - \`tables\`: Lista svih tablica
+  - \`selectedTable\`: Odabrana tablica
+  - \`tableData\`: Podaci iz tablice s paginacijom
+  - \`tableStructure\`: Struktura tablice
+  - \`editingCell\`: Trenutno editirana ćelija
+  - \`sqlQuery\`: SQL query za izvršavanje
+  - \`queryResult\`: Rezultati SQL query-ja
+
+- **Funkcionalnosti:**
+  - \`loadTables()\`: Učitaj listu tablica
+  - \`loadTableData()\`: Učitaj podatke iz tablice
+  - \`loadTableStructure()\`: Učitaj strukturu tablice
+  - \`executeQuery()\`: Izvrši SQL query
+  - \`startEditCell()\`: Počni edit ćelije
+  - \`saveCell()\`: Spremi promjene u ćeliju
+
+**Baza podataka**
+- Koristi \`information_schema\` za dohvat metapodataka
+- Koristi \`pg_indexes\` i \`pg_class\` za indekse
+- Koristi \`information_schema.table_constraints\` za foreign keys
+
+**Sigurnost**
+- Sve endpointi zahtijevaju \`auth(true, ['ADMIN'])\`
+- SQL Query Editor provjerava da query počinje s \`SELECT\`
+- Update operacije validiraju da kolona postoji prije update-a
+`
+      },
       "Upravljanje ROI statistikama": {
         summary: "Pregled i upravljanje ROI metrikama za pružatelje",
         details: `## Kako funkcionira:
