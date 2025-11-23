@@ -2329,6 +2329,18 @@ r.get('/users-overview', auth(true, ['ADMIN']), async (req, res, next) => {
 });
 
 /**
+ * GET /api/admin/migration-status-test
+ * Test endpoint za provjeru da li se route registrira
+ */
+r.get('/migration-status-test', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    res.json({ success: true, message: 'Endpoint is working!' });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
  * GET /api/admin/migration-status
  * Provjeri status migracije - SVE razlike između Prisma schema i baze
  * Provjerava SVE tablice i SVA polja
