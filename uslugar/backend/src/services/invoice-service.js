@@ -6,6 +6,7 @@ import PDFDocument from 'pdfkit';
 import { prisma } from '../lib/prisma.js';
 import { sendInvoiceEmail } from '../lib/email.js';
 import { fiscalizeInvoice, requiresFiscalization, generateQRCodeURL } from './fiscalization-service.js';
+import { uploadInvoicePDF, downloadInvoicePDF, isS3Configured } from '../lib/s3-storage.js';
 
 /**
  * Generira jedinstveni broj fakture
@@ -458,13 +459,41 @@ function getInvoiceDescription(invoice) {
 }
 
 /**
- * Sačuvaj PDF na disk ili S3 (trenutno vraća buffer)
- * TODO: Integrirati sa AWS S3 za produkciju
+ * Sačuvaj PDF u S3 i ažuriraj fakturu s URL-om
+ * @param {Object} invoice - Invoice objekt
+ * @param {Buffer} pdfBuffer - PDF buffer
+ * @returns {Promise<String|null>} - S3 URL ili null ako S3 nije konfiguriran
  */
 export async function saveInvoicePDF(invoice, pdfBuffer) {
-  // TODO: Upload to S3 ili lokalno storage
-  // Za sada vraćamo buffer, a URL će biti generiran na zahtjev
-  return pdfBuffer;
+  try {
+    // Upload u S3 ako je konfiguriran
+    if (isS3Configured()) {
+      const s3Url = await uploadInvoicePDF(pdfBuffer, invoice.invoiceNumber);
+      
+      if (s3Url) {
+        // Ažuriraj fakturu s S3 URL-om
+        await prisma.invoice.update({
+          where: { id: invoice.id },
+          data: {
+            pdfUrl: s3Url
+          }
+        });
+        
+        console.log(`[INVOICE] PDF saved to S3: ${s3Url}`);
+        return s3Url;
+      }
+    } else {
+      console.log('[INVOICE] S3 not configured, PDF stored in memory only');
+    }
+    
+    // Ako S3 nije konfiguriran ili upload ne uspije, vraćamo null
+    // PDF se i dalje može generirati na zahtjev
+    return null;
+  } catch (error) {
+    console.error('[INVOICE] Error saving PDF to S3:', error);
+    // Ne baci grešku - faktura može biti generirana i bez S3 storage
+    return null;
+  }
 }
 
 /**
@@ -502,10 +531,10 @@ export async function generateAndSendInvoice(invoiceId) {
   }
 
   // Generiraj PDF
-  const pdfBuffer = await generateInvoicePDF(invoice);
+  let pdfBuffer = await generateInvoicePDF(invoice);
 
-  // Sačuvaj PDF (trenutno samo u memoriji, može se proširiti sa S3)
-  await saveInvoicePDF(invoice, pdfBuffer);
+  // Sačuvaj PDF u S3 (ako je konfiguriran)
+  const s3Url = await saveInvoicePDF(invoice, pdfBuffer);
 
   // Ažuriraj status fakture
   let updated = await prisma.invoice.update({
@@ -514,7 +543,8 @@ export async function generateAndSendInvoice(invoiceId) {
       status: 'SENT',
       pdfGeneratedAt: new Date(),
       emailSentAt: new Date(),
-      emailSentTo: invoice.user.email
+      emailSentTo: invoice.user.email,
+      ...(s3Url && { pdfUrl: s3Url }) // Ažuriraj pdfUrl ako je S3 upload uspio
     }
   });
 
@@ -572,6 +602,11 @@ export async function generateAndSendInvoice(invoiceId) {
         }
       });
       pdfBuffer = await generateInvoicePDF(updatedInvoice);
+      
+      // Re-upload u S3 s ažuriranim PDF-om (s ZKI/JIR)
+      if (isS3Configured()) {
+        await saveInvoicePDF(updatedInvoice, pdfBuffer);
+      }
     } catch (pdfError) {
       console.error('[INVOICE] Error regenerating PDF with fiscal data:', pdfError);
       // Koristi originalni PDF ako regeneriranje ne uspije

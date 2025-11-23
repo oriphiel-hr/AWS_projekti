@@ -272,7 +272,7 @@ const features = [
         { name: "Payment success/failure handling", implemented: true },
         { name: "Povrat na platformu nakon plaćanja", implemented: true },
         { name: "Sigurnosno skladištenje Stripe secret key u AWS Secrets Manager", implemented: true },
-        { name: "Fakturiranje (PDF fakture za pretplate i kupovine)", implemented: true, partiallyImplemented: true },
+        { name: "Fakturiranje (PDF fakture za pretplate i kupovine)", implemented: true },
         { name: "Povrat novca za pretplate (refund subscription payment)", implemented: true }
       ]
     },
@@ -350,7 +350,7 @@ const features = [
         { name: "Automatsko isteka pretplate", implemented: true },
         { name: "Notifikacije o isteku pretplate", implemented: true },
         { name: "Online plaćanje (Stripe Checkout)", implemented: true },
-        { name: "Fakturiranje (PDF fakture za pretplate i kupovine)", implemented: true, partiallyImplemented: true },
+        { name: "Fakturiranje (PDF fakture za pretplate i kupovine)", implemented: true },
         { name: "Povrat novca za pretplate (refund subscription payment)", implemented: true }
       ]
     },
@@ -2217,40 +2217,74 @@ const featureDescriptions = {
     },
     "Fakturiranje (PDF fakture za pretplate i kupovine)": {
       implemented: true,
-      summary: "Za sve naplate generiramo PDF fakture spremne za računovodstvo i porezne potrebe.",
-      details: `**⚠️ DJELOMIČNO IMPLEMENTIRANO**: Postoji \`generateInvoicePDF\` funkcija za generiranje PDF faktura, ali nema S3 storage za čuvanje PDF-a. PDF se trenutno generira u memoriji, ali nema trajno spremište (S3 ili lokalno storage). TODO komentar u kodu: "TODO: Upload to S3 ili lokalno storage".
+      summary: "Za sve naplate generiramo PDF fakture spremne za računovodstvo i porezne potrebe. PDF fakture se automatski spremaju u AWS S3 za trajno čuvanje.",
+      details: `**✅ POTPUNO IMPLEMENTIRANO**: Kompletan sustav za generiranje i čuvanje PDF faktura s AWS S3 storage integracijom. PDF fakture se automatski generiraju, uploadaju u S3 i spremaju URL u bazu podataka.
 
 **Kako funkcionira**
 - Svaka naplata (pretplata, kartična kupnja leadova) generira fakturu s pravnim podacima i PDV tretmanom.
+- PDF faktura se automatski generira i uploada u AWS S3 bucket.
+- S3 URL se sprema u bazu podataka (\`Invoice.pdfUrl\`).
 - Fakture su dostupne u povijesti transakcija i šalju se emailom korisniku.
-- Korisnik može ponovno preuzeti fakturu u svakom trenutku.
+- Korisnik može ponovno preuzeti fakturu u svakom trenutku (iz S3 ili regeneracijom).
+- Ako je faktura fiskalizirana (ZKI/JIR), PDF se regenerira i re-uploada u S3 s ažuriranim podacima.
 
 **Prednosti**
 - Pojednostavljuje računovodstvo i porezne obveze.
 - Garantira da su svi podaci konzistentni i usklađeni s propisima.
+- Trajno čuvanje faktura u AWS S3 (scalable, reliable storage).
+- Brzo preuzimanje faktura iz S3 (bez regeneracije).
+- Automatska integracija s fiskalizacijom (ZKI/JIR).
 
 **Kada koristiti**
 - Mjesečno knjigovodstvo, revizije i porezne prijave.
 - Interna evidencija i transparentnost prema klijentima.
+- Pravne i porezne obveze.
 `,
-      technicalDetails: `**Frontend**
-- Povijest transakcija s linkom "Preuzmi fakturu" (PDF).
-- Email template s fakturom u privitku.
-
-**Backend**
-- \`invoiceService.generate\` koristi templating (PDF) i podatke iz Billing servisa.
-- Fakture se spremaju u storage i povezuju s transakcijom.
+      technicalDetails: `**Backend**
+- \`invoice-service.js\`:
+  - \`generateInvoicePDF(invoice)\`: Generira PDF fakturu s Uslugar brandingom, korisničkim podacima, PDV-om i fiskalizacijskim podacima (ZKI/JIR).
+  - \`saveInvoicePDF(invoice, pdfBuffer)\`: Uploada PDF u S3 i ažurira \`Invoice.pdfUrl\`.
+  - \`generateAndSendInvoice(invoiceId)\`: Generira PDF, uploada u S3, fiskalizira (ako je potrebno), regenerira PDF s ZKI/JIR i šalje emailom.
+- \`s3-storage.js\`:
+  - \`uploadInvoicePDF(pdfBuffer, invoiceNumber)\`: Uploada PDF u S3 bucket (\`invoices/{invoiceNumber}.pdf\`).
+  - \`downloadInvoicePDF(invoiceNumber)\`: Downloada PDF iz S3.
+  - \`getInvoicePDFPresignedUrl(invoiceNumber, expiresIn)\`: Generira presigned URL za private bucket (1 sat default).
+  - \`deleteInvoicePDF(invoiceNumber)\`: Briše PDF iz S3.
+  - \`isS3Configured()\`: Provjerava da li je S3 konfiguriran.
 
 **Baza**
-- \`Invoice\` (invoiceNumber, transactionId, amount, vatRate, pdfUrl).
-- \`InvoiceItem\` detalji stavki (pretplata, lead purchase).
+- \`Invoice\` model:
+  - \`pdfUrl\`: S3 URL fakture (npr. \`https://bucket.s3.region.amazonaws.com/invoices/2025-0001.pdf\`).
+  - \`pdfGeneratedAt\`: Datum generiranja PDF-a.
+  - \`invoiceNumber\`: Format YYYY-XXXX (npr. 2025-0001).
+
+**S3 Konfiguracija**
+- Environment varijable:
+  - \`AWS_S3_BUCKET_NAME\`: Ime S3 bucket-a (npr. \`uslugar-invoices\`).
+  - \`AWS_REGION\`: AWS regija (default: \`eu-north-1\`).
+  - \`AWS_ACCESS_KEY_ID\` i \`AWS_SECRET_ACCESS_KEY\`: Za lokalni development (opcionalno, ECS koristi IAM role).
+- S3 bucket struktura:
+  - \`invoices/{invoiceNumber}.pdf\`: PDF fakture.
+- Ako S3 nije konfiguriran, PDF se generira na zahtjev (fallback).
 
 **Integracije**
-- Stripe invoicing (ako je enable-an), S3/Cloud storage, accounting export.
+- AWS S3: Trajno čuvanje PDF faktura.
+- Stripe: Povezanost s payment intents i invoices.
+- Fiskalizacija: Automatska integracija s ZKI/JIR kodovima.
+- Email: Slanje faktura u privitku.
 
 **API**
-- \`GET /api/invoices\` – lista faktura.
-- \`GET /api/invoices/:id/download\` – preuzimanje PDF-a.
+- \`GET /api/invoices\`: Lista faktura korisnika.
+- \`GET /api/invoices/:invoiceId\`: Dohvat pojedinačne fakture.
+- \`GET /api/invoices/:invoiceId/pdf\`: Preuzimanje PDF-a (iz S3 ili regeneracija).
+- \`POST /api/invoices/:invoiceId/send\`: Slanje fakture emailom.
+- \`POST /api/invoices/:invoiceId/fiscalize\`: Ručna fiskalizacija.
+- \`POST /api/invoices/:invoiceId/storno\`: Storniranje fakture (admin).
+
+**Dependencies**
+- \`@aws-sdk/client-s3\`: AWS S3 client.
+- \`@aws-sdk/s3-request-presigner\`: Presigned URLs za private bucket.
+- \`pdfkit\`: Generiranje PDF dokumenata.
 `
     },
     "Povrat novca za pretplate (refund subscription payment)": {
@@ -10074,8 +10108,8 @@ Plaćanje leadova kroz Stripe osigurava fleksibilnost u načinu plaćanja leadov
     },
     "Fakturiranje (PDF fakture za pretplate i kupovine)": {
       implemented: true,
-      summary: "Automatski generirane PDF fakture za sve vaše pretplate i kupovine - profesionalne fakture za računovodstvo.",
-      details: `**⚠️ DJELOMIČNO IMPLEMENTIRANO**: Postoji \`generateInvoicePDF\` funkcija za generiranje PDF faktura, ali nema S3 storage za čuvanje PDF-a. PDF se trenutno generira u memoriji, ali nema trajno spremište (S3 ili lokalno storage).
+      summary: "Automatski generirane PDF fakture za sve vaše pretplate i kupovine - profesionalne fakture za računovodstvo. PDF fakture se automatski spremaju u AWS S3 za trajno čuvanje.",
+      details: `**✅ POTPUNO IMPLEMENTIRANO**: Kompletan sustav za generiranje i čuvanje PDF faktura s AWS S3 storage integracijom. PDF fakture se automatski generiraju, uploadaju u S3 i spremaju URL u bazu podataka.
 
 ## Kako funkcionira:
 

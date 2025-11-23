@@ -13,6 +13,7 @@ import {
   stornoInvoice
 } from '../services/invoice-service.js';
 import { fiscalizeInvoice } from '../services/fiscalization-service.js';
+import { downloadInvoicePDF, getInvoicePDFPresignedUrl } from '../lib/s3-storage.js';
 
 const r = Router();
 
@@ -168,21 +169,33 @@ r.get('/:invoiceId/pdf', auth(true, ['PROVIDER', 'ADMIN', 'USER']), async (req, 
       return res.status(403).json({ error: 'Nemate pristup ovoj fakturi' });
     }
 
-    // Generiraj PDF
-    const pdfBuffer = await generateInvoicePDF(invoice);
+    // Pokušaj preuzeti PDF iz S3 ako postoji
+    let pdfBuffer = null;
+    if (invoice.pdfUrl) {
+      try {
+        pdfBuffer = await downloadInvoicePDF(invoice.invoiceNumber);
+      } catch (s3Error) {
+        console.warn(`[INVOICE] Error downloading PDF from S3 for ${invoice.invoiceNumber}, will generate new:`, s3Error);
+      }
+    }
+
+    // Ako nema PDF u S3, generiraj novi
+    if (!pdfBuffer) {
+      pdfBuffer = await generateInvoicePDF(invoice);
+      
+      // Ažuriraj fakturu da je PDF generiran
+      await prisma.invoice.update({
+        where: { id: invoiceId },
+        data: {
+          pdfGeneratedAt: new Date()
+        }
+      });
+    }
 
     // Postavi headers za PDF download
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="faktura-${invoice.invoiceNumber}.pdf"`);
     res.setHeader('Content-Length', pdfBuffer.length);
-
-    // Ažuriraj fakturu da je PDF generiran
-    await prisma.invoice.update({
-      where: { id: invoiceId },
-      data: {
-        pdfGeneratedAt: new Date()
-      }
-    });
 
     res.send(pdfBuffer);
   } catch (e) {
