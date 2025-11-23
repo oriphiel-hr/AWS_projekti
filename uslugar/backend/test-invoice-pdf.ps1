@@ -23,14 +23,22 @@ try {
 
 $headers = @{Authorization="Bearer $token"}
 
-# 2. Get user ID (admin user)
+# 2. Get user ID from /api/users/me endpoint
 Write-Host "`n2. Getting user ID..." -ForegroundColor Yellow
 try {
     $userResponse = Invoke-RestMethod -Uri "https://uslugar.api.oriph.io/api/users/me" -Method GET -Headers $headers
-    $userId = $userResponse.user.id
+    $userId = $userResponse.id
     Write-Host "   ✅ User ID: $userId" -ForegroundColor Green
+    Write-Host "   Email: $($userResponse.email)" -ForegroundColor Gray
 } catch {
     Write-Host "   ❌ Failed to get user ID: $($_.Exception.Message)" -ForegroundColor Red
+    if ($_.Exception.Response) {
+        try {
+            $reader = New-Object System.IO.StreamReader($_.Exception.Response.GetResponseStream())
+            $responseBody = $reader.ReadToEnd()
+            Write-Host "   Response: $responseBody" -ForegroundColor Gray
+        } catch {}
+    }
     exit 1
 }
 
