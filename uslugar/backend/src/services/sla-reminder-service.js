@@ -5,7 +5,9 @@
  */
 
 import { prisma } from '../lib/prisma.js';
-import { SLASStatus } from '@prisma/client';
+import { Prisma } from '@prisma/client';
+
+const { SLASStatus } = Prisma;
 
 // Default SLA: 4 sata (240 minuta)
 const DEFAULT_SLA_MINUTES = 240;
