@@ -2377,13 +2377,13 @@ r.get('/migration-status', auth(true, ['ADMIN']), async (req, res, next) => {
       }
 
       // Dobij SVA polja iz baze za ovu tablicu
-      const actualFields = await prisma.$queryRaw`
+      const actualFields = await prisma.$queryRawUnsafe(`
         SELECT column_name, data_type, is_nullable, column_default, character_maximum_length, numeric_precision, numeric_scale
         FROM information_schema.columns
         WHERE table_schema = 'public'
-          AND table_name = ${tableName}
+          AND table_name = $1
         ORDER BY ordinal_position
-      `;
+      `, tableName);
 
       const actualFieldNames = actualFields.map(f => f.column_name);
 
