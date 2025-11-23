@@ -2348,7 +2348,9 @@ r.get('/users-overview', auth(true, ['ADMIN']), async (req, res, next) => {
  * Provjerava SVE tablice i SVA polja
  * Query params: table (optional) - provjeri samo određenu tablicu
  */
+console.log('🔍 Registering /migration-status endpoint');
 r.get('/migration-status', auth(true, ['ADMIN']), async (req, res, next) => {
+  console.log('✅ /migration-status endpoint called');
   try {
     const { table } = req.query;
     
@@ -2507,4 +2509,5 @@ r.get('/migration-status', auth(true, ['ADMIN']), async (req, res, next) => {
   }
 });
 
+console.log('🔍 Admin router loaded, total routes:', r.stack?.length || 'unknown');
 export default r;
