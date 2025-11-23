@@ -224,6 +224,16 @@ const AdminApiReference = () => {
                                     </ul>
                                   </div>
                                 )}
+                                {route.security.businessRules && route.security.businessRules.length > 0 && (
+                                  <div className="mt-2 pt-2 border-t">
+                                    <span className="text-xs font-semibold text-orange-600 block mb-1">📋 Poslovna ograničenja:</span>
+                                    <ul className="list-disc list-inside text-xs text-orange-700 space-y-1">
+                                      {route.security.businessRules.map((rule, idx) => (
+                                        <li key={idx}>{rule}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           )}
@@ -337,6 +347,16 @@ const AdminApiReference = () => {
                                     <ul className="list-disc list-inside text-xs text-gray-700 space-y-1">
                                       {route.security.additionalChecks.map((check, idx) => (
                                         <li key={idx}>{check}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+                                {route.security.businessRules && route.security.businessRules.length > 0 && (
+                                  <div className="mt-2 pt-2 border-t">
+                                    <span className="text-xs font-semibold text-orange-600 block mb-1">📋 Poslovna ograničenja:</span>
+                                    <ul className="list-disc list-inside text-xs text-orange-700 space-y-1">
+                                      {route.security.businessRules.map((rule, idx) => (
+                                        <li key={idx}>{rule}</li>
                                       ))}
                                     </ul>
                                   </div>

@@ -2843,7 +2843,8 @@ r.get('/api-reference', auth(true, ['ADMIN']), async (req, res, next) => {
       const security = {
         authRequired: false,
         roles: [],
-        additionalChecks: []
+        additionalChecks: [],
+        businessRules: []
       };
       
       // Admin rute - zahtijevaju ADMIN role
@@ -2857,8 +2858,13 @@ r.get('/api-reference', auth(true, ['ADMIN']), async (req, res, next) => {
         if (fullPath.includes('/me') || fullPath.includes('/logout')) {
           security.authRequired = true;
           security.roles = ['USER', 'PROVIDER', 'ADMIN'];
+        } else if (fullPath.includes('/register')) {
+          security.authRequired = false;
+          security.businessRules.push('PROVIDER registracija: obavezan pravni status (ne može biti INDIVIDUAL)');
+          security.businessRules.push('PROVIDER registracija: obavezan OIB');
+          security.businessRules.push('Email mora biti jedinstven');
         } else {
-          security.authRequired = false; // Login/register su javni
+          security.authRequired = false; // Login je javan
         }
       }
       // Invoices - zahtijevaju autentikaciju i ownership check
@@ -2872,6 +2878,10 @@ r.get('/api-reference', auth(true, ['ADMIN']), async (req, res, next) => {
         security.authRequired = true;
         security.roles = ['USER', 'PROVIDER', 'ADMIN'];
         security.additionalChecks.push('Participant check: korisnik mora biti sudionik chat sobe');
+        if (fullPath.includes('/rooms') && method === 'POST') {
+          security.businessRules.push('Posao mora imati ACCEPTED offer prije kreiranja chat sobe');
+          security.businessRules.push('Korisnik mora biti vlasnik posla ili provider s prihvaćenom ponudom');
+        }
         if (fullPath.includes('/internal')) {
           security.additionalChecks.push('INTERNAL chat: samo PROVIDER role, direktor za kreiranje grupnih soba');
         }
@@ -2883,12 +2893,31 @@ r.get('/api-reference', auth(true, ['ADMIN']), async (req, res, next) => {
         if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(method)) {
           security.additionalChecks.push('Ownership check: samo vlasnik posla može editirati/brisati');
         }
+        if (fullPath.includes('/accept') && method === 'PATCH') {
+          security.businessRules.push('Posao mora biti OPEN status');
+          security.businessRules.push('Ne možeš prihvatiti ponudu od iste tvrtke (isti OIB/email)');
+        }
+        if (fullPath.includes('/complete') && method === 'PATCH') {
+          security.businessRules.push('Posao mora biti IN_PROGRESS status');
+          security.businessRules.push('Korisnik mora biti vlasnik posla ili provider s prihvaćenom ponudom');
+        }
       }
       // Offers - zahtijevaju autentikaciju, ownership check
       else if (fullPath.startsWith('/api/offers')) {
         security.authRequired = true;
         security.roles = ['PROVIDER', 'ADMIN'];
-        security.additionalChecks.push('Ownership check: samo vlasnik ponude može editirati');
+        if (method === 'POST') {
+          security.businessRules.push('Posao mora biti OPEN status');
+          security.businessRules.push('Ne možeš poslati ponudu na vlastiti posao (isti userId, taxId ili email)');
+          security.businessRules.push('Zahtijeva kredite (osim PRO plan koji ima unlimited)');
+        }
+        if (fullPath.includes('/accept') && method === 'PATCH') {
+          security.additionalChecks.push('Ownership check: samo vlasnik posla može prihvatiti ponudu');
+          security.businessRules.push('Ne možeš prihvatiti ponudu od iste tvrtke (isti OIB/email)');
+        }
+        if (['PUT', 'PATCH', 'DELETE'].includes(method)) {
+          security.additionalChecks.push('Ownership check: samo vlasnik ponude može editirati');
+        }
       }
       // Providers - zahtijevaju autentikaciju, ownership check
       else if (fullPath.startsWith('/api/providers')) {
@@ -2932,6 +2961,19 @@ r.get('/api-reference', auth(true, ['ADMIN']), async (req, res, next) => {
       else if (fullPath.startsWith('/api/lead-queue')) {
         security.authRequired = true;
         security.roles = ['PROVIDER', 'ADMIN'];
+      }
+      // Reviews - zahtijevaju autentikaciju
+      else if (fullPath.startsWith('/api/reviews')) {
+        security.authRequired = true;
+        security.roles = ['USER', 'PROVIDER', 'ADMIN'];
+        if (method === 'POST') {
+          security.businessRules.push('Posao mora biti COMPLETED status');
+          security.businessRules.push('Ne možeš ocjenjivati ako već imaš recenziju za taj posao');
+        }
+        if (fullPath.includes('/reply') && method === 'POST') {
+          security.businessRules.push('Možeš odgovoriti samo jednom na recenziju');
+          security.businessRules.push('Samo toUserId može odgovoriti na recenziju');
+        }
       }
       // Public rute - javne
       else if (fullPath.startsWith('/api/public')) {
