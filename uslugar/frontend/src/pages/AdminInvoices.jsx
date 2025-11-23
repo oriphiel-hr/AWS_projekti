@@ -347,8 +347,8 @@ export default function AdminInvoices() {
                             ☁️ Na S3
                           </span>
                         ) : (
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
-                            ☁️ Nije na S3
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800" title="PDF se generira dinamički iz podataka u bazi kada se zatraži">
+                            ⚡ Generira se
                           </span>
                         )}
                       </td>
@@ -500,9 +500,12 @@ export default function AdminInvoices() {
                 <div>
                   <h3 className="font-semibold text-gray-900">S3 Storage:</h3>
                   <p className="text-gray-700">
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
-                      ☁️ PDF nije na S3
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                      ⚡ PDF se generira dinamički
                     </span>
+                  </p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    PDF nije spremljen na S3, ali se može generirati iz podataka u bazi kada se zatraži preuzimanje.
                   </p>
                 </div>
               )}
