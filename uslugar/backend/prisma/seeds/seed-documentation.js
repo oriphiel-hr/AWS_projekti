@@ -15332,23 +15332,31 @@ async function seedDocumentation() {
 
 ## Pristup bazi podataka
 
-**Prisma Studio - Vizualni database editor (PREPORUČENO)**
+**🗄️ Database Editor - Admin Panel (PREPORUČENO)**
+- **Link:** https://uslugar.oriph.io/admin/database
+- **Dostupno:** Samo za ADMIN korisnike
+- **Omogućava:**
+  - ✅ Pregled svih tablica u bazi podataka
+  - ✅ Pregled podataka iz bilo koje tablice s paginacijom
+  - ✅ **Direktan edit ćelija** (double-click na ćeliju → edit → Enter za save)
+  - ✅ Pregled strukture tablice (kolone, tipovi, nullable, default vrijednosti)
+  - ✅ Pregled indeksa i foreign keys
+  - ✅ SQL Query Editor (SELECT queries)
+  - ✅ Filtriranje i pretraživanje podataka
+  - ✅ Tablični prikaz s paginacijom (50 redaka po stranici)
+- **Kako koristiti:**
+  1. Prijavi se kao ADMIN na https://uslugar.oriph.io/admin
+  2. Klikni na **🗄️ Database Editor** u sidebaru
+  3. Odaberi tablicu za pregled (npr. \`Invoice\`, \`User\`, \`ProviderProfile\`)
+  4. **Pregled podataka:** Automatski se učitavaju podaci s paginacijom
+  5. **Edit ćelije:** Double-click na ćeliju → unesi novu vrijednost → Enter za save, Escape za cancel
+  6. **Struktura tablice:** Klikni na "🏗️ Struktura" tab za pregled kolona, tipova, indeksa i foreign keys
+  7. **SQL Query:** Klikni na "🔍 SQL Query" tab za izvršavanje SELECT queries
+
+**Prisma Studio - Lokalni vizualni database editor**
 - Pokreni lokalno: \`npx prisma studio\`
 - Otvara se na: \`http://localhost:5555\`
-- Omogućava:
-  - ✅ Pregled svih tablica i podataka
-  - ✅ CRUD operacije (Create, Read, Update, Delete)
-  - ✅ Direktan edit ćelija (klik na ćeliju → edit → save)
-  - ✅ Pregled relacija između tablica
-  - ✅ Pregled indeksa i strukture tablica
-  - ✅ SQL query execution
-  - ✅ Filtriranje i pretraživanje podataka
-- **Kako koristiti:**
-  1. Otvori terminal u \`uslugar/backend\` direktoriju
-  2. Postavi \`DATABASE_URL\` environment varijablu (ako nije već postavljena)
-  3. Pokreni: \`npx prisma studio\`
-  4. Otvori browser na \`http://localhost:5555\`
-  5. Odaberi tablicu (npr. \`Invoice\`) → klikni na red → edit ćelije → save
+- Omogućava sve funkcionalnosti kao Database Editor, ali lokalno
 
 **AWS RDS Query Editor (Alternativa)**
 - Link: https://eu-north-1.console.aws.amazon.com/rds/
@@ -15356,13 +15364,7 @@ async function seedDocumentation() {
 - **Napomena:** Zahtijeva IAM autentifikaciju (može ne raditi za obični RDS PostgreSQL)
 - Omogućava SQL query execution, ali ne vizualni edit ćelija
 
-**ECS Execute Command + psql (Za napredne)**
-- Link: https://console.aws.amazon.com/ecs/v2/clusters/apps-cluster/services/uslugar-service-2gk1f1mv/tasks
-- Navigacija: Running task → Connect → Execute Command
-- Pokreni: \`psql $DATABASE_URL\`
-- Omogućava direktan SQL pristup, ali bez vizualnog editora
-
-**Preporuka:** Koristi **Prisma Studio** za najbolje iskustvo - vizualni editor s CRUD operacijama i direktnim editom ćelija.
+**Preporuka:** Koristi **Database Editor u admin panelu** (\`/admin/database\`) za najbolje iskustvo - dostupno direktno iz browsera, bez lokalne instalacije!
 `
       },
       "Upravljanje ROI statistikama": {
