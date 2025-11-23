@@ -110,6 +110,10 @@ jobs:
       - name: Replace image in TD and add environment variables
         run: |
           jq --arg NAME "${{ env.CONTAINER_NAME }}" --arg IMG "${IMAGE_URI}" '
+            # Ensure taskRoleArn exists (for S3 access)
+            if (.taskRoleArn == null or .taskRoleArn == "") then
+              .taskRoleArn = "arn:aws:iam::666203386231:role/ecsTaskRole"
+            else . end |
             .containerDefinitions = (.containerDefinitions | map(
               if .name == $NAME then 
                 .image = $IMG |
