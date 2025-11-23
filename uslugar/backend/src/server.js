@@ -331,7 +331,55 @@ async function ensureProjectTypeColumn() {
     }
   }
 }
+
+async function ensureDirectorFields() {
+  try {
+    await prisma.$queryRaw`SELECT "isDirector" FROM "ProviderProfile" LIMIT 1`
+    console.log('✅ isDirector column exists')
+  } catch (error) {
+    if (error.message.includes('does not exist')) {
+      console.log('🔧 Adding missing isDirector and companyId columns...')
+      try {
+        await prisma.$executeRaw`ALTER TABLE "ProviderProfile" ADD COLUMN IF NOT EXISTS "isDirector" BOOLEAN NOT NULL DEFAULT false`
+        await prisma.$executeRaw`ALTER TABLE "ProviderProfile" ADD COLUMN IF NOT EXISTS "companyId" TEXT`
+        // Add foreign key constraint if it doesn't exist
+        try {
+          await prisma.$executeRaw`
+            DO $$
+            BEGIN
+              IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint 
+                WHERE conname = 'ProviderProfile_companyId_fkey'
+              ) THEN
+                ALTER TABLE "ProviderProfile" 
+                ADD CONSTRAINT "ProviderProfile_companyId_fkey" 
+                FOREIGN KEY ("companyId") 
+                REFERENCES "ProviderProfile"("id") 
+                ON DELETE SET NULL 
+                ON UPDATE CASCADE;
+              END IF;
+            END $$;
+          `
+        } catch (fkError) {
+          console.log('⚠️  Foreign key constraint may already exist or failed:', fkError.message)
+        }
+        // Create indexes
+        try {
+          await prisma.$executeRaw`CREATE INDEX IF NOT EXISTS "ProviderProfile_isDirector_idx" ON "ProviderProfile"("isDirector")`
+          await prisma.$executeRaw`CREATE INDEX IF NOT EXISTS "ProviderProfile_companyId_idx" ON "ProviderProfile"("companyId")`
+        } catch (idxError) {
+          console.log('⚠️  Indexes may already exist:', idxError.message)
+        }
+        console.log('✅ Director fields added successfully')
+      } catch (e) {
+        console.error('⚠️  Failed to add director fields:', e.message)
+      }
+    }
+  }
+}
+
 await ensureProjectTypeColumn()
+await ensureDirectorFields()
 
 // Auto-fix: Ensure lifetimeLeadsConverted exists in Subscription
 async function ensureLifetimeLeadsConverted() {
