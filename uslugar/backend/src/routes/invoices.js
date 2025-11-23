@@ -363,17 +363,23 @@ r.post('/create-test', auth(true, ['ADMIN']), async (req, res, next) => {
     // Generiraj i spremi PDF
     await generateAndSendInvoice(invoice.id);
 
+    // Dohvati ažurirani invoice s pdfUrl
+    const updatedInvoice = await prisma.invoice.findUnique({
+      where: { id: invoice.id },
+      select: {
+        id: true,
+        invoiceNumber: true,
+        amount: true,
+        totalAmount: true,
+        pdfUrl: true,
+        status: true
+      }
+    });
+
     res.json({
       success: true,
       message: 'Test faktura kreirana i PDF generiran',
-      invoice: {
-        id: invoice.id,
-        invoiceNumber: invoice.invoiceNumber,
-        amount: invoice.amount,
-        totalAmount: invoice.totalAmount,
-        pdfUrl: invoice.pdfUrl,
-        status: invoice.status
-      }
+      invoice: updatedInvoice
     });
   } catch (e) {
     next(e);
