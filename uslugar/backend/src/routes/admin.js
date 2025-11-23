@@ -2328,4 +2328,167 @@ r.get('/users-overview', auth(true, ['ADMIN']), async (req, res, next) => {
   }
 });
 
+/**
+ * GET /api/admin/migration-status
+ * Provjeri status migracije - SVE razlike između Prisma schema i baze
+ * Provjerava SVE tablice i SVA polja
+ * Query params: table (optional) - provjeri samo određenu tablicu
+ */
+r.get('/migration-status', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const { table } = req.query;
+    
+    // Dobij SVE tablice koje stvarno postoje u bazi
+    const actualTables = await prisma.$queryRaw`
+      SELECT table_name 
+      FROM information_schema.tables 
+      WHERE table_schema = 'public' 
+        AND table_type = 'BASE TABLE'
+        AND table_name NOT LIKE '_prisma%'
+      ORDER BY table_name
+    `;
+
+    const actualTableNames = actualTables.map(t => t.table_name);
+
+    // Filtrirati ako je specificirana tablica
+    const tablesToCheck = table 
+      ? (actualTableNames.includes(table) ? [table] : [])
+      : actualTableNames;
+
+    const tablesStatus = {};
+    const tablesDetails = {};
+
+    // Provjeri svaku tablicu
+    for (const tableName of tablesToCheck) {
+      // Provjeri da li tablica postoji
+      const tableExists = actualTableNames.includes(tableName);
+      tablesStatus[tableName] = {
+        exists: tableExists,
+        status: tableExists ? '✅ EXISTS' : '❌ MISSING'
+      };
+
+      if (!tableExists) {
+        tablesDetails[tableName] = {
+          exists: false,
+          actualFields: [],
+          fields: {}
+        };
+        continue;
+      }
+
+      // Dobij SVA polja iz baze za ovu tablicu
+      const actualFields = await prisma.$queryRaw`
+        SELECT column_name, data_type, is_nullable, column_default, character_maximum_length, numeric_precision, numeric_scale
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = ${tableName}
+        ORDER BY ordinal_position
+      `;
+
+      const actualFieldNames = actualFields.map(f => f.column_name);
+
+      // Provjeri svako polje detaljno
+      const fieldsCheck = {};
+      for (const field of actualFields) {
+        fieldsCheck[field.column_name] = {
+          exists: true,
+          status: '✅ EXISTS',
+          data_type: field.data_type,
+          is_nullable: field.is_nullable === 'YES',
+          default: field.column_default,
+          max_length: field.character_maximum_length,
+          precision: field.numeric_precision,
+          scale: field.numeric_scale
+        };
+      }
+
+      tablesDetails[tableName] = {
+        exists: true,
+        actualFields: actualFieldNames,
+        fields: fieldsCheck,
+        summary: {
+          totalFields: actualFieldNames.length,
+          fields: actualFieldNames
+        }
+      };
+    }
+
+    // Provjeri migration history za director fields
+    let migrationRecorded = false;
+    let migrationDetails = null;
+    try {
+      const migrations = await prisma.$queryRaw`
+        SELECT migration_name, applied_steps_count, started_at, finished_at
+        FROM _prisma_migrations
+        WHERE migration_name = '20251123000000_add_director_fields'
+        ORDER BY started_at DESC
+        LIMIT 1
+      `;
+      
+      if (migrations && migrations.length > 0) {
+        migrationRecorded = true;
+        migrationDetails = {
+          migration_name: migrations[0].migration_name,
+          applied_steps_count: migrations[0].applied_steps_count,
+          started_at: migrations[0].started_at,
+          finished_at: migrations[0].finished_at
+        };
+      }
+    } catch (error) {
+      // Ignore error
+    }
+
+    // Provjeri sve migracije
+    let allMigrations = [];
+    try {
+      allMigrations = await prisma.$queryRaw`
+        SELECT migration_name, applied_steps_count, started_at, finished_at
+        FROM _prisma_migrations
+        ORDER BY started_at DESC
+        LIMIT 50
+      `;
+    } catch (error) {
+      // Ignore error
+    }
+
+    // Izračunaj ukupne statistike
+    const totalTables = tablesToCheck.length;
+    const existingTables = Object.values(tablesStatus).filter(t => t.exists).length;
+    const missingTables = totalTables - existingTables;
+    
+    let totalFields = 0;
+    for (const [tableName, details] of Object.entries(tablesDetails)) {
+      if (details.exists) {
+        totalFields += details.summary.totalFields || 0;
+      }
+    }
+
+    res.json({
+      success: true,
+      summary: {
+        totalTables: totalTables,
+        existingTables: existingTables,
+        missingTables: missingTables,
+        totalFields: totalFields
+      },
+      tables: tablesStatus,
+      tablesDetails: tablesDetails,
+      migrations: {
+        directorFieldsMigration: {
+          recorded: migrationRecorded,
+          details: migrationDetails
+        },
+        recent: allMigrations.slice(0, 10).map(m => ({
+          name: m.migration_name,
+          applied_steps: m.applied_steps_count,
+          started_at: m.started_at,
+          finished_at: m.finished_at
+        }))
+      }
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
 export default r;
