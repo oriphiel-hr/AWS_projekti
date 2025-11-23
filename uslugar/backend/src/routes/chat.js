@@ -453,7 +453,7 @@ r.get('/rooms/:roomId/messages', auth(true), async (req, res, next) => {
     }
 
     // Dohvati room s informacijama o zaključavanju
-    const room = await prisma.chatRoom.findUnique({
+    const roomLockInfo = await prisma.chatRoom.findUnique({
       where: { id: roomId },
       select: {
         isLocked: true,
