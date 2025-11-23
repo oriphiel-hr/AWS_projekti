@@ -2766,6 +2766,14 @@ r.get('/api-reference', auth(true, ['ADMIN']), async (req, res, next) => {
           // Direktna ruta
           const path = basePath + layer.route.path;
           const methods = Object.keys(layer.route.methods).filter(m => m !== '_all' && layer.route.methods[m]);
+          
+          // Izvuci parametre iz path-a (npr. :id, :licenseId)
+          const params = [];
+          const paramMatches = path.matchAll(/:(\w+)/g);
+          for (const match of paramMatches) {
+            params.push(match[1]);
+          }
+          
           methods.forEach(method => {
             const handler = layer.route.stack[0];
             routes.push({
@@ -2773,7 +2781,8 @@ r.get('/api-reference', auth(true, ['ADMIN']), async (req, res, next) => {
               path: path,
               fullPath: path.startsWith('/api') ? path : `/api${path}`,
               handler: handler?.name || 'anonymous',
-              middleware: handler?.name || null
+              middleware: handler?.name || null,
+              params: params.length > 0 ? params : null
             });
           });
         } else if (layer.name === 'router' && layer.handle?.stack) {

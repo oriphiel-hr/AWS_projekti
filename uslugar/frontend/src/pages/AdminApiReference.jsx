@@ -178,6 +178,18 @@ const AdminApiReference = () => {
                             <span className="font-semibold text-gray-700">Path:</span>
                             <code className="ml-2 text-gray-900 font-mono">{route.fullPath}</code>
                           </div>
+                          {route.params && route.params.length > 0 && (
+                            <div>
+                              <span className="font-semibold text-gray-700">Parametri:</span>
+                              <div className="ml-2 mt-1 flex flex-wrap gap-2">
+                                {route.params.map((param, idx) => (
+                                  <span key={idx} className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs font-mono">
+                                    :{param}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                           {route.handler && route.handler !== 'anonymous' && (
                             <div>
                               <span className="font-semibold text-gray-700">Handler:</span>
@@ -246,6 +258,18 @@ const AdminApiReference = () => {
                             <span className="font-semibold text-gray-700">Path:</span>
                             <code className="ml-2 text-gray-900 font-mono">{route.fullPath}</code>
                           </div>
+                          {route.params && route.params.length > 0 && (
+                            <div>
+                              <span className="font-semibold text-gray-700">Parametri:</span>
+                              <div className="ml-2 mt-1 flex flex-wrap gap-2">
+                                {route.params.map((param, idx) => (
+                                  <span key={idx} className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs font-mono">
+                                    :{param}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                           {route.handler && route.handler !== 'anonymous' && (
                             <div>
                               <span className="font-semibold text-gray-700">Handler:</span>
@@ -273,4 +297,5 @@ const AdminApiReference = () => {
 };
 
 export default AdminApiReference;
+
 
