@@ -326,5 +326,59 @@ r.post('/:invoiceId/storno', auth(true, ['ADMIN']), async (req, res, next) => {
   }
 });
 
+/**
+ * POST /api/invoices/create-test
+ * Kreira test fakturu (samo admin) - za testiranje PDF generiranja
+ */
+r.post('/create-test', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const { userId, amount = 100, type = 'SUBSCRIPTION' } = req.body;
+    
+    if (!userId) {
+      return res.status(400).json({ error: 'userId is required' });
+    }
+
+    // Provjeri da li korisnik postoji
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true, fullName: true }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Kreiraj test fakturu
+    const invoice = await createInvoice({
+      userId,
+      type,
+      amount: parseFloat(amount),
+      currency: 'EUR',
+      subscriptionId: null,
+      leadPurchaseId: null,
+      stripePaymentIntentId: 'test_pi_' + Date.now(),
+      stripeInvoiceId: null
+    });
+
+    // Generiraj i spremi PDF
+    await generateAndSendInvoice(invoice.id);
+
+    res.json({
+      success: true,
+      message: 'Test faktura kreirana i PDF generiran',
+      invoice: {
+        id: invoice.id,
+        invoiceNumber: invoice.invoiceNumber,
+        amount: invoice.amount,
+        totalAmount: invoice.totalAmount,
+        pdfUrl: invoice.pdfUrl,
+        status: invoice.status
+      }
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
 export default r;
 
