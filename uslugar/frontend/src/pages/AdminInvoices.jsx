@@ -158,6 +158,23 @@ export default function AdminInvoices() {
     }
   };
 
+  const deletePDFFromS3 = async (invoiceId, invoiceNumber) => {
+    if (!confirm(`Jeste li sigurni da želite obrisati PDF fakture ${invoiceNumber} s S3?`)) {
+      return;
+    }
+    
+    try {
+      await api.delete(`/invoices/${invoiceId}/pdf-s3`);
+      alert('PDF je uspješno obrisan s S3');
+      await loadInvoices();
+      if (selectedInvoice?.id === invoiceId) {
+        setSelectedInvoice(null);
+      }
+    } catch (err) {
+      alert(err.response?.data?.error || 'Greška pri brisanju PDF-a s S3');
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-6">
@@ -291,6 +308,7 @@ export default function AdminInvoices() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Datum</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Iznos</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">S3</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Akcije</th>
                   </tr>
                 </thead>
@@ -323,8 +341,19 @@ export default function AdminInvoices() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">{formatCurrency(invoice.totalAmount)}</div>
                       </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {invoice.pdfUrl ? (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800" title={invoice.pdfUrl}>
+                            ☁️ Na S3
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                            ☁️ Nije na S3
+                          </span>
+                        )}
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 items-center">
                           <button
                             onClick={() => downloadPDF(invoice.id, invoice.invoiceNumber)}
                             className="text-indigo-600 hover:text-indigo-900"
@@ -332,6 +361,24 @@ export default function AdminInvoices() {
                           >
                             📥
                           </button>
+                          {invoice.pdfUrl ? (
+                            <span className="text-green-600" title="PDF je na S3">
+                              ☁️
+                            </span>
+                          ) : (
+                            <span className="text-gray-400" title="PDF nije na S3">
+                              ☁️
+                            </span>
+                          )}
+                          {invoice.pdfUrl && (
+                            <button
+                              onClick={() => deletePDFFromS3(invoice.id, invoice.invoiceNumber)}
+                              className="text-red-600 hover:text-red-900"
+                              title="Obriši PDF s S3"
+                            >
+                              🗑️
+                            </button>
+                          )}
                           {invoice.status !== 'PAID' && (
                             <button
                               onClick={() => markAsPaid(invoice.id)}
@@ -430,6 +477,35 @@ export default function AdminInvoices() {
                 <p className="text-gray-700">Izdana: {formatDate(selectedInvoice.issueDate)}</p>
                 <p className="text-gray-700">Rok plaćanja: {formatDate(selectedInvoice.dueDate)}</p>
               </div>
+              {selectedInvoice.pdfUrl && (
+                <div>
+                  <h3 className="font-semibold text-gray-900">S3 Storage:</h3>
+                  <p className="text-gray-700">
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 mr-2">
+                      ☁️ PDF je na S3
+                    </span>
+                  </p>
+                  <p className="text-xs text-gray-500 break-all mt-1">{selectedInvoice.pdfUrl}</p>
+                  <button
+                    onClick={() => {
+                      deletePDFFromS3(selectedInvoice.id, selectedInvoice.invoiceNumber);
+                    }}
+                    className="mt-2 px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
+                  >
+                    🗑️ Obriši PDF s S3
+                  </button>
+                </div>
+              )}
+              {!selectedInvoice.pdfUrl && (
+                <div>
+                  <h3 className="font-semibold text-gray-900">S3 Storage:</h3>
+                  <p className="text-gray-700">
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                      ☁️ PDF nije na S3
+                    </span>
+                  </p>
+                </div>
+              )}
               {selectedInvoice.emailSentAt && (
                 <div>
                   <h3 className="font-semibold text-gray-900">Email:</h3>
