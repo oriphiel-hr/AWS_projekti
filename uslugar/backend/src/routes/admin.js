@@ -22,6 +22,18 @@ r.get('/platform-stats', auth(true, ['ADMIN']), async (req, res, next) => {
 });
 
 /**
+ * GET /api/admin/migration-status-test
+ * Test endpoint za provjeru da li se route registrira
+ */
+r.get('/migration-status-test', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    res.json({ success: true, message: 'Endpoint is working!' });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
  * GET /api/admin/platform-trends
  * Mjesečni trendovi platforme
  * Query params: months (default: 12)
