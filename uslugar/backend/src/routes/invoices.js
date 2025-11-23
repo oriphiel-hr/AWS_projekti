@@ -297,6 +297,80 @@ r.post('/:invoiceId/fiscalize', auth(true, ['ADMIN', 'PROVIDER', 'USER']), async
 });
 
 /**
+ * POST /api/invoices/:invoiceId/upload-to-s3
+ * Uploadaj PDF fakture na S3 (samo admin)
+ */
+r.post('/:invoiceId/upload-to-s3', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const { invoiceId } = req.params;
+
+    const invoice = await prisma.invoice.findUnique({
+      where: { id: invoiceId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            companyName: true,
+            taxId: true,
+            city: true
+          }
+        },
+        subscription: {
+          select: {
+            plan: true
+          }
+        },
+        leadPurchase: {
+          include: {
+            job: {
+              select: {
+                title: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!invoice) {
+      return res.status(404).json({ error: 'Faktura nije pronađena' });
+    }
+
+    if (invoice.pdfUrl) {
+      return res.status(400).json({ error: 'PDF je već na S3' });
+    }
+
+    // Provjeri da li je S3 konfiguriran
+    const { isS3Configured } = await import('../lib/s3-storage.js');
+    if (!isS3Configured()) {
+      return res.status(503).json({ error: 'S3 nije konfiguriran' });
+    }
+
+    // Generiraj PDF
+    const { generateInvoicePDF } = await import('../services/invoice-service.js');
+    const pdfBuffer = await generateInvoicePDF(invoice);
+
+    // Upload na S3
+    const { saveInvoicePDF } = await import('../services/invoice-service.js');
+    const s3Url = await saveInvoicePDF(invoice, pdfBuffer);
+
+    if (s3Url) {
+      res.json({
+        success: true,
+        message: 'PDF je uspješno uploadan na S3',
+        pdfUrl: s3Url
+      });
+    } else {
+      res.status(500).json({ error: 'Greška pri uploadu PDF-a na S3' });
+    }
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
  * DELETE /api/invoices/:invoiceId/pdf-s3
  * Obriši PDF fakture s S3 (samo admin)
  */

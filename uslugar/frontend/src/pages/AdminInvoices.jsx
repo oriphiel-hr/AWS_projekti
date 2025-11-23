@@ -175,6 +175,27 @@ export default function AdminInvoices() {
     }
   };
 
+  const uploadPDFToS3 = async (invoiceId, invoiceNumber) => {
+    if (!confirm(`Uploadati PDF fakture ${invoiceNumber} na S3?`)) {
+      return;
+    }
+    
+    try {
+      const response = await api.post(`/invoices/${invoiceId}/upload-to-s3`);
+      alert('PDF je uspješno uploadan na S3');
+      await loadInvoices();
+      if (selectedInvoice?.id === invoiceId) {
+        // Refresh selected invoice
+        const updatedInvoice = invoices.find(inv => inv.id === invoiceId);
+        if (updatedInvoice) {
+          setSelectedInvoice(updatedInvoice);
+        }
+      }
+    } catch (err) {
+      alert(err.response?.data?.error || 'Greška pri uploadu PDF-a na S3');
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-6">
@@ -370,13 +391,21 @@ export default function AdminInvoices() {
                               ☁️
                             </span>
                           )}
-                          {invoice.pdfUrl && (
+                          {invoice.pdfUrl ? (
                             <button
                               onClick={() => deletePDFFromS3(invoice.id, invoice.invoiceNumber)}
                               className="text-red-600 hover:text-red-900"
                               title="Obriši PDF s S3"
                             >
                               🗑️
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => uploadPDFToS3(invoice.id, invoice.invoiceNumber)}
+                              className="text-blue-600 hover:text-blue-900"
+                              title="Uploadaj PDF na S3"
+                            >
+                              ⬆️
                             </button>
                           )}
                           {invoice.status !== 'PAID' && (
@@ -507,6 +536,14 @@ export default function AdminInvoices() {
                   <p className="text-sm text-gray-500 mt-1">
                     PDF nije spremljen na S3, ali se može generirati iz podataka u bazi kada se zatraži preuzimanje.
                   </p>
+                  <button
+                    onClick={() => {
+                      uploadPDFToS3(selectedInvoice.id, selectedInvoice.invoiceNumber);
+                    }}
+                    className="mt-2 px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+                  >
+                    ⬆️ Uploadaj PDF na S3
+                  </button>
                 </div>
               )}
               {selectedInvoice.emailSentAt && (
