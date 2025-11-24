@@ -2822,7 +2822,9 @@ r.get('/api-reference', auth(true, ['ADMIN']), async (req, res, next) => {
             const regexStr = layer.regexp.toString();
             // Poboljšana ekstrakcija path-a iz regexp-a
             // Express regexp format: /^\/api\/exclusive\/leads(?:\/(?=$))?$/i
-            const match = regexStr.match(/\^\\?\/?([^\\$]*)/);
+            // Ili: /^\/api\/chatbot(?:\/(?=$))?$/i
+            // Prvo pokušaj izvući kompletan path (uključujući /api/)
+            let match = regexStr.match(/\^\\?\/?api\\?\/?([^\\$]*)/);
             if (match && match[1]) {
               routerPath = '/' + match[1]
                 .replace(/\\\//g, '/')
@@ -2830,6 +2832,22 @@ r.get('/api-reference', auth(true, ['ADMIN']), async (req, res, next) => {
                 .replace(/\\\?/g, '?')
                 .replace(/\(\\?\/\?\(\?\$\)\)\?/g, '') // Remove optional trailing slash
                 .replace(/\(\?\$\)/g, ''); // Remove end anchor
+            } else {
+              // Ako nismo uspjeli, pokušaj bez /api/ prefixa
+              match = regexStr.match(/\^\\?\/?([^\\$]*)/);
+              if (match && match[1]) {
+                routerPath = '/' + match[1]
+                  .replace(/\\\//g, '/')
+                  .replace(/\\\./g, '.')
+                  .replace(/\\\?/g, '?')
+                  .replace(/\(\\?\/\?\(\?\$\)\)\?/g, '') // Remove optional trailing slash
+                  .replace(/\(\?\$\)/g, ''); // Remove end anchor
+                
+                // Ako routerPath još uvijek sadrži /api/, ukloni ga (jer će se dodati kasnije)
+                if (routerPath.startsWith('/api/')) {
+                  routerPath = routerPath.substring(4); // Remove '/api'
+                }
+              }
             }
           }
           
@@ -2849,16 +2867,27 @@ r.get('/api-reference', auth(true, ['ADMIN']), async (req, res, next) => {
             }
           }
           
+          // Ako još uvijek nema path-a, pokušaj direktno iz regexp-a s alternativnim pristupom
+          if (!routerPath && layer.regexp) {
+            const regexStr = layer.regexp.toString();
+            // Pokušaj izvući path iz kompleksnijeg regexp-a
+            // Format: /^\/api\/(chatbot|wizard|director|matchmaking)(?:\/(?=$))?$/i
+            const complexMatch = regexStr.match(/\/api\/(\w+)/);
+            if (complexMatch && complexMatch[1]) {
+              routerPath = '/' + complexMatch[1];
+            }
+          }
+          
           // Ako još uvijek nema path-a, pokušaj iz app mount path-a
           // (ovo je fallback - Express često ne eksponira mount path direktno)
           const nestedBasePath = basePath + routerPath;
           
           // Debug: loguj nested routere koji se parsiraju
-          if (process.env.NODE_ENV !== 'production') {
-            console.log(`[API-REF] Parsing nested router: basePath="${basePath}", routerPath="${routerPath}", nestedBasePath="${nestedBasePath}"`);
-          }
+          console.log(`[API-REF] Parsing nested router: basePath="${basePath}", routerPath="${routerPath}", nestedBasePath="${nestedBasePath}", regexp="${layer.regexp?.toString()}"`);
           
-          routes.push(...getRoutes(layer.handle.stack, nestedBasePath));
+          const nestedRoutes = getRoutes(layer.handle.stack, nestedBasePath);
+          console.log(`[API-REF] Found ${nestedRoutes.length} routes in nested router at "${nestedBasePath}"`);
+          routes.push(...nestedRoutes);
         }
       }
       
@@ -2880,6 +2909,18 @@ r.get('/api-reference', auth(true, ['ADMIN']), async (req, res, next) => {
       uniqueBasePaths.add(basePath);
     });
     console.log(`[API-REF] Unique base paths: ${Array.from(uniqueBasePaths).sort().join(', ')}`);
+    
+    // Debug: provjeri da li se određene rute parsiraju
+    const expectedRoutes = ['chatbot', 'wizard', 'director', 'matchmaking', 'exclusive', 'reviews', 'payments', 'subscriptions'];
+    expectedRoutes.forEach(expectedRoute => {
+      const found = allRoutes.some(route => route.fullPath.includes(`/api/${expectedRoute}`));
+      if (!found) {
+        console.log(`[API-REF] WARNING: Expected route "/api/${expectedRoute}" not found in parsed routes!`);
+      } else {
+        const count = allRoutes.filter(route => route.fullPath.includes(`/api/${expectedRoute}`)).length;
+        console.log(`[API-REF] Found ${count} routes for "/api/${expectedRoute}"`);
+      }
+    });
     
     // Funkcija za određivanje sigurnosnih zahtjeva na temelju path-a i metode
     const getSecurityInfo = (fullPath, method) => {
@@ -3238,7 +3279,20 @@ r.get('/api-reference', auth(true, ['ADMIN']), async (req, res, next) => {
       // Ekstraktiraj base path (prvi segment nakon /api/)
       const pathWithoutApi = route.fullPath.replace(/^\/api\/?/, '');
       const pathParts = pathWithoutApi.split('/').filter(p => p);
-      const basePath = pathParts[0] || 'root';
+      let basePath = pathParts[0] || 'root';
+      
+      // Ako je basePath "root", pokušaj izvući iz path-a direktno
+      if (basePath === 'root' && route.path && route.path !== '/') {
+        const pathPartsFromRoute = route.path.split('/').filter(p => p);
+        if (pathPartsFromRoute.length > 0) {
+          basePath = pathPartsFromRoute[0];
+        }
+      }
+      
+      // Debug: loguj rute koje imaju basePath "root" (možda problem s parsiranjem)
+      if (basePath === 'root' && route.fullPath !== '/api/' && route.fullPath !== '/api') {
+        console.log(`[API-REF] WARNING: Route ${route.method} ${route.fullPath} has basePath "root" - path="${route.path}"`);
+      }
       
       // Ako je basePath "root", možda je to stvarno root ruta ili greška
       if (basePath === 'root' && route.fullPath !== '/api/') {
