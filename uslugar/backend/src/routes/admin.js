@@ -2820,10 +2820,16 @@ r.get('/api-reference', auth(true, ['ADMIN']), async (req, res, next) => {
           let routerPath = '';
           if (layer.regexp) {
             const regexStr = layer.regexp.toString();
-            // Pojednostavljena ekstrakcija path-a iz regexp-a
+            // Poboljšana ekstrakcija path-a iz regexp-a
+            // Express regexp format: /^\/api\/exclusive\/leads(?:\/(?=$))?$/i
             const match = regexStr.match(/\^\\?\/?([^\\$]*)/);
             if (match && match[1]) {
-              routerPath = '/' + match[1].replace(/\\\//g, '/').replace(/\\\./g, '.').replace(/\\\?/g, '?');
+              routerPath = '/' + match[1]
+                .replace(/\\\//g, '/')
+                .replace(/\\\./g, '.')
+                .replace(/\\\?/g, '?')
+                .replace(/\(\\?\/\?\(\?\$\)\)\?/g, '') // Remove optional trailing slash
+                .replace(/\(\?\$\)/g, ''); // Remove end anchor
             }
           }
           
@@ -2832,9 +2838,26 @@ r.get('/api-reference', auth(true, ['ADMIN']), async (req, res, next) => {
             routerPath = layer.route.path;
           }
           
+          // Pokušaj izvući iz keys (Express često čuva mount path u keys)
+          if (!routerPath && layer.keys && layer.keys.length > 0) {
+            // Keys mogu sadržavati informacije o path-u
+            for (const key of layer.keys) {
+              if (key.name && key.name !== '0') {
+                routerPath = '/' + key.name;
+                break;
+              }
+            }
+          }
+          
           // Ako još uvijek nema path-a, pokušaj iz app mount path-a
           // (ovo je fallback - Express često ne eksponira mount path direktno)
           const nestedBasePath = basePath + routerPath;
+          
+          // Debug: loguj nested routere koji se parsiraju
+          if (process.env.NODE_ENV !== 'production') {
+            console.log(`[API-REF] Parsing nested router: basePath="${basePath}", routerPath="${routerPath}", nestedBasePath="${nestedBasePath}"`);
+          }
+          
           routes.push(...getRoutes(layer.handle.stack, nestedBasePath));
         }
       }
@@ -2844,6 +2867,19 @@ r.get('/api-reference', auth(true, ['ADMIN']), async (req, res, next) => {
     
     // Dohvati sve rute iz Express app instance
     const allRoutes = getRoutes(app._router?.stack || []);
+    
+    // Debug: loguj ukupan broj parsiranih ruta
+    console.log(`[API-REF] Total routes parsed: ${allRoutes.length}`);
+    
+    // Debug: loguj sve unique base paths
+    const uniqueBasePaths = new Set();
+    allRoutes.forEach(route => {
+      const pathWithoutApi = route.fullPath.replace(/^\/api\/?/, '');
+      const pathParts = pathWithoutApi.split('/').filter(p => p);
+      const basePath = pathParts[0] || 'root';
+      uniqueBasePaths.add(basePath);
+    });
+    console.log(`[API-REF] Unique base paths: ${Array.from(uniqueBasePaths).sort().join(', ')}`);
     
     // Funkcija za određivanje sigurnosnih zahtjeva na temelju path-a i metode
     const getSecurityInfo = (fullPath, method) => {
