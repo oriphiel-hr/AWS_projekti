@@ -2516,6 +2516,27 @@ r.get('/migration-status', auth(true, ['ADMIN']), async (req, res, next) => {
 });
 
 console.log('🔍 Admin router loaded, total routes:', r.stack?.length || 'unknown');
+// Debug: List all registered routes
+if (r.stack) {
+  console.log('🔍 Admin routes registered:');
+  r.stack.forEach((layer, idx) => {
+    if (layer.route) {
+      const methods = Object.keys(layer.route.methods).join(', ').toUpperCase();
+      console.log(`  ${idx + 1}. ${methods} ${layer.route.path}`);
+    } else if (layer.regexp) {
+      console.log(`  ${idx + 1}. [Middleware/Router] ${layer.regexp.toString().substring(0, 50)}`);
+    }
+  });
+  // Check specifically for api-reference
+  const apiRefRoute = r.stack.find(layer => 
+    layer.route && layer.route.path === '/api-reference'
+  );
+  if (apiRefRoute) {
+    console.log('✅ /api-reference route found in admin router');
+  } else {
+    console.log('❌ /api-reference route NOT found in admin router!');
+  }
+}
 /**
  * GET /api/admin/database/tables
  * Dohvati listu svih tablica u bazi
@@ -2748,7 +2769,15 @@ r.patch('/database/table/:tableName/cell', auth(true, ['ADMIN']), async (req, re
  * GET /api/admin/api-reference
  * Dohvati sve API endpointe s detaljima
  */
-r.get('/api-reference', auth(true, ['ADMIN']), async (req, res, next) => {
+r.get('/api-reference', (req, res, next) => {
+  console.log('[API-REF] ============================================');
+  console.log('[API-REF] Endpoint /api-reference hit!');
+  console.log('[API-REF] Method:', req.method);
+  console.log('[API-REF] Path:', req.path);
+  console.log('[API-REF] Original URL:', req.originalUrl);
+  console.log('[API-REF] User:', req.user ? req.user.id : 'NO USER');
+  next();
+}, auth(true, ['ADMIN']), async (req, res, next) => {
   try {
     console.log('[API-REF] Endpoint called - starting route parsing...');
     
