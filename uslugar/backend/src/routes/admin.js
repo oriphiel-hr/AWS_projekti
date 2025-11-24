@@ -2750,8 +2750,17 @@ r.patch('/database/table/:tableName/cell', auth(true, ['ADMIN']), async (req, re
  */
 r.get('/api-reference', auth(true, ['ADMIN']), async (req, res, next) => {
   try {
+    console.log('[API-REF] Endpoint called - starting route parsing...');
+    
     // Koristi Express app instance iz req.app
     const app = req.app;
+    
+    if (!app || !app._router || !app._router.stack) {
+      console.error('[API-REF] ERROR: app._router.stack is not available!');
+      return res.status(500).json({ error: 'Router stack not available' });
+    }
+    
+    console.log(`[API-REF] Router stack has ${app._router.stack.length} layers`);
     
     // Funkcija za rekurzivno dohvaćanje ruta
     const getRoutes = (stack, basePath = '') => {
@@ -2883,10 +2892,12 @@ r.get('/api-reference', auth(true, ['ADMIN']), async (req, res, next) => {
           const nestedBasePath = basePath + routerPath;
           
           // Debug: loguj nested routere koji se parsiraju
-          console.log(`[API-REF] Parsing nested router: basePath="${basePath}", routerPath="${routerPath}", nestedBasePath="${nestedBasePath}", regexp="${layer.regexp?.toString()}"`);
+          console.log(`[API-REF] Parsing nested router: basePath="${basePath}", routerPath="${routerPath}", nestedBasePath="${nestedBasePath}", regexp="${layer.regexp?.toString()?.substring(0, 100)}"`);
           
           const nestedRoutes = getRoutes(layer.handle.stack, nestedBasePath);
-          console.log(`[API-REF] Found ${nestedRoutes.length} routes in nested router at "${nestedBasePath}"`);
+          if (nestedRoutes.length > 0) {
+            console.log(`[API-REF] Found ${nestedRoutes.length} routes in nested router at "${nestedBasePath}":`, nestedRoutes.map(r => `${r.method} ${r.fullPath}`).join(', '));
+          }
           routes.push(...nestedRoutes);
         }
       }
@@ -3324,6 +3335,20 @@ r.get('/api-reference', auth(true, ['ADMIN']), async (req, res, next) => {
       });
     });
     
+    console.log(`[API-REF] Returning response: ${validRoutes.length} valid routes, ${Object.keys(groupedRoutes).length} groups`);
+    console.log(`[API-REF] Group keys: ${Object.keys(groupedRoutes).sort().join(', ')}`);
+    
+    // Provjeri da li se određene rute nalaze u rezultatu
+    const checkRoutes = ['chatbot', 'wizard', 'director', 'matchmaking'];
+    checkRoutes.forEach(routeName => {
+      const found = validRoutes.some(r => r.fullPath.includes(`/api/${routeName}`));
+      const inGroups = Object.keys(groupedRoutes).some(key => key === routeName || groupedRoutes[key].some(r => r.fullPath.includes(`/api/${routeName}`)));
+      console.log(`[API-REF] Route "/api/${routeName}": found=${found}, inGroups=${inGroups}`);
+      if (found && !inGroups) {
+        console.log(`[API-REF] WARNING: Route "/api/${routeName}" found in validRoutes but not in groupedRoutes!`);
+      }
+    });
+    
     res.json({
       success: true,
       totalRoutes: validRoutes.length,
@@ -3336,7 +3361,8 @@ r.get('/api-reference', auth(true, ['ADMIN']), async (req, res, next) => {
       })
     });
   } catch (e) {
-    console.error('Error getting API reference:', e);
+    console.error('[API-REF] ERROR in api-reference endpoint:', e);
+    console.error('[API-REF] Stack trace:', e.stack);
     next(e);
   }
 });
