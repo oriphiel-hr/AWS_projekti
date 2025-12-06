@@ -113,27 +113,68 @@ jobs:
           echo "Current taskRoleArn:"
           jq '.taskRoleArn // "NOT SET"' td_clean.json
 
-      - name: Verify Stripe secrets exist in Secrets Manager
+      - name: Verify Stripe secrets exist in Secrets Manager and get ARNs
         run: |
-          SECRET_KEY_ARN="arn:aws:secretsmanager:eu-north-1:666203386231:secret:uslugar/stripe-secret-key-jKdcdD"
-          PUBLISHABLE_KEY_ARN="arn:aws:secretsmanager:eu-north-1:666203386231:secret:uslugar/stripe-publishable-key-37rvJI"
+          # Try to find secrets by name (AWS adds random suffix to ARN)
+          SECRET_KEY_NAME="uslugar/stripe-secret-key"
+          PUBLISHABLE_KEY_NAME="uslugar/stripe-publishable-key"
           
-          echo "Checking if Stripe Secret Key exists: $SECRET_KEY_ARN"
-          if aws secretsmanager describe-secret --secret-id "$SECRET_KEY_ARN" >/dev/null 2>&1; then
-            echo "✅ Stripe Secret Key exists in Secrets Manager"
-          else
-            echo "❌ Stripe Secret Key does not exist in Secrets Manager!"
-            echo "Please create the secret: $SECRET_KEY_ARN"
-            exit 1
+          echo "Searching for Stripe Secret Key with name prefix: $SECRET_KEY_NAME"
+          SECRET_KEY_ARN=$(aws secretsmanager list-secrets \
+            --region eu-north-1 \
+            --filters Key=name,Values="$SECRET_KEY_NAME" \
+            --query "SecretList[0].ARN" \
+            --output text 2>/dev/null || echo "")
+          
+          if [ -z "$SECRET_KEY_ARN" ] || [ "$SECRET_KEY_ARN" == "None" ]; then
+            echo "⚠️  Secret not found by name prefix, trying to get by partial ARN..."
+            # Try with common suffix patterns
+            for suffix in "jKdcdD" "jKdcdD-" ""; do
+              TEST_ARN="arn:aws:secretsmanager:eu-north-1:666203386231:secret:${SECRET_KEY_NAME}-${suffix}"
+              if aws secretsmanager describe-secret --secret-id "$TEST_ARN" --region eu-north-1 >/dev/null 2>&1; then
+                SECRET_KEY_ARN="$TEST_ARN"
+                break
+              fi
+            done
           fi
           
-          echo "Checking if Stripe Publishable Key exists: $PUBLISHABLE_KEY_ARN"
-          if aws secretsmanager describe-secret --secret-id "$PUBLISHABLE_KEY_ARN" >/dev/null 2>&1; then
-            echo "✅ Stripe Publishable Key exists in Secrets Manager"
-          else
-            echo "❌ Stripe Publishable Key does not exist in Secrets Manager!"
-            echo "Please create the secret: $PUBLISHABLE_KEY_ARN"
+          if [ -z "$SECRET_KEY_ARN" ] || [ "$SECRET_KEY_ARN" == "None" ]; then
+            echo "❌ Stripe Secret Key not found!"
+            echo "Please check if secret exists with name containing: $SECRET_KEY_NAME"
+            echo "You can list all secrets with: aws secretsmanager list-secrets --region eu-north-1"
             exit 1
+          else
+            echo "✅ Found Stripe Secret Key: $SECRET_KEY_ARN"
+            echo "STRIPE_SECRET_KEY_ARN=$SECRET_KEY_ARN" >> $GITHUB_ENV
+          fi
+          
+          echo "Searching for Stripe Publishable Key with name prefix: $PUBLISHABLE_KEY_NAME"
+          PUBLISHABLE_KEY_ARN=$(aws secretsmanager list-secrets \
+            --region eu-north-1 \
+            --filters Key=name,Values="$PUBLISHABLE_KEY_NAME" \
+            --query "SecretList[0].ARN" \
+            --output text 2>/dev/null || echo "")
+          
+          if [ -z "$PUBLISHABLE_KEY_ARN" ] || [ "$PUBLISHABLE_KEY_ARN" == "None" ]; then
+            echo "⚠️  Secret not found by name prefix, trying to get by partial ARN..."
+            # Try with common suffix patterns
+            for suffix in "37rvJI" "37rvJI-" ""; do
+              TEST_ARN="arn:aws:secretsmanager:eu-north-1:666203386231:secret:${PUBLISHABLE_KEY_NAME}-${suffix}"
+              if aws secretsmanager describe-secret --secret-id "$TEST_ARN" --region eu-north-1 >/dev/null 2>&1; then
+                PUBLISHABLE_KEY_ARN="$TEST_ARN"
+                break
+              fi
+            done
+          fi
+          
+          if [ -z "$PUBLISHABLE_KEY_ARN" ] || [ "$PUBLISHABLE_KEY_ARN" == "None" ]; then
+            echo "❌ Stripe Publishable Key not found!"
+            echo "Please check if secret exists with name containing: $PUBLISHABLE_KEY_NAME"
+            echo "You can list all secrets with: aws secretsmanager list-secrets --region eu-north-1"
+            exit 1
+          else
+            echo "✅ Found Stripe Publishable Key: $PUBLISHABLE_KEY_ARN"
+            echo "STRIPE_PUBLISHABLE_KEY_ARN=$PUBLISHABLE_KEY_ARN" >> $GITHUB_ENV
           fi
 
       - name: Replace image in TD and add environment variables
@@ -141,7 +182,13 @@ jobs:
           echo "Current container secrets before update:"
           jq '.containerDefinitions[] | select(.name == "${{ env.CONTAINER_NAME }}") | .secrets // []' td_clean.json || echo "No secrets found"
           
-          jq --arg NAME "${{ env.CONTAINER_NAME }}" --arg IMG "${IMAGE_URI}" '
+          echo "Using Stripe Secret Key ARN: ${STRIPE_SECRET_KEY_ARN}"
+          echo "Using Stripe Publishable Key ARN: ${STRIPE_PUBLISHABLE_KEY_ARN}"
+          
+          jq --arg NAME "${{ env.CONTAINER_NAME }}" \
+             --arg IMG "${IMAGE_URI}" \
+             --arg SECRET_ARN "${STRIPE_SECRET_KEY_ARN}" \
+             --arg PUBLISHABLE_ARN "${STRIPE_PUBLISHABLE_KEY_ARN}" '
             # Ensure executionRoleArn exists (required for secrets from Secrets Manager)
             if (.executionRoleArn == null or .executionRoleArn == "") then
               .executionRoleArn = "arn:aws:iam::666203386231:role/ecsTaskExecutionRole"
@@ -181,11 +228,11 @@ jobs:
                   [
                     {
                       "name": "STRIPE_SECRET_KEY",
-                      "valueFrom": "arn:aws:secretsmanager:eu-north-1:666203386231:secret:uslugar/stripe-secret-key-jKdcdD"
+                      "valueFrom": $SECRET_ARN
                     },
                     {
                       "name": "STRIPE_PUBLISHABLE_KEY",
-                      "valueFrom": "arn:aws:secretsmanager:eu-north-1:666203386231:secret:uslugar/stripe-publishable-key-37rvJI"
+                      "valueFrom": $PUBLISHABLE_ARN
                     }
                   ])
               else . end
