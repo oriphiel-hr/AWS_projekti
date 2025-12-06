@@ -1088,9 +1088,15 @@ r.get('/admin/test', (req, res) => {
  */
 r.get('/admin/sessions', auth(true, ['ADMIN']), async (req, res, next) => {
   try {
+    console.log('[ADMIN PAYMENTS] Endpoint called');
+    console.log('[ADMIN PAYMENTS] User:', req.user?.id, req.user?.role);
+    
     // Check if Stripe is configured - try to initialize if not already done
     let stripeInstance = stripe;
     const stripeKey = process.env.STRIPE_SECRET_KEY || '';
+    
+    console.log('[ADMIN PAYMENTS] Stripe instance exists:', !!stripeInstance);
+    console.log('[ADMIN PAYMENTS] STRIPE_SECRET_KEY exists:', !!stripeKey, 'length:', stripeKey.length);
     
     if (!stripeInstance && stripeKey && stripeKey !== '') {
       try {
@@ -1218,6 +1224,18 @@ r.get('/admin/sessions', auth(true, ['ADMIN']), async (req, res, next) => {
           plan = subscription.plan;
         }
 
+        // Calculate amount - use amount_paid for paid invoices, amount_due for unpaid
+        let amountTotal = 0;
+        if (invoice.status === 'paid' && invoice.amount_paid) {
+          amountTotal = invoice.amount_paid;
+        } else if (invoice.amount_due) {
+          amountTotal = invoice.amount_due;
+        } else if (invoice.total) {
+          amountTotal = invoice.total;
+        } else if (invoice.subtotal) {
+          amountTotal = invoice.subtotal;
+        }
+
         return {
           id: invoice.id,
           invoiceNumber: invoice.number,
@@ -1228,8 +1246,8 @@ r.get('/admin/sessions', auth(true, ['ADMIN']), async (req, res, next) => {
           credits: subscription?.creditsBalance || null,
           paymentStatus: invoice.status === 'paid' ? 'paid' : (invoice.status === 'open' ? 'unpaid' : invoice.status),
           status: invoice.status,
-          amountTotal: invoice.amount_paid || invoice.total,
-          currency: invoice.currency,
+          amountTotal: amountTotal, // Amount in cents
+          currency: invoice.currency || 'eur',
           createdAt: invoice.created,
           dueDate: invoice.due_date,
           hostedInvoiceUrl: invoice.hosted_invoice_url,
@@ -1243,10 +1261,18 @@ r.get('/admin/sessions', auth(true, ['ADMIN']), async (req, res, next) => {
       })
     );
 
+    console.log(`[ADMIN PAYMENTS] Returning ${enrichedSessions.length} sessions`);
+    console.log(`[ADMIN PAYMENTS] Sample session:`, enrichedSessions[0] ? {
+      id: enrichedSessions[0].id,
+      amountTotal: enrichedSessions[0].amountTotal,
+      currency: enrichedSessions[0].currency,
+      paymentStatus: enrichedSessions[0].paymentStatus
+    } : 'No sessions');
+
     res.json({
       success: true,
       sessions: enrichedSessions,
-      hasMore: sessions.has_more
+      hasMore: invoices.has_more
     });
   } catch (error) {
     console.error('[ADMIN PAYMENTS] Error loading sessions:', error);
