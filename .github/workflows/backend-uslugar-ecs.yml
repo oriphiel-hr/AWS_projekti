@@ -218,9 +218,29 @@ jobs:
           
           echo ""
           echo "✅ Service update initiated. New tasks will be deployed with Stripe secrets."
-          echo "⏳ Wait 2-3 minutes for deployment to complete."
+          echo "⏳ Waiting for deployment to stabilize (this may take 2-3 minutes)..."
+          
+          # Wait for service to stabilize (with timeout)
+          echo "Monitoring deployment status..."
+          aws ecs wait services-stable \
+            --cluster "${{ env.ECS_CLUSTER }}" \
+            --services "${{ env.ECS_SERVICE }}" \
+            --region "${{ env.AWS_REGION }}" || echo "⚠️  Deployment may still be in progress"
+          
           echo ""
-          echo "To verify deployment:"
-          echo "  - Check ECS Service status in AWS Console"
-          echo "  - Check CloudWatch logs for '[PAYMENTS] Stripe initialized successfully'"
+          echo "✅ Deployment completed!"
+          echo ""
+          echo "To verify Stripe is working:"
+          echo "  - Check CloudWatch logs: aws logs tail /ecs/uslugar --follow --region eu-north-1 --filter-pattern 'STRIPE'"
+          echo "  - Look for: '[PAYMENTS] Stripe initialized successfully'"
           echo "  - Test admin payments endpoint: /api/payments/admin/sessions"
+          
+          # Show current deployment status
+          echo ""
+          echo "Current deployment status:"
+          aws ecs describe-services \
+            --cluster "${{ env.ECS_CLUSTER }}" \
+            --services "${{ env.ECS_SERVICE }}" \
+            --region "${{ env.AWS_REGION }}" \
+            --query "services[0].deployments[0].{Status:status,TaskDefinition:taskDefinition,RunningCount:runningCount,DesiredCount:desiredCount}" \
+            --output table || echo "Could not fetch deployment status"
