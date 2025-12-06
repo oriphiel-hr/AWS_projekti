@@ -138,7 +138,20 @@ jobs:
                     "name": "AWS_REGION",
                     "value": "eu-north-1"
                   }
-                ])
+                ]) |
+                # Add Stripe secrets if not already present
+                .secrets = ((.secrets // []) | 
+                  map(select(.name != "STRIPE_SECRET_KEY" and .name != "STRIPE_PUBLISHABLE_KEY")) +
+                  [
+                    {
+                      "name": "STRIPE_SECRET_KEY",
+                      "valueFrom": "arn:aws:secretsmanager:eu-north-1:666203386231:secret:uslugar/stripe-keys-4X5yVg::STRIPE_SECRET_KEY::"
+                    },
+                    {
+                      "name": "STRIPE_PUBLISHABLE_KEY",
+                      "valueFrom": "arn:aws:secretsmanager:eu-north-1:666203386231:secret:uslugar/stripe-keys-4X5yVg::STRIPE_PUBLISHABLE_KEY::"
+                    }
+                  ])
               else . end
             ))
           ' td_clean.json > td_new.json

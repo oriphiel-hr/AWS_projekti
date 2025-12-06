@@ -20,6 +20,7 @@ on:
       - "uslugar/backend/src/services/sms-service.js"
       - "uslugar/frontend/src/pages/AdminSmsLogs.jsx"
       - "uslugar/backend/src/server.js"
+      - "uslugar/backend/src/routes/payments.js"
 
 env:
   AWS_REGION: eu-north-1
