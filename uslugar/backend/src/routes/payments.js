@@ -1075,59 +1075,6 @@ async function activateSubscription(userId, plan, credits, stripePaymentIntentId
 }
 
 /**
- * Admin: Get all payment sessions
- * GET /api/payments/admin/sessions
- */
-r.get('/admin/sessions', auth(true, ['ADMIN']), async (req, res, next) => {
-  try {
-    // Get all Stripe checkout sessions
-    const sessions = await stripe.checkout.sessions.list({
-      limit: 100,
-      expand: ['data.customer']
-    });
-
-    // Format sessions with relevant info
-    const formattedSessions = await Promise.all(
-      sessions.data.map(async (session) => {
-        let user = null;
-        if (session.metadata?.userId) {
-          user = await prisma.user.findUnique({
-            where: { id: session.metadata.userId },
-            select: { id: true, email: true, fullName: true }
-          });
-        }
-
-        return {
-          id: session.id,
-          customerEmail: session.customer_email,
-          paymentStatus: session.payment_status,
-          status: session.status,
-          amountTotal: session.amount_total,
-          currency: session.currency,
-          createdAt: session.created,
-          updatedAt: session.updated_at,
-          plan: session.metadata?.plan || 'N/A',
-          userId: session.metadata?.userId || 'N/A',
-          credits: session.metadata?.credits || '0',
-          user: user,
-          url: session.url
-        };
-      })
-    );
-
-    res.json({
-      success: true,
-      sessions: formattedSessions,
-      total: formattedSessions.length
-    });
-
-  } catch (error) {
-    console.error('Admin sessions error:', error);
-    next(error);
-  }
-});
-
-/**
  * GET /api/payments/admin/sessions
  * Admin endpoint - Get all Stripe checkout sessions
  */
@@ -1135,9 +1082,12 @@ r.get('/admin/sessions', auth(true, ['ADMIN']), async (req, res, next) => {
   try {
     // Check if Stripe is configured
     if (!stripe || !process.env.STRIPE_SECRET_KEY) {
-      return res.status(503).json({ 
-        error: 'Payment system not configured',
-        message: 'Stripe API keys are missing.'
+      console.warn('[ADMIN PAYMENTS] Stripe not configured - returning empty sessions list');
+      return res.json({ 
+        success: true,
+        sessions: [],
+        hasMore: false,
+        message: 'Stripe is not configured. Payment sessions are not available.'
       });
     }
 
