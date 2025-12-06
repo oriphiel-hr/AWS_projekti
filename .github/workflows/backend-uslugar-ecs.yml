@@ -115,15 +115,24 @@ jobs:
 
       - name: Verify Stripe secrets exist in Secrets Manager
         run: |
-          SECRET_ARN="arn:aws:secretsmanager:eu-north-1:666203386231:secret:uslugar/stripe-keys-4X5yVg"
-          echo "Checking if secret exists: $SECRET_ARN"
-          if aws secretsmanager describe-secret --secret-id "$SECRET_ARN" >/dev/null 2>&1; then
-            echo "✅ Secret exists in Secrets Manager"
-            aws secretsmanager get-secret-value --secret-id "$SECRET_ARN" --query "SecretString" --output text | jq -r 'keys[]' || echo "⚠️ Could not parse secret keys"
+          SECRET_KEY_ARN="arn:aws:secretsmanager:eu-north-1:666203386231:secret:uslugar/stripe-secret-key-jKdcdD"
+          PUBLISHABLE_KEY_ARN="arn:aws:secretsmanager:eu-north-1:666203386231:secret:uslugar/stripe-publishable-key-37rvJI"
+          
+          echo "Checking if Stripe Secret Key exists: $SECRET_KEY_ARN"
+          if aws secretsmanager describe-secret --secret-id "$SECRET_KEY_ARN" >/dev/null 2>&1; then
+            echo "✅ Stripe Secret Key exists in Secrets Manager"
           else
-            echo "❌ Secret does not exist in Secrets Manager!"
-            echo "Please create the secret: $SECRET_ARN"
-            echo "With keys: STRIPE_SECRET_KEY, STRIPE_PUBLISHABLE_KEY"
+            echo "❌ Stripe Secret Key does not exist in Secrets Manager!"
+            echo "Please create the secret: $SECRET_KEY_ARN"
+            exit 1
+          fi
+          
+          echo "Checking if Stripe Publishable Key exists: $PUBLISHABLE_KEY_ARN"
+          if aws secretsmanager describe-secret --secret-id "$PUBLISHABLE_KEY_ARN" >/dev/null 2>&1; then
+            echo "✅ Stripe Publishable Key exists in Secrets Manager"
+          else
+            echo "❌ Stripe Publishable Key does not exist in Secrets Manager!"
+            echo "Please create the secret: $PUBLISHABLE_KEY_ARN"
             exit 1
           fi
 
@@ -166,17 +175,17 @@ jobs:
                     "value": "eu-north-1"
                   }
                 ]) |
-                # Remove existing Stripe secrets and add new ones
+                # Remove existing Stripe secrets and add new ones (plaintext secrets, no ::KEY:: suffix)
                 .secrets = ((.secrets // []) | 
                   map(select(.name != "STRIPE_SECRET_KEY" and .name != "STRIPE_PUBLISHABLE_KEY")) +
                   [
                     {
                       "name": "STRIPE_SECRET_KEY",
-                      "valueFrom": "arn:aws:secretsmanager:eu-north-1:666203386231:secret:uslugar/stripe-keys-4X5yVg::STRIPE_SECRET_KEY::"
+                      "valueFrom": "arn:aws:secretsmanager:eu-north-1:666203386231:secret:uslugar/stripe-secret-key-jKdcdD"
                     },
                     {
                       "name": "STRIPE_PUBLISHABLE_KEY",
-                      "valueFrom": "arn:aws:secretsmanager:eu-north-1:666203386231:secret:uslugar/stripe-keys-4X5yVg::STRIPE_PUBLISHABLE_KEY::"
+                      "valueFrom": "arn:aws:secretsmanager:eu-north-1:666203386231:secret:uslugar/stripe-publishable-key-37rvJI"
                     }
                   ])
               else . end
