@@ -436,7 +436,7 @@ const features = [
         { name: "Automatsko snižavanje cijene ako nema leadova", implemented: true },
         { name: "Credit refund ako tržište miruje", implemented: true },
         { name: "Proporcionalna naplata (REAL_VALUE)", implemented: true },
-        { name: "Mjesečni izvještaj o isporučenim leadovima", implemented: true, partiallyImplemented: true },
+        { name: "Mjesečni izvještaj o isporučenim leadovima", implemented: true },
         { name: "Carryover neiskorištenih leadova", implemented: true },
         { name: "Pauziranje kategorije bez naplate", implemented: true }
       ]
@@ -13952,7 +13952,7 @@ SMS verifikacija osigurava da vaš telefonski broj pripada vama i povećava povj
     "Mjesečni izvještaj o isporučenim leadovima": {
       implemented: true,
       summary: "Mjesečni izvještaj o isporučenim leadovima automatski generira i šalje klijentima detaljne izvještaje o isporučenim leadovima u obračunskom periodu, uključujući statistike, trendove i billing informacije.",
-      details: `**⚠️ DJELOMIČNO IMPLEMENTIRANO**: Postoji \`generateMonthlyReport\` funkcija za generiranje izvještaja, ali nema automatskog slanja emailom. Izvještaji se mogu generirati ručno.
+      details: `**✅ POTPUNO IMPLEMENTIRANO**: Mjesečni izvještaji se automatski generiraju i šalju emailom svim aktivnim korisnicima na početku svakog mjeseca. Izvještaji uključuju statistike, trendove i billing informacije.
 
 **Kako funkcionira**
 - Mjesečni izvještaj se automatski generira na kraju svakog obračunskog perioda (obično mjesec dana).
@@ -13983,23 +13983,26 @@ SMS verifikacija osigurava da vaš telefonski broj pripada vama i povećava povj
 - Email notifikacija s linkom na izvještaj u dashboardu.
 
 **Backend**
-- \`reportService.generateMonthlyReport\` generira mjesečni izvještaj za svakog klijenta na kraju obračunskog perioda.
-- Algoritam agregira podatke o isporučenim leadovima iz BillingAdjustment i LeadAssignment tablica.
-- Izvještaj uključuje statistike, trendove, billing informacije i grafikonske prikaze.
-- \`emailService.sendMonthlyReport\` šalje izvještaj klijentima putem emaila.
-- Event \`report.monthly.generated\` informira ostale servise o generiranom izvještaju.
+- \`report-generator.js\` - \`generateMonthlyReport\` generira mjesečni izvještaj za svakog klijenta s detaljnim statistikama, trendovima i billing informacijama.
+- \`monthly-report-service.js\` - Servis za slanje mjesečnih izvještaja emailom:
+  - \`sendMonthlyReport\` - Šalje izvještaj određenom korisniku
+  - \`sendMonthlyReportsToAllUsers\` - Šalje izvještaje svim aktivnim korisnicima
+- Cron job u \`queueScheduler.js\` pokreće se 1. dana u mjesecu u 9:00 i automatski šalje izvještaje za prošli mjesec.
+- Algoritam agregira podatke o isporučenim leadovima iz LeadPurchase, CreditTransaction i BillingAdjustment tablica.
+- Email template uključuje HTML formatirani izvještaj s statistikama, trendovima i billing informacijama.
 
 **Baza**
-- \`MonthlyReport\` tablica čuva generirane izvještaje (userId, periodStart, periodEnd, reportData JSONB, generatedAt).
-- \`BillingAdjustment\` tablica sadrži podatke o isporučenim leadovima (deliveredLeads, expectedLeads, periodStart, periodEnd).
-- \`LeadAssignment\` tablica bilježi sve dodjele leadova koje se koriste za izračun statistika.
-- \`ReportCache\` tablica cacheira agregirane podatke za brže generiranje izvještaja.
+- \`LeadPurchase\` tablica sadrži sve kupljene leadove koje se koriste za izračun statistika.
+- \`CreditTransaction\` tablica bilježi sve transakcije kredita za period.
+- \`BillingPlan\` tablica definira očekivani volumen leadova po planu.
+- \`BillingAdjustment\` tablica sadrži podatke o isporučenim leadovima (deliveredLeads, expectedLeads, periodStart, periodEnd, adjustmentType, adjustmentCredits).
+- Podaci se agregiraju u realnom vremenu pri generiranju izvještaja (nema cache tablice).
 
 **API**
-- \`GET /api/director/billing/monthly-report\` – vraća mjesečni izvještaj za trenutni ili određeni period.
-- \`GET /api/director/billing/monthly-reports\` – vraća listu svih mjesečnih izvještaja.
-- \`GET /api/director/billing/monthly-report/:period/download\` – preuzimanje izvještaja u PDF ili Excel formatu.
-- \`POST /api/admin/billing/generate-monthly-reports\` – ručno generiranje mjesečnih izvještaja (admin only).
+- \`GET /api/roi/monthly-stats\` – vraća mjesečni izvještaj za određeni period (query: year, month, format: json|pdf|csv).
+- \`POST /api/roi/send-monthly-report\` – ručno pošalji mjesečni izvještaj emailom (body: year?, month?).
+- \`POST /api/admin/reports/send-monthly-reports\` – pošalji mjesečne izvještaje svim aktivnim korisnicima (admin only, body: year?, month?).
+- \`POST /api/admin/reports/send-monthly-report/:userId\` – pošalji mjesečni izvještaj određenom korisniku (admin only, body: year?, month?).
       `
     },
     "Carryover neiskorištenih leadova": {

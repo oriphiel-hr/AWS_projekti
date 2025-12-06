@@ -8,6 +8,7 @@ import {
   generatePDFReport,
   generateCSVReport
 } from '../services/report-generator.js';
+import { sendMonthlyReport } from '../services/monthly-report-service.js';
 import { getProviderPosition, calculateBenchmarks } from '../services/benchmark-service.js';
 import { forecastProviderPerformance } from '../services/forecast-service.js';
 
@@ -300,6 +301,41 @@ function generateInsights(roi, subscription) {
   
   return insights;
 }
+
+/**
+ * POST /api/roi/send-monthly-report
+ * Ručno pošalji mjesečni izvještaj emailom
+ * Body: { year?, month? } (opcionalno - default: prošli mjesec)
+ */
+r.post('/send-monthly-report', auth(true, ['PROVIDER']), async (req, res, next) => {
+  try {
+    const providerId = req.user.id;
+    const { year, month } = req.body;
+    
+    // Ako nije specificirano, koristi prošli mjesec
+    const now = new Date();
+    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const reportYear = year || lastMonth.getFullYear();
+    const reportMonth = month || (lastMonth.getMonth() + 1);
+    
+    const result = await sendMonthlyReport(providerId, reportYear, reportMonth);
+    
+    if (result.success) {
+      res.json({
+        success: true,
+        message: `Mjesečni izvještaj poslan na ${result.email}`,
+        period: result.period
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        error: result.error || 'Failed to send monthly report'
+      });
+    }
+  } catch (e) {
+    next(e);
+  }
+});
 
 export default r;
 

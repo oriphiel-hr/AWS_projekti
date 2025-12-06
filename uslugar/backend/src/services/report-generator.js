@@ -1,6 +1,7 @@
 // Report Generator Service - Mjesečni i godišnji izvještaji
 import PDFDocument from 'pdfkit';
 import { prisma } from '../lib/prisma.js';
+import { getPlanVolumeSummary } from './billing-adjustment-service.js';
 
 /**
  * Generiraj mjesečni izvještaj
@@ -95,6 +96,9 @@ export async function generateMonthlyReport(providerId, year, month) {
     const previousStats = calculateMonthlyStats(previousMonthPurchases, [], previousMonthStart, previousMonthEnd);
     const trends = calculateTrends(stats, previousStats);
     
+    // Dohvati billing informacije (BillingPlan i BillingAdjustment)
+    const billingInfo = await getBillingInfoForPeriod(providerId, startDate, endDate);
+    
     return {
       period: {
         type: 'monthly',
@@ -112,6 +116,7 @@ export async function generateMonthlyReport(providerId, year, month) {
       stats,
       categoryStats,
       trends,
+      billing: billingInfo, // Billing informacije (očekivani vs isporučeni leadovi, korekcije)
       purchases: purchases.map(p => ({
         id: p.id,
         jobTitle: p.job.title,
@@ -722,5 +727,134 @@ export function generateCSVReport(reportData, periodType = 'monthly') {
   
   // BOM za UTF-8 (Excel kompatibilnost)
   return '\uFEFF' + lines.join('\n');
+}
+
+/**
+ * Dohvati billing informacije za određeni period
+ * @param {string} providerId - ID providera
+ * @param {Date} periodStart - Početak perioda
+ * @param {Date} periodEnd - Kraj perioda
+ * @returns {Promise<object>} Billing informacije
+ */
+async function getBillingInfoForPeriod(providerId, periodStart, periodEnd) {
+  try {
+    // Dohvati aktivne billing planove korisnika
+    const billingPlans = await prisma.billingPlan.findMany({
+      where: {
+        userId: providerId,
+        isActive: true
+      },
+      include: {
+        category: {
+          select: {
+            id: true,
+            name: true
+          }
+        }
+      }
+    });
+
+    // Dohvati billing adjustments za period
+    const adjustments = await prisma.billingAdjustment.findMany({
+      where: {
+        userId: providerId,
+        periodStart: {
+          gte: periodStart,
+          lte: periodEnd
+        }
+      },
+      include: {
+        billingPlan: {
+          include: {
+            category: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: {
+        periodStart: 'desc'
+      }
+    });
+
+    // Izračunaj ukupne statistike
+    const plansSummary = await Promise.all(
+      billingPlans.map(async (plan) => {
+        try {
+          const summary = await getPlanVolumeSummary(plan.id, periodStart, periodEnd);
+          return {
+            planId: plan.id,
+            planName: plan.name,
+            category: plan.category ? plan.category.name : null,
+            region: plan.region,
+            expectedLeads: plan.expectedLeads,
+            deliveredLeads: summary.deliveredLeads,
+            diff: summary.diff,
+            period: plan.period
+          };
+        } catch (error) {
+          console.error(`[Report Generator] Error getting volume summary for plan ${plan.id}:`, error);
+          return {
+            planId: plan.id,
+            planName: plan.name,
+            category: plan.category ? plan.category.name : null,
+            region: plan.region,
+            expectedLeads: plan.expectedLeads,
+            deliveredLeads: 0,
+            diff: -plan.expectedLeads,
+            period: plan.period
+          };
+        }
+      })
+    );
+
+    // Ukupni očekivani i isporučeni leadovi
+    const totalExpected = plansSummary.reduce((sum, p) => sum + (p.expectedLeads || 0), 0);
+    const totalDelivered = plansSummary.reduce((sum, p) => sum + (p.deliveredLeads || 0), 0);
+    const totalDiff = totalDelivered - totalExpected;
+
+    // Ukupni krediti iz adjustments
+    const totalCredits = adjustments
+      .filter(a => a.adjustmentType === 'CREDIT')
+      .reduce((sum, a) => sum + (a.adjustmentCredits || 0), 0);
+
+    return {
+      plans: plansSummary,
+      adjustments: adjustments.map(a => ({
+        id: a.id,
+        planName: a.billingPlan.name,
+        category: a.billingPlan.category ? a.billingPlan.category.name : null,
+        periodStart: a.periodStart,
+        periodEnd: a.periodEnd,
+        expectedLeads: a.expectedLeads,
+        deliveredLeads: a.deliveredLeads,
+        adjustmentType: a.adjustmentType,
+        adjustmentCredits: a.adjustmentCredits,
+        status: a.status,
+        notes: a.notes
+      })),
+      totals: {
+        expectedLeads: totalExpected,
+        deliveredLeads: totalDelivered,
+        diff: totalDiff,
+        creditsFromAdjustments: totalCredits
+      }
+    };
+  } catch (error) {
+    console.error('[Report Generator] Error getting billing info:', error);
+    return {
+      plans: [],
+      adjustments: [],
+      totals: {
+        expectedLeads: 0,
+        deliveredLeads: 0,
+        diff: 0,
+        creditsFromAdjustments: 0
+      }
+    };
+  }
 }
 

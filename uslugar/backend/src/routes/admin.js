@@ -5,6 +5,7 @@ import { deleteUserWithRelations } from '../lib/delete-helpers.js';
 import { offerToNextInQueue } from '../lib/leadQueueManager.js';
 import { getPlatformStatistics, getMonthlyTrends } from '../services/platform-stats-service.js';
 import { getPendingModeration, moderateContent, getModerationStats, reportMessage } from '../services/moderation-service.js';
+import { sendMonthlyReportsToAllUsers, sendMonthlyReport } from '../services/monthly-report-service.js';
 
 const r = Router();
 
@@ -3392,6 +3393,122 @@ r.get('/api-reference', (req, res, next) => {
   } catch (e) {
     console.error('[API-REF] ERROR in api-reference endpoint:', e);
     console.error('[API-REF] Stack trace:', e.stack);
+    next(e);
+  }
+});
+
+/**
+ * POST /api/admin/reports/send-monthly-reports
+ * Pošalji mjesečne izvještaje svim aktivnim korisnicima (admin only)
+ * Body: { year?, month? } (opcionalno - default: prošli mjesec)
+ */
+r.post('/reports/send-monthly-reports', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const { year, month } = req.body;
+    
+    // Ako je specificirano, pošalji za određeni mjesec
+    if (year && month) {
+      // Pošalji svim korisnicima za određeni mjesec
+      const activeUsers = await prisma.user.findMany({
+        where: {
+          role: 'PROVIDER',
+          subscriptions: {
+            some: {
+              status: 'ACTIVE'
+            }
+          }
+        },
+        select: {
+          id: true,
+          email: true,
+          fullName: true
+        }
+      });
+      
+      let sent = 0;
+      let failed = 0;
+      const errors = [];
+      
+      for (const user of activeUsers) {
+        try {
+          const result = await sendMonthlyReport(user.id, parseInt(year), parseInt(month));
+          if (result.success) {
+            sent++;
+          } else {
+            failed++;
+            errors.push({ userId: user.id, email: user.email, error: result.error });
+          }
+        } catch (error) {
+          failed++;
+          errors.push({ userId: user.id, email: user.email, error: error.message });
+        }
+      }
+      
+      return res.json({
+        success: true,
+        message: `Monthly reports sent for ${year}-${month}`,
+        sent,
+        failed,
+        total: activeUsers.length,
+        errors: errors.length > 0 ? errors.slice(0, 10) : undefined // Prvih 10 grešaka
+      });
+    }
+    
+    // Default: pošalji za prošli mjesec (automatski)
+    const result = await sendMonthlyReportsToAllUsers();
+    
+    if (result.success) {
+      res.json({
+        success: true,
+        message: `Monthly reports sent to ${result.sent} users`,
+        period: result.period,
+        sent: result.sent,
+        failed: result.failed,
+        total: result.total,
+        errors: result.errors
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        error: result.error || 'Failed to send monthly reports'
+      });
+    }
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * POST /api/admin/reports/send-monthly-report/:userId
+ * Pošalji mjesečni izvještaj određenom korisniku (admin only)
+ * Body: { year?, month? } (opcionalno - default: prošli mjesec)
+ */
+r.post('/reports/send-monthly-report/:userId', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    const { year, month } = req.body;
+    
+    // Ako nije specificirano, koristi prošli mjesec
+    const now = new Date();
+    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const reportYear = year || lastMonth.getFullYear();
+    const reportMonth = month || (lastMonth.getMonth() + 1);
+    
+    const result = await sendMonthlyReport(userId, reportYear, reportMonth);
+    
+    if (result.success) {
+      res.json({
+        success: true,
+        message: `Monthly report sent to ${result.email}`,
+        period: result.period
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        error: result.error || 'Failed to send monthly report'
+      });
+    }
+  } catch (e) {
     next(e);
   }
 });

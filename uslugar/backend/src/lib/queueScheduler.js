@@ -19,6 +19,7 @@ import { checkAndSendSLAReminders } from '../services/sla-reminder-service.js';
 import { checkAddonLifecycles, processAutoRenewals, processAddonUpsells } from '../services/addon-lifecycle-service.js';
 import { checkAndDowngradeExpiredSubscriptions } from '../routes/subscriptions.js';
 import { publishExpiredReviews } from '../services/review-publish-service.js';
+import { sendMonthlyReportsToAllUsers } from '../services/monthly-report-service.js';
 
 export function startQueueScheduler() {
   console.log('⏰ Starting Queue Scheduler...')
@@ -91,6 +92,29 @@ export function startQueueScheduler() {
       console.log('✅ License expiry check completed')
     } catch (error) {
       console.error('❌ License expiry check failed:', error)
+    }
+    
+    console.log('='.repeat(50) + '\n')
+  })
+  
+  // Pošalji mjesečne izvještaje svim korisnicima - 1. dan u mjesecu u 9:00
+  cron.schedule('0 9 1 * *', async () => {
+    console.log(`\n${'='.repeat(50)}`)
+    console.log(`⏰ Monthly Report Sending: ${new Date().toISOString()}`)
+    console.log('='.repeat(50))
+    
+    try {
+      const result = await sendMonthlyReportsToAllUsers()
+      if (result.success) {
+        console.log(`✅ Monthly reports sent: ${result.sent}/${result.total} (${result.failed} failed)`)
+        if (result.errors && result.errors.length > 0) {
+          console.log(`⚠️ Errors:`, result.errors.slice(0, 5)) // Prikaži prvih 5 grešaka
+        }
+      } else {
+        console.error(`❌ Monthly reports failed: ${result.error}`)
+      }
+    } catch (error) {
+      console.error('❌ Monthly report sending failed:', error)
     }
     
     console.log('='.repeat(50) + '\n')
@@ -190,6 +214,7 @@ export function startQueueScheduler() {
   console.log('   - Add-on upsell offers: Every hour at :00')
   console.log('   - Expired subscriptions downgrade (TRIAL→BASIC): Every hour at :00')
   console.log('   - Review publish (reciprocal delay): Every hour at :00')
+  console.log('   - Monthly reports: 1st of month at 09:00')
   console.log('   - License expiry check: Daily at 09:00')
   console.log('   - License validity check: Daily at 10:00')
   console.log('   - Batch auto-verification: Daily at 11:00')
