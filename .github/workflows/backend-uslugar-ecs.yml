@@ -208,8 +208,19 @@ jobs:
 
       - name: Update service to new TD
         run: |
+          echo "Updating ECS service to use new Task Definition..."
           aws ecs update-service \
             --cluster "${{ env.ECS_CLUSTER }}" \
             --service "${{ env.ECS_SERVICE }}" \
             --task-definition "${NEW_TD_ARN}" \
+            --force-new-deployment \
             --query "service.taskDefinition" --output text
+          
+          echo ""
+          echo "✅ Service update initiated. New tasks will be deployed with Stripe secrets."
+          echo "⏳ Wait 2-3 minutes for deployment to complete."
+          echo ""
+          echo "To verify deployment:"
+          echo "  - Check ECS Service status in AWS Console"
+          echo "  - Check CloudWatch logs for '[PAYMENTS] Stripe initialized successfully'"
+          echo "  - Test admin payments endpoint: /api/payments/admin/sessions"
