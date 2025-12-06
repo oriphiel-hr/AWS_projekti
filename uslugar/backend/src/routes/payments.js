@@ -1127,5 +1127,104 @@ r.get('/admin/sessions', auth(true, ['ADMIN']), async (req, res, next) => {
   }
 });
 
+/**
+ * GET /api/payments/admin/sessions
+ * Admin endpoint - Get all Stripe checkout sessions
+ */
+r.get('/admin/sessions', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    // Check if Stripe is configured
+    if (!stripe || !process.env.STRIPE_SECRET_KEY) {
+      return res.status(503).json({ 
+        error: 'Payment system not configured',
+        message: 'Stripe API keys are missing.'
+      });
+    }
+
+    const { limit = 100, starting_after } = req.query;
+
+    // Get all checkout sessions from Stripe
+    const sessions = await stripe.checkout.sessions.list({
+      limit: parseInt(limit),
+      starting_after: starting_after || undefined
+    });
+
+    // Enrich sessions with user data from database
+    const enrichedSessions = await Promise.all(
+      sessions.data.map(async (session) => {
+        let user = null;
+        let userId = null;
+
+        // Try to get user from customer_email or metadata
+        if (session.customer_email) {
+          user = await prisma.user.findFirst({
+            where: { email: session.customer_email },
+            select: {
+              id: true,
+              fullName: true,
+              email: true
+            }
+          });
+          if (user) userId = user.id;
+        }
+
+        // Also check metadata for userId
+        if (session.metadata?.userId) {
+          userId = session.metadata.userId;
+          if (!user) {
+            user = await prisma.user.findUnique({
+              where: { id: session.metadata.userId },
+              select: {
+                id: true,
+                fullName: true,
+                email: true
+              }
+            });
+          }
+        }
+
+        // Get subscription info if available
+        let subscription = null;
+        if (userId) {
+          subscription = await prisma.subscription.findUnique({
+            where: { userId },
+            select: {
+              plan: true,
+              creditsBalance: true
+            }
+          });
+        }
+
+        return {
+          id: session.id,
+          userId: userId,
+          user: user,
+          customerEmail: session.customer_email,
+          plan: session.metadata?.plan || subscription?.plan || null,
+          credits: subscription?.creditsBalance || null,
+          paymentStatus: session.payment_status,
+          status: session.status,
+          amountTotal: session.amount_total,
+          currency: session.currency,
+          createdAt: session.created,
+          completedAt: session.completed_at,
+          expiresAt: session.expires_at,
+          paymentIntent: session.payment_intent,
+          subscription: session.subscription
+        };
+      })
+    );
+
+    res.json({
+      success: true,
+      sessions: enrichedSessions,
+      hasMore: sessions.has_more
+    });
+  } catch (error) {
+    console.error('[ADMIN PAYMENTS] Error loading sessions:', error);
+    next(error);
+  }
+});
+
 export default r;
 
