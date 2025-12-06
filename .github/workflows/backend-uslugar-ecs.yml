@@ -115,22 +115,22 @@ jobs:
 
       - name: Set Stripe secret references
         run: |
-          # AWS ECS supports using secret names directly (without full ARN)
-          # This avoids needing ListSecrets permission
-          # Update these names to match your actual secret names in AWS Secrets Manager console
+          # Use full ARN with suffix (as documented in STRIPE-MANUAL-SETUP.md)
+          # AWS ECS requires the full ARN for plaintext secrets
+          # Update these ARNs if your secrets have different suffixes
           
-          # Secret names (update these if your secrets have different names)
-          SECRET_KEY_NAME="uslugar/stripe-secret-key"
-          PUBLISHABLE_KEY_NAME="uslugar/stripe-publishable-key"
+          # Full ARNs with suffixes (update if different)
+          SECRET_KEY_ARN="arn:aws:secretsmanager:eu-north-1:666203386231:secret:uslugar/stripe-secret-key-jKdcdD"
+          PUBLISHABLE_KEY_ARN="arn:aws:secretsmanager:eu-north-1:666203386231:secret:uslugar/stripe-publishable-key-37rvJI"
           
-          echo "Using Stripe Secret Key name: $SECRET_KEY_NAME"
-          echo "Using Stripe Publishable Key name: $PUBLISHABLE_KEY_NAME"
+          echo "Using Stripe Secret Key ARN: $SECRET_KEY_ARN"
+          echo "Using Stripe Publishable Key ARN: $PUBLISHABLE_KEY_ARN"
           echo ""
-          echo "Note: If these names don't match your secrets, update SECRET_KEY_NAME and PUBLISHABLE_KEY_NAME in this workflow file."
-          echo "The actual secret names can be found in AWS Secrets Manager console."
+          echo "Note: If these ARNs don't match your secrets, update them in this workflow file."
+          echo "The actual secret ARNs can be found in AWS Secrets Manager console."
           
-          echo "STRIPE_SECRET_KEY_REF=$SECRET_KEY_NAME" >> $GITHUB_ENV
-          echo "STRIPE_PUBLISHABLE_KEY_REF=$PUBLISHABLE_KEY_NAME" >> $GITHUB_ENV
+          echo "STRIPE_SECRET_KEY_REF=$SECRET_KEY_ARN" >> $GITHUB_ENV
+          echo "STRIPE_PUBLISHABLE_KEY_REF=$PUBLISHABLE_KEY_ARN" >> $GITHUB_ENV
 
       - name: Replace image in TD and add environment variables
         run: |
