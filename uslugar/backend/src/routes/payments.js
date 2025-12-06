@@ -1075,6 +1075,14 @@ async function activateSubscription(userId, plan, credits, stripePaymentIntentId
 }
 
 /**
+ * GET /api/payments/admin/test
+ * Test endpoint to verify routing works
+ */
+r.get('/admin/test', (req, res) => {
+  res.json({ success: true, message: 'Payments admin route is working' });
+});
+
+/**
  * GET /api/payments/admin/sessions
  * Admin endpoint - Get all Stripe checkout sessions
  */
