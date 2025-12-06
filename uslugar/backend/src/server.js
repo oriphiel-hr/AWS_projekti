@@ -480,6 +480,75 @@ async function ensureWhiteLabel() {
 }
 await ensureWhiteLabel()
 
+// Auto-fix: Ensure Review fields exist (isPublished, moderationStatus, etc.)
+async function ensureReviewFields() {
+  try {
+    // Try to query Review with isPublished - if fails, column doesn't exist
+    await prisma.$queryRaw`SELECT "isPublished" FROM "Review" LIMIT 1`
+    console.log('✅ Review fields (isPublished, moderationStatus, etc.) exist')
+  } catch (error) {
+    if (error.message.includes('does not exist')) {
+      console.log('🔧 Adding missing Review fields...')
+      try {
+        // Create enums if they don't exist
+        await prisma.$executeRaw`
+          DO $$ BEGIN
+            CREATE TYPE "ModerationStatus" AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
+          EXCEPTION
+            WHEN duplicate_object THEN null;
+          END $$;
+        `
+        await prisma.$executeRaw`
+          DO $$ BEGIN
+            CREATE TYPE "ReportStatus" AS ENUM ('PENDING', 'REVIEWED', 'DISMISSED', 'ACCEPTED');
+          EXCEPTION
+            WHEN duplicate_object THEN null;
+          END $$;
+        `
+        
+        // RECIPROCAL DELAY - Simultana objava ocjena
+        await prisma.$executeRaw`ALTER TABLE "Review" ADD COLUMN IF NOT EXISTS "isPublished" BOOLEAN NOT NULL DEFAULT false`
+        await prisma.$executeRaw`ALTER TABLE "Review" ADD COLUMN IF NOT EXISTS "publishedAt" TIMESTAMP(3)`
+        await prisma.$executeRaw`ALTER TABLE "Review" ADD COLUMN IF NOT EXISTS "reviewDeadline" TIMESTAMP(3)`
+        
+        // REPLY - Odgovor na recenziju (1x dozvoljen)
+        await prisma.$executeRaw`ALTER TABLE "Review" ADD COLUMN IF NOT EXISTS "replyText" TEXT`
+        await prisma.$executeRaw`ALTER TABLE "Review" ADD COLUMN IF NOT EXISTS "repliedAt" TIMESTAMP(3)`
+        await prisma.$executeRaw`ALTER TABLE "Review" ADD COLUMN IF NOT EXISTS "hasReplied" BOOLEAN NOT NULL DEFAULT false`
+        
+        // MODERATION
+        await prisma.$executeRaw`ALTER TABLE "Review" ADD COLUMN IF NOT EXISTS "moderationStatus" "ModerationStatus" NOT NULL DEFAULT 'PENDING'`
+        await prisma.$executeRaw`ALTER TABLE "Review" ADD COLUMN IF NOT EXISTS "moderationReviewedBy" TEXT`
+        await prisma.$executeRaw`ALTER TABLE "Review" ADD COLUMN IF NOT EXISTS "moderationReviewedAt" TIMESTAMP(3)`
+        await prisma.$executeRaw`ALTER TABLE "Review" ADD COLUMN IF NOT EXISTS "moderationRejectionReason" TEXT`
+        await prisma.$executeRaw`ALTER TABLE "Review" ADD COLUMN IF NOT EXISTS "moderationNotes" TEXT`
+        
+        // REPORT - Prijava lažnih ocjena
+        await prisma.$executeRaw`ALTER TABLE "Review" ADD COLUMN IF NOT EXISTS "isReported" BOOLEAN NOT NULL DEFAULT false`
+        await prisma.$executeRaw`ALTER TABLE "Review" ADD COLUMN IF NOT EXISTS "reportedBy" TEXT`
+        await prisma.$executeRaw`ALTER TABLE "Review" ADD COLUMN IF NOT EXISTS "reportedAt" TIMESTAMP(3)`
+        await prisma.$executeRaw`ALTER TABLE "Review" ADD COLUMN IF NOT EXISTS "reportReason" TEXT`
+        await prisma.$executeRaw`ALTER TABLE "Review" ADD COLUMN IF NOT EXISTS "reportStatus" "ReportStatus"`
+        await prisma.$executeRaw`ALTER TABLE "Review" ADD COLUMN IF NOT EXISTS "reportReviewedBy" TEXT`
+        await prisma.$executeRaw`ALTER TABLE "Review" ADD COLUMN IF NOT EXISTS "reportReviewedAt" TIMESTAMP(3)`
+        await prisma.$executeRaw`ALTER TABLE "Review" ADD COLUMN IF NOT EXISTS "reportReviewNotes" TEXT`
+        
+        // Create indexes if they don't exist
+        await prisma.$executeRaw`CREATE INDEX IF NOT EXISTS "Review_moderationStatus_idx" ON "Review"("moderationStatus")`
+        await prisma.$executeRaw`CREATE INDEX IF NOT EXISTS "Review_isPublished_idx" ON "Review"("isPublished")`
+        await prisma.$executeRaw`CREATE INDEX IF NOT EXISTS "Review_reviewDeadline_idx" ON "Review"("reviewDeadline")`
+        await prisma.$executeRaw`CREATE INDEX IF NOT EXISTS "Review_isReported_idx" ON "Review"("isReported")`
+        await prisma.$executeRaw`CREATE INDEX IF NOT EXISTS "Review_reportStatus_idx" ON "Review"("reportStatus")`
+        
+        console.log('✅ Review fields added successfully')
+      } catch (e) {
+        console.error('⚠️  Failed to add Review fields:', e.message)
+      }
+    }
+  }
+}
+await ensureReviewFields()
+
 // Start Queue Scheduler (checks expired offers every hour)
 startQueueScheduler()
 
