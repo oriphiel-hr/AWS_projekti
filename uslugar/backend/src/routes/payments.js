@@ -1080,35 +1080,76 @@ async function activateSubscription(userId, plan, credits, stripePaymentIntentId
  */
 r.get('/admin/sessions', auth(true, ['ADMIN']), async (req, res, next) => {
   try {
-    // Check if Stripe is configured
-    if (!stripe || !process.env.STRIPE_SECRET_KEY) {
-      console.warn('[ADMIN PAYMENTS] Stripe not configured - returning empty sessions list');
+    // Check if Stripe is configured - try to initialize if not already done
+    let stripeInstance = stripe;
+    const stripeKey = process.env.STRIPE_SECRET_KEY || '';
+    
+    if (!stripeInstance && stripeKey && stripeKey !== '') {
+      try {
+        stripeInstance = new Stripe(stripeKey);
+        console.log('[ADMIN PAYMENTS] Stripe initialized from environment');
+      } catch (initError) {
+        console.error('[ADMIN PAYMENTS] Failed to initialize Stripe:', initError.message);
+      }
+    }
+    
+    if (!stripeInstance || !stripeKey || stripeKey === '') {
+      console.warn('[ADMIN PAYMENTS] Stripe not configured - STRIPE_SECRET_KEY missing');
       return res.json({ 
         success: true,
         sessions: [],
         hasMore: false,
-        message: 'Stripe is not configured. Payment sessions are not available.'
+        message: 'Stripe is not configured. Payment sessions are not available. Please configure STRIPE_SECRET_KEY in AWS Secrets Manager.'
       });
     }
 
     const { limit = 100, starting_after } = req.query;
 
-    // Get all checkout sessions from Stripe
-    const sessions = await stripe.checkout.sessions.list({
-      limit: parseInt(limit),
-      starting_after: starting_after || undefined
+    console.log('[ADMIN PAYMENTS] Fetching Stripe invoices and checkout sessions...');
+    
+    // Get invoices directly from Stripe (these are what user sees in Stripe dashboard)
+    // Also get checkout sessions for additional context
+    const [invoices, sessions] = await Promise.all([
+      stripeInstance.invoices.list({
+        limit: parseInt(limit),
+        expand: ['data.customer', 'data.payment_intent', 'data.subscription']
+      }).catch(err => {
+        console.error('[ADMIN PAYMENTS] Failed to fetch invoices:', err.message);
+        throw err;
+      }),
+      stripeInstance.checkout.sessions.list({
+        limit: parseInt(limit),
+        starting_after: starting_after || undefined,
+        expand: ['data.customer']
+      }).catch(err => {
+        console.warn('[ADMIN PAYMENTS] Failed to fetch checkout sessions:', err.message);
+        return { data: [] };
+      })
+    ]);
+    
+    console.log(`[ADMIN PAYMENTS] Found ${invoices.data.length} invoices and ${sessions.data.length} sessions from Stripe`);
+    
+    // Create a map of sessions by customer email for easier lookup
+    const sessionMap = new Map();
+    sessions.data.forEach(session => {
+      if (session.customer_email) {
+        if (!sessionMap.has(session.customer_email)) {
+          sessionMap.set(session.customer_email, []);
+        }
+        sessionMap.get(session.customer_email).push(session);
+      }
     });
 
-    // Enrich sessions with user data from database
+    // Enrich invoices with user data from database and session info
     const enrichedSessions = await Promise.all(
-      sessions.data.map(async (session) => {
+      invoices.data.map(async (invoice) => {
         let user = null;
         let userId = null;
 
-        // Try to get user from customer_email or metadata
-        if (session.customer_email) {
+        // Try to get user from customer_email
+        if (invoice.customer_email) {
           user = await prisma.user.findFirst({
-            where: { email: session.customer_email },
+            where: { email: invoice.customer_email },
             select: {
               id: true,
               fullName: true,
@@ -1118,19 +1159,29 @@ r.get('/admin/sessions', auth(true, ['ADMIN']), async (req, res, next) => {
           if (user) userId = user.id;
         }
 
-        // Also check metadata for userId
-        if (session.metadata?.userId) {
-          userId = session.metadata.userId;
+        // Also check customer object if available
+        if (invoice.customer && typeof invoice.customer === 'object' && invoice.customer.email) {
           if (!user) {
-            user = await prisma.user.findUnique({
-              where: { id: session.metadata.userId },
+            user = await prisma.user.findFirst({
+              where: { email: invoice.customer.email },
               select: {
                 id: true,
                 fullName: true,
                 email: true
               }
             });
+            if (user) userId = user.id;
           }
+        }
+        
+        // Try to find matching checkout session
+        let matchingSession = null;
+        if (invoice.customer_email && sessionMap.has(invoice.customer_email)) {
+          // Find session with similar amount and date
+          matchingSession = sessionMap.get(invoice.customer_email).find(s => 
+            Math.abs(s.amount_total - invoice.amount_paid) < 100 && 
+            Math.abs(s.created - invoice.created) < 3600 // Within 1 hour
+          );
         }
 
         // Get subscription info if available
@@ -1144,23 +1195,42 @@ r.get('/admin/sessions', auth(true, ['ADMIN']), async (req, res, next) => {
             }
           });
         }
+        
+        // Extract plan from invoice description or subscription
+        let plan = null;
+        if (invoice.description) {
+          const planMatch = invoice.description.match(/(PRO|PREMIUM|BASIC|TRIAL)/i);
+          if (planMatch) plan = planMatch[1].toUpperCase();
+        }
+        if (!plan && invoice.subscription && typeof invoice.subscription === 'object') {
+          // Try to get plan from subscription metadata
+          plan = invoice.subscription.metadata?.plan || null;
+        }
+        if (!plan && subscription) {
+          plan = subscription.plan;
+        }
 
         return {
-          id: session.id,
+          id: invoice.id,
+          invoiceNumber: invoice.number,
           userId: userId,
           user: user,
-          customerEmail: session.customer_email,
-          plan: session.metadata?.plan || subscription?.plan || null,
+          customerEmail: invoice.customer_email || (invoice.customer && typeof invoice.customer === 'object' ? invoice.customer.email : null),
+          plan: plan || matchingSession?.metadata?.plan || null,
           credits: subscription?.creditsBalance || null,
-          paymentStatus: session.payment_status,
-          status: session.status,
-          amountTotal: session.amount_total,
-          currency: session.currency,
-          createdAt: session.created,
-          completedAt: session.completed_at,
-          expiresAt: session.expires_at,
-          paymentIntent: session.payment_intent,
-          subscription: session.subscription
+          paymentStatus: invoice.status === 'paid' ? 'paid' : (invoice.status === 'open' ? 'unpaid' : invoice.status),
+          status: invoice.status,
+          amountTotal: invoice.amount_paid || invoice.total,
+          currency: invoice.currency,
+          createdAt: invoice.created,
+          dueDate: invoice.due_date,
+          hostedInvoiceUrl: invoice.hosted_invoice_url,
+          invoicePdf: invoice.invoice_pdf,
+          paymentIntent: invoice.payment_intent,
+          subscription: invoice.subscription,
+          description: invoice.description,
+          // Include session info if available
+          sessionId: matchingSession?.id || null
         };
       })
     );
