@@ -106,10 +106,37 @@ jobs:
             --query "taskDefinition" --output json > td.json
 
           jq 'del(.status,.requiresAttributes,.compatibilities,.revision,.registeredAt,.registeredBy,.deregisteredAt,.taskDefinitionArn,.tags,.inferenceAccelerators)' td.json > td_clean.json
+          
+          echo "Current executionRoleArn:"
+          jq '.executionRoleArn // "NOT SET"' td_clean.json
+          
+          echo "Current taskRoleArn:"
+          jq '.taskRoleArn // "NOT SET"' td_clean.json
+
+      - name: Verify Stripe secrets exist in Secrets Manager
+        run: |
+          SECRET_ARN="arn:aws:secretsmanager:eu-north-1:666203386231:secret:uslugar/stripe-keys-4X5yVg"
+          echo "Checking if secret exists: $SECRET_ARN"
+          if aws secretsmanager describe-secret --secret-id "$SECRET_ARN" >/dev/null 2>&1; then
+            echo "✅ Secret exists in Secrets Manager"
+            aws secretsmanager get-secret-value --secret-id "$SECRET_ARN" --query "SecretString" --output text | jq -r 'keys[]' || echo "⚠️ Could not parse secret keys"
+          else
+            echo "❌ Secret does not exist in Secrets Manager!"
+            echo "Please create the secret: $SECRET_ARN"
+            echo "With keys: STRIPE_SECRET_KEY, STRIPE_PUBLISHABLE_KEY"
+            exit 1
+          fi
 
       - name: Replace image in TD and add environment variables
         run: |
+          echo "Current container secrets before update:"
+          jq '.containerDefinitions[] | select(.name == "${{ env.CONTAINER_NAME }}") | .secrets // []' td_clean.json || echo "No secrets found"
+          
           jq --arg NAME "${{ env.CONTAINER_NAME }}" --arg IMG "${IMAGE_URI}" '
+            # Ensure executionRoleArn exists (required for secrets from Secrets Manager)
+            if (.executionRoleArn == null or .executionRoleArn == "") then
+              .executionRoleArn = "arn:aws:iam::666203386231:role/ecsTaskExecutionRole"
+            else . end |
             # Ensure taskRoleArn exists (for S3 access)
             if (.taskRoleArn == null or .taskRoleArn == "") then
               .taskRoleArn = "arn:aws:iam::666203386231:role/ecsTaskRole"
@@ -139,7 +166,7 @@ jobs:
                     "value": "eu-north-1"
                   }
                 ]) |
-                # Add Stripe secrets if not already present
+                # Remove existing Stripe secrets and add new ones
                 .secrets = ((.secrets // []) | 
                   map(select(.name != "STRIPE_SECRET_KEY" and .name != "STRIPE_PUBLISHABLE_KEY")) +
                   [
@@ -155,6 +182,9 @@ jobs:
               else . end
             ))
           ' td_clean.json > td_new.json
+          
+          echo "Container secrets after update:"
+          jq '.containerDefinitions[] | select(.name == "${{ env.CONTAINER_NAME }}") | .secrets' td_new.json || echo "No secrets found"
 
       - name: Register new TD revision
         run: |
