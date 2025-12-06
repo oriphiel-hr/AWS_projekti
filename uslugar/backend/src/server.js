@@ -549,6 +549,65 @@ async function ensureReviewFields() {
 }
 await ensureReviewFields()
 
+// Auto-fix: Ensure ChatRoom fields exist (isLocked, lockedAt, etc.)
+async function ensureChatRoomFields() {
+  try {
+    // Try to query ChatRoom with isLocked - if fails, column doesn't exist
+    await prisma.$queryRaw`SELECT "isLocked" FROM "ChatRoom" LIMIT 1`
+    console.log('✅ ChatRoom fields (isLocked, lockedAt, etc.) exist')
+  } catch (error) {
+    if (error.message.includes('does not exist')) {
+      console.log('🔧 Adding missing ChatRoom fields...')
+      try {
+        // THREAD LOCKING
+        await prisma.$executeRaw`ALTER TABLE "ChatRoom" ADD COLUMN IF NOT EXISTS "isLocked" BOOLEAN NOT NULL DEFAULT false`
+        await prisma.$executeRaw`ALTER TABLE "ChatRoom" ADD COLUMN IF NOT EXISTS "lockedAt" TIMESTAMP(3)`
+        await prisma.$executeRaw`ALTER TABLE "ChatRoom" ADD COLUMN IF NOT EXISTS "lockedReason" TEXT`
+        await prisma.$executeRaw`ALTER TABLE "ChatRoom" ADD COLUMN IF NOT EXISTS "unlockedUntil" TIMESTAMP(3)`
+        await prisma.$executeRaw`ALTER TABLE "ChatRoom" ADD COLUMN IF NOT EXISTS "lastActivityAt" TIMESTAMP(3)`
+        await prisma.$executeRaw`ALTER TABLE "ChatRoom" ADD COLUMN IF NOT EXISTS "lockedById" TEXT`
+        
+        // CHAT-BOT
+        await prisma.$executeRaw`ALTER TABLE "ChatRoom" ADD COLUMN IF NOT EXISTS "isBotRoom" BOOLEAN NOT NULL DEFAULT false`
+        
+        // SUPPORT CHAT
+        await prisma.$executeRaw`ALTER TABLE "ChatRoom" ADD COLUMN IF NOT EXISTS "isSupportRoom" BOOLEAN NOT NULL DEFAULT false`
+        
+        // Add foreign key constraint for lockedById if it doesn't exist
+        try {
+          await prisma.$executeRaw`
+            DO $$
+            BEGIN
+              IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint 
+                WHERE conname = 'ChatRoom_lockedById_fkey'
+              ) THEN
+                ALTER TABLE "ChatRoom" 
+                ADD CONSTRAINT "ChatRoom_lockedById_fkey" 
+                FOREIGN KEY ("lockedById") 
+                REFERENCES "User"("id") 
+                ON DELETE SET NULL 
+                ON UPDATE CASCADE;
+              END IF;
+            END $$;
+          `
+        } catch (fkError) {
+          console.log('⚠️  Foreign key constraint may already exist or failed:', fkError.message)
+        }
+        
+        // Create indexes if they don't exist
+        await prisma.$executeRaw`CREATE INDEX IF NOT EXISTS "ChatRoom_isLocked_idx" ON "ChatRoom"("isLocked")`
+        await prisma.$executeRaw`CREATE INDEX IF NOT EXISTS "ChatRoom_lastActivityAt_idx" ON "ChatRoom"("lastActivityAt")`
+        
+        console.log('✅ ChatRoom fields added successfully')
+      } catch (e) {
+        console.error('⚠️  Failed to add ChatRoom fields:', e.message)
+      }
+    }
+  }
+}
+await ensureChatRoomFields()
+
 // Start Queue Scheduler (checks expired offers every hour)
 startQueueScheduler()
 
