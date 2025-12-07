@@ -66,26 +66,29 @@ export default function AdminRouter(){
 
   // Detektiraj hash linkove koji nisu dio admin panela i preusmjeri na glavnu aplikaciju
   useEffect(() => {
-    const handleHashChange = () => {
-      const hash = window.location.hash?.slice(1).split('?')[0];
-      if (!hash) return;
-      
-      // Admin panel rute (hash-ovi koji su dio admin panela)
-      const adminHashRoutes = ['admin'];
-      // Admin panel path rute (koje se koriste u BrowserRouter)
-      const adminPathRoutes = ['payments', 'provider-approvals', 'kyc-metrics', 'verification-documents', 
-                               'platform-stats', 'moderation', 'sms-logs', 'invoices', 
-                               'users-overview', 'cleanup', 'testing', 'database', 'api-reference', 'user-types'];
-      
-      // Provjeri da li je hash dio admin panela
+    // Admin panel rute (hash-ovi koji su dio admin panela)
+    const adminHashRoutes = ['admin'];
+    // Admin panel path rute (koje se koriste u BrowserRouter)
+    const adminPathRoutes = ['payments', 'provider-approvals', 'kyc-metrics', 'verification-documents', 
+                             'platform-stats', 'moderation', 'sms-logs', 'invoices', 
+                             'users-overview', 'cleanup', 'testing', 'database', 'api-reference', 'user-types'];
+    
+    const isAdminRoute = (hash) => {
+      if (!hash) return false;
       const isAdminHash = adminHashRoutes.includes(hash) || hash.startsWith('admin/');
       const isAdminPath = adminPathRoutes.some(route => hash === route);
+      return isAdminHash || isAdminPath;
+    };
+
+    const handleHashChange = () => {
+      const hash = window.location.hash?.slice(1).split('?')[0];
+      const pathname = window.location.pathname;
       
-      // Ako hash postoji i NIJE dio admin panela, preusmjeri na glavnu aplikaciju
-      if (!isAdminHash && !isAdminPath) {
+      // Ako smo u admin panelu (pathname sadrži /admin/) i hash NIJE dio admin panela
+      if (pathname.includes('/admin/') && hash && !isAdminRoute(hash)) {
         // Resetiraj pathname na root i postavi hash
         const query = window.location.search;
-        window.location.href = `/${window.location.hash}${query}`;
+        window.location.replace(`/${window.location.hash}${query}`);
       }
     };
 
@@ -96,18 +99,12 @@ export default function AdminRouter(){
         const href = target.getAttribute('href');
         if (href && href.startsWith('#')) {
           const hash = href.slice(1).split('?')[0];
-          // Admin panel rute
-          const adminHashRoutes = ['admin'];
-          const adminPathRoutes = ['payments', 'provider-approvals', 'kyc-metrics', 'verification-documents', 
-                                   'platform-stats', 'moderation', 'sms-logs', 'invoices', 
-                                   'users-overview', 'cleanup', 'testing', 'database', 'api-reference', 'user-types'];
+          const pathname = window.location.pathname;
           
-          const isAdminHash = adminHashRoutes.includes(hash) || hash.startsWith('admin/');
-          const isAdminPath = adminPathRoutes.some(route => hash === route);
-          
-          // Ako hash NIJE dio admin panela, resetiraj pathname
-          if (!isAdminHash && !isAdminPath) {
+          // Ako smo u admin panelu i hash NIJE dio admin panela, resetiraj pathname
+          if (pathname.includes('/admin/') && !isAdminRoute(hash)) {
             e.preventDefault();
+            e.stopPropagation();
             const query = window.location.search;
             window.location.href = `/${href}${query}`;
           }
@@ -120,11 +117,11 @@ export default function AdminRouter(){
     
     // Slušaj hash promjene i klikove
     window.addEventListener('hashchange', handleHashChange);
-    document.addEventListener('click', handleClick);
+    document.addEventListener('click', handleClick, true); // Use capture phase
     
     return () => {
       window.removeEventListener('hashchange', handleHashChange);
-      document.removeEventListener('click', handleClick);
+      document.removeEventListener('click', handleClick, true);
     };
   }, []);
 
