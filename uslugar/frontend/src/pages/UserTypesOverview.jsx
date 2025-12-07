@@ -233,6 +233,83 @@ export default function UserTypesOverview() {
         </div>
       </div>
 
+      {/* Značke */}
+      {data.badges && (
+        <div className="mb-12">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Značke Pružatelja</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* BUSINESS Badge */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                  <span className="text-2xl">🏢</span>
+                  Business Badge
+                </h3>
+                <span className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                  {data.badges.business.total}
+                </span>
+              </div>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                {data.badges.business.description}
+              </p>
+            </div>
+
+            {/* IDENTITY Badge */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                  <span className="text-2xl">🆔</span>
+                  Identity Badge
+                </h3>
+                <span className="text-3xl font-bold text-purple-600 dark:text-purple-400">
+                  {data.badges.identity.total}
+                </span>
+              </div>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                {data.badges.identity.description}
+              </p>
+              <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
+                <div>📧 Email: {data.badges.identity.email}</div>
+                <div>📱 Telefon: {data.badges.identity.phone}</div>
+                <div>🌐 DNS: {data.badges.identity.dns}</div>
+              </div>
+            </div>
+
+            {/* SAFETY Badge */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                  <span className="text-2xl">🛡️</span>
+                  Safety Badge
+                </h3>
+                <span className="text-3xl font-bold text-green-600 dark:text-green-400">
+                  {data.badges.safety.total}
+                </span>
+              </div>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                {data.badges.safety.description}
+              </p>
+            </div>
+
+            {/* All Badges Summary */}
+            <div className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-lg shadow-md p-6 border-2 border-indigo-200 dark:border-indigo-700">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                  <span className="text-2xl">⭐</span>
+                  Ukupno
+                </h3>
+                <span className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">
+                  {data.badges.allBadges.total}
+                </span>
+              </div>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                {data.badges.allBadges.description}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Reputacija */}
       {data.reputation && data.reputation.totalProviders > 0 && (
         <div className="mb-12">

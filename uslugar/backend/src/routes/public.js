@@ -18,6 +18,12 @@ r.get('/user-types-overview', async (req, res, next) => {
           select: {
             legalStatusId: true,
             companyName: true,
+            kycVerified: true,
+            badgeData: true,
+            identityEmailVerified: true,
+            identityPhoneVerified: true,
+            identityDnsVerified: true,
+            safetyInsuranceUrl: true,
             licenses: {
               select: {
                 isVerified: true,
@@ -217,6 +223,51 @@ r.get('/user-types-overview', async (req, res, next) => {
         withLicenses: users.filter(u => u.providerProfile?.licenses.length > 0).length,
         verifiedLicenses: users.filter(u => u.providerProfile?.licenses.some(l => l.isVerified)).length,
         pendingVerification: users.filter(u => u.providerProfile?.licenses.some(l => !l.isVerified)).length
+      },
+      badges: {
+        business: {
+          total: users.filter(u => {
+            const profile = u.providerProfile;
+            if (!profile) return false;
+            // BUSINESS badge: kycVerified ili badgeData.BUSINESS.verified
+            return profile.kycVerified || 
+                   (profile.badgeData && typeof profile.badgeData === 'object' && profile.badgeData.BUSINESS?.verified);
+          }).length,
+          description: 'Pružatelji s verificiranom tvrtkom (Sudski/Obrtni registar)'
+        },
+        identity: {
+          total: users.filter(u => {
+            const profile = u.providerProfile;
+            if (!profile) return false;
+            // IDENTITY badge: barem jedna od email/phone/DNS verifikacija
+            return profile.identityEmailVerified || 
+                   profile.identityPhoneVerified || 
+                   profile.identityDnsVerified;
+          }).length,
+          email: users.filter(u => u.providerProfile?.identityEmailVerified).length,
+          phone: users.filter(u => u.providerProfile?.identityPhoneVerified).length,
+          dns: users.filter(u => u.providerProfile?.identityDnsVerified).length,
+          description: 'Pružatelji s verificiranim identitetom (email/telefon/domena)'
+        },
+        safety: {
+          total: users.filter(u => u.providerProfile?.safetyInsuranceUrl).length,
+          description: 'Pružatelji s uploadanom policom osiguranja'
+        },
+        allBadges: {
+          total: users.filter(u => {
+            const profile = u.providerProfile;
+            if (!profile) return false;
+            // Ima barem jednu značku
+            const hasBusiness = profile.kycVerified || 
+                               (profile.badgeData && typeof profile.badgeData === 'object' && profile.badgeData.BUSINESS?.verified);
+            const hasIdentity = profile.identityEmailVerified || 
+                               profile.identityPhoneVerified || 
+                               profile.identityDnsVerified;
+            const hasSafety = !!profile.safetyInsuranceUrl;
+            return hasBusiness || hasIdentity || hasSafety;
+          }).length,
+          description: 'Pružatelji s barem jednom značkom'
+        }
       }
     });
   } catch (e) {
