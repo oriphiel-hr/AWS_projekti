@@ -351,16 +351,6 @@ export default function App(){
             👥 Tipovi Korisnika
           </button>
 
-          {/* Direct Registration Links */}
-          {!token && (
-            <button
-              className={'px-3 py-2 border rounded transition-colors ' + (tab==='register-user' ? 'bg-green-600 text-white' : 'border-green-600 text-green-600 hover:bg-green-50 dark:border-green-500 dark:text-green-400 dark:hover:bg-green-900/20')}
-              onClick={() => setTab('register-user')}
-            >
-              👤 Registracija
-            </button>
-          )}
-
           {/* Dropdown Menus */}
           {!token && (
             <>
@@ -370,6 +360,12 @@ export default function App(){
                   onClick={() => { setTab('login'); }}
                 >
                   🔑 Prijava
+                </button>
+                <button
+                  className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"
+                  onClick={() => { setTab('register-user'); }}
+                >
+                  👤 Registracija
                 </button>
               </DropdownMenu>
 
