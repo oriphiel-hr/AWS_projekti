@@ -66,21 +66,27 @@ export default function AdminRouter(){
 
   // Detektiraj hash linkove koji nisu dio admin panela i preusmjeri na glavnu aplikaciju
   useEffect(() => {
+    if (!isAuthenticated) return; // Ne radi provjere dok korisnik nije autentificiran
+    
     // Admin panel rute (hash-ovi koji su dio admin panela)
     const adminHashRoutes = ['admin'];
     // Admin panel path rute (koje se koriste u BrowserRouter)
     const adminPathRoutes = ['payments', 'provider-approvals', 'kyc-metrics', 'verification-documents', 
                              'platform-stats', 'moderation', 'sms-logs', 'invoices', 
                              'users-overview', 'cleanup', 'testing', 'database', 'api-reference', 'user-types'];
+    // Dodaj sve MODELS kao admin rute
+    const adminModelRoutes = MODELS.map(m => m.toLowerCase());
     
     const isAdminRoute = (hash) => {
       if (!hash) return false;
-      const isAdminHash = adminHashRoutes.includes(hash) || hash.startsWith('admin/');
-      const isAdminPath = adminPathRoutes.some(route => hash === route);
-      return isAdminHash || isAdminPath;
+      const hashLower = hash.toLowerCase();
+      const isAdminHash = adminHashRoutes.includes(hashLower) || hashLower.startsWith('admin/');
+      const isAdminPath = adminPathRoutes.some(route => hashLower === route);
+      const isAdminModel = adminModelRoutes.some(model => hashLower === model);
+      return isAdminHash || isAdminPath || isAdminModel;
     };
 
-    const handleHashChange = () => {
+    const checkAndRedirect = () => {
       const hash = window.location.hash?.slice(1).split('?')[0];
       const pathname = window.location.pathname;
       
@@ -88,8 +94,11 @@ export default function AdminRouter(){
       if (pathname.includes('/admin/') && hash && !isAdminRoute(hash)) {
         // Resetiraj pathname na root i postavi hash
         const query = window.location.search;
-        window.location.replace(`/${window.location.hash}${query}`);
+        const newUrl = `/${window.location.hash}${query}`;
+        window.location.replace(newUrl);
+        return true; // Redirected
       }
+      return false; // No redirect needed
     };
 
     // Interceptiraj klikove na hash linkove
@@ -106,14 +115,30 @@ export default function AdminRouter(){
             e.preventDefault();
             e.stopPropagation();
             const query = window.location.search;
-            window.location.href = `/${href}${query}`;
+            window.location.replace(`/${href}${query}`);
+            return;
           }
         }
       }
     };
 
-    // Provjeri trenutni hash pri učitavanju
-    handleHashChange();
+    // Provjeri trenutni URL pri učitavanju (samo jednom)
+    const initialCheck = () => {
+      if (checkAndRedirect()) {
+        return; // Redirected
+      }
+    };
+    
+    // Provjeri odmah nakon što se komponenta učita
+    initialCheck();
+    
+    // Slušaj hash promjene
+    const handleHashChange = () => {
+      // Dodaj malu delay da se hash promjena potpuno primijeni
+      setTimeout(() => {
+        checkAndRedirect();
+      }, 10);
+    };
     
     // Slušaj hash promjene i klikove
     window.addEventListener('hashchange', handleHashChange);
@@ -123,7 +148,7 @@ export default function AdminRouter(){
       window.removeEventListener('hashchange', handleHashChange);
       document.removeEventListener('click', handleClick, true);
     };
-  }, []);
+  }, [isAuthenticated]);
 
   const handleLogin = (token, userData) => {
     setIsAuthenticated(true);
@@ -178,6 +203,8 @@ export default function AdminRouter(){
           <Route path="/admin/database" element={<AdminDatabaseEditor />} />
           <Route path="/admin/api-reference" element={<AdminApiReference />} />
           <Route path="/admin/user-types" element={<UserTypesOverview isAdmin={true} />} />
+          {/* Fallback ruta za nepoznate admin rute - redirect na prvi model */}
+          <Route path="/admin/*" element={<Navigate to={`/admin/${MODELS[0]}`} replace />} />
         </Route>
       </Routes>
     </BrowserRouter>
