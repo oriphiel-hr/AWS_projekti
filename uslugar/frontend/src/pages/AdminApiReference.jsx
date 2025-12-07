@@ -265,6 +265,12 @@ const AdminApiReference = () => {
                     {isExpanded && (
                       <div className="px-6 py-4 bg-gray-50 border-t">
                         <div className="space-y-2 text-sm">
+                          {route.description && (
+                            <div className="mb-3 pb-3 border-b">
+                              <span className="font-semibold text-gray-700 block mb-1">📝 Opis:</span>
+                              <p className="text-gray-700 text-sm leading-relaxed">{route.description}</p>
+                            </div>
+                          )}
                           <div>
                             <span className="font-semibold text-gray-700">Method:</span>
                             <span className="ml-2 text-gray-900">{route.method}</span>
@@ -421,6 +427,12 @@ const AdminApiReference = () => {
                     {isExpanded && (
                       <div className="px-6 py-4 bg-gray-50 border-t">
                         <div className="space-y-2 text-sm">
+                          {route.description && (
+                            <div className="mb-3 pb-3 border-b">
+                              <span className="font-semibold text-gray-700 block mb-1">📝 Opis:</span>
+                              <p className="text-gray-700 text-sm leading-relaxed">{route.description}</p>
+                            </div>
+                          )}
                           <div>
                             <span className="font-semibold text-gray-700">Method:</span>
                             <span className="ml-2 text-gray-900">{route.method}</span>

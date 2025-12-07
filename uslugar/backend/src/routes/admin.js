@@ -3432,6 +3432,425 @@ r.get('/api-reference', (req, res, next) => {
       return security;
     };
     
+    // Funkcija za generiranje detaljnog opisa API endpointa
+    const getEndpointDescription = (fullPath, method, handler) => {
+      const pathLower = fullPath.toLowerCase();
+      const methodUpper = method.toUpperCase();
+      
+      // Admin endpoints
+      if (pathLower.startsWith('/api/admin')) {
+        if (pathLower.includes('/api-reference')) {
+          return 'Dohvaća kompletan popis svih API endpointa s detaljima o sigurnosti, parametrima i handler-ima. Koristi se za generiranje API dokumentacije u Admin panelu.';
+        }
+        if (pathLower.includes('/cleanup/non-master')) {
+          if (methodUpper === 'GET' && pathLower.includes('/preview')) {
+            return 'Vraća pregled broja redaka u svakoj tablici koji će biti obrisani prije pokretanja čišćenja. Omogućava adminu da vidi koliko će podataka biti obrisano.';
+          }
+          if (methodUpper === 'POST') {
+            return 'Briše sve transakcijske podatke (chat, poslovi, ponude, leadovi, pretplate, fakture, itd.) osim master podataka (kategorije, planovi, ADMIN korisnik, testiranje). Nepovratna akcija.';
+          }
+        }
+        if (pathLower.includes('/payments')) {
+          return 'Upravljanje plaćanjima i transakcijama. Omogućava pregled svih plaćanja, refundova i billing informacija.';
+        }
+        if (pathLower.includes('/provider-approvals')) {
+          return 'Upravljanje odobravanjem provider profila. Omogućava adminu da pregleda i odobri/odbije zahtjeve za provider profil.';
+        }
+        if (pathLower.includes('/kyc-metrics')) {
+          return 'Pregled KYC (Know Your Customer) metrika i statistika. Prikazuje broj verifikacija, status verifikacija i trendove.';
+        }
+        if (pathLower.includes('/verification-documents')) {
+          return 'Upravljanje dokumentima za verifikaciju. Omogućava pregled i odobravanje/odbijanje verifikacijskih dokumenata.';
+        }
+        if (pathLower.includes('/platform-stats')) {
+          return 'Statistike platforme. Prikazuje ukupan broj korisnika, poslova, ponuda, pretplata i drugih metrika.';
+        }
+        if (pathLower.includes('/moderation')) {
+          return 'Moderacija sadržaja. Omogućava pregled i moderaciju recenzija, poruka i drugog korisničkog sadržaja.';
+        }
+        if (pathLower.includes('/sms-logs')) {
+          return 'Pregled SMS logova. Prikazuje sve poslane SMS poruke, njihov status i rezultate.';
+        }
+        if (pathLower.includes('/invoices')) {
+          return 'Upravljanje fakturama. Omogućava pregled, kreiranje i upravljanje fakturama za korisnike.';
+        }
+        if (pathLower.includes('/users-overview')) {
+          return 'Pregled korisnika. Prikazuje sve korisnike s detaljima o njihovim profilima, pretplatama i aktivnostima.';
+        }
+        if (pathLower.includes('/testing')) {
+          return 'Testiranje funkcionalnosti. Omogućava pokretanje testova i provjeru funkcionalnosti sistema.';
+        }
+        if (pathLower.includes('/database')) {
+          return 'Database editor. Omogućava direktan pristup i uređivanje podataka u bazi podataka.';
+        }
+        if (pathLower.includes('/user-types')) {
+          return 'Pregled tipova korisnika. Prikazuje statistike o različitim tipovima korisnika (privatni, poslovni, pružatelji, pretplate).';
+        }
+        if (pathLower.includes('/reports/send-monthly-reports')) {
+          return 'Slanje mjesečnih izvještaja svim aktivnim korisnicima. Pokreće se ručno ili automatski 1. u mjesecu.';
+        }
+        // Generic admin CRUD endpoints
+        if (methodUpper === 'GET' && !pathLower.includes('/')) {
+          return 'Dohvaća listu svih zapisa iz admin panela. Podržava paginaciju i filtriranje.';
+        }
+        if (methodUpper === 'GET' && pathLower.match(/\/[^\/]+$/)) {
+          return 'Dohvaća pojedinačni zapis po ID-u. Vraća sve detalje zapisa uključujući povezane podatke.';
+        }
+        if (methodUpper === 'POST') {
+          return 'Kreira novi zapis. Validira podatke i provjerava dozvole prije kreiranja.';
+        }
+        if (methodUpper === 'PUT' || methodUpper === 'PATCH') {
+          return 'Ažurira postojeći zapis. Validira podatke i provjerava ownership prije ažuriranja.';
+        }
+        if (methodUpper === 'DELETE') {
+          return 'Briše zapis. Provjerava dozvole i cascade delete povezanih podataka.';
+        }
+        return 'Admin endpoint za upravljanje podacima.';
+      }
+      
+      // Auth endpoints
+      if (pathLower.startsWith('/api/auth')) {
+        if (pathLower.includes('/login')) {
+          return 'Prijava korisnika. Provjerava credentials i vraća JWT token. Podržava različite role (USER, PROVIDER, ADMIN).';
+        }
+        if (pathLower.includes('/register')) {
+          return 'Registracija novog korisnika. Kreira User zapis i opcionalno ProviderProfile ako je role PROVIDER. Validira email jedinstvenost i pravni status.';
+        }
+        if (pathLower.includes('/me')) {
+          return 'Dohvaća podatke trenutno prijavljenog korisnika. Vraća user podatke, profil, pretplatu i povezane informacije.';
+        }
+        if (pathLower.includes('/logout')) {
+          return 'Odjava korisnika. Invalidira token i čisti session podatke.';
+        }
+        if (pathLower.includes('/verify-email')) {
+          return 'Verifikacija email adrese. Aktivira korisnički račun nakon što korisnik klikne na link u email-u.';
+        }
+        if (pathLower.includes('/forgot-password')) {
+          return 'Zaboravljena lozinka. Šalje email s linkom za reset lozinke.';
+        }
+        if (pathLower.includes('/reset-password')) {
+          return 'Reset lozinke. Postavlja novu lozinku koristeći token iz email-a.';
+        }
+        return 'Autentifikacija i autorizacija korisnika.';
+      }
+      
+      // Jobs endpoints
+      if (pathLower.startsWith('/api/jobs')) {
+        if (methodUpper === 'GET' && !pathLower.includes('/')) {
+          return 'Dohvaća listu poslova. Podržava filtriranje po kategoriji, lokaciji, statusu i drugim kriterijima.';
+        }
+        if (methodUpper === 'GET' && pathLower.includes('/for-provider')) {
+          return 'Dohvaća poslove relevantne za providera. Filtrira po kategorijama providera i udaljenosti.';
+        }
+        if (methodUpper === 'POST') {
+          return 'Kreira novi posao. Validira kategoriju, geolokaciju i podatke prije kreiranja.';
+        }
+        if (pathLower.includes('/accept')) {
+          return 'Prihvaća ponudu na posao. Mijenja status posla na IN_PROGRESS i kreira chat sobu.';
+        }
+        if (pathLower.includes('/complete')) {
+          return 'Označava posao kao završen. Mijenja status posla na COMPLETED i omogućava recenzije.';
+        }
+        if (methodUpper === 'PUT' || methodUpper === 'PATCH') {
+          return 'Ažurira postojeći posao. Provjerava ownership i validira podatke prije ažuriranja.';
+        }
+        if (methodUpper === 'DELETE') {
+          return 'Briše posao. Provjerava ownership i briše povezane ponude i chat sobe.';
+        }
+        return 'Upravljanje poslovima (jobs).';
+      }
+      
+      // Offers endpoints
+      if (pathLower.startsWith('/api/offers')) {
+        if (methodUpper === 'POST') {
+          return 'Kreira novu ponudu na posao. Zahtijeva kredite (osim PRO plan) i provjerava da posao nije vlastiti.';
+        }
+        if (pathLower.includes('/accept')) {
+          return 'Prihvaća ponudu. Mijenja status ponude na ACCEPTED i automatski prihvaća posao.';
+        }
+        if (methodUpper === 'PUT' || methodUpper === 'PATCH') {
+          return 'Ažurira ponudu. Provjerava ownership i validira podatke prije ažuriranja.';
+        }
+        if (methodUpper === 'DELETE') {
+          return 'Briše ponudu. Provjerava ownership i vraća kredite ako je potrebno.';
+        }
+        return 'Upravljanje ponudama (offers) na poslove.';
+      }
+      
+      // Providers endpoints
+      if (pathLower.startsWith('/api/providers')) {
+        if (methodUpper === 'GET' && !pathLower.match(/\/[^\/]+$/)) {
+          return 'Dohvaća listu pružatelja usluga. Podržava filtriranje po kategorijama, lokaciji i drugim kriterijima.';
+        }
+        if (methodUpper === 'GET' && pathLower.match(/\/[^\/]+$/)) {
+          return 'Dohvaća detalje pojedinačnog pružatelja. Vraća profil, recenzije, licence i povezane informacije.';
+        }
+        if (methodUpper === 'POST') {
+          return 'Kreira novi provider profil. Zahtijeva PROVIDER role i validni pravni status.';
+        }
+        if (methodUpper === 'PUT' || methodUpper === 'PATCH') {
+          return 'Ažurira provider profil. Provjerava ownership i validira kategorije prije ažuriranja.';
+        }
+        if (methodUpper === 'DELETE') {
+          return 'Briše provider profil. Provjerava ownership i briše povezane podatke.';
+        }
+        return 'Upravljanje provider profilima.';
+      }
+      
+      // Chat endpoints
+      if (pathLower.startsWith('/api/chat')) {
+        if (pathLower.includes('/rooms') && methodUpper === 'GET') {
+          return 'Dohvaća listu chat soba za korisnika. Vraća sve sobe u kojima je korisnik sudionik.';
+        }
+        if (pathLower.includes('/rooms') && methodUpper === 'POST') {
+          return 'Kreira novu chat sobu. Zahtijeva da posao ima prihvaćenu ponudu.';
+        }
+        if (pathLower.includes('/messages')) {
+          if (methodUpper === 'GET') {
+            return 'Dohvaća poruke iz chat sobe. Podržava paginaciju i filtriranje.';
+          }
+          if (methodUpper === 'POST') {
+            return 'Šalje novu poruku u chat sobu. Provjerava da je korisnik sudionik sobe.';
+          }
+        }
+        if (pathLower.includes('/read')) {
+          return 'Označava poruke kao pročitane. Automatski ažurira read status za korisnika.';
+        }
+        if (pathLower.includes('/internal')) {
+          return 'Internal chat za PROVIDER role. Omogućava grupne sobe i komunikaciju unutar tima.';
+        }
+        return 'Upravljanje chat sobama i porukama.';
+      }
+      
+      // Exclusive leads endpoints
+      if (pathLower.startsWith('/api/exclusive')) {
+        if (pathLower.includes('/leads') && methodUpper === 'GET') {
+          return 'Dohvaća listu dostupnih ekskluzivnih leadova. Filtrira po kategorijama, lokaciji i statusu.';
+        }
+        if (pathLower.includes('/purchase')) {
+          return 'Kupuje ekskluzivni lead. Zahtijeva kredite ili Stripe Payment Intent. Dodjeljuje lead samo jednom provideru.';
+        }
+        if (pathLower.includes('/create-payment-intent')) {
+          return 'Kreira Stripe Payment Intent za kupovinu leada. Omogućava plaćanje kreditnom karticom.';
+        }
+        if (pathLower.includes('/contacted')) {
+          return 'Označava lead kao kontaktiran. Ažurira ROI statistiku i status leada.';
+        }
+        if (pathLower.includes('/converted')) {
+          return 'Označava lead kao konvertiran (uspešan). Ažurira ROI statistiku i status leada.';
+        }
+        if (pathLower.includes('/refund')) {
+          return 'Zahtijeva refund za lead. Zahtijeva admin odobrenje i validaciju razloga.';
+        }
+        return 'Upravljanje ekskluzivnim leadovima.';
+      }
+      
+      // Lead queue endpoints
+      if (pathLower.startsWith('/api/lead-queue') || pathLower.includes('/my-offers') || pathLower.includes('/my-queue')) {
+        if (pathLower.includes('/my-offers') || pathLower === '/api/my-offers') {
+          return 'Dohvaća aktivne ponude u queueu za providera. Vraća samo ponude koje nisu istekle.';
+        }
+        if (pathLower.includes('/my-queue') || pathLower === '/api/my-queue') {
+          return 'Dohvaća povijest queue ponuda za providera. Vraća sve ponude koje je provider dobio.';
+        }
+        if (pathLower.includes('/respond')) {
+          return 'Odgovara na queue ponudu. Prihvaća ili odbija ponudu u queueu.';
+        }
+        return 'Upravljanje lead queue sistemom.';
+      }
+      
+      // Subscriptions endpoints
+      if (pathLower.startsWith('/api/subscriptions')) {
+        if (pathLower.includes('/subscribe')) {
+          return 'Pretplaćuje korisnika na plan. Zahtijeva Stripe Payment Intent ili postojeće kredite.';
+        }
+        if (pathLower.includes('/cancel')) {
+          return 'Otkazuje pretplatu. Pretplata se neće obnoviti nakon isteka, ali ostaje aktivan do kraja perioda.';
+        }
+        if (methodUpper === 'GET') {
+          return 'Dohvaća informacije o pretplati korisnika. Vraća trenutni plan, status i billing informacije.';
+        }
+        if (pathLower.includes('/downgrade') || pathLower.includes('/check-expiring')) {
+          return 'Automatski downgrade isteklih pretplata na BASIC. Pokreće se iz scheduled job-a.';
+        }
+        return 'Upravljanje pretplatama.';
+      }
+      
+      // Payments endpoints
+      if (pathLower.startsWith('/api/payments')) {
+        if (pathLower.includes('/create-checkout')) {
+          return 'Kreira Stripe Checkout Session za plaćanje. Podržava popuste za nove korisnike i upgrade/downgrade.';
+        }
+        if (pathLower.includes('/webhook')) {
+          return 'Stripe webhook endpoint. Prima notifikacije o plaćanjima i ažurira pretplate automatski.';
+        }
+        if (methodUpper === 'GET') {
+          return 'Dohvaća povijest plaćanja korisnika. Vraća sve transakcije i billing informacije.';
+        }
+        return 'Upravljanje plaćanjima i transakcijama.';
+      }
+      
+      // Reviews endpoints
+      if (pathLower.startsWith('/api/reviews')) {
+        if (methodUpper === 'POST') {
+          return 'Kreira novu recenziju. Zahtijeva da je posao COMPLETED i provjerava da korisnik već nije recenzirao. AI automatska moderacija.';
+        }
+        if (pathLower.includes('/reply')) {
+          return 'Odgovara na recenziju. Omogućava provideru da odgovori na recenziju jednom.';
+        }
+        if (methodUpper === 'GET') {
+          return 'Dohvaća recenzije. Vraća samo objavljene i odobrene recenzije (osim admin/vlasnik).';
+        }
+        if (pathLower.includes('/publish')) {
+          return 'Automatski objavljuje recenzije čiji je reciprocal delay istekao. Pokreće se iz scheduled job-a.';
+        }
+        return 'Upravljanje recenzijama.';
+      }
+      
+      // Notifications endpoints
+      if (pathLower.startsWith('/api/notifications')) {
+        if (methodUpper === 'GET') {
+          return 'Dohvaća notifikacije korisnika. Podržava filtriranje po tipu i statusu (pročitano/nepročitano).';
+        }
+        if (pathLower.includes('/read')) {
+          return 'Označava notifikacije kao pročitane. Ažurira read status za odabrane notifikacije.';
+        }
+        return 'Upravljanje notifikacijama.';
+      }
+      
+      // KYC endpoints
+      if (pathLower.startsWith('/api/kyc')) {
+        if (pathLower.includes('/upload-document')) {
+          return 'Upload KYC dokumenta. Validira format (PDF, JPG, PNG) i automatski provjerava OIB i naziv tvrtke.';
+        }
+        if (methodUpper === 'GET') {
+          return 'Dohvaća KYC dokumente i status verifikacije. Vraća sve dokumente za providera.';
+        }
+        return 'Upravljanje KYC verifikacijom.';
+      }
+      
+      // Support endpoints
+      if (pathLower.startsWith('/api/support')) {
+        if (methodUpper === 'POST' && !pathLower.includes('/reply')) {
+          return 'Kreira novi support ticket. Korisnik može kreirati ticket samo za sebe.';
+        }
+        if (pathLower.includes('/reply')) {
+          return 'Odgovara na support ticket. Samo admin ili vlasnik ticket-a može odgovoriti.';
+        }
+        if (methodUpper === 'GET') {
+          return 'Dohvaća support ticket-e. Vraća ticket-e korisnika ili sve ticket-e (admin).';
+        }
+        return 'Upravljanje support ticket-ima.';
+      }
+      
+      // Public endpoints
+      if (pathLower.startsWith('/api/public')) {
+        if (pathLower.includes('/user-types')) {
+          return 'Javni endpoint za pregled tipova korisnika. Vraća statistike o korisnicima, pružateljima i pretplatama. Admin vidi brojke, ne-admin samo tekst.';
+        }
+        if (pathLower.includes('/providers')) {
+          return 'Javni endpoint za pregled pružatelja. Vraća javne profile pružatelja bez osjetljivih podataka.';
+        }
+        return 'Javni endpointi dostupni bez autentifikacije.';
+      }
+      
+      // Users endpoints
+      if (pathLower.startsWith('/api/users')) {
+        if (pathLower.includes('/me')) {
+          if (methodUpper === 'GET') {
+            return 'Dohvaća podatke trenutno prijavljenog korisnika.';
+          }
+          if (methodUpper === 'PUT' || methodUpper === 'PATCH') {
+            return 'Ažurira podatke trenutno prijavljenog korisnika. Provjerava ownership.';
+          }
+        }
+        return 'Upravljanje korisnicima.';
+      }
+      
+      // Categories endpoints
+      if (pathLower.startsWith('/api/categories')) {
+        if (methodUpper === 'GET') {
+          return 'Dohvaća listu kategorija. Vraća aktivne kategorije s detaljima o licencama i NKD kodovima.';
+        }
+        return 'Upravljanje kategorijama usluga.';
+      }
+      
+      // Documentation endpoints
+      if (pathLower.startsWith('/api/documentation')) {
+        if (methodUpper === 'GET') {
+          return 'Dohvaća dokumentaciju funkcionalnosti. Vraća kategorije i feature-e s opisima.';
+        }
+        return 'Upravljanje dokumentacijom.';
+      }
+      
+      // Wizard endpoints
+      if (pathLower.startsWith('/api/wizard')) {
+        if (pathLower.includes('/complete')) {
+          return 'Završava wizard setup za providera. Zahtijeva barem jednu kategoriju i regiju.';
+        }
+        return 'Wizard setup za nove providere.';
+      }
+      
+      // Chatbot endpoints
+      if (pathLower.startsWith('/api/chatbot')) {
+        if (pathLower.includes('/advance')) {
+          return 'Napreduje chatbot sesiju na sljedeći korak. Validira trenutni korak i prelazi na sljedeći.';
+        }
+        return 'Upravljanje chatbot sesijama.';
+      }
+      
+      // Director endpoints
+      if (pathLower.startsWith('/api/director')) {
+        return 'Director Dashboard endpointi. Omogućava direktorima upravljanje timom i pregled statistika.';
+      }
+      
+      // Matchmaking endpoints
+      if (pathLower.startsWith('/api/matchmaking')) {
+        return 'Matchmaking sistem. Automatski povezuje poslove s relevantnim providerima.';
+      }
+      
+      // Provider ROI endpoints
+      if (pathLower.startsWith('/api/provider-roi')) {
+        return 'ROI Dashboard endpointi. Prikazuje statistike o ROI-u za providere (konvertirani, kontaktirani leadovi).';
+      }
+      
+      // Invoices endpoints
+      if (pathLower.startsWith('/api/invoices')) {
+        if (methodUpper === 'GET') {
+          return 'Dohvaća fakture korisnika. Vraća sve fakture s detaljima o plaćanjima.';
+        }
+        return 'Upravljanje fakturama.';
+      }
+      
+      // Whitelabel endpoints
+      if (pathLower.startsWith('/api/whitelabel')) {
+        return 'WhiteLabel funkcionalnost za PRO plan. Omogućava prilagodbu brandinga.';
+      }
+      
+      // Client verification endpoints
+      if (pathLower.startsWith('/api/client-verification')) {
+        return 'Client verifikacija. Automatska verifikacija klijenata na temelju OIB-a i naziva tvrtke.';
+      }
+      
+      // SMS verification endpoints
+      if (pathLower.startsWith('/api/sms-verification')) {
+        return 'SMS verifikacija. Šalje SMS kod za verifikaciju telefonskog broja.';
+      }
+      
+      // Upload endpoints
+      if (pathLower.startsWith('/api/upload')) {
+        return 'Upload fajlova. Podržava upload slika i dokumenata s validacijom formata i veličine.';
+      }
+      
+      // Push notifications endpoints
+      if (pathLower.startsWith('/api/push-notifications')) {
+        return 'Push notification subscription. Omogućava korisnicima da se pretplate na push notifikacije.';
+      }
+      
+      // Default description
+      return `API endpoint za ${methodUpper} operacije na ${fullPath}.`;
+    };
+    
     // Funkcija za određivanje tko pokreće API endpoint
     const getTriggerInfo = (fullPath, method) => {
       const triggers = {
@@ -3836,12 +4255,14 @@ r.get('/api-reference', (req, res, next) => {
       return triggers;
     };
     
-    // Dodaj sigurnosne informacije i trigger informacije svakoj ruti
+    // Dodaj sigurnosne informacije, trigger informacije i opis svakoj ruti
     allRoutes.forEach(route => {
       const security = getSecurityInfo(route.fullPath, route.method);
       const trigger = getTriggerInfo(route.fullPath, route.method);
+      const description = getEndpointDescription(route.fullPath, route.method, route.handler);
       route.security = security;
       route.trigger = trigger;
+      route.description = description;
       // Debug: loguj rute s businessRules
       if (security.businessRules && security.businessRules.length > 0) {
         console.log(`[API-REF] Route with businessRules: ${route.method} ${route.fullPath}`, security.businessRules);
