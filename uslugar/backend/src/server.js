@@ -49,6 +49,8 @@ import savedSearchesRouter from './routes/saved-searches.js'
 import jobAlertsRouter from './routes/job-alerts.js'
 import { startQueueScheduler } from './lib/queueScheduler.js'
 import { checkExpiringSubscriptions } from './lib/subscription-reminder.js'
+import { apiRequestLogger } from './lib/api-request-logger.js'
+import { errorHandlerMiddleware } from './lib/error-logger.js'
 
 // .env samo izvan produkcije
 if (process.env.NODE_ENV !== 'production') {
@@ -153,6 +155,9 @@ app.use((req, res, next) => {
 // ostali middlewares
 app.use(express.json())
 app.use(morgan('dev'))
+
+// API Request Logger - logira sve API zahtjeve (prije ruta)
+app.use('/api', apiRequestLogger)
 
 // Health check endpoints
 app.get('/health', (_req, res) => res.status(200).send('ok'))
@@ -303,8 +308,12 @@ app.use('/api/chatbot', chatbotRouter)
 app.use('/api/saved-searches', savedSearchesRouter)
 app.use('/api/job-alerts', jobAlertsRouter)
 
-// basic error handler
-app.use((err, _req, res, _next) => {
+// basic error handler - mora biti na kraju, nakon svih ruta
+app.use((err, req, res, next) => {
+  // Error handler middleware logira grešku
+  errorHandlerMiddleware(err, req, res, next)
+  
+  // Nastavi sa standardnim error handling-om
   console.error(err)
   res.status(err.status || 500).json({ error: err.message || 'Server error' })
 })

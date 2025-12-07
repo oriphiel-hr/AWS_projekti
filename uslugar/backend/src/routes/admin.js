@@ -262,7 +262,12 @@ r.get('/cleanup/non-master/preview', auth(true, ['ADMIN']), async (req, res, nex
     counts.savedSearches = await safeCount(prisma.savedSearch, 'savedSearches');
     counts.jobAlerts = await safeCount(prisma.jobAlert, 'jobAlerts');
 
-    // 16) Users except ADMIN and optionally preserved emails
+    // 16) Logging tables
+    counts.apiRequestLogs = await safeCount(prisma.apiRequestLog, 'apiRequestLogs');
+    counts.errorLogs = await safeCount(prisma.errorLog, 'errorLogs');
+    // Note: addonEventLogs already counted in section 6
+
+    // 17) Users except ADMIN and optionally preserved emails
     try {
       const whereClause = {
         role: { not: 'ADMIN' }
@@ -366,7 +371,12 @@ r.post('/cleanup/non-master', auth(true, ['ADMIN']), async (req, res, next) => {
     result.deleted.savedSearches = await prisma.savedSearch.deleteMany({});
     result.deleted.jobAlerts = await prisma.jobAlert.deleteMany({});
 
-    // 16) Users except ADMIN and optionally preserved emails
+    // 16) Logging tables
+    result.deleted.apiRequestLogs = await prisma.apiRequestLog.deleteMany({});
+    result.deleted.errorLogs = await prisma.errorLog.deleteMany({});
+    // Note: addonEventLogs already deleted in section 6
+
+    // 17) Users except ADMIN and optionally preserved emails
     // Use delete helpers if needed per-user for safety; but relations already deleted above
     const usersToDelete = await prisma.user.findMany({
       where: {
@@ -2292,6 +2302,442 @@ r.get('/invoices', auth(true, ['ADMIN']), async (req, res, next) => {
 });
 
 /**
+ * GET /api/admin/audit-logs
+ * Pregled audit logova (admin)
+ * Query params: action, actorId, messageId, roomId, jobId, limit, offset, startDate, endDate
+ */
+r.get('/audit-logs', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const { action, actorId, messageId, roomId, jobId, limit = 50, offset = 0, startDate, endDate } = req.query;
+    
+    const where = {};
+    
+    if (action) {
+      where.action = action;
+    }
+    
+    if (actorId) {
+      where.actorId = actorId;
+    }
+    
+    if (messageId) {
+      where.messageId = messageId;
+    }
+    
+    if (roomId) {
+      where.roomId = roomId;
+    }
+    
+    if (jobId) {
+      where.jobId = jobId;
+    }
+    
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) {
+        where.createdAt.gte = new Date(startDate);
+      }
+      if (endDate) {
+        where.createdAt.lte = new Date(endDate);
+      }
+    }
+    
+    const [logs, total] = await Promise.all([
+      prisma.auditLog.findMany({
+        where,
+        include: {
+          actor: {
+            select: {
+              id: true,
+              email: true,
+              fullName: true,
+              role: true
+            }
+          },
+          message: {
+            select: {
+              id: true,
+              content: true
+            }
+          },
+          room: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          job: {
+            select: {
+              id: true,
+              title: true
+            }
+          }
+        },
+        orderBy: {
+          createdAt: 'desc'
+        },
+        take: parseInt(limit),
+        skip: parseInt(offset)
+      }),
+      prisma.auditLog.count({ where })
+    ]);
+    
+    // Statistike
+    const stats = await prisma.auditLog.groupBy({
+      by: ['action'],
+      where,
+      _count: {
+        id: true
+      }
+    });
+    
+    res.json({
+      logs,
+      total,
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+      stats: stats.reduce((acc, s) => {
+        acc[s.action] = s._count.id;
+        return acc;
+      }, {})
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * GET /api/admin/addon-event-logs
+ * Pregled addon event logova (admin)
+ * Query params: addonId, eventType, limit, offset, startDate, endDate
+ */
+r.get('/addon-event-logs', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const { addonId, eventType, limit = 50, offset = 0, startDate, endDate } = req.query;
+    
+    const where = {};
+    
+    if (addonId) {
+      where.addonId = addonId;
+    }
+    
+    if (eventType) {
+      where.eventType = eventType;
+    }
+    
+    if (startDate || endDate) {
+      where.occurredAt = {};
+      if (startDate) {
+        where.occurredAt.gte = new Date(startDate);
+      }
+      if (endDate) {
+        where.occurredAt.lte = new Date(endDate);
+      }
+    }
+    
+    const [logs, total] = await Promise.all([
+      prisma.addonEventLog.findMany({
+        where,
+        include: {
+          addon: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  email: true,
+                  fullName: true
+                }
+              }
+            }
+          }
+        },
+        orderBy: {
+          occurredAt: 'desc'
+        },
+        take: parseInt(limit),
+        skip: parseInt(offset)
+      }),
+      prisma.addonEventLog.count({ where })
+    ]);
+    
+    // Statistike
+    const stats = await prisma.addonEventLog.groupBy({
+      by: ['eventType'],
+      where,
+      _count: {
+        id: true
+      }
+    });
+    
+    res.json({
+      logs,
+      total,
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+      stats: stats.reduce((acc, s) => {
+        acc[s.eventType] = s._count.id;
+        return acc;
+      }, {})
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * GET /api/admin/api-request-logs
+ * Pregled API request logova (admin)
+ * Query params: method, path, statusCode, userId, limit, offset, startDate, endDate
+ */
+r.get('/api-request-logs', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const { method, path, statusCode, userId, limit = 50, offset = 0, startDate, endDate } = req.query;
+    
+    const where = {};
+    
+    if (method) {
+      where.method = method;
+    }
+    
+    if (path) {
+      where.path = { contains: path };
+    }
+    
+    if (statusCode) {
+      where.statusCode = parseInt(statusCode);
+    }
+    
+    if (userId) {
+      where.userId = userId;
+    }
+    
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) {
+        where.createdAt.gte = new Date(startDate);
+      }
+      if (endDate) {
+        where.createdAt.lte = new Date(endDate);
+      }
+    }
+    
+    const [logs, total] = await Promise.all([
+      prisma.apiRequestLog.findMany({
+        where,
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              fullName: true,
+              role: true
+            }
+          }
+        },
+        orderBy: {
+          createdAt: 'desc'
+        },
+        take: parseInt(limit),
+        skip: parseInt(offset)
+      }),
+      prisma.apiRequestLog.count({ where })
+    ]);
+    
+    // Statistike
+    const [statusStats, methodStats, pathStats] = await Promise.all([
+      prisma.apiRequestLog.groupBy({
+        by: ['statusCode'],
+        where,
+        _count: { id: true },
+        _avg: { responseTime: true }
+      }),
+      prisma.apiRequestLog.groupBy({
+        by: ['method'],
+        where,
+        _count: { id: true },
+        _avg: { responseTime: true }
+      }),
+      prisma.apiRequestLog.groupBy({
+        by: ['path'],
+        where,
+        _count: { id: true },
+        _avg: { responseTime: true },
+        orderBy: { _count: { id: 'desc' } },
+        take: 10
+      })
+    ]);
+    
+    res.json({
+      logs,
+      total,
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+      stats: {
+        byStatus: statusStats.reduce((acc, s) => {
+          acc[s.statusCode] = {
+            count: s._count.id,
+            avgResponseTime: s._avg.responseTime
+          };
+          return acc;
+        }, {}),
+        byMethod: methodStats.reduce((acc, s) => {
+          acc[s.method] = {
+            count: s._count.id,
+            avgResponseTime: s._avg.responseTime
+          };
+          return acc;
+        }, {}),
+        topPaths: pathStats.map(s => ({
+          path: s.path,
+          count: s._count.id,
+          avgResponseTime: s._avg.responseTime
+        }))
+      }
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * GET /api/admin/error-logs
+ * Pregled error logova (admin)
+ * Query params: level, status, endpoint, userId, limit, offset, startDate, endDate
+ */
+r.get('/error-logs', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const { level, status, endpoint, userId, limit = 50, offset = 0, startDate, endDate } = req.query;
+    
+    const where = {};
+    
+    if (level) {
+      where.level = level;
+    }
+    
+    if (status) {
+      where.status = status;
+    }
+    
+    if (endpoint) {
+      where.endpoint = { contains: endpoint };
+    }
+    
+    if (userId) {
+      where.userId = userId;
+    }
+    
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) {
+        where.createdAt.gte = new Date(startDate);
+      }
+      if (endDate) {
+        where.createdAt.lte = new Date(endDate);
+      }
+    }
+    
+    const [logs, total] = await Promise.all([
+      prisma.errorLog.findMany({
+        where,
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              fullName: true,
+              role: true
+            }
+          }
+        },
+        orderBy: {
+          createdAt: 'desc'
+        },
+        take: parseInt(limit),
+        skip: parseInt(offset)
+      }),
+      prisma.errorLog.count({ where })
+    ]);
+    
+    // Statistike
+    const [levelStats, statusStats, endpointStats] = await Promise.all([
+      prisma.errorLog.groupBy({
+        by: ['level'],
+        where,
+        _count: { id: true }
+      }),
+      prisma.errorLog.groupBy({
+        by: ['status'],
+        where,
+        _count: { id: true }
+      }),
+      prisma.errorLog.groupBy({
+        by: ['endpoint'],
+        where: { endpoint: { not: null } },
+        _count: { id: true },
+        orderBy: { _count: { id: 'desc' } },
+        take: 10
+      })
+    ]);
+    
+    res.json({
+      logs,
+      total,
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+      stats: {
+        byLevel: levelStats.reduce((acc, s) => {
+          acc[s.level] = s._count.id;
+          return acc;
+        }, {}),
+        byStatus: statusStats.reduce((acc, s) => {
+          acc[s.status] = s._count.id;
+          return acc;
+        }, {}),
+        topEndpoints: endpointStats.map(s => ({
+          endpoint: s.endpoint,
+          count: s._count.id
+        }))
+      }
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * PATCH /api/admin/error-logs/:id
+ * Ažuriraj status error loga (admin)
+ */
+r.patch('/error-logs/:id', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { status, notes } = req.body;
+    const userId = req.user.id;
+    
+    const updateData = {};
+    if (status) {
+      updateData.status = status;
+      if (status === 'RESOLVED') {
+        updateData.resolvedAt = new Date();
+        updateData.resolvedBy = userId;
+      }
+    }
+    if (notes !== undefined) {
+      updateData.notes = notes;
+    }
+    
+    const errorLog = await prisma.errorLog.update({
+      where: { id },
+      data: updateData
+    });
+    
+    res.json({ success: true, errorLog });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
  * GET /api/admin/sms-logs/stats
  * Statistike SMS-ova (admin)
  */
@@ -3528,6 +3974,34 @@ r.get('/api-reference', (req, res, next) => {
         if (pathLower.includes('/reports/send-monthly-reports')) {
           return 'Slanje mjesečnih izvještaja svim aktivnim korisnicima. Pokreće se ručno ili automatski 1. u mjesecu.';
         }
+        if (pathLower.includes('/audit-logs')) {
+          return 'Pregled audit logova za chat akcije, otkrivanje kontakata i druge akcije. Omogućava filtriranje po akciji, korisniku, poruci, sobi, poslu i datumu. Vraća statistike po tipovima akcija.';
+        }
+        if (pathLower.includes('/api-request-logs')) {
+          return 'Pregled automatski logiranih API zahtjeva. Prikazuje metodu, path, status kod, response time, korisnika i IP adresu. Omogućava filtriranje i prikaz statistika po status kodovima, metodama i top path-ovima.';
+        }
+        if (pathLower.includes('/error-logs')) {
+          if (methodUpper === 'GET') {
+            return 'Pregled centralizirano logiranih grešaka. Prikazuje error poruke, stack trace, kontekst i status (NEW, IN_PROGRESS, RESOLVED, IGNORED). Omogućava filtriranje po levelu, statusu, endpointu i korisniku.';
+          }
+          if (methodUpper === 'PATCH') {
+            return 'Ažuriranje statusa error loga. Omogućava promjenu statusa (NEW, IN_PROGRESS, RESOLVED, IGNORED) i dodavanje napomena. Automatski bilježi tko je riješio grešku i kada.';
+          }
+        }
+        if (pathLower.includes('/addon-event-logs')) {
+          return 'Pregled event logova za addon pretplate. Prikazuje sve događaje vezane uz addon pretplate (PURCHASED, RENEWED, EXPIRED, DEPLETED, LOW_BALANCE, GRACE_STARTED, CANCELLED). Omogućava filtriranje po addon ID-u, event tipu i datumu.';
+        }
+        if (pathLower.includes('/sms-logs')) {
+          if (methodUpper === 'GET' && !pathLower.includes('/stats') && !pathLower.includes('/sync')) {
+            return 'Pregled SMS logova. Prikazuje sve poslane SMS poruke s detaljima o statusu, tipu, korisniku i Twilio SID-u. Omogućava filtriranje po telefonu, tipu, statusu i datumu.';
+          }
+          if (pathLower.includes('/stats')) {
+            return 'Statistike SMS logova. Vraća agregirane podatke po statusu, tipu i modu. Koristi se za monitoring uspješnosti SMS slanja.';
+          }
+          if (pathLower.includes('/sync-from-twilio')) {
+            return 'Sinkronizacija SMS logova iz Twilio API-ja. Dohvaća SMS poruke iz Twilio-a i sprema ih u bazu. Omogućava ručno osvježavanje logova.';
+          }
+        }
         // Generic admin CRUD endpoints
         if (methodUpper === 'GET' && !pathLower.includes('/')) {
           return 'Dohvaća listu svih zapisa iz admin panela. Podržava paginaciju i filtriranje.';
@@ -3960,6 +4434,20 @@ r.get('/api-reference', (req, res, next) => {
         } else if (fullPath.includes('/reports/send-monthly-reports')) {
           triggers.type = 'manual';
           triggers.details.push('Ručno pokretanje iz Admin Panela');
+        } else if (fullPath.includes('/audit-logs')) {
+          triggers.details.push('Admin Panel → Audit Logs stranica (https://uslugar.oriph.io/admin/audit-logs)');
+        } else if (fullPath.includes('/api-request-logs')) {
+          triggers.details.push('Admin Panel → API Request Logs stranica (https://uslugar.oriph.io/admin/api-request-logs)');
+          triggers.details.push('Automatski: Middleware logira sve API zahtjeve u real-time');
+        } else if (fullPath.includes('/error-logs')) {
+          triggers.details.push('Admin Panel → Error Logs stranica (https://uslugar.oriph.io/admin/error-logs)');
+          triggers.details.push('Automatski: Error handler middleware logira sve greške u real-time');
+        } else if (fullPath.includes('/addon-event-logs')) {
+          triggers.details.push('Admin Panel → Addon Event Logs stranica (https://uslugar.oriph.io/admin/addon-event-logs)');
+          triggers.details.push('Automatski: Addon lifecycle service logira evente pri promjenama statusa');
+        } else if (fullPath.includes('/sms-logs')) {
+          triggers.details.push('Admin Panel → SMS Logs stranica (https://uslugar.oriph.io/admin/sms-logs)');
+          triggers.details.push('Automatski: SMS service logira sve poslane SMS poruke');
         }
         return triggers;
       }

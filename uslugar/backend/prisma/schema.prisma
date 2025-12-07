@@ -160,6 +160,8 @@ model User {
   auditLogs           AuditLog[]                @relation("UserAuditLogs")
   savedSearches       SavedSearch[]
   jobAlerts           JobAlert[]
+  apiRequestLogs      ApiRequestLog[] @relation("UserApiRequestLogs")
+  errorLogs           ErrorLog[]      @relation("UserErrorLogs")
   billingPlans        BillingPlan[]
   billingAdjustments  BillingAdjustment[]
   featureOwnership    CompanyFeatureOwnership[] @relation("UserFeatureOwnership")
@@ -1582,4 +1584,53 @@ model JobAlert {
   @@index([userId, isActive])
   @@index([isActive, frequency])
   @@index([lastSentAt])
+}
+
+// API Request Logs - logiranje svih API zahtjeva za monitoring i debugging
+model ApiRequestLog {
+  id          String    @id @default(cuid())
+  method      String // GET, POST, PUT, DELETE, PATCH
+  path        String // API path (npr. /api/jobs)
+  statusCode  Int // HTTP status kod
+  userId      String? // ID korisnika (ako je autentificiran)
+  user        User?    @relation("UserApiRequestLogs", fields: [userId], references: [id], onDelete: SetNull)
+  ipAddress   String? // IP adresa klijenta
+  userAgent   String? // User agent
+  requestBody Json? // Request body (za POST/PUT/PATCH)
+  responseTime Int // Vrijeme izvršavanja u ms
+  errorMessage String? // Error poruka (ako ima)
+  createdAt   DateTime  @default(now())
+
+  @@index([method, path])
+  @@index([statusCode])
+  @@index([userId, createdAt])
+  @@index([createdAt])
+  @@index([path, createdAt])
+}
+
+// Error Logs - centralizirano logiranje grešaka
+model ErrorLog {
+  id          String    @id @default(cuid())
+  level       String    @default("ERROR") // ERROR, WARN, CRITICAL
+  message     String // Error poruka
+  stack       String? // Stack trace
+  endpoint    String? // API endpoint gdje se greška dogodila
+  method      String? // HTTP metoda
+  userId      String? // ID korisnika (ako je dostupan)
+  user        User?    @relation("UserErrorLogs", fields: [userId], references: [id], onDelete: SetNull)
+  ipAddress   String? // IP adresa
+  userAgent   String? // User agent
+  context     Json? // Dodatni kontekst (request body, query params, itd.)
+  status      String    @default("NEW") // NEW, IN_PROGRESS, RESOLVED, IGNORED
+  resolvedAt  DateTime? // Kada je greška riješena
+  resolvedBy  String? // ID admin korisnika koji je riješio
+  notes       String? // Admin napomene
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([level])
+  @@index([status])
+  @@index([userId, createdAt])
+  @@index([endpoint, createdAt])
+  @@index([createdAt])
 }

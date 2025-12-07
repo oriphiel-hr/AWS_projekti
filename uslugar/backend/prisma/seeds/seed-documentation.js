@@ -14667,7 +14667,12 @@ async function seedDocumentation() {
           { name: "Statistike platforme", implemented: true, isAdminOnly: true },
           { name: "Grafički prikaz statistika", implemented: true, isAdminOnly: true },
           { name: "KYC Metrike", implemented: true, isAdminOnly: true },
-          { name: "Provider Approvals", implemented: true, isAdminOnly: true }
+          { name: "Provider Approvals", implemented: true, isAdminOnly: true },
+          { name: "Audit Logs", implemented: true, isAdminOnly: true },
+          { name: "API Request Logs", implemented: true, isAdminOnly: true },
+          { name: "Error Logs", implemented: true, isAdminOnly: true },
+          { name: "Addon Event Logs", implemented: true, isAdminOnly: true },
+          { name: "SMS Logs", implemented: true, isAdminOnly: true }
         ]
       }
     ];
@@ -15228,6 +15233,198 @@ async function seedDocumentation() {
 - GET /api/admin/sms-logs (list + filteri)
 - GET /api/admin/sms-logs/stats (primarni KPI-i)
 - POST /api/admin/sms-logs/resend/:id za ručno ponovno slanje (opcionalno)
+      `
+      },
+      "Audit Logs": {
+        summary: "Pregled svih audit logova za chat akcije, otkrivanje kontakata i druge akcije",
+        details: `## Kako funkcionira:
+
+**Pregled audit logova**
+- Administratorska lista svih audit logova s filtrima (akcija, korisnik, poruka, soba, posao, datum)
+- Detaljan prikaz svih akcija vezanih uz chat (kreiranje, uređivanje, brisanje poruka)
+- Praćenje otkrivanja i maskiranja kontakata
+- Povijest kreiranja i brisanja chat soba
+
+**Tipovi akcija**
+- MESSAGE_CREATED, MESSAGE_EDITED, MESSAGE_DELETED
+- ATTACHMENT_UPLOADED, ATTACHMENT_DELETED
+- CONTACT_REVEALED, CONTACT_MASKED
+- ROOM_CREATED, ROOM_DELETED
+
+**Statistike**
+- Broj akcija po tipu
+- Najaktivniji korisnici
+- Vremenski trendovi aktivnosti
+`,
+        technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- Komponenta: 'uslugar/frontend/src/pages/AdminAuditLogs.jsx'
+- Ruta: '/admin/audit-logs'
+- Filtri po akciji, korisniku, poruci, sobi, poslu i datumu
+- Tablični prikaz s paginacijom i detaljnim prikazom metadata
+
+### Backend:
+- Ruta: '/api/admin/audit-logs'
+- Middleware: auth(true, ['ADMIN'])
+- Query parametri: action, actorId, messageId, roomId, jobId, limit, offset, startDate, endDate
+- Servis koristi Prisma s eager loadingom relacija (actor, message, room, job)
+
+### Baza:
+- Tablica 'AuditLog' (action, actorId, messageId, roomId, jobId, metadata, ipAddress, userAgent, createdAt)
+- Indeksi na actorId, messageId, roomId, jobId, action, createdAt
+- Relacije: AuditLog → User (actor), AuditLog → ChatMessage, AuditLog → ChatRoom, AuditLog → Job
+
+### API poziv:
+- GET /api/admin/audit-logs (list + filteri + statistike)
+      `
+      },
+      "API Request Logs": {
+        summary: "Automatsko logiranje svih API zahtjeva za monitoring i debugging",
+        details: `## Kako funkcionira:
+
+**Automatsko logiranje**
+- Middleware automatski logira sve API zahtjeve (metoda, path, status kod, response time)
+- Snimanje IP adrese, user agent-a i korisnika (ako je autentificiran)
+- Request body se logira za POST/PUT/PATCH (osjetljivi podaci se maskiraju)
+- Error poruke se logiraju za zahtjeve s status kodom >= 400
+
+**Filtriranje i pretraga**
+- Filtriranje po metodi (GET, POST, PUT, DELETE, PATCH)
+- Pretraga po path-u (npr. /api/jobs)
+- Filtriranje po status kodovima (200, 404, 500, itd.)
+- Filtriranje po korisniku i datumu
+
+**Statistike i metrike**
+- Statistike po status kodovima (broj zahtjeva, prosječno vrijeme odgovora)
+- Statistike po metodama
+- Top 10 najčešćih path-ova s prosječnim response time-om
+- Identifikacija sporih endpointa (>1000ms)
+`,
+        technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- Komponenta: 'uslugar/frontend/src/pages/AdminApiRequestLogs.jsx'
+- Ruta: '/admin/api-request-logs'
+- Filtri po metodi, path-u, status kodu, korisniku i datumu
+- Tablični prikaz s bojama za status kodove i response time
+- Statistike s grafovima
+
+### Backend:
+- Middleware: 'uslugar/backend/src/lib/api-request-logger.js'
+- Integracija u 'uslugar/backend/src/server.js' prije svih ruta
+- Ruta: '/api/admin/api-request-logs'
+- Middleware: auth(true, ['ADMIN'])
+- Query parametri: method, path, statusCode, userId, limit, offset, startDate, endDate
+
+### Baza:
+- Tablica 'ApiRequestLog' (method, path, statusCode, userId, ipAddress, userAgent, requestBody, responseTime, errorMessage, createdAt)
+- Indeksi na method+path, statusCode, userId+createdAt, createdAt, path+createdAt
+- Relacija: ApiRequestLog → User (userId)
+
+### API poziv:
+- GET /api/admin/api-request-logs (list + filteri + statistike)
+      `
+      },
+      "Error Logs": {
+        summary: "Centralizirano logiranje grešaka s mogućnošću praćenja i rješavanja",
+        details: `## Kako funkcionira:
+
+**Automatsko logiranje grešaka**
+- Error handler middleware automatski logira sve greške (ERROR, WARN, CRITICAL)
+- Snimanje error poruke, stack trace-a i konteksta (endpoint, metoda, korisnik)
+- IP adresa i user agent se logiraju za debugging
+- Request body i query parametri se logiraju (osjetljivi podaci se maskiraju)
+
+**Upravljanje greškama**
+- Statusi: NEW, IN_PROGRESS, RESOLVED, IGNORED
+- Admin može ažurirati status i dodati napomene
+- Automatsko praćenje kada je greška riješena i tko ju je riješio
+- Mogućnost ignoriranja poznatih grešaka
+
+**Filtriranje i pretraga**
+- Filtriranje po levelu (ERROR, WARN, CRITICAL)
+- Filtriranje po statusu
+- Pretraga po endpointu
+- Filtriranje po korisniku i datumu
+
+**Statistike**
+- Statistike po levelima
+- Statistike po statusima
+- Top 10 endpointa s najviše grešaka
+`,
+        technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- Komponenta: 'uslugar/frontend/src/pages/AdminErrorLogs.jsx'
+- Ruta: '/admin/error-logs'
+- Filtri po levelu, statusu, endpointu, korisniku i datumu
+- Modal za detalje s prikazom stack trace-a i konteksta
+- Mogućnost ažuriranja statusa i dodavanja napomena
+
+### Backend:
+- Logger: 'uslugar/backend/src/lib/error-logger.js'
+- Error handler middleware integriran u 'uslugar/backend/src/server.js'
+- Ruta: '/api/admin/error-logs'
+- Middleware: auth(true, ['ADMIN'])
+- Query parametri: level, status, endpoint, userId, limit, offset, startDate, endDate
+- PATCH /api/admin/error-logs/:id za ažuriranje statusa
+
+### Baza:
+- Tablica 'ErrorLog' (level, message, stack, endpoint, method, userId, ipAddress, userAgent, context, status, resolvedAt, resolvedBy, notes, createdAt, updatedAt)
+- Indeksi na level, status, userId+createdAt, endpoint+createdAt, createdAt
+- Relacija: ErrorLog → User (userId)
+
+### API poziv:
+- GET /api/admin/error-logs (list + filteri + statistike)
+- PATCH /api/admin/error-logs/:id (ažuriranje statusa i napomena)
+      `
+      },
+      "Addon Event Logs": {
+        summary: "Pregled svih event logova za addon pretplate (kupnja, obnova, isteci, itd.)",
+        details: `## Kako funkcionira:
+
+**Pregled event logova**
+- Administratorska lista svih addon event logova s filtrima (addon, event type, datum)
+- Detaljan prikaz svih događaja vezanih uz addon pretplate
+- Praćenje promjena statusa (oldStatus → newStatus)
+- Metadata s dodatnim informacijama o eventu
+
+**Tipovi eventa**
+- PURCHASED (kupljeno)
+- RENEWED (obnovljeno)
+- EXPIRED (isteklo)
+- DEPLETED (iscrpljeno)
+- LOW_BALANCE (niska bilanca)
+- GRACE_STARTED (grace period započeo)
+- CANCELLED (otkazano)
+
+**Statistike**
+- Broj eventa po tipu
+- Najaktivniji addon-i
+- Vremenski trendovi
+`,
+        technicalDetails: `## Tehnički detalji:
+
+### Frontend:
+- Komponenta: 'uslugar/frontend/src/pages/AdminAddonEventLogs.jsx'
+- Ruta: '/admin/addon-event-logs'
+- Filtri po addon ID-u, event tipu i datumu
+- Tablični prikaz s prikazom korisnika i metadata
+
+### Backend:
+- Ruta: '/api/admin/addon-event-logs'
+- Middleware: auth(true, ['ADMIN'])
+- Query parametri: addonId, eventType, limit, offset, startDate, endDate
+- Servis koristi Prisma s eager loadingom relacija (addon → user)
+
+### Baza:
+- Tablica 'AddonEventLog' (addonId, eventType, oldStatus, newStatus, metadata, occurredAt)
+- Indeksi na addonId, eventType, occurredAt
+- Relacija: AddonEventLog → AddonSubscription → User
+
+### API poziv:
+- GET /api/admin/addon-event-logs (list + filteri + statistike)
       `
       },
       "Moderacija sadržaja": {

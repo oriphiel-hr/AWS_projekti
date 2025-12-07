@@ -68,7 +68,7 @@ export default function AdminDataCleanup(){
         <div className="text-yellow-800">
           <p className="font-semibold">Upozorenje</p>
           <ul className="list-disc ml-5 mt-1 text-sm">
-            <li>Bit će obrisani transakcijski podaci: Chat (poruke, sobe, SLA, audit logovi), Poslovi i Ponude, Lead management (queue, purchases), Provider profili (licence, ROI, team lokacije), Pretplate (subscriptions, add-ons, billing), Fakture, Kreditne transakcije, Feature ownership, Client verifikacije, Support ticketi, WhiteLabel postavke, Push/SMS logovi, Chatbot sesije, Spremljene pretrage, Job alerts i svi korisnici koji nisu ADMIN.</li>
+            <li>Bit će obrisani transakcijski podaci: Chat (poruke, sobe, SLA, audit logovi), Poslovi i Ponude, Lead management (queue, purchases), Provider profili (licence, ROI, team lokacije), Pretplate (subscriptions, add-ons, billing), Fakture, Kreditne transakcije, Feature ownership, Client verifikacije, Support ticketi, WhiteLabel postavke, Push/SMS logovi, Chatbot sesije, Spremljene pretrage, Job alerts, API Request logovi, Error logovi i svi korisnici koji nisu ADMIN.</li>
             <li>Sačuvat će se: ADMIN korisnik, Kategorije, Pretplatnički planovi (SubscriptionPlan), Pravni statusi (LegalStatus), Dokumentacija (DocumentationCategory, DocumentationFeature), <strong>Testiranje (TestPlan, TestItem, TestRun, TestRunItem)</strong>.</li>
             <li>Akcija je nepovratna.</li>
           </ul>
@@ -138,6 +138,10 @@ export default function AdminDataCleanup(){
             <div className="font-semibold text-blue-700 mb-2 mt-3">Pretrage i alerti</div>
             {renderCount('Spremljene pretrage', preview.savedSearches)}
             {renderCount('Job alerts', preview.jobAlerts)}
+            
+            <div className="font-semibold text-blue-700 mb-2 mt-3">Logging tablice</div>
+            {renderCount('API Request logovi', preview.apiRequestLogs)}
+            {renderCount('Error logovi', preview.errorLogs)}
             
             <div className="font-semibold text-blue-700 mb-2 mt-3">Korisnici</div>
             {renderCount('Korisnici (bez ADMIN)', preview.users)}
@@ -227,6 +231,10 @@ export default function AdminDataCleanup(){
             <div className="font-semibold text-green-700 mb-2 mt-3">Pretrage i alerti</div>
             {renderCount('Spremljene pretrage', result.deleted?.savedSearches)}
             {renderCount('Job alerts', result.deleted?.jobAlerts)}
+            
+            <div className="font-semibold text-green-700 mb-2 mt-3">Logging tablice</div>
+            {renderCount('API Request logovi', result.deleted?.apiRequestLogs)}
+            {renderCount('Error logovi', result.deleted?.errorLogs)}
             
             <div className="font-semibold text-green-700 mb-2 mt-3">Korisnici</div>
             {renderCount('Korisnici obrisani (bez ADMIN)', result.deleted?.users)}

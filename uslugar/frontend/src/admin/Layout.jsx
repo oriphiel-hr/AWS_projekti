@@ -250,6 +250,55 @@ export default function Layout({ user, onLogout }){
               >
                 👥 Tipovi Korisnika
               </NavLink>
+              <div className="text-xs uppercase tracking-wide font-semibold text-gray-500 mb-3 mt-4">Logovi i Monitoring</div>
+              <NavLink
+                to="/admin/audit-logs"
+                className={({isActive}) =>
+                  `block px-4 py-2 rounded-lg text-sm font-medium transition ${
+                    isActive 
+                      ? 'bg-indigo-600 text-white shadow-sm' 
+                      : 'text-gray-700 hover:bg-gray-200'
+                  }`
+                }
+              >
+                📋 Audit Logs
+              </NavLink>
+              <NavLink
+                to="/admin/api-request-logs"
+                className={({isActive}) =>
+                  `block px-4 py-2 rounded-lg text-sm font-medium transition ${
+                    isActive 
+                      ? 'bg-indigo-600 text-white shadow-sm' 
+                      : 'text-gray-700 hover:bg-gray-200'
+                  }`
+                }
+              >
+                🌐 API Request Logs
+              </NavLink>
+              <NavLink
+                to="/admin/error-logs"
+                className={({isActive}) =>
+                  `block px-4 py-2 rounded-lg text-sm font-medium transition ${
+                    isActive 
+                      ? 'bg-indigo-600 text-white shadow-sm' 
+                      : 'text-gray-700 hover:bg-gray-200'
+                  }`
+                }
+              >
+                ❌ Error Logs
+              </NavLink>
+              <NavLink
+                to="/admin/addon-event-logs"
+                className={({isActive}) =>
+                  `block px-4 py-2 rounded-lg text-sm font-medium transition ${
+                    isActive 
+                      ? 'bg-indigo-600 text-white shadow-sm' 
+                      : 'text-gray-700 hover:bg-gray-200'
+                  }`
+                }
+              >
+                📦 Addon Event Logs
+              </NavLink>
             </nav>
           </aside>
           <main className="flex-1 p-6 overflow-auto">

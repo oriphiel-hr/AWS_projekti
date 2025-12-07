@@ -19,6 +19,10 @@ import AdminUsersOverview from '../pages/AdminUsersOverview'
 import AdminDatabaseEditor from '../pages/AdminDatabaseEditor'
 import AdminApiReference from '../pages/AdminApiReference'
 import UserTypesOverview from '../pages/UserTypesOverview'
+import AdminAuditLogs from '../pages/AdminAuditLogs'
+import AdminApiRequestLogs from '../pages/AdminApiRequestLogs'
+import AdminErrorLogs from '../pages/AdminErrorLogs'
+import AdminAddonEventLogs from '../pages/AdminAddonEventLogs'
 import api from '../api'
 
 // Model nazivi u PascalCase kako backend očekuje
@@ -73,7 +77,8 @@ export default function AdminRouter(){
     // Admin panel path rute (koje se koriste u BrowserRouter)
     const adminPathRoutes = ['payments', 'provider-approvals', 'kyc-metrics', 'verification-documents', 
                              'platform-stats', 'moderation', 'sms-logs', 'invoices', 
-                             'users-overview', 'cleanup', 'testing', 'database', 'api-reference', 'user-types'];
+                             'users-overview', 'cleanup', 'testing', 'database', 'api-reference', 'user-types',
+                             'audit-logs', 'api-request-logs', 'error-logs', 'addon-event-logs'];
     // Dodaj sve MODELS kao admin rute
     const adminModelRoutes = MODELS.map(m => m.toLowerCase());
     
@@ -249,6 +254,10 @@ export default function AdminRouter(){
           <Route path="/admin/database" element={<AdminDatabaseEditor />} />
           <Route path="/admin/api-reference" element={<AdminApiReference />} />
           <Route path="/admin/user-types" element={<UserTypesOverview isAdmin={true} />} />
+          <Route path="/admin/audit-logs" element={<AdminAuditLogs />} />
+          <Route path="/admin/api-request-logs" element={<AdminApiRequestLogs />} />
+          <Route path="/admin/error-logs" element={<AdminErrorLogs />} />
+          <Route path="/admin/addon-event-logs" element={<AdminAddonEventLogs />} />
           {/* Fallback ruta za nepoznate admin rute - redirect na prvi model */}
           <Route path="/admin/*" element={<Navigate to={`/admin/${MODELS[0]}`} replace />} />
         </Route>
