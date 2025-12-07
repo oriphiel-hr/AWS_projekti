@@ -182,7 +182,10 @@ r.post('/cleanup/non-master', auth(true, ['ADMIN']), async (req, res, next) => {
 
     const result = { deleted: {} };
 
-    // 1) Delete chat messages and rooms first
+    // 1) Delete chat-related data first
+    result.deleted.messageSLAs = await prisma.messageSLA.deleteMany({});
+    result.deleted.messageVersions = await prisma.messageVersion.deleteMany({});
+    result.deleted.auditLogs = await prisma.auditLog.deleteMany({});
     result.deleted.chatMessages = await prisma.chatMessage.deleteMany({});
     result.deleted.chatRooms = await prisma.chatRoom.deleteMany({});
 
@@ -194,10 +197,17 @@ r.post('/cleanup/non-master', auth(true, ['ADMIN']), async (req, res, next) => {
     result.deleted.offers = await prisma.offer.deleteMany({});
     result.deleted.jobs = await prisma.job.deleteMany({});
 
-    // 4) Subscriptions
-    result.deleted.subscriptions = await prisma.subscription.deleteMany({});
+    // 4) Lead management
+    result.deleted.companyLeadQueues = await prisma.companyLeadQueue.deleteMany({});
+    result.deleted.leadQueues = await prisma.leadQueue.deleteMany({});
+    result.deleted.leadPurchases = await prisma.leadPurchase.deleteMany({});
 
-    // 5) Provider profiles (disconnect categories per profile to clear m2m)
+    // 5) Provider-related data
+    result.deleted.providerROIs = await prisma.providerROI.deleteMany({});
+    result.deleted.providerLicenses = await prisma.providerLicense.deleteMany({});
+    result.deleted.providerTeamLocations = await prisma.providerTeamLocation.deleteMany({});
+    
+    // Provider profiles (disconnect categories per profile to clear m2m)
     const providerList = await prisma.providerProfile.findMany({ select: { id: true, userId: true } });
     for (const p of providerList) {
       await prisma.providerProfile.update({
@@ -207,10 +217,41 @@ r.post('/cleanup/non-master', auth(true, ['ADMIN']), async (req, res, next) => {
     }
     result.deleted.providerProfiles = await prisma.providerProfile.deleteMany({});
 
-    // 6) WhiteLabel settings (if any)
-    if (prisma.whiteLabel) {
-      result.deleted.whiteLabels = await prisma.whiteLabel.deleteMany({});
-    }
+    // 6) Subscriptions and billing
+    result.deleted.addonEventLogs = await prisma.addonEventLog.deleteMany({});
+    result.deleted.addonUsages = await prisma.addonUsage.deleteMany({});
+    result.deleted.addonSubscriptions = await prisma.addonSubscription.deleteMany({});
+    result.deleted.subscriptionHistories = await prisma.subscriptionHistory.deleteMany({});
+    result.deleted.trialEngagements = await prisma.trialEngagement.deleteMany({});
+    result.deleted.subscriptions = await prisma.subscription.deleteMany({});
+    result.deleted.billingAdjustments = await prisma.billingAdjustment.deleteMany({});
+    result.deleted.billingPlans = await prisma.billingPlan.deleteMany({});
+
+    // 7) Invoices
+    result.deleted.invoices = await prisma.invoice.deleteMany({});
+
+    // 8) Credit transactions
+    result.deleted.creditTransactions = await prisma.creditTransaction.deleteMany({});
+
+    // 9) Feature ownership
+    result.deleted.featureOwnershipHistories = await prisma.featureOwnershipHistory.deleteMany({});
+    result.deleted.companyFeatureOwnerships = await prisma.companyFeatureOwnership.deleteMany({});
+
+    // 10) Client verification
+    result.deleted.clientVerifications = await prisma.clientVerification.deleteMany({});
+
+    // 11) Support tickets
+    result.deleted.supportTickets = await prisma.supportTicket.deleteMany({});
+
+    // 12) WhiteLabel settings
+    result.deleted.whiteLabels = await prisma.whiteLabel.deleteMany({});
+
+    // 13) SMS and Push notifications
+    result.deleted.pushSubscriptions = await prisma.pushSubscription.deleteMany({});
+    result.deleted.smsLogs = await prisma.smsLog.deleteMany({});
+
+    // 14) Chatbot sessions
+    result.deleted.chatbotSessions = await prisma.chatbotSession.deleteMany({});
 
     // 7) Users except ADMIN and optionally preserved emails
     // Use delete helpers if needed per-user for safety; but relations already deleted above

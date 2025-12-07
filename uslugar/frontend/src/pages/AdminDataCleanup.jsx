@@ -39,8 +39,8 @@ export default function AdminDataCleanup(){
         <div className="text-yellow-800">
           <p className="font-semibold">Upozorenje</p>
           <ul className="list-disc ml-5 mt-1 text-sm">
-            <li>Bit će obrisani transakcijski podaci: Chat, Ponude, Poslovi, Recenzije, Notifikacije, Pretplate, Provider profili i svi korisnici koji nisu ADMIN.</li>
-            <li>Sačuvat će se: ADMIN korisnik, Kategorije, Pretplatnički planovi, Pravni statusi, <strong>Testiranje (Admin → Testiranje: planovi, stavke i runovi)</strong>.</li>
+            <li>Bit će obrisani transakcijski podaci: Chat (poruke, sobe, SLA, audit logovi), Poslovi i Ponude, Lead management (queue, purchases), Provider profili (licence, ROI, team lokacije), Pretplate (subscriptions, add-ons, billing), Fakture, Kreditne transakcije, Feature ownership, Client verifikacije, Support ticketi, WhiteLabel postavke, Push/SMS logovi, Chatbot sesije i svi korisnici koji nisu ADMIN.</li>
+            <li>Sačuvat će se: ADMIN korisnik, Kategorije, Pretplatnički planovi (SubscriptionPlan), Pravni statusi (LegalStatus), Dokumentacija (DocumentationCategory, DocumentationFeature), <strong>Testiranje (TestPlan, TestItem, TestRun, TestRunItem)</strong>.</li>
             <li>Akcija je nepovratna.</li>
           </ul>
         </div>
@@ -71,15 +71,61 @@ export default function AdminDataCleanup(){
         <div className="bg-green-50 border border-green-200 rounded p-4">
           <div className="font-semibold text-green-800 mb-2">Rezultat</div>
           <div className="space-y-1">
+            <div className="font-semibold text-green-700 mb-2">Chat i poruke</div>
             {renderCount('Chat poruke', result.deleted?.chatMessages)}
             {renderCount('Chat sobe', result.deleted?.chatRooms)}
+            {renderCount('Verzije poruka', result.deleted?.messageVersions)}
+            {renderCount('SLA tracking', result.deleted?.messageSLAs)}
+            {renderCount('Audit logovi', result.deleted?.auditLogs)}
+            
+            <div className="font-semibold text-green-700 mb-2 mt-3">Recenzije i notifikacije</div>
             {renderCount('Recenzije', result.deleted?.reviews)}
             {renderCount('Notifikacije', result.deleted?.notifications)}
-            {renderCount('Ponude', result.deleted?.offers)}
+            
+            <div className="font-semibold text-green-700 mb-2 mt-3">Poslovi i ponude</div>
             {renderCount('Poslovi', result.deleted?.jobs)}
-            {renderCount('Pretplate', result.deleted?.subscriptions)}
+            {renderCount('Ponude', result.deleted?.offers)}
+            
+            <div className="font-semibold text-green-700 mb-2 mt-3">Lead management</div>
+            {renderCount('Kupljeni leadovi', result.deleted?.leadPurchases)}
+            {renderCount('Lead queue', result.deleted?.leadQueues)}
+            {renderCount('Company lead queue', result.deleted?.companyLeadQueues)}
+            
+            <div className="font-semibold text-green-700 mb-2 mt-3">Provider podaci</div>
             {renderCount('Provider profili', result.deleted?.providerProfiles)}
+            {renderCount('Provider licence', result.deleted?.providerLicenses)}
+            {renderCount('Provider ROI', result.deleted?.providerROIs)}
+            {renderCount('Team lokacije', result.deleted?.providerTeamLocations)}
+            
+            <div className="font-semibold text-green-700 mb-2 mt-3">Pretplate i naplata</div>
+            {renderCount('Pretplate', result.deleted?.subscriptions)}
+            {renderCount('Povijest pretplata', result.deleted?.subscriptionHistories)}
+            {renderCount('Trial engagement', result.deleted?.trialEngagements)}
+            {renderCount('Add-on pretplate', result.deleted?.addonSubscriptions)}
+            {renderCount('Add-on usage', result.deleted?.addonUsages)}
+            {renderCount('Add-on event logovi', result.deleted?.addonEventLogs)}
+            {renderCount('Billing planovi', result.deleted?.billingPlans)}
+            {renderCount('Billing korekcije', result.deleted?.billingAdjustments)}
+            {renderCount('Fakture', result.deleted?.invoices)}
+            
+            <div className="font-semibold text-green-700 mb-2 mt-3">Krediti i transakcije</div>
+            {renderCount('Kreditne transakcije', result.deleted?.creditTransactions)}
+            
+            <div className="font-semibold text-green-700 mb-2 mt-3">Feature ownership</div>
+            {renderCount('Company feature ownership', result.deleted?.companyFeatureOwnerships)}
+            {renderCount('Feature ownership povijest', result.deleted?.featureOwnershipHistories)}
+            
+            <div className="font-semibold text-green-700 mb-2 mt-3">Verifikacija i podrška</div>
+            {renderCount('Client verifikacije', result.deleted?.clientVerifications)}
+            {renderCount('Support ticketi', result.deleted?.supportTickets)}
+            
+            <div className="font-semibold text-green-700 mb-2 mt-3">Ostalo</div>
             {result.deleted?.whiteLabels !== undefined && renderCount('WhiteLabel postavke', result.deleted?.whiteLabels)}
+            {renderCount('Push pretplate', result.deleted?.pushSubscriptions)}
+            {renderCount('SMS logovi', result.deleted?.smsLogs)}
+            {renderCount('Chatbot sesije', result.deleted?.chatbotSessions)}
+            
+            <div className="font-semibold text-green-700 mb-2 mt-3">Korisnici</div>
             {renderCount('Korisnici obrisani (bez ADMIN)', result.deleted?.users)}
           </div>
         </div>
