@@ -249,9 +249,15 @@ export default function UserTypesOverview() {
                   {data.badges.business.total}
                 </span>
               </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                 {data.badges.business.description}
               </p>
+              {data.badges.business.providers !== undefined && (
+                <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
+                  <div>🏢 Pružatelji: {data.badges.business.providers}</div>
+                  <div>👥 Korisnici (tvrtke/obrti): {data.badges.business.users}</div>
+                </div>
+              )}
             </div>
 
             {/* IDENTITY Badge */}
@@ -269,9 +275,17 @@ export default function UserTypesOverview() {
                 {data.badges.identity.description}
               </p>
               <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
-                <div>📧 Email: {data.badges.identity.email}</div>
-                <div>📱 Telefon: {data.badges.identity.phone}</div>
-                <div>🌐 DNS: {data.badges.identity.dns}</div>
+                {data.badges.identity.providers !== undefined && (
+                  <>
+                    <div>🏢 Pružatelji: {data.badges.identity.providers}</div>
+                    <div>👥 Korisnici (tvrtke/obrti): {data.badges.identity.users}</div>
+                  </>
+                )}
+                <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                  <div>📧 Email: {data.badges.identity.email}</div>
+                  <div>📱 Telefon: {data.badges.identity.phone}</div>
+                  <div>🌐 DNS: {data.badges.identity.dns}</div>
+                </div>
               </div>
             </div>
 
@@ -286,9 +300,15 @@ export default function UserTypesOverview() {
                   {data.badges.safety.total}
                 </span>
               </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                 {data.badges.safety.description}
               </p>
+              {data.badges.safety.providers !== undefined && (
+                <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
+                  <div>🏢 Pružatelji: {data.badges.safety.providers}</div>
+                  <div>👥 Korisnici (tvrtke/obrti): {data.badges.safety.users}</div>
+                </div>
+              )}
             </div>
 
             {/* All Badges Summary */}
@@ -302,9 +322,15 @@ export default function UserTypesOverview() {
                   {data.badges.allBadges.total}
                 </span>
               </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                 {data.badges.allBadges.description}
               </p>
+              {data.badges.allBadges.providers !== undefined && (
+                <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
+                  <div>🏢 Pružatelji: {data.badges.allBadges.providers}</div>
+                  <div>👥 Korisnici (tvrtke/obrti): {data.badges.allBadges.users}</div>
+                </div>
+              )}
             </div>
           </div>
         </div>

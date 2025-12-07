@@ -242,7 +242,37 @@ r.get('/user-types-overview', async (req, res, next) => {
             return profile.kycVerified || 
                    (badgeDataObj && typeof badgeDataObj === 'object' && badgeDataObj.BUSINESS?.verified);
           }).length,
-          description: 'Pružatelji s verificiranom tvrtkom (Sudski/Obrtni registar)'
+          providers: users.filter(u => {
+            if (u.role !== 'PROVIDER') return false;
+            const profile = u.providerProfile;
+            if (!profile) return false;
+            let badgeDataObj = profile.badgeData;
+            if (typeof badgeDataObj === 'string') {
+              try {
+                badgeDataObj = JSON.parse(badgeDataObj);
+              } catch (e) {
+                badgeDataObj = null;
+              }
+            }
+            return profile.kycVerified || 
+                   (badgeDataObj && typeof badgeDataObj === 'object' && badgeDataObj.BUSINESS?.verified);
+          }).length,
+          users: users.filter(u => {
+            if (u.role !== 'USER') return false;
+            const profile = u.providerProfile;
+            if (!profile) return false;
+            let badgeDataObj = profile.badgeData;
+            if (typeof badgeDataObj === 'string') {
+              try {
+                badgeDataObj = JSON.parse(badgeDataObj);
+              } catch (e) {
+                badgeDataObj = null;
+              }
+            }
+            return profile.kycVerified || 
+                   (badgeDataObj && typeof badgeDataObj === 'object' && badgeDataObj.BUSINESS?.verified);
+          }).length,
+          description: 'Korisnici s verificiranom tvrtkom (Sudski/Obrtni registar) - uključuje i pružatelje i tvrtke/obrte koji traže usluge'
         },
         identity: {
           total: users.filter(u => {
@@ -253,14 +283,32 @@ r.get('/user-types-overview', async (req, res, next) => {
                    profile.identityPhoneVerified || 
                    profile.identityDnsVerified;
           }).length,
+          providers: users.filter(u => {
+            if (u.role !== 'PROVIDER') return false;
+            const profile = u.providerProfile;
+            if (!profile) return false;
+            return profile.identityEmailVerified || 
+                   profile.identityPhoneVerified || 
+                   profile.identityDnsVerified;
+          }).length,
+          users: users.filter(u => {
+            if (u.role !== 'USER') return false;
+            const profile = u.providerProfile;
+            if (!profile) return false;
+            return profile.identityEmailVerified || 
+                   profile.identityPhoneVerified || 
+                   profile.identityDnsVerified;
+          }).length,
           email: users.filter(u => u.providerProfile?.identityEmailVerified).length,
           phone: users.filter(u => u.providerProfile?.identityPhoneVerified).length,
           dns: users.filter(u => u.providerProfile?.identityDnsVerified).length,
-          description: 'Pružatelji s verificiranim identitetom (email/telefon/domena)'
+          description: 'Korisnici s verificiranim identitetom (email/telefon/domena) - uključuje i pružatelje i tvrtke/obrte'
         },
         safety: {
           total: users.filter(u => u.providerProfile?.safetyInsuranceUrl).length,
-          description: 'Pružatelji s uploadanom policom osiguranja'
+          providers: users.filter(u => u.role === 'PROVIDER' && u.providerProfile?.safetyInsuranceUrl).length,
+          users: users.filter(u => u.role === 'USER' && u.providerProfile?.safetyInsuranceUrl).length,
+          description: 'Korisnici s uploadanom policom osiguranja - uključuje i pružatelje i tvrtke/obrte'
         },
         allBadges: {
           total: users.filter(u => {
@@ -284,7 +332,47 @@ r.get('/user-types-overview', async (req, res, next) => {
             const hasSafety = !!profile.safetyInsuranceUrl;
             return hasBusiness || hasIdentity || hasSafety;
           }).length,
-          description: 'Pružatelji s barem jednom značkom'
+          providers: users.filter(u => {
+            if (u.role !== 'PROVIDER') return false;
+            const profile = u.providerProfile;
+            if (!profile) return false;
+            let badgeDataObj = profile.badgeData;
+            if (typeof badgeDataObj === 'string') {
+              try {
+                badgeDataObj = JSON.parse(badgeDataObj);
+              } catch (e) {
+                badgeDataObj = null;
+              }
+            }
+            const hasBusiness = profile.kycVerified || 
+                               (badgeDataObj && typeof badgeDataObj === 'object' && badgeDataObj.BUSINESS?.verified);
+            const hasIdentity = profile.identityEmailVerified || 
+                               profile.identityPhoneVerified || 
+                               profile.identityDnsVerified;
+            const hasSafety = !!profile.safetyInsuranceUrl;
+            return hasBusiness || hasIdentity || hasSafety;
+          }).length,
+          users: users.filter(u => {
+            if (u.role !== 'USER') return false;
+            const profile = u.providerProfile;
+            if (!profile) return false;
+            let badgeDataObj = profile.badgeData;
+            if (typeof badgeDataObj === 'string') {
+              try {
+                badgeDataObj = JSON.parse(badgeDataObj);
+              } catch (e) {
+                badgeDataObj = null;
+              }
+            }
+            const hasBusiness = profile.kycVerified || 
+                               (badgeDataObj && typeof badgeDataObj === 'object' && badgeDataObj.BUSINESS?.verified);
+            const hasIdentity = profile.identityEmailVerified || 
+                               profile.identityPhoneVerified || 
+                               profile.identityDnsVerified;
+            const hasSafety = !!profile.safetyInsuranceUrl;
+            return hasBusiness || hasIdentity || hasSafety;
+          }).length,
+          description: 'Korisnici s barem jednom značkom - uključuje i pružatelje i tvrtke/obrte koji traže usluge'
         }
       }
     });
