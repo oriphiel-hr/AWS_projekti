@@ -19,7 +19,7 @@ export default function TimeLanding(){
               <a href="#leads" className="inline-flex items-center px-5 py-3 bg-indigo-600 text-white rounded-md shadow hover:bg-indigo-700">
                 📩 Pošalji brzi upit
               </a>
-              <a href="#register-provider" className="inline-flex items-center px-5 py-3 bg-gray-100 text-gray-900 rounded-md hover:bg-gray-200">
+              <a href="#register-user" className="inline-flex items-center px-5 py-3 bg-gray-100 text-gray-900 rounded-md hover:bg-gray-200">
                 👷‍♂️ Postani majstor na Uslugara
               </a>
             </div>
@@ -127,7 +127,7 @@ export default function TimeLanding(){
           <p className="mt-2 text-indigo-100">Pošalji brzi upit i dobij prvog provjerenog majstora u sat vremena.</p>
           <div className="mt-6 flex justify-center gap-3">
             <a href="#leads" className="inline-flex items-center px-5 py-3 bg-white text-gray-900 rounded-md shadow hover:bg-gray-100">Pošalji upit</a>
-            <a href="#register-provider" className="inline-flex items-center px-5 py-3 bg-indigo-500 text-white rounded-md hover:bg-indigo-400">Postani majstor</a>
+            <a href="#register-user" className="inline-flex items-center px-5 py-3 bg-indigo-500 text-white rounded-md hover:bg-indigo-400">Postani majstor</a>
           </div>
         </div>
       </section>

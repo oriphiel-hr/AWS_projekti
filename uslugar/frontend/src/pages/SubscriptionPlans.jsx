@@ -425,7 +425,7 @@ export default function SubscriptionPlans() {
             </div>
             <span className="text-gray-400 group-hover:text-gray-600">→</span>
           </a>
-          <a href="#register-provider" className="group bg-white rounded-xl border border-gray-200 p-4 hover:shadow transition-shadow inline-flex items-center justify-between">
+          <a href="#register-user" className="group bg-white rounded-xl border border-gray-200 p-4 hover:shadow transition-shadow inline-flex items-center justify-between">
             <div>
               <div className="text-gray-900 font-semibold">Registriraj se kao Pružatelj</div>
               <div className="text-sm text-gray-600">Započni s EXCLUSIVE leadovima</div>

@@ -274,7 +274,7 @@ export default function Login({ onSuccess }) {
             </a>
             {' '}ili{' '}
             <a 
-              href="#register-provider" 
+              href="#register-user" 
               className="text-green-600 dark:text-green-400 hover:text-green-500 dark:hover:text-green-300 font-medium underline focus:outline-none focus:ring-2 focus:ring-green-500 rounded"
               aria-label="Registrirajte se kao pružatelj usluga"
             >

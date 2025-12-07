@@ -251,7 +251,7 @@ export default function Pricing({ setTab }) {
           </p>
           <div className="space-x-4">
             <button
-              onClick={() => setTab('register-provider')}
+              onClick={() => setTab('register-user')}
               className="inline-block bg-green-600 text-white py-3 px-8 rounded-lg font-semibold hover:bg-green-700 transition-colors"
             >
               Registriraj se kao pružatelj

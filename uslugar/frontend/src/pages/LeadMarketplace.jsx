@@ -182,7 +182,7 @@ export default function LeadMarketplace() {
           <p className="text-sm text-red-700">{error}</p>
           <div className="mt-3 flex flex-wrap gap-2">
             <button onClick={() => { window.location.hash = '#login' }} className="px-3 py-2 bg-red-600 text-white rounded">Prijava</button>
-            <button onClick={() => { window.location.hash = '#register-provider' }} className="px-3 py-2 bg-white border rounded">Registriraj se kao pružatelj</button>
+            <button onClick={() => { window.location.hash = '#register-user' }} className="px-3 py-2 bg-white border rounded">Registriraj se kao pružatelj</button>
           </div>
         </div>
       )}

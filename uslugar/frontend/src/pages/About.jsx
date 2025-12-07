@@ -164,7 +164,7 @@ const About = () => {
         </p>
         <div className="space-x-4">
           <a
-            href="#register-provider"
+            href="#register-user"
             className="inline-block bg-white text-blue-600 py-3 px-8 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
           >
             🎯 Registriraj se kao Pružatelj

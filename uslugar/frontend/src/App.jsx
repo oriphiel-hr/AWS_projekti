@@ -62,7 +62,8 @@ export default function App(){
     }
   };
 
-  // TAB: 'user' | 'admin' | 'login' | 'register-user' | 'register-provider' | 'upgrade-to-provider' | 'verify' | 'forgot-password' | 'reset-password' | 'leads' | 'my-leads' | 'roi' | 'subscription' | 'pricing' | 'providers' | 'documentation' | 'faq'
+  // TAB: 'user' | 'admin' | 'login' | 'register-user' | 'upgrade-to-provider' | 'verify' | 'forgot-password' | 'reset-password' | 'leads' | 'my-leads' | 'roi' | 'subscription' | 'pricing' | 'providers' | 'documentation' | 'faq'
+  // Note: 'register-provider' is kept in validTabs for backward compatibility but redirects to 'register-user'
   const [tab, setTab] = useState(() => {
     const hash = window.location.hash?.slice(1).split('?')[0];
     const validTabs = ['admin', 'login', 'register-user', 'register-provider', 'provider-profile', 'user-profile', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'leads', 'my-leads', 'my-jobs', 'roi', 'subscription', 'subscription-success', 'pricing', 'providers', 'documentation', 'faq', 'about', 'contact', 'time-landing', 'team-locations', 'invoices', 'user', 'user-types', 'director'];
@@ -352,20 +353,12 @@ export default function App(){
 
           {/* Direct Registration Links */}
           {!token && (
-            <>
-              <button
-                className={'px-3 py-2 border rounded transition-colors ' + (tab==='register-user' ? 'bg-green-600 text-white' : 'border-green-600 text-green-600 hover:bg-green-50 dark:border-green-500 dark:text-green-400 dark:hover:bg-green-900/20')}
-                onClick={() => setTab('register-user')}
-              >
-                👤 Registracija korisnika
-              </button>
-              <button
-                className={'px-3 py-2 border rounded transition-colors ' + (tab==='register-provider' ? 'bg-blue-600 text-white' : 'border-blue-600 text-blue-600 hover:bg-blue-50 dark:border-blue-500 dark:text-blue-400 dark:hover:bg-blue-900/20')}
-                onClick={() => setTab('register-provider')}
-              >
-                🏢 Registracija pružatelja
-              </button>
-            </>
+            <button
+              className={'px-3 py-2 border rounded transition-colors ' + (tab==='register-user' ? 'bg-green-600 text-white' : 'border-green-600 text-green-600 hover:bg-green-50 dark:border-green-500 dark:text-green-400 dark:hover:bg-green-900/20')}
+              onClick={() => setTab('register-user')}
+            >
+              👤 Registracija
+            </button>
           )}
 
           {/* Dropdown Menus */}
@@ -386,7 +379,7 @@ export default function App(){
                 </button>
                 <button
                   className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"
-                  onClick={() => { setTab('register-provider'); }}
+                  onClick={() => { setTab('register-user'); }}
                 >
                   🏢 Registracija pružatelja usluge
                 </button>
@@ -653,8 +646,8 @@ export default function App(){
                     👤 Registracija korisnika
                   </button>
                   <button
-                    className={'w-full text-left px-3 py-2 rounded ' + (tab==='register-provider' ? 'bg-blue-600 text-white' : 'hover:bg-gray-100')}
-                    onClick={() => { setTab('register-provider'); setIsMobileMenuOpen(false); }}
+                    className={'w-full text-left px-3 py-2 rounded ' + (tab==='register-user' ? 'bg-blue-600 text-white' : 'hover:bg-gray-100')}
+                    onClick={() => { setTab('register-user'); setIsMobileMenuOpen(false); }}
                   >
                     🏢 Registracija pružatelja
                   </button>
@@ -682,7 +675,7 @@ export default function App(){
                 </button>
                 <button
                   className="w-full text-left px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-300 transition-colors"
-                  onClick={() => { setTab('register-provider'); setIsMobileMenuOpen(false); }}
+                  onClick={() => { setTab('register-user'); setIsMobileMenuOpen(false); }}
                 >
                   🏢 Registracija pružatelja usluge
                 </button>
@@ -892,7 +885,7 @@ export default function App(){
                     💰 Pogledaj Cjenik
                   </button>
                   <button
-                    onClick={() => setTab('register-provider')}
+                    onClick={() => setTab('register-user')}
                     className="bg-green-500 text-white px-6 py-2 rounded-lg font-semibold hover:bg-green-600 transition-colors text-sm"
                   >
                     🎯 Registriraj se kao Pružatelj
