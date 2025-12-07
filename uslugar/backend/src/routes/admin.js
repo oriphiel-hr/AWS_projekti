@@ -3496,6 +3496,8 @@ r.get('/api-reference', (req, res, next) => {
           triggers.details.push('Stranica: https://uslugar.oriph.io/#my-jobs (prihvaćanje ponude)');
         } else if (fullPath.includes('/complete')) {
           triggers.details.push('Stranica: https://uslugar.oriph.io/#my-jobs (završavanje posla)');
+        } else {
+          triggers.details.push('Stranica: Nema specifične stranice - poziva se iz frontend komponenti');
         }
         return triggers;
       }
@@ -3507,6 +3509,8 @@ r.get('/api-reference', (req, res, next) => {
           triggers.details.push('Stranica: https://uslugar.oriph.io/#providers (slanje ponude na posao)');
         } else if (fullPath.includes('/accept')) {
           triggers.details.push('Stranica: https://uslugar.oriph.io/#my-jobs (prihvaćanje ponude)');
+        } else {
+          triggers.details.push('Stranica: Nema specifične stranice - poziva se iz frontend komponenti');
         }
         return triggers;
       }
@@ -3518,6 +3522,8 @@ r.get('/api-reference', (req, res, next) => {
           triggers.details.push('Stranica: https://uslugar.oriph.io/#providers (lista pružatelja)');
         } else if (method === 'POST' || method === 'PUT' || method === 'PATCH') {
           triggers.details.push('Stranica: https://uslugar.oriph.io/#provider-profile (uređivanje profila)');
+        } else {
+          triggers.details.push('Stranica: Nema specifične stranice - poziva se iz frontend komponenti');
         }
         return triggers;
       }
@@ -3528,7 +3534,9 @@ r.get('/api-reference', (req, res, next) => {
         if (fullPath.includes('/rooms') && method === 'POST') {
           triggers.details.push('Stranica: https://uslugar.oriph.io/#my-jobs (kreiranje chat sobe nakon prihvaćanja ponude)');
         } else if (fullPath.includes('/messages')) {
-          triggers.details.push('Stranica: ChatRoom komponenta (real-time chat)');
+          triggers.details.push('Stranica: Nema specifične stranice - poziva se iz ChatRoom komponente (real-time chat)');
+        } else {
+          triggers.details.push('Stranica: Nema specifične stranice - poziva se iz ChatRoom komponente');
         }
         return triggers;
       }
@@ -3542,6 +3550,8 @@ r.get('/api-reference', (req, res, next) => {
           triggers.details.push('Stranica: https://uslugar.oriph.io/#leads (kupnja leada)');
         } else if (fullPath.includes('/contacted') || fullPath.includes('/converted')) {
           triggers.details.push('Stranica: https://uslugar.oriph.io/#my-leads (označavanje statusa leada)');
+        } else {
+          triggers.details.push('Stranica: Nema specifične stranice - poziva se iz frontend komponenti');
         }
         return triggers;
       }
@@ -3549,15 +3559,22 @@ r.get('/api-reference', (req, res, next) => {
       // Lead queue endpoints
       if (fullPath.startsWith('/api/lead-queue') || fullPath.includes('/my-offers') || fullPath.includes('/my-queue')) {
         triggers.type = 'page';
-        triggers.details.push('Stranica: https://uslugar.oriph.io/#my-leads (Lead Queue management)');
         if (fullPath.includes('/respond')) {
           triggers.details.push('Stranica: https://uslugar.oriph.io/#my-leads (odgovaranje na queue ponudu)');
+        } else {
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#my-leads (Lead Queue management)');
         }
         return triggers;
       }
       
       // Subscriptions endpoints
       if (fullPath.startsWith('/api/subscriptions')) {
+        // Auto-downgrade se pokreće iz job-a
+        if (fullPath.includes('/downgrade') || fullPath.includes('/check-expiring')) {
+          triggers.type = 'job';
+          triggers.details.push('Job: checkExpiringSubscriptions (svaki dan u ponoć)');
+          return triggers;
+        }
         triggers.type = 'page';
         if (fullPath.includes('/subscribe')) {
           triggers.details.push('Stranica: https://uslugar.oriph.io/#pricing (pretplata)');
@@ -3565,49 +3582,55 @@ r.get('/api-reference', (req, res, next) => {
           triggers.details.push('Stranica: https://uslugar.oriph.io/#subscription (otkazivanje pretplate)');
         } else if (method === 'GET') {
           triggers.details.push('Stranica: https://uslugar.oriph.io/#subscription (pregled pretplate)');
-        }
-        // Auto-downgrade se pokreće iz job-a
-        if (fullPath.includes('/downgrade') || fullPath.includes('/check-expiring')) {
-          triggers.type = 'job';
-          triggers.details.push('Job: checkExpiringSubscriptions (svaki dan u ponoć)');
+        } else {
+          triggers.details.push('Stranica: Nema specifične stranice - poziva se iz frontend komponenti');
         }
         return triggers;
       }
       
       // Payments endpoints
       if (fullPath.startsWith('/api/payments')) {
+        if (fullPath.includes('/webhook')) {
+          triggers.type = 'webhook';
+          triggers.details.push('Stripe webhook - automatski poziv od Stripe-a nakon plaćanja');
+          return triggers;
+        }
         triggers.type = 'page';
         if (fullPath.includes('/create-checkout')) {
           triggers.details.push('Stranica: https://uslugar.oriph.io/#pricing (Stripe checkout)');
-        } else if (fullPath.includes('/webhook')) {
-          triggers.type = 'webhook';
-          triggers.details.push('Stripe webhook - automatski poziv od Stripe-a nakon plaćanja');
+        } else {
+          triggers.details.push('Stranica: Nema specifične stranice - poziva se iz frontend komponenti');
         }
         return triggers;
       }
       
       // Reviews endpoints
       if (fullPath.startsWith('/api/reviews')) {
-        triggers.type = 'page';
-        if (method === 'POST') {
-          triggers.details.push('Stranica: https://uslugar.oriph.io/#my-jobs (dodavanje recenzije nakon završetka posla)');
-        } else if (method === 'GET') {
-          triggers.details.push('Stranica: ProviderProfile komponenta (prikaz recenzija)');
-        }
         // Auto-publish se pokreće iz job-a
         if (fullPath.includes('/publish')) {
           triggers.type = 'job';
           triggers.details.push('Job: publishExpiredReviews (svaki dan u ponoć)');
+          return triggers;
+        }
+        triggers.type = 'page';
+        if (method === 'POST') {
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#my-jobs (dodavanje recenzije nakon završetka posla)');
+        } else if (method === 'GET') {
+          triggers.details.push('Stranica: Nema specifične stranice - poziva se iz ProviderProfile komponente (prikaz recenzija)');
+        } else {
+          triggers.details.push('Stranica: Nema specifične stranice - poziva se iz frontend komponenti');
         }
         return triggers;
       }
       
       // Notifications endpoints
       if (fullPath.startsWith('/api/notifications')) {
-        triggers.type = 'api';
-        triggers.details.push('Poziva se iz drugih API-ja (automatski) ili frontend komponenti');
         if (fullPath.includes('/read')) {
-          triggers.details.push('Stranica: Notification komponenta (označavanje kao pročitano)');
+          triggers.type = 'page';
+          triggers.details.push('Stranica: Nema specifične stranice - poziva se iz Notification komponente (označavanje kao pročitano)');
+        } else {
+          triggers.type = 'api';
+          triggers.details.push('Poziva se iz drugih API-ja (automatski) ili frontend komponenti');
         }
         return triggers;
       }
@@ -3633,7 +3656,118 @@ r.get('/api-reference', (req, res, next) => {
           triggers.details.push('Stranica: https://uslugar.oriph.io/#user-types (Tipovi korisnika)');
         } else if (fullPath.includes('/providers')) {
           triggers.details.push('Stranica: https://uslugar.oriph.io/#providers (Javni pregled pružatelja)');
+        } else {
+          triggers.details.push('Stranica: Nema specifične stranice - javni endpoint');
         }
+        return triggers;
+      }
+      
+      // Users endpoints
+      if (fullPath.startsWith('/api/users')) {
+        triggers.type = 'page';
+        if (fullPath.includes('/me')) {
+          triggers.details.push('Stranica: Nema specifične stranice - poziva se iz frontend komponenti za dohvaćanje korisničkih podataka');
+        } else {
+          triggers.details.push('Stranica: Nema specifične stranice - poziva se iz frontend komponenti');
+        }
+        return triggers;
+      }
+      
+      // Categories endpoints
+      if (fullPath.startsWith('/api/categories')) {
+        triggers.type = 'page';
+        triggers.details.push('Stranica: Nema specifične stranice - poziva se iz frontend komponenti (dropdown meniji, filteri)');
+        return triggers;
+      }
+      
+      // Legal statuses endpoints
+      if (fullPath.startsWith('/api/legal-statuses')) {
+        triggers.type = 'page';
+        triggers.details.push('Stranica: Nema specifične stranice - poziva se iz frontend komponenti (dropdown meniji)');
+        return triggers;
+      }
+      
+      // Documentation endpoints
+      if (fullPath.startsWith('/api/documentation')) {
+        triggers.type = 'page';
+        triggers.details.push('Stranica: https://uslugar.oriph.io/#documentation (Dokumentacija)');
+        return triggers;
+      }
+      
+      // Wizard endpoints
+      if (fullPath.startsWith('/api/wizard')) {
+        triggers.type = 'page';
+        triggers.details.push('Stranica: Nema specifične stranice - poziva se iz Wizard komponente');
+        return triggers;
+      }
+      
+      // Chatbot endpoints
+      if (fullPath.startsWith('/api/chatbot')) {
+        triggers.type = 'page';
+        triggers.details.push('Stranica: Nema specifične stranice - poziva se iz Chatbot komponente');
+        return triggers;
+      }
+      
+      // Director endpoints
+      if (fullPath.startsWith('/api/director')) {
+        triggers.type = 'page';
+        triggers.details.push('Stranica: https://uslugar.oriph.io/#director (Director Dashboard)');
+        return triggers;
+      }
+      
+      // Matchmaking endpoints
+      if (fullPath.startsWith('/api/matchmaking')) {
+        triggers.type = 'page';
+        triggers.details.push('Stranica: Nema specifične stranice - poziva se iz Matchmaking komponente');
+        return triggers;
+      }
+      
+      // Provider ROI endpoints
+      if (fullPath.startsWith('/api/provider-roi')) {
+        triggers.type = 'page';
+        triggers.details.push('Stranica: https://uslugar.oriph.io/#roi (ROI Dashboard)');
+        return triggers;
+      }
+      
+      // Invoices endpoints
+      if (fullPath.startsWith('/api/invoices')) {
+        triggers.type = 'page';
+        triggers.details.push('Stranica: https://uslugar.oriph.io/#invoices (Fakture)');
+        return triggers;
+      }
+      
+      // Whitelabel endpoints
+      if (fullPath.startsWith('/api/whitelabel')) {
+        triggers.type = 'page';
+        triggers.details.push('Stranica: Nema specifične stranice - poziva se iz ProviderProfile komponente (PRO plan)');
+        return triggers;
+      }
+      
+      // Client verification endpoints
+      if (fullPath.startsWith('/api/client-verification')) {
+        triggers.type = 'page';
+        triggers.details.push('Stranica: Nema specifične stranice - poziva se iz frontend komponenti');
+        return triggers;
+      }
+      
+      // SMS verification endpoints
+      if (fullPath.startsWith('/api/sms-verification')) {
+        triggers.type = 'page';
+        triggers.details.push('Stranica: Nema specifične stranice - poziva se iz frontend komponenti (SMS verifikacija)');
+        return triggers;
+      }
+      
+      // Upload endpoints
+      if (fullPath.startsWith('/api/upload')) {
+        triggers.type = 'page';
+        triggers.details.push('Stranica: Nema specifične stranice - poziva se iz frontend komponenti (upload slika/dokumenata)');
+        return triggers;
+      }
+      
+      // Push notifications endpoints
+      if (fullPath.startsWith('/api/push-notifications')) {
+        triggers.type = 'api';
+        triggers.details.push('Poziva se iz frontend komponenti (push notification subscription)');
         return triggers;
       }
       
@@ -3695,9 +3829,10 @@ r.get('/api-reference', (req, res, next) => {
         return triggers;
       }
       
-      // Default - pretpostavljamo da je stranica
+      // Default - provjeri da li postoji stranica ili nema
+      // Većina endpointa se poziva iz frontend komponenti, ali ako nema specifične stranice, označi kao "nema"
       triggers.type = 'page';
-      triggers.details.push('Frontend stranica ili komponenta');
+      triggers.details.push('Stranica: Nema specifične stranice - poziva se iz frontend komponenti ili API-ja');
       return triggers;
     };
     

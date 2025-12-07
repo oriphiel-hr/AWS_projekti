@@ -8,6 +8,7 @@ const AdminApiReference = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [expandedRoutes, setExpandedRoutes] = useState(new Set());
+  const [expandAll, setExpandAll] = useState(false);
 
   useEffect(() => {
     loadApiReference();
@@ -50,7 +51,87 @@ const AdminApiReference = () => {
       newExpanded.add(routeKey);
     }
     setExpandedRoutes(newExpanded);
+    // Ažuriraj expandAll checkbox na temelju trenutnog stanja
+    // Provjeri da li su sve rute otvorene
+    if (apiData?.routes || apiData?.allRoutes) {
+      const allRouteKeys = new Set();
+      if (apiData?.routes) {
+        Object.entries(apiData.routes).forEach(([group, routes]) => {
+          routes.forEach((route, index) => {
+            const routeKey = `${group}-${route.method}-${route.path}-${index}`;
+            allRouteKeys.add(routeKey);
+          });
+        });
+      }
+      if (apiData?.allRoutes) {
+        apiData.allRoutes.forEach((route, index) => {
+          const routeKey = `all-${route.method}-${route.fullPath}-${index}`;
+          allRouteKeys.add(routeKey);
+        });
+      }
+      // Provjeri da li su sve rute otvorene
+      const allExpanded = allRouteKeys.size > 0 && Array.from(allRouteKeys).every(key => newExpanded.has(key));
+      setExpandAll(allExpanded);
+    }
   };
+
+  const handleExpandAll = (checked) => {
+    setExpandAll(checked);
+    if (checked) {
+      // Otvori sve rute (samo one koje su vidljive nakon filtriranja)
+      const allRouteKeys = new Set();
+      // Dodaj rute iz filtriranih grupa
+      filteredRoutes.forEach(([group, routes]) => {
+        routes.forEach((route, index) => {
+          const routeKey = `${group}-${route.method}-${route.path}-${index}`;
+          allRouteKeys.add(routeKey);
+        });
+      });
+      // Dodaj rute iz filtriranih allRoutes (ako postoji search)
+      if (searchTerm && filteredAllRoutes) {
+        filteredAllRoutes.forEach((route, index) => {
+          const routeKey = `all-${route.method}-${route.fullPath}-${index}`;
+          allRouteKeys.add(routeKey);
+        });
+      }
+      setExpandedRoutes(allRouteKeys);
+    } else {
+      // Zatvori sve rute
+      setExpandedRoutes(new Set());
+    }
+  };
+  
+  // Ažuriraj expandAll checkbox na temelju trenutnog stanja expandedRoutes
+  useEffect(() => {
+    if (!apiData) return;
+    
+    // Izračunaj sve moguće route keys (vidljive rute)
+    const allPossibleKeys = new Set();
+    
+    // Dodaj rute iz filtriranih grupa
+    filteredRoutes.forEach(([group, routes]) => {
+      routes.forEach((route, index) => {
+        const routeKey = `${group}-${route.method}-${route.path}-${index}`;
+        allPossibleKeys.add(routeKey);
+      });
+    });
+    
+    // Dodaj rute iz filtriranih allRoutes (ako postoji search)
+    if (searchTerm && filteredAllRoutes) {
+      filteredAllRoutes.forEach((route, index) => {
+        const routeKey = `all-${route.method}-${route.fullPath}-${index}`;
+        allPossibleKeys.add(routeKey);
+      });
+    }
+    
+    // Provjeri da li su sve vidljive rute otvorene
+    if (allPossibleKeys.size > 0) {
+      const allExpanded = Array.from(allPossibleKeys).every(key => expandedRoutes.has(key));
+      setExpandAll(allExpanded);
+    } else {
+      setExpandAll(false);
+    }
+  }, [expandedRoutes, filteredRoutes, filteredAllRoutes, searchTerm, apiData]);
 
   const getMethodColor = (method) => {
     const colors = {
@@ -116,7 +197,7 @@ const AdminApiReference = () => {
 
       {/* Search and Filter */}
       <div className="mb-6 bg-white rounded-lg shadow p-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Pretraži</label>
             <input
@@ -140,6 +221,18 @@ const AdminApiReference = () => {
               ))}
             </select>
           </div>
+        </div>
+        <div className="flex items-center">
+          <input
+            type="checkbox"
+            id="expandAll"
+            checked={expandAll}
+            onChange={(e) => handleExpandAll(e.target.checked)}
+            className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+          />
+          <label htmlFor="expandAll" className="ml-2 text-sm font-medium text-gray-700 cursor-pointer">
+            Otvori/sakrij sve detalje
+          </label>
         </div>
       </div>
 
