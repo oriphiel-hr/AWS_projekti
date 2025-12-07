@@ -79,7 +79,7 @@ export default function UserTypesOverview({ isAdmin = false }) {
                 <div key={type} className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
                   <div className="flex items-center justify-between mb-4">
                     <h4 className="text-lg font-semibold text-gray-900 dark:text-white">{type}</h4>
-                    <span className="text-3xl font-bold text-green-600 dark:text-green-400">{info.count}</span>
+                    {isAdmin && <span className="text-3xl font-bold text-green-600 dark:text-green-400">{info.count}</span>}
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-400">{info.description}</p>
                 </div>
@@ -102,7 +102,7 @@ export default function UserTypesOverview({ isAdmin = false }) {
                 <div key={type} className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
                   <div className="flex items-center justify-between mb-4">
                     <h4 className="text-lg font-semibold text-gray-900 dark:text-white">{type}</h4>
-                    <span className="text-3xl font-bold text-blue-600 dark:text-blue-400">{info.count}</span>
+                    {isAdmin && <span className="text-3xl font-bold text-blue-600 dark:text-blue-400">{info.count}</span>}
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-400">{info.description}</p>
                 </div>
@@ -125,7 +125,7 @@ export default function UserTypesOverview({ isAdmin = false }) {
                 <div key={type} className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
                   <div className="flex items-center justify-between mb-4">
                     <h4 className="text-lg font-semibold text-gray-900 dark:text-white">{type}</h4>
-                    <span className="text-3xl font-bold text-purple-600 dark:text-purple-400">{info.count}</span>
+                    {isAdmin && <span className="text-3xl font-bold text-purple-600 dark:text-purple-400">{info.count}</span>}
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-400">{info.description}</p>
                 </div>
@@ -144,7 +144,7 @@ export default function UserTypesOverview({ isAdmin = false }) {
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
               {Object.entries(data.legalStatusStats).map(([status, count]) => (
                 <div key={status} className="text-center">
-                  <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{count}</div>
+                  {isAdmin && <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{count}</div>}
                   <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">{status}</div>
                 </div>
               ))}
@@ -161,7 +161,7 @@ export default function UserTypesOverview({ isAdmin = false }) {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             {Object.entries(data.subscriptionStats).map(([plan, count]) => (
               <div key={plan} className="text-center">
-                <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{count}</div>
+                {isAdmin && <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{count}</div>}
                 <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">{plan}</div>
               </div>
             ))}
@@ -178,9 +178,11 @@ export default function UserTypesOverview({ isAdmin = false }) {
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Verificirane tvrtke</h3>
-              <span className="text-3xl font-bold text-green-600 dark:text-green-400">
-                {data.verification.verified}
-              </span>
+              {isAdmin && (
+                <span className="text-3xl font-bold text-green-600 dark:text-green-400">
+                  {data.verification.verified}
+                </span>
+              )}
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400">
               Tvrtke koje su potvrdile svoj identitet dokumentima (OIB, sudski registar)
@@ -189,9 +191,11 @@ export default function UserTypesOverview({ isAdmin = false }) {
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Nije verificirano</h3>
-              <span className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">
-                {data.verification.notVerified}
-              </span>
+              {isAdmin && (
+                <span className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">
+                  {data.verification.notVerified}
+                </span>
+              )}
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400">
               Tvrtke koje još nisu potvrdile svoj identitet dokumentima
@@ -209,9 +213,11 @@ export default function UserTypesOverview({ isAdmin = false }) {
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">S licencama</h3>
-              <span className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-                {data.licenses.withLicenses}
-              </span>
+              {isAdmin && (
+                <span className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                  {data.licenses.withLicenses}
+                </span>
+              )}
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400">
               Pružatelji koji su učitali licence za svoje djelatnosti
@@ -220,9 +226,11 @@ export default function UserTypesOverview({ isAdmin = false }) {
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Verificirane licence</h3>
-              <span className="text-3xl font-bold text-green-600 dark:text-green-400">
-                {data.licenses.verifiedLicenses}
-              </span>
+              {isAdmin && (
+                <span className="text-3xl font-bold text-green-600 dark:text-green-400">
+                  {data.licenses.verifiedLicenses}
+                </span>
+              )}
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400">
               Licence koje su verificirane od strane administratora
@@ -231,9 +239,11 @@ export default function UserTypesOverview({ isAdmin = false }) {
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Čeka verifikaciju</h3>
-              <span className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">
-                {data.licenses.pendingVerification}
-              </span>
+              {isAdmin && (
+                <span className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">
+                  {data.licenses.pendingVerification}
+                </span>
+              )}
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400">
               Licence koje čekaju na verifikaciju od strane administratora
@@ -255,9 +265,11 @@ export default function UserTypesOverview({ isAdmin = false }) {
                   <span className="text-2xl">🏢</span>
                   Business Badge
                 </h3>
-                <span className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-                  {data.badges.business.total}
-                </span>
+                {isAdmin && (
+                  <span className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                    {data.badges.business.total}
+                  </span>
+                )}
               </div>
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                 {data.badges.business.description}
@@ -277,25 +289,29 @@ export default function UserTypesOverview({ isAdmin = false }) {
                   <span className="text-2xl">🆔</span>
                   Identity Badge
                 </h3>
-                <span className="text-3xl font-bold text-purple-600 dark:text-purple-400">
-                  {data.badges.identity.total}
-                </span>
+                {isAdmin && (
+                  <span className="text-3xl font-bold text-purple-600 dark:text-purple-400">
+                    {data.badges.identity.total}
+                  </span>
+                )}
               </div>
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                 {data.badges.identity.description}
               </p>
               <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
-                {data.badges.identity.providers !== undefined && (
+                {isAdmin && data.badges.identity.providers !== undefined && (
                   <>
                     <div>🏢 Pružatelji: {data.badges.identity.providers}</div>
                     <div>👥 Korisnici (tvrtke/obrti): {data.badges.identity.users}</div>
                   </>
                 )}
-                <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-                  <div>📧 Email: {data.badges.identity.email}</div>
-                  <div>📱 Telefon: {data.badges.identity.phone}</div>
-                  <div>🌐 DNS: {data.badges.identity.dns}</div>
-                </div>
+                {isAdmin && (
+                  <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                    <div>📧 Email: {data.badges.identity.email}</div>
+                    <div>📱 Telefon: {data.badges.identity.phone}</div>
+                    <div>🌐 DNS: {data.badges.identity.dns}</div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -306,9 +322,11 @@ export default function UserTypesOverview({ isAdmin = false }) {
                   <span className="text-2xl">🛡️</span>
                   Safety Badge
                 </h3>
-                <span className="text-3xl font-bold text-green-600 dark:text-green-400">
-                  {data.badges.safety.total}
-                </span>
+                {isAdmin && (
+                  <span className="text-3xl font-bold text-green-600 dark:text-green-400">
+                    {data.badges.safety.total}
+                  </span>
+                )}
               </div>
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                 {data.badges.safety.description}
@@ -349,33 +367,41 @@ export default function UserTypesOverview({ isAdmin = false }) {
       )}
 
       {/* Reputacija */}
-      {data.reputation && data.reputation.totalProviders > 0 && (
+      {data.reputation && (
         <div className="mb-12">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Reputacija Pružatelja</h2>
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div className="text-center">
-                <div className="text-3xl font-bold text-indigo-600 dark:text-indigo-400 mb-2">
-                  {data.reputation.avgRating.toFixed(1)} ⭐
-                </div>
+                {isAdmin && (
+                  <div className="text-3xl font-bold text-indigo-600 dark:text-indigo-400 mb-2">
+                    {data.reputation.avgRating.toFixed(1)} ⭐
+                  </div>
+                )}
                 <div className="text-sm text-gray-600 dark:text-gray-400">Prosječna ocjena</div>
               </div>
               <div className="text-center">
-                <div className="text-3xl font-bold text-indigo-600 dark:text-indigo-400 mb-2">
-                  {data.reputation.avgResponseTimeMinutes} min
-                </div>
+                {isAdmin && (
+                  <div className="text-3xl font-bold text-indigo-600 dark:text-indigo-400 mb-2">
+                    {data.reputation.avgResponseTimeMinutes} min
+                  </div>
+                )}
                 <div className="text-sm text-gray-600 dark:text-gray-400">Prosječno vrijeme odgovora</div>
               </div>
               <div className="text-center">
-                <div className="text-3xl font-bold text-indigo-600 dark:text-indigo-400 mb-2">
-                  {data.reputation.avgConversionRate.toFixed(1)}%
-                </div>
+                {isAdmin && (
+                  <div className="text-3xl font-bold text-indigo-600 dark:text-indigo-400 mb-2">
+                    {data.reputation.avgConversionRate.toFixed(1)}%
+                  </div>
+                )}
                 <div className="text-sm text-gray-600 dark:text-gray-400">Prosječna stopa konverzije</div>
               </div>
               <div className="text-center">
-                <div className="text-3xl font-bold text-indigo-600 dark:text-indigo-400 mb-2">
-                  {data.reputation.totalProviders}
-                </div>
+                {isAdmin && (
+                  <div className="text-3xl font-bold text-indigo-600 dark:text-indigo-400 mb-2">
+                    {data.reputation.totalProviders}
+                  </div>
+                )}
                 <div className="text-sm text-gray-600 dark:text-gray-400">Ukupno pružatelja</div>
               </div>
             </div>
