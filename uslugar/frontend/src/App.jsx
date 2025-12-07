@@ -8,7 +8,6 @@ import ProviderFilter from './components/ProviderFilter';
 import ReviewList from './components/ReviewList';
 import Login from './pages/Login';
 import UserRegister from './pages/UserRegister';
-import ProviderRegister from './pages/ProviderRegister';
 import ProviderProfile from './pages/ProviderProfile';
 import ProviderProfileModal from './components/ProviderProfile';
 import UserProfile from './pages/UserProfile';
@@ -236,6 +235,13 @@ export default function App(){
           setTab('user-profile');
           window.location.hash = '#user-profile';
         }
+        return;
+      }
+      
+      // Redirect register-provider to register-user (UserRegister already allows choosing provider type)
+      if (hash === 'register-provider') {
+        window.location.hash = '#register-user';
+        setTab('register-user');
         return;
       }
       
@@ -1029,9 +1035,10 @@ export default function App(){
         </section>
       )}
 
+      {/* register-provider redirects to register-user (UserRegister already allows choosing provider type) */}
       {tab === 'register-provider' && (
         <section id="register-provider" className="tab-section">
-          <ProviderRegister onSuccess={(token, user) => {
+          <UserRegister onSuccess={(token, user) => {
             saveToken(token);
             setTab('user');
           }} />
