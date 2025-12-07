@@ -64,6 +64,70 @@ export default function AdminRouter(){
     setIsLoading(false);
   }, []);
 
+  // Detektiraj hash linkove koji nisu dio admin panela i preusmjeri na glavnu aplikaciju
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash?.slice(1).split('?')[0];
+      if (!hash) return;
+      
+      // Admin panel rute (hash-ovi koji su dio admin panela)
+      const adminHashRoutes = ['admin'];
+      // Admin panel path rute (koje se koriste u BrowserRouter)
+      const adminPathRoutes = ['payments', 'provider-approvals', 'kyc-metrics', 'verification-documents', 
+                               'platform-stats', 'moderation', 'sms-logs', 'invoices', 
+                               'users-overview', 'cleanup', 'testing', 'database', 'api-reference', 'user-types'];
+      
+      // Provjeri da li je hash dio admin panela
+      const isAdminHash = adminHashRoutes.includes(hash) || hash.startsWith('admin/');
+      const isAdminPath = adminPathRoutes.some(route => hash === route);
+      
+      // Ako hash postoji i NIJE dio admin panela, preusmjeri na glavnu aplikaciju
+      if (!isAdminHash && !isAdminPath) {
+        // Resetiraj pathname na root i postavi hash
+        const query = window.location.search;
+        window.location.href = `/${window.location.hash}${query}`;
+      }
+    };
+
+    // Interceptiraj klikove na hash linkove
+    const handleClick = (e) => {
+      const target = e.target.closest('a[href^="#"]');
+      if (target) {
+        const href = target.getAttribute('href');
+        if (href && href.startsWith('#')) {
+          const hash = href.slice(1).split('?')[0];
+          // Admin panel rute
+          const adminHashRoutes = ['admin'];
+          const adminPathRoutes = ['payments', 'provider-approvals', 'kyc-metrics', 'verification-documents', 
+                                   'platform-stats', 'moderation', 'sms-logs', 'invoices', 
+                                   'users-overview', 'cleanup', 'testing', 'database', 'api-reference', 'user-types'];
+          
+          const isAdminHash = adminHashRoutes.includes(hash) || hash.startsWith('admin/');
+          const isAdminPath = adminPathRoutes.some(route => hash === route);
+          
+          // Ako hash NIJE dio admin panela, resetiraj pathname
+          if (!isAdminHash && !isAdminPath) {
+            e.preventDefault();
+            const query = window.location.search;
+            window.location.href = `/${href}${query}`;
+          }
+        }
+      }
+    };
+
+    // Provjeri trenutni hash pri učitavanju
+    handleHashChange();
+    
+    // Slušaj hash promjene i klikove
+    window.addEventListener('hashchange', handleHashChange);
+    document.addEventListener('click', handleClick);
+    
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange);
+      document.removeEventListener('click', handleClick);
+    };
+  }, []);
+
   const handleLogin = (token, userData) => {
     setIsAuthenticated(true);
     setUser(userData);
