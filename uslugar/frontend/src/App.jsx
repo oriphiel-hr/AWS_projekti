@@ -49,6 +49,15 @@ export function useAuth() {
 export default function App(){
   const { token, saveToken, logout } = useAuth();
   const { isDarkMode, toggleDarkMode } = useDarkMode();
+  
+  // Helper funkcija za navigaciju koja provjerava da li smo u admin panelu
+  const navigateToTab = (tabName) => {
+    if (window.location.pathname.startsWith('/admin/')) {
+      window.location.replace(`/#${tabName}`);
+    } else {
+      setTab(tabName);
+    }
+  };
 
   // Helper funkcija za provjeru je li korisnik PROVIDER ili USER sa legalStatusId
   const isProviderOrBusinessUser = () => {
@@ -319,7 +328,13 @@ export default function App(){
           {/* Main Navigation */}
           <button
             className={'px-3 py-2 border rounded transition-colors ' + (tab==='user' ? 'bg-gray-900 dark:bg-gray-700 text-white' : 'hover:bg-gray-100 dark:hover:bg-gray-800 dark:border-gray-600 dark:text-gray-300')}
-            onClick={() => setTab('user')}
+            onClick={() => {
+              if (window.location.pathname.startsWith('/admin/')) {
+                window.location.replace('/#user');
+              } else {
+                setTab('user');
+              }
+            }}
             aria-label="Početna stranica"
             aria-current={tab === 'user' ? 'page' : undefined}
           >
@@ -327,7 +342,13 @@ export default function App(){
           </button>
           <button
             className={'px-3 py-2 border rounded transition-colors ' + (tab==='pricing' ? 'bg-orange-600 text-white' : 'border-orange-600 text-orange-600 hover:bg-orange-50 dark:border-orange-500 dark:text-orange-400 dark:hover:bg-orange-900/20')}
-            onClick={() => setTab('pricing')}
+            onClick={() => {
+              if (window.location.pathname.startsWith('/admin/')) {
+                window.location.replace('/#pricing');
+              } else {
+                setTab('pricing');
+              }
+            }}
             aria-label="Cjenik"
             aria-current={tab === 'pricing' ? 'page' : undefined}
           >
@@ -335,7 +356,13 @@ export default function App(){
           </button>
           <button
             className={'px-3 py-2 border rounded transition-colors ' + (tab==='faq' ? 'bg-purple-600 text-white' : 'border-purple-600 text-purple-600 hover:bg-purple-50 dark:border-purple-500 dark:text-purple-400 dark:hover:bg-purple-900/20')}
-            onClick={() => setTab('faq')}
+            onClick={() => {
+              if (window.location.pathname.startsWith('/admin/')) {
+                window.location.replace('/#faq');
+              } else {
+                setTab('faq');
+              }
+            }}
             aria-label="Često postavljana pitanja"
             aria-current={tab === 'faq' ? 'page' : undefined}
           >
@@ -343,7 +370,13 @@ export default function App(){
           </button>
           <button
             className={'px-3 py-2 border rounded transition-colors ' + (tab==='documentation' ? 'bg-indigo-600 text-white' : 'border-indigo-600 text-indigo-600 hover:bg-indigo-50 dark:border-indigo-500 dark:text-indigo-400 dark:hover:bg-indigo-900/20')}
-            onClick={() => setTab('documentation')}
+            onClick={() => {
+              if (window.location.pathname.startsWith('/admin/')) {
+                window.location.replace('/#documentation');
+              } else {
+                setTab('documentation');
+              }
+            }}
             aria-label="Dokumentacija"
             aria-current={tab === 'documentation' ? 'page' : undefined}
           >
@@ -351,7 +384,13 @@ export default function App(){
           </button>
           <button
             className={'px-3 py-2 border rounded transition-colors ' + (tab==='about' ? 'bg-green-600 text-white' : 'border-green-600 text-green-600 hover:bg-green-50 dark:border-green-500 dark:text-green-400 dark:hover:bg-green-900/20')}
-            onClick={() => setTab('about')}
+            onClick={() => {
+              if (window.location.pathname.startsWith('/admin/')) {
+                window.location.replace('/#about');
+              } else {
+                setTab('about');
+              }
+            }}
             aria-label="O nama"
             aria-current={tab === 'about' ? 'page' : undefined}
           >
@@ -359,7 +398,13 @@ export default function App(){
           </button>
           <button
             className={'px-3 py-2 border rounded transition-colors ' + (tab==='contact' ? 'bg-blue-600 text-white' : 'border-blue-600 text-blue-600 hover:bg-blue-50 dark:border-blue-500 dark:text-blue-400 dark:hover:bg-blue-900/20')}
-            onClick={() => setTab('contact')}
+            onClick={() => {
+              if (window.location.pathname.startsWith('/admin/')) {
+                window.location.replace('/#contact');
+              } else {
+                setTab('contact');
+              }
+            }}
             aria-label="Kontakt"
             aria-current={tab === 'contact' ? 'page' : undefined}
           >
@@ -367,7 +412,13 @@ export default function App(){
           </button>
           <button
             className={'px-3 py-2 border rounded transition-colors ' + (tab==='user-types' ? 'bg-teal-600 text-white' : 'border-teal-600 text-teal-600 hover:bg-teal-50 dark:border-teal-500 dark:text-teal-400 dark:hover:bg-teal-900/20')}
-            onClick={() => setTab('user-types')}
+            onClick={() => {
+              if (window.location.pathname.startsWith('/admin/')) {
+                window.location.replace('/#user-types');
+              } else {
+                setTab('user-types');
+              }
+            }}
             aria-label="Tipovi korisnika"
             aria-current={tab === 'user-types' ? 'page' : undefined}
           >
@@ -380,13 +431,25 @@ export default function App(){
               <DropdownMenu title="👤 Korisnik" icon="👤">
                 <button
                   className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"
-                  onClick={() => { setTab('login'); }}
+                  onClick={() => {
+                    if (window.location.pathname.startsWith('/admin/')) {
+                      window.location.replace('/#login');
+                    } else {
+                      setTab('login');
+                    }
+                  }}
                 >
                   🔑 Prijava
                 </button>
                 <button
                   className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"
-                  onClick={() => { setTab('register-user'); }}
+                  onClick={() => {
+                    if (window.location.pathname.startsWith('/admin/')) {
+                      window.location.replace('/#register-user');
+                    } else {
+                      setTab('register-user');
+                    }
+                  }}
                 >
                   👤 Registracija
                 </button>
@@ -395,13 +458,25 @@ export default function App(){
               <DropdownMenu title="🛠️ Usluge" icon="🛠️">
                 <button
                   className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"
-                  onClick={() => { setTab('categories'); }}
+                  onClick={() => {
+                    if (window.location.pathname.startsWith('/admin/')) {
+                      window.location.replace('/#categories');
+                    } else {
+                      setTab('categories');
+                    }
+                  }}
                 >
                   🛠️ Kategorije ({categories.length})
                 </button>
                 <button
                   className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"
-                  onClick={() => { setTab('providers'); }}
+                  onClick={() => {
+                    if (window.location.pathname.startsWith('/admin/')) {
+                      window.location.replace('/#providers');
+                    } else {
+                      setTab('providers');
+                    }
+                  }}
                 >
                   👥 Pružatelji ({providers.length})
                 </button>
@@ -544,37 +619,37 @@ export default function App(){
           <div className="flex items-center gap-2">
             <button
               className={'px-3 py-2 border rounded ' + (tab==='user' ? 'bg-gray-900 text-white' : 'hover:bg-gray-100')}
-              onClick={() => setTab('user')}
+              onClick={() => navigateToTab('user')}
             >
               🏠
             </button>
             <button
               className={'px-3 py-2 border rounded ' + (tab==='pricing' ? 'bg-orange-600 text-white' : 'border-orange-600 text-orange-600')}
-              onClick={() => setTab('pricing')}
+              onClick={() => navigateToTab('pricing')}
             >
               💰
             </button>
             <button
               className={'px-3 py-2 border rounded ' + (tab==='faq' ? 'bg-purple-600 text-white' : 'border-purple-600 text-purple-600')}
-              onClick={() => setTab('faq')}
+              onClick={() => navigateToTab('faq')}
             >
               ❓
             </button>
             <button
               className={'px-3 py-2 border rounded ' + (tab==='documentation' ? 'bg-indigo-600 text-white' : 'border-indigo-600 text-indigo-600')}
-              onClick={() => setTab('documentation')}
+              onClick={() => navigateToTab('documentation')}
             >
               📚
             </button>
             <button
               className={'px-3 py-2 border rounded ' + (tab==='about' ? 'bg-green-600 text-white' : 'border-green-600 text-green-600')}
-              onClick={() => setTab('about')}
+              onClick={() => navigateToTab('about')}
             >
               🏢
             </button>
             <button
               className={'px-3 py-2 border rounded ' + (tab==='contact' ? 'bg-blue-600 text-white' : 'border-blue-600 text-blue-600')}
-              onClick={() => setTab('contact')}
+              onClick={() => navigateToTab('contact')}
             >
               📞
             </button>
@@ -610,37 +685,37 @@ export default function App(){
             <div className="space-y-1">
               <button
                 className={'w-full text-left px-3 py-2 rounded transition-colors ' + (tab==='user' ? 'bg-gray-900 dark:bg-gray-700 text-white' : 'hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-300')}
-                onClick={() => { setTab('user'); setIsMobileMenuOpen(false); }}
+                onClick={() => { navigateToTab('user'); setIsMobileMenuOpen(false); }}
               >
                 🏠 Početna
               </button>
               <button
                 className={'w-full text-left px-3 py-2 rounded ' + (tab==='pricing' ? 'bg-orange-600 text-white' : 'hover:bg-gray-100')}
-                onClick={() => { setTab('pricing'); setIsMobileMenuOpen(false); }}
+                onClick={() => { navigateToTab('pricing'); setIsMobileMenuOpen(false); }}
               >
                 💰 Cjenik
               </button>
               <button
                 className={'w-full text-left px-3 py-2 rounded ' + (tab==='faq' ? 'bg-purple-600 text-white' : 'hover:bg-gray-100')}
-                onClick={() => { setTab('faq'); setIsMobileMenuOpen(false); }}
+                onClick={() => { navigateToTab('faq'); setIsMobileMenuOpen(false); }}
               >
                 ❓ FAQ
               </button>
               <button
                 className={'w-full text-left px-3 py-2 rounded ' + (tab==='documentation' ? 'bg-indigo-600 text-white' : 'hover:bg-gray-100')}
-                onClick={() => { setTab('documentation'); setIsMobileMenuOpen(false); }}
+                onClick={() => { navigateToTab('documentation'); setIsMobileMenuOpen(false); }}
               >
                 📚 Dokumentacija
               </button>
               <button
                 className={'w-full text-left px-3 py-2 rounded ' + (tab==='about' ? 'bg-green-600 text-white' : 'hover:bg-gray-100')}
-                onClick={() => { setTab('about'); setIsMobileMenuOpen(false); }}
+                onClick={() => { navigateToTab('about'); setIsMobileMenuOpen(false); }}
               >
                 🏢 O nama
               </button>
               <button
                 className={'w-full text-left px-3 py-2 rounded ' + (tab==='contact' ? 'bg-blue-600 text-white' : 'hover:bg-gray-100')}
-                onClick={() => { setTab('contact'); setIsMobileMenuOpen(false); }}
+                onClick={() => { navigateToTab('contact'); setIsMobileMenuOpen(false); }}
               >
                 📞 Kontakt
               </button>
