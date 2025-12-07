@@ -266,6 +266,35 @@ const AdminApiReference = () => {
                               <code className="ml-2 text-gray-900 font-mono">{route.middleware}</code>
                             </div>
                           )}
+                          {route.trigger && (
+                            <div className="mt-3 pt-3 border-t">
+                              <span className="font-semibold text-gray-700 block mb-2">🚀 Pokreće:</span>
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-2">
+                                  <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                                    route.trigger.type === 'page' ? 'bg-blue-100 text-blue-800' :
+                                    route.trigger.type === 'job' ? 'bg-purple-100 text-purple-800' :
+                                    route.trigger.type === 'api' ? 'bg-green-100 text-green-800' :
+                                    route.trigger.type === 'webhook' ? 'bg-orange-100 text-orange-800' :
+                                    'bg-gray-100 text-gray-800'
+                                  }`}>
+                                    {route.trigger.type === 'page' ? '📄 Stranica' :
+                                     route.trigger.type === 'job' ? '⏰ Job' :
+                                     route.trigger.type === 'api' ? '🔗 API' :
+                                     route.trigger.type === 'webhook' ? '🔔 Webhook' :
+                                     '📝 Ručno'}
+                                  </span>
+                                </div>
+                                {route.trigger.details && route.trigger.details.length > 0 && (
+                                  <ul className="list-disc list-inside text-xs text-gray-700 space-y-1">
+                                    {route.trigger.details.map((detail, idx) => (
+                                      <li key={idx}>{detail}</li>
+                                    ))}
+                                  </ul>
+                                )}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}
@@ -385,6 +414,35 @@ const AdminApiReference = () => {
                             <div>
                               <span className="font-semibold text-gray-700">Handler:</span>
                               <code className="ml-2 text-gray-900 font-mono">{route.handler}</code>
+                            </div>
+                          )}
+                          {route.trigger && (
+                            <div className="mt-3 pt-3 border-t">
+                              <span className="font-semibold text-gray-700 block mb-2">🚀 Pokreće:</span>
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-2">
+                                  <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                                    route.trigger.type === 'page' ? 'bg-blue-100 text-blue-800' :
+                                    route.trigger.type === 'job' ? 'bg-purple-100 text-purple-800' :
+                                    route.trigger.type === 'api' ? 'bg-green-100 text-green-800' :
+                                    route.trigger.type === 'webhook' ? 'bg-orange-100 text-orange-800' :
+                                    'bg-gray-100 text-gray-800'
+                                  }`}>
+                                    {route.trigger.type === 'page' ? '📄 Stranica' :
+                                     route.trigger.type === 'job' ? '⏰ Job' :
+                                     route.trigger.type === 'api' ? '🔗 API' :
+                                     route.trigger.type === 'webhook' ? '🔔 Webhook' :
+                                     '📝 Ručno'}
+                                  </span>
+                                </div>
+                                {route.trigger.details && route.trigger.details.length > 0 && (
+                                  <ul className="list-disc list-inside text-xs text-gray-700 space-y-1">
+                                    {route.trigger.details.map((detail, idx) => (
+                                      <li key={idx}>{detail}</li>
+                                    ))}
+                                  </ul>
+                                )}
+                              </div>
                             </div>
                           )}
                         </div>

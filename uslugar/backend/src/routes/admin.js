@@ -3432,10 +3432,281 @@ r.get('/api-reference', (req, res, next) => {
       return security;
     };
     
-    // Dodaj sigurnosne informacije svakoj ruti
+    // Funkcija za određivanje tko pokreće API endpoint
+    const getTriggerInfo = (fullPath, method) => {
+      const triggers = {
+        type: null, // 'page', 'job', 'api', 'webhook', 'manual'
+        details: []
+      };
+      
+      // Webhook endpoints
+      if (fullPath.includes('/webhook')) {
+        triggers.type = 'webhook';
+        if (fullPath.includes('/stripe')) {
+          triggers.details.push('Stripe webhook - automatski poziv od Stripe-a');
+        } else {
+          triggers.details.push('Webhook - automatski poziv od vanjskog servisa');
+        }
+        return triggers;
+      }
+      
+      // Admin endpoints - ručno ili iz admin panela
+      if (fullPath.startsWith('/api/admin')) {
+        triggers.type = 'page';
+        triggers.details.push('Admin Panel: https://uslugar.oriph.io/admin/...');
+        if (fullPath.includes('/api-reference')) {
+          triggers.details.push('Admin Panel → API Reference stranica');
+        } else if (fullPath.includes('/cleanup')) {
+          triggers.details.push('Admin Panel → Čišćenje podataka stranica');
+        } else if (fullPath.includes('/payments')) {
+          triggers.details.push('Admin Panel → Payments stranica');
+        } else if (fullPath.includes('/provider-approvals')) {
+          triggers.details.push('Admin Panel → Provider Approvals stranica');
+        } else if (fullPath.includes('/reports/send-monthly-reports')) {
+          triggers.type = 'manual';
+          triggers.details.push('Ručno pokretanje iz Admin Panela');
+        }
+        return triggers;
+      }
+      
+      // Auth endpoints
+      if (fullPath.startsWith('/api/auth')) {
+        triggers.type = 'page';
+        if (fullPath.includes('/login')) {
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#login');
+        } else if (fullPath.includes('/register')) {
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#register-user');
+        } else if (fullPath.includes('/me')) {
+          triggers.type = 'api';
+          triggers.details.push('Poziva se iz drugih API-ja ili frontend komponenti za provjeru autentifikacije');
+        } else if (fullPath.includes('/logout')) {
+          triggers.details.push('Stranica: bilo koja stranica s logout gumbom');
+        }
+        return triggers;
+      }
+      
+      // Jobs endpoints
+      if (fullPath.startsWith('/api/jobs')) {
+        triggers.type = 'page';
+        if (method === 'GET') {
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#user (Početna - lista poslova)');
+        } else if (method === 'POST') {
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#user (JobForm komponenta)');
+        } else if (fullPath.includes('/accept')) {
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#my-jobs (prihvaćanje ponude)');
+        } else if (fullPath.includes('/complete')) {
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#my-jobs (završavanje posla)');
+        }
+        return triggers;
+      }
+      
+      // Offers endpoints
+      if (fullPath.startsWith('/api/offers')) {
+        triggers.type = 'page';
+        if (method === 'POST') {
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#providers (slanje ponude na posao)');
+        } else if (fullPath.includes('/accept')) {
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#my-jobs (prihvaćanje ponude)');
+        }
+        return triggers;
+      }
+      
+      // Providers endpoints
+      if (fullPath.startsWith('/api/providers')) {
+        triggers.type = 'page';
+        if (method === 'GET') {
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#providers (lista pružatelja)');
+        } else if (method === 'POST' || method === 'PUT' || method === 'PATCH') {
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#provider-profile (uređivanje profila)');
+        }
+        return triggers;
+      }
+      
+      // Chat endpoints
+      if (fullPath.startsWith('/api/chat')) {
+        triggers.type = 'page';
+        if (fullPath.includes('/rooms') && method === 'POST') {
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#my-jobs (kreiranje chat sobe nakon prihvaćanja ponude)');
+        } else if (fullPath.includes('/messages')) {
+          triggers.details.push('Stranica: ChatRoom komponenta (real-time chat)');
+        }
+        return triggers;
+      }
+      
+      // Exclusive leads endpoints
+      if (fullPath.startsWith('/api/exclusive')) {
+        triggers.type = 'page';
+        if (fullPath.includes('/leads') && method === 'GET') {
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#leads (Lead Marketplace)');
+        } else if (fullPath.includes('/purchase')) {
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#leads (kupnja leada)');
+        } else if (fullPath.includes('/contacted') || fullPath.includes('/converted')) {
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#my-leads (označavanje statusa leada)');
+        }
+        return triggers;
+      }
+      
+      // Lead queue endpoints
+      if (fullPath.startsWith('/api/lead-queue') || fullPath.includes('/my-offers') || fullPath.includes('/my-queue')) {
+        triggers.type = 'page';
+        triggers.details.push('Stranica: https://uslugar.oriph.io/#my-leads (Lead Queue management)');
+        if (fullPath.includes('/respond')) {
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#my-leads (odgovaranje na queue ponudu)');
+        }
+        return triggers;
+      }
+      
+      // Subscriptions endpoints
+      if (fullPath.startsWith('/api/subscriptions')) {
+        triggers.type = 'page';
+        if (fullPath.includes('/subscribe')) {
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#pricing (pretplata)');
+        } else if (fullPath.includes('/cancel')) {
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#subscription (otkazivanje pretplate)');
+        } else if (method === 'GET') {
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#subscription (pregled pretplate)');
+        }
+        // Auto-downgrade se pokreće iz job-a
+        if (fullPath.includes('/downgrade') || fullPath.includes('/check-expiring')) {
+          triggers.type = 'job';
+          triggers.details.push('Job: checkExpiringSubscriptions (svaki dan u ponoć)');
+        }
+        return triggers;
+      }
+      
+      // Payments endpoints
+      if (fullPath.startsWith('/api/payments')) {
+        triggers.type = 'page';
+        if (fullPath.includes('/create-checkout')) {
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#pricing (Stripe checkout)');
+        } else if (fullPath.includes('/webhook')) {
+          triggers.type = 'webhook';
+          triggers.details.push('Stripe webhook - automatski poziv od Stripe-a nakon plaćanja');
+        }
+        return triggers;
+      }
+      
+      // Reviews endpoints
+      if (fullPath.startsWith('/api/reviews')) {
+        triggers.type = 'page';
+        if (method === 'POST') {
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#my-jobs (dodavanje recenzije nakon završetka posla)');
+        } else if (method === 'GET') {
+          triggers.details.push('Stranica: ProviderProfile komponenta (prikaz recenzija)');
+        }
+        // Auto-publish se pokreće iz job-a
+        if (fullPath.includes('/publish')) {
+          triggers.type = 'job';
+          triggers.details.push('Job: publishExpiredReviews (svaki dan u ponoć)');
+        }
+        return triggers;
+      }
+      
+      // Notifications endpoints
+      if (fullPath.startsWith('/api/notifications')) {
+        triggers.type = 'api';
+        triggers.details.push('Poziva se iz drugih API-ja (automatski) ili frontend komponenti');
+        if (fullPath.includes('/read')) {
+          triggers.details.push('Stranica: Notification komponenta (označavanje kao pročitano)');
+        }
+        return triggers;
+      }
+      
+      // KYC endpoints
+      if (fullPath.startsWith('/api/kyc')) {
+        triggers.type = 'page';
+        triggers.details.push('Stranica: https://uslugar.oriph.io/#provider-profile (KYC upload)');
+        return triggers;
+      }
+      
+      // Support endpoints
+      if (fullPath.startsWith('/api/support')) {
+        triggers.type = 'page';
+        triggers.details.push('Stranica: https://uslugar.oriph.io/#contact (Support ticket)');
+        return triggers;
+      }
+      
+      // Public endpoints
+      if (fullPath.startsWith('/api/public')) {
+        triggers.type = 'page';
+        if (fullPath.includes('/user-types')) {
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#user-types (Tipovi korisnika)');
+        } else if (fullPath.includes('/providers')) {
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#providers (Javni pregled pružatelja)');
+        }
+        return triggers;
+      }
+      
+      // Queue Scheduler jobs
+      if (fullPath.includes('/check-expired') || fullPath.includes('/check-inactive')) {
+        triggers.type = 'job';
+        triggers.details.push('Job: Queue Scheduler (svaki sat)');
+        if (fullPath.includes('/offers')) {
+          triggers.details.push('Job: checkExpiredOffers');
+        } else if (fullPath.includes('/lead-purchases')) {
+          triggers.details.push('Job: checkInactiveLeadPurchases (automatski refund nakon 48h)');
+        }
+        return triggers;
+      }
+      
+      // License expiry check
+      if (fullPath.includes('/check-expiring-licenses') || fullPath.includes('/validate-licenses')) {
+        triggers.type = 'job';
+        triggers.details.push('Job: checkExpiringLicenses (svaki dan u ponoć)');
+        triggers.details.push('Job: validateAllLicenses (svaki dan u ponoć)');
+        return triggers;
+      }
+      
+      // SLA reminders
+      if (fullPath.includes('/sla-reminders')) {
+        triggers.type = 'job';
+        triggers.details.push('Job: checkAndSendSLAReminders (svaki sat)');
+        return triggers;
+      }
+      
+      // Addon lifecycle
+      if (fullPath.includes('/addon-lifecycle')) {
+        triggers.type = 'job';
+        triggers.details.push('Job: checkAddonLifecycles (svaki dan u ponoć)');
+        triggers.details.push('Job: processAutoRenewals (svaki dan u ponoć)');
+        triggers.details.push('Job: processAddonUpsells (svaki dan u ponoć)');
+        return triggers;
+      }
+      
+      // Auto verification
+      if (fullPath.includes('/auto-verify')) {
+        triggers.type = 'job';
+        triggers.details.push('Job: batchAutoVerifyClients (svaki dan u ponoć)');
+        return triggers;
+      }
+      
+      // Monthly reports
+      if (fullPath.includes('/monthly-reports')) {
+        triggers.type = 'job';
+        triggers.details.push('Job: sendMonthlyReportsToAllUsers (1. u mjesecu u ponoć)');
+        return triggers;
+      }
+      
+      // Thread locking
+      if (fullPath.includes('/thread-locking')) {
+        triggers.type = 'job';
+        triggers.details.push('Job: lockInactiveThreads (svaki sat)');
+        triggers.details.push('Job: reLockExpiredTemporaryUnlocks (svaki sat)');
+        return triggers;
+      }
+      
+      // Default - pretpostavljamo da je stranica
+      triggers.type = 'page';
+      triggers.details.push('Frontend stranica ili komponenta');
+      return triggers;
+    };
+    
+    // Dodaj sigurnosne informacije i trigger informacije svakoj ruti
     allRoutes.forEach(route => {
       const security = getSecurityInfo(route.fullPath, route.method);
+      const trigger = getTriggerInfo(route.fullPath, route.method);
       route.security = security;
+      route.trigger = trigger;
       // Debug: loguj rute s businessRules
       if (security.businessRules && security.businessRules.length > 0) {
         console.log(`[API-REF] Route with businessRules: ${route.method} ${route.fullPath}`, security.businessRules);
