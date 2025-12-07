@@ -1,19 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
 
-export default function UserTypesOverview() {
+export default function UserTypesOverview({ isAdmin = false }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [isAdmin]);
 
   const loadData = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/public/user-types-overview');
+      // Ako je admin, koristi admin endpoint; inače public endpoint
+      const endpoint = isAdmin ? '/admin/user-types-overview' : '/public/user-types-overview';
+      const response = await api.get(endpoint);
       setData(response.data);
       setError(null);
     } catch (err) {
@@ -59,8 +61,9 @@ export default function UserTypesOverview() {
       </div>
 
       {/* Tipovi korisnika - grupirano */}
-      <div className="mb-12">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Tipovi Korisnika</h2>
+      {data.userTypes && (
+        <div className="mb-12">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Tipovi Korisnika</h2>
         
         {/* Grupa 1: Korisnici usluga */}
         <div className="mb-8">
@@ -131,6 +134,7 @@ export default function UserTypesOverview() {
           </div>
         </div>
       </div>
+      )}
 
       {/* Pravni statusi */}
       {data.legalStatusStats && Object.keys(data.legalStatusStats).length > 0 && (
@@ -150,7 +154,8 @@ export default function UserTypesOverview() {
       )}
 
       {/* Pretplate */}
-      <div className="mb-12">
+      {data.subscriptionStats && (
+        <div className="mb-12">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Raspodjela po Pretplati</h2>
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
@@ -163,8 +168,10 @@ export default function UserTypesOverview() {
           </div>
         </div>
       </div>
+      )}
 
       {/* Verifikacija */}
+      {data.verification && (
       <div className="mb-12">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Status Verifikacije Tvrtki</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -192,8 +199,10 @@ export default function UserTypesOverview() {
           </div>
         </div>
       </div>
+      )}
 
       {/* Licence */}
+      {data.licenses && (
       <div className="mb-12">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Status Licence</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -232,6 +241,7 @@ export default function UserTypesOverview() {
           </div>
         </div>
       </div>
+      )}
 
       {/* Značke */}
       {data.badges && (
@@ -252,7 +262,7 @@ export default function UserTypesOverview() {
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                 {data.badges.business.description}
               </p>
-              {data.badges.business.providers !== undefined && (
+              {isAdmin && data.badges.business.providers !== undefined && (
                 <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
                   <div>🏢 Pružatelji: {data.badges.business.providers}</div>
                   <div>👥 Korisnici (tvrtke/obrti): {data.badges.business.users}</div>
@@ -303,7 +313,7 @@ export default function UserTypesOverview() {
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                 {data.badges.safety.description}
               </p>
-              {data.badges.safety.providers !== undefined && (
+              {isAdmin && data.badges.safety.providers !== undefined && (
                 <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
                   <div>🏢 Pružatelji: {data.badges.safety.providers}</div>
                   <div>👥 Korisnici (tvrtke/obrti): {data.badges.safety.users}</div>
@@ -311,27 +321,29 @@ export default function UserTypesOverview() {
               )}
             </div>
 
-            {/* All Badges Summary */}
-            <div className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-lg shadow-md p-6 border-2 border-indigo-200 dark:border-indigo-700">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                  <span className="text-2xl">⭐</span>
-                  Ukupno
-                </h3>
-                <span className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">
-                  {data.badges.allBadges.total}
-                </span>
-              </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                {data.badges.allBadges.description}
-              </p>
-              {data.badges.allBadges.providers !== undefined && (
-                <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
-                  <div>🏢 Pružatelji: {data.badges.allBadges.providers}</div>
-                  <div>👥 Korisnici (tvrtke/obrti): {data.badges.allBadges.users}</div>
+            {/* All Badges Summary - SAMO ADMIN */}
+            {isAdmin && (
+              <div className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-lg shadow-md p-6 border-2 border-indigo-200 dark:border-indigo-700">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                    <span className="text-2xl">⭐</span>
+                    Ukupno
+                  </h3>
+                  <span className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">
+                    {data.badges.allBadges.total}
+                  </span>
                 </div>
-              )}
-            </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                  {data.badges.allBadges.description}
+                </p>
+                {data.badges.allBadges.providers !== undefined && (
+                  <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
+                    <div>🏢 Pružatelji: {data.badges.allBadges.providers}</div>
+                    <div>👥 Korisnici (tvrtke/obrti): {data.badges.allBadges.users}</div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -229,38 +229,6 @@ r.get('/user-types-overview', async (req, res, next) => {
           total: users.filter(u => {
             const profile = u.providerProfile;
             if (!profile) return false;
-            // BUSINESS badge: kycVerified ili badgeData.BUSINESS.verified
-            // badgeData može biti objekt ili JSON string
-            let badgeDataObj = profile.badgeData;
-            if (typeof badgeDataObj === 'string') {
-              try {
-                badgeDataObj = JSON.parse(badgeDataObj);
-              } catch (e) {
-                badgeDataObj = null;
-              }
-            }
-            return profile.kycVerified || 
-                   (badgeDataObj && typeof badgeDataObj === 'object' && badgeDataObj.BUSINESS?.verified);
-          }).length,
-          providers: users.filter(u => {
-            if (u.role !== 'PROVIDER') return false;
-            const profile = u.providerProfile;
-            if (!profile) return false;
-            let badgeDataObj = profile.badgeData;
-            if (typeof badgeDataObj === 'string') {
-              try {
-                badgeDataObj = JSON.parse(badgeDataObj);
-              } catch (e) {
-                badgeDataObj = null;
-              }
-            }
-            return profile.kycVerified || 
-                   (badgeDataObj && typeof badgeDataObj === 'object' && badgeDataObj.BUSINESS?.verified);
-          }).length,
-          users: users.filter(u => {
-            if (u.role !== 'USER') return false;
-            const profile = u.providerProfile;
-            if (!profile) return false;
             let badgeDataObj = profile.badgeData;
             if (typeof badgeDataObj === 'string') {
               try {
@@ -278,23 +246,6 @@ r.get('/user-types-overview', async (req, res, next) => {
           total: users.filter(u => {
             const profile = u.providerProfile;
             if (!profile) return false;
-            // IDENTITY badge: barem jedna od email/phone/DNS verifikacija
-            return profile.identityEmailVerified || 
-                   profile.identityPhoneVerified || 
-                   profile.identityDnsVerified;
-          }).length,
-          providers: users.filter(u => {
-            if (u.role !== 'PROVIDER') return false;
-            const profile = u.providerProfile;
-            if (!profile) return false;
-            return profile.identityEmailVerified || 
-                   profile.identityPhoneVerified || 
-                   profile.identityDnsVerified;
-          }).length,
-          users: users.filter(u => {
-            if (u.role !== 'USER') return false;
-            const profile = u.providerProfile;
-            if (!profile) return false;
             return profile.identityEmailVerified || 
                    profile.identityPhoneVerified || 
                    profile.identityDnsVerified;
@@ -306,74 +257,9 @@ r.get('/user-types-overview', async (req, res, next) => {
         },
         safety: {
           total: users.filter(u => u.providerProfile?.safetyInsuranceUrl).length,
-          providers: users.filter(u => u.role === 'PROVIDER' && u.providerProfile?.safetyInsuranceUrl).length,
-          users: users.filter(u => u.role === 'USER' && u.providerProfile?.safetyInsuranceUrl).length,
           description: 'Korisnici s uploadanom policom osiguranja - uključuje i pružatelje i tvrtke/obrte'
-        },
-        allBadges: {
-          total: users.filter(u => {
-            const profile = u.providerProfile;
-            if (!profile) return false;
-            // Ima barem jednu značku
-            // badgeData može biti objekt ili JSON string
-            let badgeDataObj = profile.badgeData;
-            if (typeof badgeDataObj === 'string') {
-              try {
-                badgeDataObj = JSON.parse(badgeDataObj);
-              } catch (e) {
-                badgeDataObj = null;
-              }
-            }
-            const hasBusiness = profile.kycVerified || 
-                               (badgeDataObj && typeof badgeDataObj === 'object' && badgeDataObj.BUSINESS?.verified);
-            const hasIdentity = profile.identityEmailVerified || 
-                               profile.identityPhoneVerified || 
-                               profile.identityDnsVerified;
-            const hasSafety = !!profile.safetyInsuranceUrl;
-            return hasBusiness || hasIdentity || hasSafety;
-          }).length,
-          providers: users.filter(u => {
-            if (u.role !== 'PROVIDER') return false;
-            const profile = u.providerProfile;
-            if (!profile) return false;
-            let badgeDataObj = profile.badgeData;
-            if (typeof badgeDataObj === 'string') {
-              try {
-                badgeDataObj = JSON.parse(badgeDataObj);
-              } catch (e) {
-                badgeDataObj = null;
-              }
-            }
-            const hasBusiness = profile.kycVerified || 
-                               (badgeDataObj && typeof badgeDataObj === 'object' && badgeDataObj.BUSINESS?.verified);
-            const hasIdentity = profile.identityEmailVerified || 
-                               profile.identityPhoneVerified || 
-                               profile.identityDnsVerified;
-            const hasSafety = !!profile.safetyInsuranceUrl;
-            return hasBusiness || hasIdentity || hasSafety;
-          }).length,
-          users: users.filter(u => {
-            if (u.role !== 'USER') return false;
-            const profile = u.providerProfile;
-            if (!profile) return false;
-            let badgeDataObj = profile.badgeData;
-            if (typeof badgeDataObj === 'string') {
-              try {
-                badgeDataObj = JSON.parse(badgeDataObj);
-              } catch (e) {
-                badgeDataObj = null;
-              }
-            }
-            const hasBusiness = profile.kycVerified || 
-                               (badgeDataObj && typeof badgeDataObj === 'object' && badgeDataObj.BUSINESS?.verified);
-            const hasIdentity = profile.identityEmailVerified || 
-                               profile.identityPhoneVerified || 
-                               profile.identityDnsVerified;
-            const hasSafety = !!profile.safetyInsuranceUrl;
-            return hasBusiness || hasIdentity || hasSafety;
-          }).length,
-          description: 'Korisnici s barem jednom značkom - uključuje i pružatelje i tvrtke/obrte koji traže usluge'
         }
+        // allBadges ne vraćamo u public endpoint - samo admin
       }
     });
   } catch (e) {

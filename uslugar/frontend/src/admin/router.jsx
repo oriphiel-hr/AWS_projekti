@@ -18,6 +18,7 @@ import AdminInvoices from '../pages/AdminInvoices'
 import AdminUsersOverview from '../pages/AdminUsersOverview'
 import AdminDatabaseEditor from '../pages/AdminDatabaseEditor'
 import AdminApiReference from '../pages/AdminApiReference'
+import UserTypesOverview from '../pages/UserTypesOverview'
 import api from '../api'
 
 // Model nazivi u PascalCase kako backend očekuje
@@ -115,6 +116,7 @@ export default function AdminRouter(){
           <Route path="/admin/testing" element={<AdminTesting />} />
           <Route path="/admin/database" element={<AdminDatabaseEditor />} />
           <Route path="/admin/api-reference" element={<AdminApiReference />} />
+          <Route path="/admin/user-types" element={<UserTypesOverview isAdmin={true} />} />
         </Route>
       </Routes>
     </BrowserRouter>

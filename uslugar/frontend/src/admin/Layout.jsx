@@ -238,6 +238,18 @@ export default function Layout({ user, onLogout }){
               >
                 🧪 Testiranje
               </NavLink>
+              <NavLink
+                to="/admin/user-types"
+                className={({isActive}) =>
+                  `block px-4 py-2 rounded-lg text-sm font-medium transition ${
+                    isActive 
+                      ? 'bg-indigo-600 text-white shadow-sm' 
+                      : 'text-gray-700 hover:bg-gray-200'
+                  }`
+                }
+              >
+                👥 Tipovi Korisnika
+              </NavLink>
             </nav>
           </aside>
           <main className="flex-1 p-6 overflow-auto">
