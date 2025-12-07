@@ -174,6 +174,90 @@ r.get('/kyc-metrics', auth(true, ['ADMIN']), async (req, res, next) => {
   }
 });
 
+// Admin cleanup: get counts of rows that will be deleted (preview)
+r.get('/cleanup/non-master/preview', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const { preserveEmails = [] } = req.query || {};
+    const preserveEmailsArray = preserveEmails ? (Array.isArray(preserveEmails) ? preserveEmails : preserveEmails.split(',').map(e => e.trim()).filter(Boolean)) : [];
+
+    const counts = {};
+
+    // 1) Chat-related data
+    counts.messageSLAs = await prisma.messageSLA.count({});
+    counts.messageVersions = await prisma.messageVersion.count({});
+    counts.auditLogs = await prisma.auditLog.count({});
+    counts.chatMessages = await prisma.chatMessage.count({});
+    counts.chatRooms = await prisma.chatRoom.count({});
+
+    // 2) Reviews, Notifications
+    counts.reviews = await prisma.review.count({});
+    counts.notifications = await prisma.notification.count({});
+
+    // 3) Offers, Jobs
+    counts.offers = await prisma.offer.count({});
+    counts.jobs = await prisma.job.count({});
+
+    // 4) Lead management
+    counts.companyLeadQueues = await prisma.companyLeadQueue.count({});
+    counts.leadQueues = await prisma.leadQueue.count({});
+    counts.leadPurchases = await prisma.leadPurchase.count({});
+
+    // 5) Provider-related data
+    counts.providerROIs = await prisma.providerROI.count({});
+    counts.providerLicenses = await prisma.providerLicense.count({});
+    counts.providerTeamLocations = await prisma.providerTeamLocation.count({});
+    counts.providerProfiles = await prisma.providerProfile.count({});
+
+    // 6) Subscriptions and billing
+    counts.addonEventLogs = await prisma.addonEventLog.count({});
+    counts.addonUsages = await prisma.addonUsage.count({});
+    counts.addonSubscriptions = await prisma.addonSubscription.count({});
+    counts.subscriptionHistories = await prisma.subscriptionHistory.count({});
+    counts.trialEngagements = await prisma.trialEngagement.count({});
+    counts.subscriptions = await prisma.subscription.count({});
+    counts.billingAdjustments = await prisma.billingAdjustment.count({});
+    counts.billingPlans = await prisma.billingPlan.count({});
+
+    // 7) Invoices
+    counts.invoices = await prisma.invoice.count({});
+
+    // 8) Credit transactions
+    counts.creditTransactions = await prisma.creditTransaction.count({});
+
+    // 9) Feature ownership
+    counts.featureOwnershipHistories = await prisma.featureOwnershipHistory.count({});
+    counts.companyFeatureOwnerships = await prisma.companyFeatureOwnership.count({});
+
+    // 10) Client verification
+    counts.clientVerifications = await prisma.clientVerification.count({});
+
+    // 11) Support tickets
+    counts.supportTickets = await prisma.supportTicket.count({});
+
+    // 12) WhiteLabel settings
+    counts.whiteLabels = await prisma.whiteLabel.count({});
+
+    // 13) SMS and Push notifications
+    counts.pushSubscriptions = await prisma.pushSubscription.count({});
+    counts.smsLogs = await prisma.smsLog.count({});
+
+    // 14) Chatbot sessions
+    counts.chatbotSessions = await prisma.chatbotSession.count({});
+
+    // 15) Users except ADMIN and optionally preserved emails
+    counts.users = await prisma.user.count({
+      where: {
+        role: { not: 'ADMIN' },
+        email: preserveEmailsArray.length ? { notIn: preserveEmailsArray } : undefined
+      }
+    });
+
+    res.json({ success: true, counts });
+  } catch (e) {
+    next(e);
+  }
+});
+
 // Admin cleanup: delete non-master data, preserve ADMIN user and master tables
 r.post('/cleanup/non-master', auth(true, ['ADMIN']), async (req, res, next) => {
   try {

@@ -1,11 +1,34 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import api from '@/api'
 
 export default function AdminDataCleanup(){
   const [loading, setLoading] = useState(false)
+  const [loadingPreview, setLoadingPreview] = useState(true)
   const [error, setError] = useState('')
   const [result, setResult] = useState(null)
   const [preserveEmails, setPreserveEmails] = useState('')
+  const [preview, setPreview] = useState(null)
+
+  async function loadPreview(){
+    setLoadingPreview(true)
+    try{
+      const emails = preserveEmails
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean)
+      const params = emails.length > 0 ? { preserveEmails: emails.join(',') } : {}
+      const { data } = await api.get('/admin/cleanup/non-master/preview', { params })
+      setPreview(data.counts)
+    }catch(e){
+      console.error('Error loading preview:', e)
+    }finally{
+      setLoadingPreview(false)
+    }
+  }
+
+  useEffect(() => {
+    loadPreview()
+  }, [preserveEmails])
 
   async function runCleanup(){
     if(!confirm('Potvrdi čišćenje podataka (ne-matični). Ova akcija je nepovratna.')) return
@@ -46,6 +69,72 @@ export default function AdminDataCleanup(){
         </div>
       </div>
 
+      {loadingPreview ? (
+        <div className="text-gray-600">Učitavam pregled podataka...</div>
+      ) : preview && (
+        <div className="bg-blue-50 border border-blue-200 rounded p-4">
+          <div className="font-semibold text-blue-800 mb-3">📊 Pregled podataka koji će biti obrisani:</div>
+          <div className="space-y-1 text-sm">
+            <div className="font-semibold text-blue-700 mb-2">Chat i poruke</div>
+            {renderCount('Chat poruke', preview.chatMessages)}
+            {renderCount('Chat sobe', preview.chatRooms)}
+            {renderCount('Verzije poruka', preview.messageVersions)}
+            {renderCount('SLA tracking', preview.messageSLAs)}
+            {renderCount('Audit logovi', preview.auditLogs)}
+            
+            <div className="font-semibold text-blue-700 mb-2 mt-3">Recenzije i notifikacije</div>
+            {renderCount('Recenzije', preview.reviews)}
+            {renderCount('Notifikacije', preview.notifications)}
+            
+            <div className="font-semibold text-blue-700 mb-2 mt-3">Poslovi i ponude</div>
+            {renderCount('Poslovi', preview.jobs)}
+            {renderCount('Ponude', preview.offers)}
+            
+            <div className="font-semibold text-blue-700 mb-2 mt-3">Lead management</div>
+            {renderCount('Kupljeni leadovi', preview.leadPurchases)}
+            {renderCount('Lead queue', preview.leadQueues)}
+            {renderCount('Company lead queue', preview.companyLeadQueues)}
+            
+            <div className="font-semibold text-blue-700 mb-2 mt-3">Provider podaci</div>
+            {renderCount('Provider profili', preview.providerProfiles)}
+            {renderCount('Provider licence', preview.providerLicenses)}
+            {renderCount('Provider ROI', preview.providerROIs)}
+            {renderCount('Team lokacije', preview.providerTeamLocations)}
+            
+            <div className="font-semibold text-blue-700 mb-2 mt-3">Pretplate i naplata</div>
+            {renderCount('Pretplate', preview.subscriptions)}
+            {renderCount('Povijest pretplata', preview.subscriptionHistories)}
+            {renderCount('Trial engagement', preview.trialEngagements)}
+            {renderCount('Add-on pretplate', preview.addonSubscriptions)}
+            {renderCount('Add-on usage', preview.addonUsages)}
+            {renderCount('Add-on event logovi', preview.addonEventLogs)}
+            {renderCount('Billing planovi', preview.billingPlans)}
+            {renderCount('Billing korekcije', preview.billingAdjustments)}
+            {renderCount('Fakture', preview.invoices)}
+            
+            <div className="font-semibold text-blue-700 mb-2 mt-3">Krediti i transakcije</div>
+            {renderCount('Kreditne transakcije', preview.creditTransactions)}
+            
+            <div className="font-semibold text-blue-700 mb-2 mt-3">Feature ownership</div>
+            {renderCount('Company feature ownership', preview.companyFeatureOwnerships)}
+            {renderCount('Feature ownership povijest', preview.featureOwnershipHistories)}
+            
+            <div className="font-semibold text-blue-700 mb-2 mt-3">Verifikacija i podrška</div>
+            {renderCount('Client verifikacije', preview.clientVerifications)}
+            {renderCount('Support ticketi', preview.supportTickets)}
+            
+            <div className="font-semibold text-blue-700 mb-2 mt-3">Ostalo</div>
+            {preview.whiteLabels !== undefined && renderCount('WhiteLabel postavke', preview.whiteLabels)}
+            {renderCount('Push pretplate', preview.pushSubscriptions)}
+            {renderCount('SMS logovi', preview.smsLogs)}
+            {renderCount('Chatbot sesije', preview.chatbotSessions)}
+            
+            <div className="font-semibold text-blue-700 mb-2 mt-3">Korisnici</div>
+            {renderCount('Korisnici (bez ADMIN)', preview.users)}
+          </div>
+        </div>
+      )}
+
       <label className="block">
         <div className="text-sm text-gray-700 mb-1">E-mailovi korisnika koje treba sačuvati (opcionalno, zarezom odvojeni)</div>
         <input
@@ -57,7 +146,7 @@ export default function AdminDataCleanup(){
         />
       </label>
 
-      <button onClick={runCleanup} disabled={loading} className="px-4 py-2 bg-rose-600 text-white rounded hover:bg-rose-700 disabled:opacity-50">
+      <button onClick={runCleanup} disabled={loading || loadingPreview} className="px-4 py-2 bg-rose-600 text-white rounded hover:bg-rose-700 disabled:opacity-50">
         {loading ? 'Čistim...' : 'Pokreni čišćenje'}
       </button>
 
