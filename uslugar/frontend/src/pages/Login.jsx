@@ -8,6 +8,7 @@ export default function Login({ onSuccess }) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [emailError, setEmailError] = useState('');
+  const [userType, setUserType] = useState(null); // null | 'USER' | 'PROVIDER'
   const [requiresRoleSelection, setRequiresRoleSelection] = useState(false);
   const [availableRoles, setAvailableRoles] = useState([]);
 
@@ -40,7 +41,8 @@ export default function Login({ onSuccess }) {
     try {
       const response = await api.post('/auth/login', {
         email,
-        password
+        password,
+        ...(userType && { role: userType }) // Dodaj role samo ako je odabran
       });
 
       // Check if role selection is required
@@ -168,6 +170,66 @@ export default function Login({ onSuccess }) {
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Prijava</h1>
         <p className="text-gray-600 dark:text-gray-400 mb-6">Prijavite se na svoj račun</p>
+
+        {/* Odabir tipa korisnika */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+            Prijavite se kao: <span className="text-xs text-gray-500 font-normal">(opcionalno)</span>
+          </label>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => setUserType(userType === 'USER' ? null : 'USER')}
+              className={`p-4 border-2 rounded-lg text-left transition-all ${
+                userType === 'USER'
+                  ? 'border-green-500 bg-green-50 dark:bg-green-900/20 dark:border-green-400'
+                  : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 bg-white dark:bg-gray-700'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <div className={`text-2xl ${userType === 'USER' ? 'text-green-500 dark:text-green-400' : 'text-gray-400'}`}>
+                  👤
+                </div>
+                <div>
+                  <div className={`font-semibold ${userType === 'USER' ? 'text-green-700 dark:text-green-300' : 'text-gray-700 dark:text-gray-300'}`}>
+                    Korisnik usluge
+                  </div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                    Tražim usluge
+                  </div>
+                </div>
+              </div>
+            </button>
+            <button
+              type="button"
+              onClick={() => setUserType(userType === 'PROVIDER' ? null : 'PROVIDER')}
+              className={`p-4 border-2 rounded-lg text-left transition-all ${
+                userType === 'PROVIDER'
+                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-400'
+                  : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 bg-white dark:bg-gray-700'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <div className={`text-2xl ${userType === 'PROVIDER' ? 'text-blue-500 dark:text-blue-400' : 'text-gray-400'}`}>
+                  🏢
+                </div>
+                <div>
+                  <div className={`font-semibold ${userType === 'PROVIDER' ? 'text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300'}`}>
+                    Pružatelj usluge
+                  </div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                    Nudim usluge
+                  </div>
+                </div>
+              </div>
+            </button>
+          </div>
+          {userType && (
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+              Odabrano: {userType === 'USER' ? 'Korisnik usluge' : 'Pružatelj usluge'} • Kliknite ponovno za poništavanje
+            </p>
+          )}
+        </div>
 
         {error && (
           <div 
