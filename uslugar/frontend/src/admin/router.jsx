@@ -101,24 +101,70 @@ export default function AdminRouter(){
       return false; // No redirect needed
     };
 
-    // Interceptiraj klikove na hash linkove
+    // Interceptiraj klikove na sve linkove (hash i vanjske)
     const handleClick = (e) => {
-      const target = e.target.closest('a[href^="#"]');
-      if (target) {
-        const href = target.getAttribute('href');
-        if (href && href.startsWith('#')) {
-          const hash = href.slice(1).split('?')[0];
-          const pathname = window.location.pathname;
-          
-          // Ako smo u admin panelu i hash NIJE dio admin panela, resetiraj pathname
-          if (pathname.includes('/admin/') && !isAdminRoute(hash)) {
-            e.preventDefault();
-            e.stopPropagation();
-            const query = window.location.search;
-            window.location.replace(`/${href}${query}`);
-            return;
-          }
+      const target = e.target.closest('a[href]');
+      if (!target) return;
+      
+      const href = target.getAttribute('href');
+      if (!href) return;
+      
+      const pathname = window.location.pathname;
+      
+      // Ako nismo u admin panelu, ne radi ništa
+      if (!pathname.includes('/admin/')) return;
+      
+      // Apsolutni URL-ovi (https://, http://, mailto:, tel:) - omogući normalno otvaranje
+      if (href.match(/^(https?:\/\/|mailto:|tel:)/i)) {
+        // Ako je target="_blank", omogući normalno otvaranje
+        if (target.getAttribute('target') === '_blank') {
+          return; // Omogući normalno otvaranje
         }
+        // Inače, možda želimo preusmjeriti na glavnu aplikaciju
+        // Ali za sada omogućimo normalno otvaranje
+        return;
+      }
+      
+      // Hash linkovi
+      if (href.startsWith('#')) {
+        const hash = href.slice(1).split('?')[0];
+        
+        // Ako hash NIJE dio admin panela, resetiraj pathname na root
+        if (!isAdminRoute(hash)) {
+          e.preventDefault();
+          e.stopPropagation();
+          const query = window.location.search;
+          window.location.replace(`/${href}${query}`);
+          return;
+        }
+        // Ako je hash dio admin panela, omogući normalno React Router navigaciju
+        return;
+      }
+      
+      // Relativni linkovi koji nisu hash (npr. "/", "/#login", "/#register")
+      // Ako relativni link nije dio admin panela, preusmjeri na glavnu aplikaciju
+      if (href.startsWith('/')) {
+        // Provjeri da li je to admin ruta
+        const isAdminPath = href.startsWith('/admin/') || href === '/admin';
+        
+        if (!isAdminPath) {
+          // Nije admin ruta - preusmjeri na glavnu aplikaciju
+          e.preventDefault();
+          e.stopPropagation();
+          window.location.replace(href);
+          return;
+        }
+        // Ako je admin ruta, omogući normalno React Router navigaciju
+        return;
+      }
+      
+      // Ostali relativni linkovi (bez /) - tretiraj kao hash ili preusmjeri
+      // Ako nije hash, možda je relativni path - preusmjeri na glavnu aplikaciju
+      if (!href.startsWith('#') && !href.match(/^(https?:\/\/|mailto:|tel:)/i)) {
+        e.preventDefault();
+        e.stopPropagation();
+        window.location.replace(`/${href}`);
+        return;
       }
     };
 
