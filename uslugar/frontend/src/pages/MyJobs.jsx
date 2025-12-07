@@ -4,6 +4,7 @@ import { useAuth } from '../App.jsx';
 
 export default function MyJobs({ onNavigate }) {
   const { token } = useAuth();
+  const [user, setUser] = useState(null);
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedJob, setSelectedJob] = useState(null);
@@ -15,18 +16,61 @@ export default function MyJobs({ onNavigate }) {
       return;
     }
 
+    // Učitaj korisničke podatke
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (e) {
+        console.error('Error parsing user:', e);
+      }
+    }
+
     loadMyJobs();
   }, [token]);
 
   const loadMyJobs = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/jobs', {
-        params: {
-          myJobs: true // Backend će filtrirati po userId iz tokena
+      
+      // Provjeri role korisnika
+      const storedUser = localStorage.getItem('user');
+      let userRole = 'USER';
+      if (storedUser) {
+        try {
+          const userData = JSON.parse(storedUser);
+          userRole = userData.role;
+        } catch (e) {
+          console.error('Error parsing user:', e);
         }
-      });
-      setJobs(response.data);
+      }
+
+      if (userRole === 'PROVIDER') {
+        // Za providera - dohvati poslove na koje je poslao ponudu
+        const offersResponse = await api.get('/offers/my-offers');
+        const myOffers = offersResponse.data || [];
+        
+        // Mapiraj ponude u poslove s informacijama o ponudi
+        const providerJobs = myOffers.map(offer => ({
+          ...offer.job,
+          myOffer: {
+            id: offer.id,
+            status: offer.status,
+            message: offer.message,
+            price: offer.amount,
+            createdAt: offer.createdAt
+          }
+        }));
+        setJobs(providerJobs);
+      } else {
+        // Za korisnika - dohvati poslove koje je objavio
+        const response = await api.get('/jobs', {
+          params: {
+            myJobs: true // Backend će filtrirati po userId iz tokena
+          }
+        });
+        setJobs(response.data);
+      }
     } catch (error) {
       console.error('Error loading my jobs:', error);
       alert('Greška pri učitavanju poslova');
@@ -91,21 +135,31 @@ export default function MyJobs({ onNavigate }) {
     );
   }
 
+  const isProvider = user?.role === 'PROVIDER';
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">📋 Moji Poslovi</h1>
-        <p className="text-gray-600">Pregledajte sve poslove koje ste objavili i primljene ponude</p>
+        <p className="text-gray-600">
+          {isProvider 
+            ? 'Pregledajte sve poslove na koje ste poslali ponudu ili koje ste prihvatili'
+            : 'Pregledajte sve poslove koje ste objavili i primljene ponude'}
+        </p>
       </div>
 
       {jobs.length === 0 ? (
         <div className="bg-white rounded-lg shadow p-8 text-center">
-          <p className="text-gray-600 mb-4">Nemate još objavljenih poslova.</p>
+          <p className="text-gray-600 mb-4">
+            {isProvider 
+              ? 'Nemate još poslova na koje ste poslali ponudu.'
+              : 'Nemate još objavljenih poslova.'}
+          </p>
           <button
-            onClick={() => onNavigate && onNavigate('user')}
+            onClick={() => onNavigate && onNavigate(isProvider ? 'providers' : 'user')}
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
           >
-            Objavi novi posao
+            {isProvider ? 'Pretraži poslove' : 'Objavi novi posao'}
           </button>
         </div>
       ) : (
@@ -127,17 +181,41 @@ export default function MyJobs({ onNavigate }) {
                     }`}>
                       {job.status === 'OPEN' ? 'Otvoren' : job.status === 'ACCEPTED' ? 'Prihvaćen' : 'Završen'}
                     </span>
+                    {isProvider && job.myOffer && (
+                      <span className={`px-2 py-1 rounded ${
+                        job.myOffer.status === 'ACCEPTED' ? 'bg-green-100 text-green-800' :
+                        job.myOffer.status === 'REJECTED' ? 'bg-red-100 text-red-800' :
+                        'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {job.myOffer.status === 'ACCEPTED' ? '✓ Ponuda prihvaćena' :
+                         job.myOffer.status === 'REJECTED' ? '✗ Ponuda odbijena' :
+                         '⏳ Čeka odgovor'}
+                      </span>
+                    )}
                   </div>
+                  {isProvider && job.myOffer && (
+                    <div className="mt-2 p-3 bg-blue-50 rounded">
+                      <p className="text-sm font-semibold text-blue-900">Vaša ponuda:</p>
+                      <p className="text-sm text-blue-700">{job.myOffer.message}</p>
+                      {job.myOffer.price && (
+                        <p className="text-sm font-semibold text-blue-900 mt-1">
+                          Cijena: {job.myOffer.price} €
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
-                <button
-                  onClick={() => handleViewJobDetails(job)}
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                >
-                  {selectedJob?.id === job.id ? 'Sakrij detalje' : 'Prikaži detalje'}
-                </button>
+                {!isProvider && (
+                  <button
+                    onClick={() => handleViewJobDetails(job)}
+                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                  >
+                    {selectedJob?.id === job.id ? 'Sakrij detalje' : 'Prikaži detalje'}
+                  </button>
+                )}
               </div>
 
-              {selectedJob?.id === job.id && (
+              {!isProvider && selectedJob?.id === job.id && (
                 <div className="mt-4 border-t pt-4">
                   <h4 className="font-semibold mb-3">Primljene ponude ({offers[job.id]?.length || 0})</h4>
                   {offers[job.id] && offers[job.id].length > 0 ? (

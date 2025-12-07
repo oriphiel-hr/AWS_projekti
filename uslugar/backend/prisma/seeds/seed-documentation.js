@@ -53,7 +53,19 @@ const features = [
         { name: "Rok izvršenja", implemented: true },
         { name: "Pretraživanje poslova", implemented: true },
         { name: "Filtriranje po kategoriji, lokaciji, budžetu", implemented: true },
-        { name: "Pregled detalja posla", implemented: true }
+        { name: "Pregled detalja posla", implemented: true },
+        { name: "Moderna tražilica poslova (sticky search bar)", implemented: true },
+        { name: "Napredni filteri (kategorija, grad, budžet, status, datum)", implemented: true },
+        { name: "Sortiranje poslova (najnoviji, najstariji, budžet visok→nizak, budžet nizak→visok)", implemented: true },
+        { name: "View mode - Grid i List prikaz poslova", implemented: true },
+        { name: "Spremljene pretrage (saved searches)", implemented: true },
+        { name: "Job alerts - email notifikacije za nove poslove", implemented: true },
+        { name: "Frekvencije job alertova (DAILY, WEEKLY, INSTANT)", implemented: true },
+        { name: "Upravljanje spremljenim pretragama u profilu", implemented: true },
+        { name: "Upravljanje job alertovima u profilu", implemented: true },
+        { name: "Quick filters u tražilici", implemented: true },
+        { name: "Prikaz broja pronađenih poslova", implemented: true },
+        { name: "Očisti filtere funkcionalnost", implemented: true }
       ]
     },
     {
@@ -2366,43 +2378,263 @@ const featureDescriptions = {
     },
     "Pretraživanje poslova": {
       implemented: true,
-      summary: "Pronađite poslove koji vas zanimaju pomoću napredne pretrage po ključnim riječima, kategorijama i lokaciji.",
+      summary: "Pronađite poslove koji vas zanimaju pomoću moderne tražilice s naprednim filterima, sortiranjem i spremljenim pretragama.",
       details: `**Kako funkcionira**
-- Search bar podržava ključne riječi, dok filteri (kategorija, lokacija, budžet, hitnost, status) sužavaju rezultate.
-- Rezultati se ažuriraju u realnom vremenu, a sort opcije (datum, budžet, udaljenost) prilagođavaju poredak.
-- Omogućeno je spremanje pretraga i aktiviranje notifikacija za nove poslove koji odgovaraju kriterijima.
+- Sticky search bar na vrhu stranice omogućava brzu pretragu po naslovu, opisu ili kategoriji.
+- Quick filters (kategorija, grad, sortiranje) su dostupni odmah ispod search bara.
+- Napredni filteri (budžet, status, datum) se otvaraju klikom na gumb "Filteri".
+- Sortiranje: najnoviji, najstariji, budžet visok→nizak, budžet nizak→visok.
+- View mode: prebacivanje između grid i list prikaza poslova.
+- Spremljene pretrage: spremite svoje pretrage za brzo ponovno korištenje.
+- Job alerts: primajte email notifikacije za nove poslove koji odgovaraju vašim kriterijima.
 
 **Prednosti**
 - Brzo pronalazite relevantne poslove bez ručnog listanja cijele ponude.
 - Personalizirana upozorenja pomažu da prvi reagirate na nove prilike.
+- Moderni, intuitivan dizajn poboljšava korisničko iskustvo.
+- Fleksibilnost u načinu prikaza i filtriranja rezultata.
 
 **Kada koristiti**
 - Svakodnevno pretraživanje novih poslova u vašim kategorijama i regijama.
 - Postavljanje dugoročnih pretraga za specijalizirane usluge ili veće projekte.
+- Kada želite biti prvi koji reagira na nove poslove u određenim kategorijama.
 `,
       technicalDetails: `**Frontend**
-- \`JobSearchPage\` koristi React Query i debounce za search input.
-- Filter panel sinkronizira se s URL query parametrima i prikazuje brojače rezultata (facets).
-- \`SavedSearches\` modal upravlja listom spremljenih pretraga i notifikacijama.
+- Komponenta u \`App.jsx\` koristi sticky positioning za search bar.
+- React state upravlja filterima, search query-em, view mode-om i spremljenim pretragama.
+- \`useEffect\` hook automatski dohvaća poslove kada se filteri promijene.
+- \`SavedSearchesSection\` u \`UserProfile.jsx\` upravlja spremljenim pretragama i job alertovima.
 
 **Backend**
-- \`jobSearchController.search\` delegira upit na search service (Elastic/Algolia) kombinirajući full-text i filtre.
-- \`savedSearchService\` sprema kriterije, generira cron jobove/notifikacije za nove poslove.
-- \`jobSearchController.suggest\` pruža autocomplete prijedloge.
+- Endpoint \`GET /api/jobs\` podržava sve filtere i sort opcije kroz query parametre.
+- Endpointi u \`routes/saved-searches.js\` za upravljanje spremljenim pretragama.
+- Endpointi u \`routes/job-alerts.js\` za upravljanje job alertovima.
+- Background job (cron) provjerava nove poslove i šalje email notifikacije za job alerts.
 
 **Baza**
-- \`JobSearchSaved\` (userId, filtersJSON, notifyEnabled, lastRunAt).
-- \`JobSearchLog\` bilježi upite radi analitike i optimizacije (anonimizirano).
-- Materijalizirani view \`JobSearchView\` standardizira podatke za indeks.
+- Tablica \`SavedSearch\` (id, userId, name, searchQuery, filters, isActive, createdAt, updatedAt, lastUsedAt).
+- Tablica \`JobAlert\` (id, userId, name, searchQuery, filters, frequency, isActive, lastSentAt, createdAt, updatedAt).
+- Indeksi na relevantnim poljima za brzu pretragu i sortiranje.
 
 **Integracije**
-- Search indeks (Algolia/Elastic) s faceted filtrima; GeoIP za izračun udaljenosti.
-- Notification servis (email/push) za saved search alerte.
+- Email servis (nodemailer/SMTP) za slanje job alert notifikacija.
+- Cron job za automatsku provjeru novih poslova i slanje email notifikacija.
 
 **API**
-- \`GET /api/provider/jobs/search\` – query parametri: q, categories[], regions[], budgetMin/Max, urgency, status, sort.
-- \`POST /api/provider/jobs/saved-searches\` – spremanje pretrage.
-- \`GET /api/provider/jobs/saved-searches\` i \`DELETE /api/provider/jobs/saved-searches/:id\` – upravljanje pretragama.
+- \`GET /api/jobs\` – query parametri: q, categoryId, city, budgetMin, budgetMax, status, sortBy, dateFrom, dateTo.
+- \`GET /api/saved-searches\` – dohvat spremljenih pretraga.
+- \`POST /api/saved-searches\` – spremanje pretrage.
+- \`PUT /api/saved-searches/:id\` – ažuriranje pretrage.
+- \`DELETE /api/saved-searches/:id\` – brisanje pretrage.
+- \`POST /api/saved-searches/:id/use\` – označavanje pretrage kao korištene.
+- \`GET /api/job-alerts\` – dohvat job alertova.
+- \`POST /api/job-alerts\` – kreiranje job alerta.
+- \`PUT /api/job-alerts/:id\` – ažuriranje job alerta.
+- \`DELETE /api/job-alerts/:id\` – brisanje job alerta.
+`
+    },
+    "Moderna tražilica poslova (sticky search bar)": {
+      implemented: true,
+      summary: "Sticky search bar na vrhu stranice omogućava brzu i jednostavnu pretragu poslova bez skrolanja.",
+      details: `**Kako funkcionira**
+- Tražilica je uvijek vidljiva na vrhu stranice (sticky positioning) čak i kada korisnik skrola.
+- Veliki search input s ikonom omogućava brzu pretragu po naslovu, opisu ili kategoriji.
+- Quick filters (kategorija, grad, sortiranje) su dostupni odmah ispod search bara.
+- Gumb za napredne filtere otvara dodatne opcije (budžet, status, datum).
+
+**Prednosti**
+- Tražilica je uvijek dostupna bez obzira na poziciju na stranici.
+- Moderni, čist dizajn poboljšava korisničko iskustvo.
+- Brz pristup svim filterima i opcijama pretrage.
+
+**Kada koristiti**
+- Svakodnevno pretraživanje novih poslova.
+- Brzo pronalaženje specifičnih poslova pomoću filtera.
+`,
+      technicalDetails: `**Frontend**
+- Komponenta u \`App.jsx\` koristi \`sticky top-0\` CSS klasu za pozicioniranje.
+- React state upravlja filterima i search query-em.
+- \`useEffect\` hook automatski dohvaća poslove kada se filteri promijene.
+
+**Backend**
+- Endpoint \`GET /api/jobs\` podržava sve filtere i sort opcije.
+- Query parametri se parsiraju i primjenjuju na Prisma upite.
+
+**Baza**
+- Tablica \`Job\` s indeksima na \`categoryId\`, \`city\`, \`budget\`, \`status\`, \`createdAt\`.
+
+**API**
+- \`GET /api/jobs?q=&categoryId=&city=&budgetMin=&budgetMax=&status=&sortBy=&dateFrom=&dateTo=\`
+`
+    },
+    "Napredni filteri (kategorija, grad, budžet, status, datum)": {
+      implemented: true,
+      summary: "Napredni filteri omogućavaju precizno sužavanje rezultata pretrage poslova.",
+      details: `**Kako funkcionira**
+- Kategorija: Odabir specifične kategorije usluge.
+- Grad: Filtriranje po lokaciji posla.
+- Budžet: Min i max budžet u eurima.
+- Status: Filtriranje po statusu posla (Otvoren, U tijeku, Završen).
+- Datum: Filtriranje po datumu objave (od određenog datuma).
+
+**Prednosti**
+- Precizno pronalaženje poslova koji odgovaraju vašim kriterijima.
+- Ušteda vremena eliminacijom nebitnih rezultata.
+- Kombinacija više filtera za još preciznije rezultate.
+
+**Kada koristiti**
+- Kada tražite specifične poslove u određenoj kategoriji i lokaciji.
+- Kada želite filtrirati poslove po budžetu ili statusu.
+`,
+      technicalDetails: `**Frontend**
+- Napredni filteri se prikazuju u expandabilnom panelu ispod glavne tražilice.
+- React state upravlja svim filterima i automatski dohvaća rezultate.
+
+**Backend**
+- Endpoint \`GET /api/jobs\` podržava sve filtere kroz query parametre.
+- Prisma upiti se dinamički grade ovisno o dostupnim filterima.
+
+**Baza**
+- Indeksi na relevantnim poljima za brzu pretragu.
+`
+    },
+    "Sortiranje poslova (najnoviji, najstariji, budžet visok→nizak, budžet nizak→visok)": {
+      implemented: true,
+      summary: "Sortiranje rezultata pretrage omogućava prikaz poslova prema vašim preferencama.",
+      details: `**Kako funkcionira**
+- Najnoviji: Poslovi sortirani po datumu objave (najnoviji prvo).
+- Najstariji: Poslovi sortirani po datumu objave (najstariji prvo).
+- Budžet visok→nizak: Poslovi sortirani po budžetu (najveći prvo).
+- Budžet nizak→visok: Poslovi sortirani po budžetu (najmanji prvo).
+
+**Prednosti**
+- Brzo pronalaženje najrelevantnijih poslova prema vašim prioritetima.
+- Fleksibilnost u načinu prikaza rezultata.
+
+**Kada koristiti**
+- Kada želite vidjeti najnovije poslove prvo.
+- Kada tražite poslove s određenim budžetom.
+`,
+      technicalDetails: `**Frontend**
+- Dropdown za odabir načina sortiranja u quick filters sekciji.
+- React state upravlja sort opcijom.
+
+**Backend**
+- Endpoint \`GET /api/jobs\` podržava \`sortBy\` query parametar.
+- Prisma \`orderBy\` se dinamički postavlja ovisno o odabranoj opciji.
+
+**Baza**
+- Indeksi na \`createdAt\` i \`budget\` poljima za brzo sortiranje.
+`
+    },
+    "View mode - Grid i List prikaz poslova": {
+      implemented: true,
+      summary: "Prebacivanje između grid i list prikaza omogućava personalizaciju načina prikaza poslova.",
+      details: `**Kako funkcionira**
+- Grid prikaz: Poslovi prikazani u kartičnom formatu (3 kolone na desktopu).
+- List prikaz: Poslovi prikazani u listi s detaljnijim informacijama.
+- Gumb za prebacivanje između prikaza nalazi se u headeru tražilice.
+
+**Prednosti**
+- Grid prikaz omogućava brz pregled više poslova odjednom.
+- List prikaz pruža više detalja o svakom poslu.
+- Korisnik bira format koji mu najviše odgovara.
+
+**Kada koristiti**
+- Grid prikaz za brzi pregled više poslova.
+- List prikaz kada želite vidjeti više detalja o svakom poslu.
+`,
+      technicalDetails: `**Frontend**
+- React state \`viewMode\` upravlja načinom prikaza ('grid' ili 'list').
+- Komponente \`JobCard\` (grid) i custom list item (list) se renderiraju uvjetno.
+- Gumb za prebacivanje ažurira state.
+
+**Backend**
+- Nema promjena na backendu, samo frontend renderiranje.
+
+**Baza**
+- Nema promjena.
+`
+    },
+    "Spremljene pretrage (saved searches)": {
+      implemented: true,
+      summary: "Spremite svoje pretrage za brzo ponovno korištenje bez ponovnog postavljanja filtera.",
+      details: `**Kako funkcionira**
+- Nakon postavljanja filtera, kliknite "Spremi pretragu" i unesite naziv.
+- Spremljene pretrage se prikazuju u dropdownu u tražilici.
+- Odabirom spremljene pretrage automatski se učitavaju filteri i query.
+- Spremljene pretrage možete upravljati u profilu (dodaj, obriši).
+
+**Prednosti**
+- Ušteda vremena ponovnim korištenjem čestih pretraga.
+- Brz pristup vašim omiljenim filterima.
+- Praćenje zadnjeg korištenja pretrage.
+
+**Kada koristiti**
+- Kada često tražite iste tipove poslova.
+- Kada želite brzo prebaciti između različitih pretraga.
+`,
+      technicalDetails: `**Frontend**
+- Komponenta \`SavedSearchesSection\` u \`UserProfile.jsx\` upravlja spremljenim pretragama.
+- Dropdown u tražilici prikazuje spremljene pretrage i omogućava brzo učitavanje.
+- React state upravlja listom spremljenih pretraga.
+
+**Backend**
+- Endpointi u \`routes/saved-searches.js\`:
+  - \`GET /api/saved-searches\` – dohvat svih spremljenih pretraga korisnika.
+  - \`POST /api/saved-searches\` – kreiranje nove spremljene pretrage.
+  - \`PUT /api/saved-searches/:id\` – ažuriranje pretrage.
+  - \`DELETE /api/saved-searches/:id\` – brisanje pretrage.
+  - \`POST /api/saved-searches/:id/use\` – označavanje pretrage kao korištene.
+
+**Baza**
+- Tablica \`SavedSearch\` (id, userId, name, searchQuery, filters, isActive, createdAt, updatedAt, lastUsedAt).
+- Indeksi na \`userId\` i \`isActive\` za brzu pretragu.
+
+**API**
+- Sve operacije zahtijevaju autentifikaciju.
+`
+    },
+    "Job alerts - email notifikacije za nove poslove": {
+      implemented: true,
+      summary: "Primajte email notifikacije za nove poslove koji odgovaraju vašim kriterijima pretrage.",
+      details: `**Kako funkcionira**
+- Kreirajte job alert s nazivom, filterima i frekvencijom (DAILY, WEEKLY, INSTANT).
+- Sustav automatski provjerava nove poslove i šalje email notifikacije.
+- Email sadrži linkove na nove poslove koji odgovaraju kriterijima.
+- Job alerts možete aktivirati, pauzirati ili obrisati u profilu.
+
+**Prednosti**
+- Ne propuštate nove prilike koje odgovaraju vašim kriterijima.
+- Automatsko praćenje novih poslova bez ručnog pretraživanja.
+- Prilagodljive frekvencije notifikacija prema vašim preferencama.
+
+**Kada koristiti**
+- Kada tražite specifične tipove poslova u određenim kategorijama.
+- Kada želite biti prvi koji reagira na nove poslove.
+`,
+      technicalDetails: `**Frontend**
+- Komponenta \`SavedSearchesSection\` u \`UserProfile.jsx\` upravlja job alertovima.
+- Forma za kreiranje alerta omogućava odabir naziva, filtera i frekvencije.
+
+**Backend**
+- Endpointi u \`routes/job-alerts.js\`:
+  - \`GET /api/job-alerts\` – dohvat svih job alertova korisnika.
+  - \`POST /api/job-alerts\` – kreiranje novog job alerta.
+  - \`PUT /api/job-alerts/:id\` – ažuriranje alerta (uključujući aktivaciju/pauziranje).
+  - \`DELETE /api/job-alerts/:id\` – brisanje alerta.
+- Background job (cron) provjerava nove poslove i šalje email notifikacije.
+
+**Baza**
+- Tablica \`JobAlert\` (id, userId, name, searchQuery, filters, frequency, isActive, lastSentAt, createdAt, updatedAt).
+- Indeksi na \`userId\`, \`isActive\`, \`frequency\` i \`lastSentAt\`.
+
+**Integracije**
+- Email servis (nodemailer/SMTP) za slanje notifikacija.
+- Cron job za automatsku provjeru novih poslova.
+
+**API**
+- Sve operacije zahtijevaju autentifikaciju.
 `
     },
     "Notifikacije za nove ponude": {

@@ -1,6 +1,281 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
 
+// Komponenta za spremljene pretrage i job alerts
+function SavedSearchesSection() {
+  const [savedSearches, setSavedSearches] = useState([]);
+  const [jobAlerts, setJobAlerts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showAddSearch, setShowAddSearch] = useState(false);
+  const [showAddAlert, setShowAddAlert] = useState(false);
+  const [newSearchName, setNewSearchName] = useState('');
+  const [newAlertName, setNewAlertName] = useState('');
+  const [newAlertFrequency, setNewAlertFrequency] = useState('DAILY');
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [searchesRes, alertsRes] = await Promise.all([
+        api.get('/saved-searches').catch(() => ({ data: [] })),
+        api.get('/job-alerts').catch(() => ({ data: [] }))
+      ]);
+      setSavedSearches(searchesRes.data || []);
+      setJobAlerts(alertsRes.data || []);
+    } catch (err) {
+      console.error('Error loading saved searches/alerts:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveSearch = async () => {
+    if (!newSearchName.trim()) return;
+    try {
+      await api.post('/saved-searches', {
+        name: newSearchName,
+        searchQuery: '',
+        filters: {}
+      });
+      setNewSearchName('');
+      setShowAddSearch(false);
+      loadData();
+    } catch (err) {
+      alert('Greška pri spremanju pretrage');
+    }
+  };
+
+  const handleSaveAlert = async () => {
+    if (!newAlertName.trim()) return;
+    try {
+      await api.post('/job-alerts', {
+        name: newAlertName,
+        searchQuery: '',
+        filters: {},
+        frequency: newAlertFrequency
+      });
+      setNewAlertName('');
+      setNewAlertFrequency('DAILY');
+      setShowAddAlert(false);
+      loadData();
+    } catch (err) {
+      alert('Greška pri kreiranju alerta');
+    }
+  };
+
+  const handleDeleteSearch = async (id) => {
+    if (!confirm('Jeste li sigurni da želite obrisati ovu pretragu?')) return;
+    try {
+      await api.delete(`/saved-searches/${id}`);
+      loadData();
+    } catch (err) {
+      alert('Greška pri brisanju pretrage');
+    }
+  };
+
+  const handleDeleteAlert = async (id) => {
+    if (!confirm('Jeste li sigurni da želite obrisati ovaj alert?')) return;
+    try {
+      await api.delete(`/job-alerts/${id}`);
+      loadData();
+    } catch (err) {
+      alert('Greška pri brisanju alerta');
+    }
+  };
+
+  const handleToggleAlert = async (id, currentStatus) => {
+    try {
+      await api.put(`/job-alerts/${id}`, {
+        isActive: !currentStatus
+      });
+      loadData();
+    } catch (err) {
+      alert('Greška pri ažuriranju alerta');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-6">
+        <p className="text-gray-500">Učitavanje...</p>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {/* Spremljene pretrage */}
+      <div className="bg-purple-50 border border-purple-200 rounded-lg p-6 mb-6">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-semibold text-gray-900 border-b border-purple-200 pb-2">
+            💾 Spremljene pretrage
+          </h3>
+          <button
+            onClick={() => setShowAddSearch(!showAddSearch)}
+            className="px-3 py-1 bg-purple-600 text-white rounded text-sm hover:bg-purple-700 transition-colors"
+          >
+            {showAddSearch ? '✕' : '+ Dodaj'}
+          </button>
+        </div>
+
+        {showAddSearch && (
+          <div className="mb-4 p-3 bg-white rounded border border-purple-200">
+            <input
+              type="text"
+              className="w-full px-3 py-2 border rounded mb-2"
+              placeholder="Naziv pretrage..."
+              value={newSearchName}
+              onChange={e => setNewSearchName(e.target.value)}
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={handleSaveSearch}
+                className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors text-sm"
+              >
+                Spremi
+              </button>
+              <button
+                onClick={() => {
+                  setShowAddSearch(false);
+                  setNewSearchName('');
+                }}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors text-sm"
+              >
+                Otkaži
+              </button>
+            </div>
+          </div>
+        )}
+
+        {savedSearches.length === 0 ? (
+          <p className="text-gray-500 text-sm">Nemate spremljenih pretraga. Spremite pretragu iz tražilice poslova.</p>
+        ) : (
+          <div className="space-y-2">
+            {savedSearches.map(search => (
+              <div key={search.id} className="flex items-center justify-between p-3 bg-white rounded border border-purple-200">
+                <div className="flex-1">
+                  <p className="font-medium text-gray-900">{search.name}</p>
+                  {search.lastUsedAt && (
+                    <p className="text-xs text-gray-500">
+                      Zadnji put korišteno: {new Date(search.lastUsedAt).toLocaleDateString('hr-HR')}
+                    </p>
+                  )}
+                </div>
+                <button
+                  onClick={() => handleDeleteSearch(search.id)}
+                  className="px-3 py-1 bg-red-100 text-red-700 rounded text-sm hover:bg-red-200 transition-colors"
+                >
+                  Obriši
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Job Alerts */}
+      <div className="bg-orange-50 border border-orange-200 rounded-lg p-6 mb-6">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-semibold text-gray-900 border-b border-orange-200 pb-2">
+            🔔 Job Alerts
+          </h3>
+          <button
+            onClick={() => setShowAddAlert(!showAddAlert)}
+            className="px-3 py-1 bg-orange-600 text-white rounded text-sm hover:bg-orange-700 transition-colors"
+          >
+            {showAddAlert ? '✕' : '+ Dodaj'}
+          </button>
+        </div>
+
+        {showAddAlert && (
+          <div className="mb-4 p-3 bg-white rounded border border-orange-200">
+            <input
+              type="text"
+              className="w-full px-3 py-2 border rounded mb-2"
+              placeholder="Naziv alerta..."
+              value={newAlertName}
+              onChange={e => setNewAlertName(e.target.value)}
+            />
+            <select
+              className="w-full px-3 py-2 border rounded mb-2"
+              value={newAlertFrequency}
+              onChange={e => setNewAlertFrequency(e.target.value)}
+            >
+              <option value="DAILY">Svaki dan</option>
+              <option value="WEEKLY">Jednom tjedno</option>
+              <option value="INSTANT">Odmah</option>
+            </select>
+            <div className="flex gap-2">
+              <button
+                onClick={handleSaveAlert}
+                className="px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-700 transition-colors text-sm"
+              >
+                Kreiraj
+              </button>
+              <button
+                onClick={() => {
+                  setShowAddAlert(false);
+                  setNewAlertName('');
+                  setNewAlertFrequency('DAILY');
+                }}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors text-sm"
+              >
+                Otkaži
+              </button>
+            </div>
+          </div>
+        )}
+
+        {jobAlerts.length === 0 ? (
+          <p className="text-gray-500 text-sm">Nemate aktivnih job alertova. Kreirajte alert da dobivate email notifikacije za nove poslove.</p>
+        ) : (
+          <div className="space-y-2">
+            {jobAlerts.map(alert => (
+              <div key={alert.id} className="flex items-center justify-between p-3 bg-white rounded border border-orange-200">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium text-gray-900">{alert.name}</p>
+                    <span className={`px-2 py-1 rounded text-xs ${
+                      alert.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+                    }`}>
+                      {alert.isActive ? 'Aktivan' : 'Neaktivan'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    Frekvencija: {alert.frequency === 'DAILY' ? 'Svaki dan' : alert.frequency === 'WEEKLY' ? 'Jednom tjedno' : 'Odmah'}
+                    {alert.lastSentAt && ` • Zadnji put: ${new Date(alert.lastSentAt).toLocaleDateString('hr-HR')}`}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleToggleAlert(alert.id, alert.isActive)}
+                    className={`px-3 py-1 rounded text-sm transition-colors ${
+                      alert.isActive 
+                        ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' 
+                        : 'bg-green-100 text-green-700 hover:bg-green-200'
+                    }`}
+                  >
+                    {alert.isActive ? 'Pauziraj' : 'Aktiviraj'}
+                  </button>
+                  <button
+                    onClick={() => handleDeleteAlert(alert.id)}
+                    className="px-3 py-1 bg-red-100 text-red-700 rounded text-sm hover:bg-red-200 transition-colors"
+                  >
+                    Obriši
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
 export default function UserProfile({ onNavigate }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -266,6 +541,79 @@ export default function UserProfile({ onNavigate }) {
                   )}
                 </p>
               </div>
+            </div>
+          </div>
+
+          {/* Spremljene pretrage i Job Alerts */}
+          <SavedSearchesSection />
+
+          {/* Brzi linkovi */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 border-b border-blue-200 pb-2">
+              🔗 Brzi pristup
+            </h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {user?.role === 'USER' && (
+                <button
+                  onClick={() => {
+                    if (onNavigate) {
+                      onNavigate('my-jobs');
+                    } else {
+                      window.location.hash = '#my-jobs';
+                    }
+                  }}
+                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-left flex items-center justify-between"
+                >
+                  <span className="font-semibold">📋 Moji poslovi</span>
+                  <span>→</span>
+                </button>
+              )}
+              
+              {user?.role === 'PROVIDER' && (
+                <>
+                  <button
+                    onClick={() => {
+                      if (onNavigate) {
+                        onNavigate('my-jobs');
+                      } else {
+                        window.location.hash = '#my-jobs';
+                      }
+                    }}
+                    className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-left flex items-center justify-between"
+                  >
+                    <span className="font-semibold">📋 Moji poslovi</span>
+                    <span>→</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (onNavigate) {
+                        onNavigate('my-leads');
+                      } else {
+                        window.location.hash = '#my-leads';
+                      }
+                    }}
+                    className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-left flex items-center justify-between"
+                  >
+                    <span className="font-semibold">🎯 Moji leadovi</span>
+                    <span>→</span>
+                  </button>
+                </>
+              )}
+              
+              <button
+                onClick={() => {
+                  if (onNavigate) {
+                    onNavigate('user');
+                  } else {
+                    window.location.hash = '#user';
+                  }
+                }}
+                className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-left flex items-center justify-between"
+              >
+                <span className="font-semibold">🏠 Početna</span>
+                <span>→</span>
+              </button>
             </div>
           </div>
         </div>

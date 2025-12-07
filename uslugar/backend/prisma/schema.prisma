@@ -158,6 +158,8 @@ model User {
   smsLogs             SmsLog[]                  @relation("UserSmsLogs")
   pushSubscriptions   PushSubscription[]        @relation("UserPushSubscriptions")
   auditLogs           AuditLog[]                @relation("UserAuditLogs")
+  savedSearches       SavedSearch[]
+  jobAlerts           JobAlert[]
   billingPlans        BillingPlan[]
   billingAdjustments  BillingAdjustment[]
   featureOwnership    CompanyFeatureOwnership[] @relation("UserFeatureOwnership")
@@ -1544,4 +1546,40 @@ model ChatbotSession {
 
   @@index([providerId, status])
   @@index([status])
+}
+
+// Spremljene pretrage - korisnici mogu spremiti svoje pretrage poslova
+model SavedSearch {
+  id          String    @id @default(cuid())
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  name        String // Naziv pretrage (npr. "Poslovi u Zagrebu")
+  searchQuery String? // Tekst pretrage
+  filters     Json // JSON sa filterima: { categoryId, city, budgetMin, budgetMax, etc. }
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  lastUsedAt  DateTime? // Kada je zadnji put korištena
+
+  @@index([userId, isActive])
+  @@index([userId, createdAt])
+}
+
+// Job Alerts - email notifikacije za nove poslove koji odgovaraju pretrazi
+model JobAlert {
+  id          String    @id @default(cuid())
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  name        String // Naziv alerta (npr. "Novi poslovi u Zagrebu")
+  searchQuery String? // Tekst pretrage
+  filters     Json // JSON sa filterima: { categoryId, city, budgetMin, budgetMax, etc. }
+  frequency   String    @default("DAILY") // DAILY, WEEKLY, INSTANT
+  isActive    Boolean   @default(true)
+  lastSentAt  DateTime? // Kada je zadnji put poslan email
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([userId, isActive])
+  @@index([isActive, frequency])
+  @@index([lastSentAt])
 }

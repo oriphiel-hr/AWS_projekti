@@ -99,6 +99,27 @@ r.post('/', auth(true, ['PROVIDER']), async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+// Get my offers (for provider - all offers they've made)
+r.get('/my-offers', auth(true, ['PROVIDER']), async (req, res, next) => {
+  try {
+    const offers = await prisma.offer.findMany({ 
+      where: { userId: req.user.id },
+      include: { 
+        job: {
+          include: {
+            category: true,
+            user: {
+              select: { id: true, fullName: true, email: true, phone: true, city: true }
+            }
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json(offers);
+  } catch (e) { next(e); }
+});
+
 // list offers for a job (owner or provider self)
 r.get('/job/:jobId', auth(true), async (req, res, next) => {
   try {

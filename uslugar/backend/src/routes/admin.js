@@ -258,7 +258,11 @@ r.get('/cleanup/non-master/preview', auth(true, ['ADMIN']), async (req, res, nex
     // 14) Chatbot sessions
     counts.chatbotSessions = await safeCount(prisma.chatbotSession, 'chatbotSessions');
 
-    // 15) Users except ADMIN and optionally preserved emails
+    // 15) Saved searches and job alerts
+    counts.savedSearches = await safeCount(prisma.savedSearch, 'savedSearches');
+    counts.jobAlerts = await safeCount(prisma.jobAlert, 'jobAlerts');
+
+    // 16) Users except ADMIN and optionally preserved emails
     try {
       const whereClause = {
         role: { not: 'ADMIN' }
@@ -358,7 +362,11 @@ r.post('/cleanup/non-master', auth(true, ['ADMIN']), async (req, res, next) => {
     // 14) Chatbot sessions
     result.deleted.chatbotSessions = await prisma.chatbotSession.deleteMany({});
 
-    // 7) Users except ADMIN and optionally preserved emails
+    // 15) Saved searches and job alerts
+    result.deleted.savedSearches = await prisma.savedSearch.deleteMany({});
+    result.deleted.jobAlerts = await prisma.jobAlert.deleteMany({});
+
+    // 16) Users except ADMIN and optionally preserved emails
     // Use delete helpers if needed per-user for safety; but relations already deleted above
     const usersToDelete = await prisma.user.findMany({
       where: {
@@ -3410,6 +3418,37 @@ r.get('/api-reference', (req, res, next) => {
           security.businessRules.push('Korisnik mora odabrati barem jednu regiju');
         }
       }
+      // Saved Searches - zahtijevaju autentikaciju
+      else if (fullPath.startsWith('/api/saved-searches')) {
+        security.authRequired = true;
+        security.roles = ['USER', 'PROVIDER', 'ADMIN'];
+        security.additionalChecks.push('Ownership check: korisnik može pristupiti samo svojim spremljenim pretragama');
+        if (method === 'POST') {
+          security.businessRules.push('Naziv pretrage je obavezan');
+          security.businessRules.push('Filteri se spremaju kao JSON objekt');
+        }
+        if (['PUT', 'DELETE'].includes(method)) {
+          security.businessRules.push('Samo vlasnik pretrage može ažurirati ili obrisati');
+        }
+        if (fullPath.includes('/use') && method === 'POST') {
+          security.businessRules.push('Ažurira lastUsedAt timestamp');
+        }
+      }
+      // Job Alerts - zahtijevaju autentikaciju
+      else if (fullPath.startsWith('/api/job-alerts')) {
+        security.authRequired = true;
+        security.roles = ['USER', 'PROVIDER', 'ADMIN'];
+        security.additionalChecks.push('Ownership check: korisnik može pristupiti samo svojim job alertovima');
+        if (method === 'POST') {
+          security.businessRules.push('Naziv alerta je obavezan');
+          security.businessRules.push('Frekvencija mora biti DAILY, WEEKLY ili INSTANT (default: DAILY)');
+          security.businessRules.push('Filteri se spremaju kao JSON objekt');
+        }
+        if (['PUT', 'DELETE'].includes(method)) {
+          security.businessRules.push('Samo vlasnik alerta može ažurirati ili obrisati');
+        }
+        security.businessRules.push('Background job provjerava nove poslove i šalje email notifikacije prema frekvenciji');
+      }
       // Chatbot - dodatna poslovna ograničenja
       else if (fullPath.startsWith('/api/chatbot')) {
         security.authRequired = true;
@@ -3754,6 +3793,43 @@ r.get('/api-reference', (req, res, next) => {
         return 'Javni endpointi dostupni bez autentifikacije.';
       }
       
+      // Saved Searches endpoints
+      if (pathLower.startsWith('/api/saved-searches')) {
+        if (methodUpper === 'GET' && !pathLower.match(/\/[^\/]+/)) {
+          return 'Dohvaća sve spremljene pretrage korisnika. Vraća samo aktivne pretrage sortirane po zadnjem korištenju.';
+        }
+        if (methodUpper === 'POST') {
+          return 'Kreira novu spremljenu pretragu. Zahtijeva naziv pretrage. Opcionalno može sadržavati searchQuery i filters (JSON).';
+        }
+        if (pathLower.includes('/use') && methodUpper === 'POST') {
+          return 'Označava pretragu kao korištenu. Ažurira lastUsedAt timestamp za tracking najčešće korištenih pretraga.';
+        }
+        if (methodUpper === 'PUT' || methodUpper === 'PATCH') {
+          return 'Ažurira spremljenu pretragu. Provjerava ownership i omogućava ažuriranje naziva, query-ja, filtera i statusa.';
+        }
+        if (methodUpper === 'DELETE') {
+          return 'Briše spremljenu pretragu. Provjerava ownership prije brisanja.';
+        }
+        return 'Upravljanje spremljenim pretragama. Omogućava korisnicima da spreme svoje filtere za brzo ponovno korištenje.';
+      }
+      
+      // Job Alerts endpoints
+      if (pathLower.startsWith('/api/job-alerts')) {
+        if (methodUpper === 'GET' && !pathLower.match(/\/[^\/]+/)) {
+          return 'Dohvaća sve job alertove korisnika. Vraća samo aktivne alertove sortirane po datumu kreiranja.';
+        }
+        if (methodUpper === 'POST') {
+          return 'Kreira novi job alert. Zahtijeva naziv alerta. Opcionalno može sadržavati searchQuery, filters (JSON) i frequency (DAILY, WEEKLY, INSTANT). Default frequency je DAILY.';
+        }
+        if (methodUpper === 'PUT' || methodUpper === 'PATCH') {
+          return 'Ažurira job alert. Provjerava ownership i omogućava ažuriranje naziva, query-ja, filtera, frekvencije i statusa (aktiviran/pauziran).';
+        }
+        if (methodUpper === 'DELETE') {
+          return 'Briše job alert. Provjerava ownership prije brisanja.';
+        }
+        return 'Upravljanje job alertovima. Omogućava korisnicima da primaju email notifikacije za nove poslove koji odgovaraju njihovim kriterijima pretrage. Background job provjerava nove poslove i šalje email notifikacije prema frekvenciji.';
+      }
+      
       // Users endpoints
       if (pathLower.startsWith('/api/users')) {
         if (pathLower.includes('/me')) {
@@ -3918,6 +3994,38 @@ r.get('/api-reference', (req, res, next) => {
         } else {
           triggers.details.push('Stranica: Nema specifične stranice - poziva se iz frontend komponenti');
         }
+        return triggers;
+      }
+      
+      // Saved Searches endpoints
+      if (fullPath.startsWith('/api/saved-searches')) {
+        triggers.type = 'page';
+        if (method === 'GET') {
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#user-profile (SavedSearchesSection komponenta)');
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#user (tražilica - dropdown spremljenih pretraga)');
+        } else if (method === 'POST') {
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#user (tražilica - gumb "Spremi pretragu")');
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#user-profile (SavedSearchesSection - dodavanje nove pretrage)');
+        } else if (fullPath.includes('/use') && method === 'POST') {
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#user (tražilica - odabir spremljene pretrage iz dropdowna)');
+        } else if (['PUT', 'DELETE'].includes(method)) {
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#user-profile (SavedSearchesSection - upravljanje pretragama)');
+        }
+        return triggers;
+      }
+      
+      // Job Alerts endpoints
+      if (fullPath.startsWith('/api/job-alerts')) {
+        triggers.type = 'page';
+        if (method === 'GET') {
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#user-profile (SavedSearchesSection komponenta)');
+        } else if (method === 'POST') {
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#user-profile (SavedSearchesSection - kreiranje novog alerta)');
+        } else if (['PUT', 'DELETE'].includes(method)) {
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#user-profile (SavedSearchesSection - upravljanje alertovima)');
+        }
+        // Background job također poziva provjeru novih poslova
+        triggers.details.push('Backend Job: Provjera novih poslova i slanje email notifikacija (cron job)');
         return triggers;
       }
       
