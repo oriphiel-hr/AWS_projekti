@@ -11,6 +11,7 @@ export default function AdminDataCleanup(){
 
   async function loadPreview(){
     setLoadingPreview(true)
+    setError('')
     try{
       const emails = preserveEmails
         .split(',')
@@ -18,9 +19,14 @@ export default function AdminDataCleanup(){
         .filter(Boolean)
       const params = emails.length > 0 ? { preserveEmails: emails.join(',') } : {}
       const { data } = await api.get('/admin/cleanup/non-master/preview', { params })
-      setPreview(data.counts)
+      if(data.success && data.counts){
+        setPreview(data.counts)
+      } else {
+        setError('Greška pri učitavanju pregleda podataka')
+      }
     }catch(e){
       console.error('Error loading preview:', e)
+      setError(e?.response?.data?.error || e?.message || 'Greška pri učitavanju pregleda podataka')
     }finally{
       setLoadingPreview(false)
     }

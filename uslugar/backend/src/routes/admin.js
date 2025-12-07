@@ -177,83 +177,104 @@ r.get('/kyc-metrics', auth(true, ['ADMIN']), async (req, res, next) => {
 // Admin cleanup: get counts of rows that will be deleted (preview)
 r.get('/cleanup/non-master/preview', auth(true, ['ADMIN']), async (req, res, next) => {
   try {
-    const { preserveEmails = [] } = req.query || {};
-    const preserveEmailsArray = preserveEmails ? (Array.isArray(preserveEmails) ? preserveEmails : preserveEmails.split(',').map(e => e.trim()).filter(Boolean)) : [];
+    const preserveEmailsParam = req.query?.preserveEmails;
+    const preserveEmailsArray = preserveEmailsParam 
+      ? (Array.isArray(preserveEmailsParam) 
+          ? preserveEmailsParam 
+          : String(preserveEmailsParam).split(',').map(e => e.trim()).filter(Boolean))
+      : [];
 
     const counts = {};
 
+    // Helper function to safely count
+    const safeCount = async (model, name) => {
+      try {
+        return await model.count({});
+      } catch (error) {
+        console.error(`Error counting ${name}:`, error.message);
+        return 0;
+      }
+    };
+
     // 1) Chat-related data
-    counts.messageSLAs = await prisma.messageSLA.count({});
-    counts.messageVersions = await prisma.messageVersion.count({});
-    counts.auditLogs = await prisma.auditLog.count({});
-    counts.chatMessages = await prisma.chatMessage.count({});
-    counts.chatRooms = await prisma.chatRoom.count({});
+    counts.messageSLAs = await safeCount(prisma.messageSLA, 'messageSLAs');
+    counts.messageVersions = await safeCount(prisma.messageVersion, 'messageVersions');
+    counts.auditLogs = await safeCount(prisma.auditLog, 'auditLogs');
+    counts.chatMessages = await safeCount(prisma.chatMessage, 'chatMessages');
+    counts.chatRooms = await safeCount(prisma.chatRoom, 'chatRooms');
 
     // 2) Reviews, Notifications
-    counts.reviews = await prisma.review.count({});
-    counts.notifications = await prisma.notification.count({});
+    counts.reviews = await safeCount(prisma.review, 'reviews');
+    counts.notifications = await safeCount(prisma.notification, 'notifications');
 
     // 3) Offers, Jobs
-    counts.offers = await prisma.offer.count({});
-    counts.jobs = await prisma.job.count({});
+    counts.offers = await safeCount(prisma.offer, 'offers');
+    counts.jobs = await safeCount(prisma.job, 'jobs');
 
     // 4) Lead management
-    counts.companyLeadQueues = await prisma.companyLeadQueue.count({});
-    counts.leadQueues = await prisma.leadQueue.count({});
-    counts.leadPurchases = await prisma.leadPurchase.count({});
+    counts.companyLeadQueues = await safeCount(prisma.companyLeadQueue, 'companyLeadQueues');
+    counts.leadQueues = await safeCount(prisma.leadQueue, 'leadQueues');
+    counts.leadPurchases = await safeCount(prisma.leadPurchase, 'leadPurchases');
 
     // 5) Provider-related data
-    counts.providerROIs = await prisma.providerROI.count({});
-    counts.providerLicenses = await prisma.providerLicense.count({});
-    counts.providerTeamLocations = await prisma.providerTeamLocation.count({});
-    counts.providerProfiles = await prisma.providerProfile.count({});
+    counts.providerROIs = await safeCount(prisma.providerROI, 'providerROIs');
+    counts.providerLicenses = await safeCount(prisma.providerLicense, 'providerLicenses');
+    counts.providerTeamLocations = await safeCount(prisma.providerTeamLocation, 'providerTeamLocations');
+    counts.providerProfiles = await safeCount(prisma.providerProfile, 'providerProfiles');
 
     // 6) Subscriptions and billing
-    counts.addonEventLogs = await prisma.addonEventLog.count({});
-    counts.addonUsages = await prisma.addonUsage.count({});
-    counts.addonSubscriptions = await prisma.addonSubscription.count({});
-    counts.subscriptionHistories = await prisma.subscriptionHistory.count({});
-    counts.trialEngagements = await prisma.trialEngagement.count({});
-    counts.subscriptions = await prisma.subscription.count({});
-    counts.billingAdjustments = await prisma.billingAdjustment.count({});
-    counts.billingPlans = await prisma.billingPlan.count({});
+    counts.addonEventLogs = await safeCount(prisma.addonEventLog, 'addonEventLogs');
+    counts.addonUsages = await safeCount(prisma.addonUsage, 'addonUsages');
+    counts.addonSubscriptions = await safeCount(prisma.addonSubscription, 'addonSubscriptions');
+    counts.subscriptionHistories = await safeCount(prisma.subscriptionHistory, 'subscriptionHistories');
+    counts.trialEngagements = await safeCount(prisma.trialEngagement, 'trialEngagements');
+    counts.subscriptions = await safeCount(prisma.subscription, 'subscriptions');
+    counts.billingAdjustments = await safeCount(prisma.billingAdjustment, 'billingAdjustments');
+    counts.billingPlans = await safeCount(prisma.billingPlan, 'billingPlans');
 
     // 7) Invoices
-    counts.invoices = await prisma.invoice.count({});
+    counts.invoices = await safeCount(prisma.invoice, 'invoices');
 
     // 8) Credit transactions
-    counts.creditTransactions = await prisma.creditTransaction.count({});
+    counts.creditTransactions = await safeCount(prisma.creditTransaction, 'creditTransactions');
 
     // 9) Feature ownership
-    counts.featureOwnershipHistories = await prisma.featureOwnershipHistory.count({});
-    counts.companyFeatureOwnerships = await prisma.companyFeatureOwnership.count({});
+    counts.featureOwnershipHistories = await safeCount(prisma.featureOwnershipHistory, 'featureOwnershipHistories');
+    counts.companyFeatureOwnerships = await safeCount(prisma.companyFeatureOwnership, 'companyFeatureOwnerships');
 
     // 10) Client verification
-    counts.clientVerifications = await prisma.clientVerification.count({});
+    counts.clientVerifications = await safeCount(prisma.clientVerification, 'clientVerifications');
 
     // 11) Support tickets
-    counts.supportTickets = await prisma.supportTicket.count({});
+    counts.supportTickets = await safeCount(prisma.supportTicket, 'supportTickets');
 
     // 12) WhiteLabel settings
-    counts.whiteLabels = await prisma.whiteLabel.count({});
+    counts.whiteLabels = await safeCount(prisma.whiteLabel, 'whiteLabels');
 
     // 13) SMS and Push notifications
-    counts.pushSubscriptions = await prisma.pushSubscription.count({});
-    counts.smsLogs = await prisma.smsLog.count({});
+    counts.pushSubscriptions = await safeCount(prisma.pushSubscription, 'pushSubscriptions');
+    counts.smsLogs = await safeCount(prisma.smsLog, 'smsLogs');
 
     // 14) Chatbot sessions
-    counts.chatbotSessions = await prisma.chatbotSession.count({});
+    counts.chatbotSessions = await safeCount(prisma.chatbotSession, 'chatbotSessions');
 
     // 15) Users except ADMIN and optionally preserved emails
-    counts.users = await prisma.user.count({
-      where: {
-        role: { not: 'ADMIN' },
-        email: preserveEmailsArray.length ? { notIn: preserveEmailsArray } : undefined
+    try {
+      const whereClause = {
+        role: { not: 'ADMIN' }
+      };
+      if (preserveEmailsArray.length > 0) {
+        whereClause.email = { notIn: preserveEmailsArray };
       }
-    });
+      counts.users = await prisma.user.count({ where: whereClause });
+    } catch (error) {
+      console.error('Error counting users:', error.message);
+      counts.users = 0;
+    }
 
     res.json({ success: true, counts });
   } catch (e) {
+    console.error('Error in cleanup preview:', e);
     next(e);
   }
 });
