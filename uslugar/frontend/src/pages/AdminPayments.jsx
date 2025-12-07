@@ -9,6 +9,11 @@ export default function AdminPayments() {
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
+    // Clear any hash fragments (like #register-provider) from URL
+    // Admin panel uses React Router, not hash-based routing
+    if (window.location.hash) {
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
     loadSessions();
   }, []);
 
