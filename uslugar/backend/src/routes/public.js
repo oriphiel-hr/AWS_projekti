@@ -67,7 +67,7 @@ r.get('/user-types-overview', async (req, res, next) => {
         characteristics: []
       },
       'Poslovni korisnici': {
-        description: 'Fizičke osobe s pravnim statusom (obrt, d.o.o., itd.) koje traže usluge za svoje poslovanje',
+        description: 'Pravne osobe (obrt, d.o.o., j.d.o.o., itd.) koje traže usluge za svoje poslovanje',
         count: 0,
         characteristics: []
       },
