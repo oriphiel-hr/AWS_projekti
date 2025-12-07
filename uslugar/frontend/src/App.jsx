@@ -371,18 +371,6 @@ export default function App(){
                 >
                   🔑 Prijava
                 </button>
-                <button
-                  className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"
-                  onClick={() => { setTab('register-user'); }}
-                >
-                  👤 Registracija korisnika usluge
-                </button>
-                <button
-                  className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"
-                  onClick={() => { setTab('register-user'); }}
-                >
-                  🏢 Registracija pružatelja usluge
-                </button>
               </DropdownMenu>
 
               <DropdownMenu title="🛠️ Usluge" icon="🛠️">
@@ -637,22 +625,6 @@ export default function App(){
               >
                 📞 Kontakt
               </button>
-              {!token && (
-                <>
-                  <button
-                    className={'w-full text-left px-3 py-2 rounded ' + (tab==='register-user' ? 'bg-green-600 text-white' : 'hover:bg-gray-100')}
-                    onClick={() => { setTab('register-user'); setIsMobileMenuOpen(false); }}
-                  >
-                    👤 Registracija korisnika
-                  </button>
-                  <button
-                    className={'w-full text-left px-3 py-2 rounded ' + (tab==='register-user' ? 'bg-blue-600 text-white' : 'hover:bg-gray-100')}
-                    onClick={() => { setTab('register-user'); setIsMobileMenuOpen(false); }}
-                  >
-                    🏢 Registracija pružatelja
-                  </button>
-                </>
-              )}
             </div>
           </div>
 
@@ -666,18 +638,6 @@ export default function App(){
                   onClick={() => { setTab('login'); setIsMobileMenuOpen(false); }}
                 >
                   🔑 Prijava
-                </button>
-                <button
-                  className="w-full text-left px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-300 transition-colors"
-                  onClick={() => { setTab('register-user'); setIsMobileMenuOpen(false); }}
-                >
-                  👤 Registracija korisnika usluge
-                </button>
-                <button
-                  className="w-full text-left px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-300 transition-colors"
-                  onClick={() => { setTab('register-user'); setIsMobileMenuOpen(false); }}
-                >
-                  🏢 Registracija pružatelja usluge
                 </button>
               </div>
             </div>
