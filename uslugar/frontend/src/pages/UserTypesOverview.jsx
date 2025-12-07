@@ -58,19 +58,77 @@ export default function UserTypesOverview() {
         </p>
       </div>
 
-      {/* Tipovi korisnika */}
+      {/* Tipovi korisnika - grupirano */}
       <div className="mb-12">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Tipovi Korisnika</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {Object.entries(data.userTypes).map(([type, info]) => (
-            <div key={type} className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{type}</h3>
-                <span className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">{info.count}</span>
-              </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">{info.description}</p>
-            </div>
-          ))}
+        
+        {/* Grupa 1: Korisnici usluga */}
+        <div className="mb-8">
+          <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
+            <span className="text-2xl">👥</span>
+            Korisnici usluga
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {['Privatni korisnici', 'Poslovni korisnici'].map((type) => {
+              const info = data.userTypes[type];
+              if (!info) return null;
+              return (
+                <div key={type} className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white">{type}</h4>
+                    <span className="text-3xl font-bold text-green-600 dark:text-green-400">{info.count}</span>
+                  </div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{info.description}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Grupa 2: Pružatelji usluga */}
+        <div className="mb-8">
+          <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
+            <span className="text-2xl">🏢</span>
+            Pružatelji usluga
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {['Pružatelji usluga (Solo)', 'Pružatelji usluga (Tvrtka)', 'Verificirani pružatelji', 'Licencirani pružatelji'].map((type) => {
+              const info = data.userTypes[type];
+              if (!info) return null;
+              return (
+                <div key={type} className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white">{type}</h4>
+                    <span className="text-3xl font-bold text-blue-600 dark:text-blue-400">{info.count}</span>
+                  </div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{info.description}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Grupa 3: Pretplate */}
+        <div className="mb-8">
+          <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
+            <span className="text-2xl">💳</span>
+            Pretplate
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {['TRIAL korisnici', 'Plaćeni paketi'].map((type) => {
+              const info = data.userTypes[type];
+              if (!info) return null;
+              return (
+                <div key={type} className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white">{type}</h4>
+                    <span className="text-3xl font-bold text-purple-600 dark:text-purple-400">{info.count}</span>
+                  </div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{info.description}</p>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
 
