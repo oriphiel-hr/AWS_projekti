@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import api from '../api';
 
 const AdminApiReference = () => {
@@ -43,6 +43,42 @@ const AdminApiReference = () => {
     }
   };
 
+  const getMethodColor = (method) => {
+    const colors = {
+      'GET': 'bg-blue-100 text-blue-800 border-blue-300',
+      'POST': 'bg-green-100 text-green-800 border-green-300',
+      'PUT': 'bg-yellow-100 text-yellow-800 border-yellow-300',
+      'PATCH': 'bg-orange-100 text-orange-800 border-orange-300',
+      'DELETE': 'bg-red-100 text-red-800 border-red-300'
+    };
+    return colors[method] || 'bg-gray-100 text-gray-800 border-gray-300';
+  };
+
+  // Izračunaj filtrirane rute koristeći useMemo
+  const filteredRoutes = useMemo(() => {
+    if (!apiData?.routes) return [];
+    return Object.entries(apiData.routes).filter(([group]) => {
+      if (selectedGroup && selectedGroup !== group) return false;
+      if (!searchTerm) return true;
+      const groupRoutes = apiData.routes[group];
+      return groupRoutes.some(route => 
+        route.fullPath.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        route.method.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (route.handler && route.handler.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+    });
+  }, [apiData, selectedGroup, searchTerm]);
+
+  const filteredAllRoutes = useMemo(() => {
+    if (!apiData?.allRoutes) return [];
+    if (!searchTerm) return [];
+    return apiData.allRoutes.filter(route => {
+      return route.fullPath.toLowerCase().includes(searchTerm.toLowerCase()) ||
+             route.method.toLowerCase().includes(searchTerm.toLowerCase()) ||
+             (route.handler && route.handler.toLowerCase().includes(searchTerm.toLowerCase()));
+    });
+  }, [apiData, searchTerm]);
+
   const toggleRoute = (routeKey) => {
     const newExpanded = new Set(expandedRoutes);
     if (newExpanded.has(routeKey)) {
@@ -51,28 +87,6 @@ const AdminApiReference = () => {
       newExpanded.add(routeKey);
     }
     setExpandedRoutes(newExpanded);
-    // Ažuriraj expandAll checkbox na temelju trenutnog stanja
-    // Provjeri da li su sve rute otvorene
-    if (apiData?.routes || apiData?.allRoutes) {
-      const allRouteKeys = new Set();
-      if (apiData?.routes) {
-        Object.entries(apiData.routes).forEach(([group, routes]) => {
-          routes.forEach((route, index) => {
-            const routeKey = `${group}-${route.method}-${route.path}-${index}`;
-            allRouteKeys.add(routeKey);
-          });
-        });
-      }
-      if (apiData?.allRoutes) {
-        apiData.allRoutes.forEach((route, index) => {
-          const routeKey = `all-${route.method}-${route.fullPath}-${index}`;
-          allRouteKeys.add(routeKey);
-        });
-      }
-      // Provjeri da li su sve rute otvorene
-      const allExpanded = allRouteKeys.size > 0 && Array.from(allRouteKeys).every(key => newExpanded.has(key));
-      setExpandAll(allExpanded);
-    }
   };
 
   const handleExpandAll = (checked) => {
@@ -88,7 +102,7 @@ const AdminApiReference = () => {
         });
       });
       // Dodaj rute iz filtriranih allRoutes (ako postoji search)
-      if (searchTerm && filteredAllRoutes) {
+      if (searchTerm && filteredAllRoutes.length > 0) {
         filteredAllRoutes.forEach((route, index) => {
           const routeKey = `all-${route.method}-${route.fullPath}-${index}`;
           allRouteKeys.add(routeKey);
@@ -117,7 +131,7 @@ const AdminApiReference = () => {
     });
     
     // Dodaj rute iz filtriranih allRoutes (ako postoji search)
-    if (searchTerm && filteredAllRoutes) {
+    if (searchTerm && filteredAllRoutes.length > 0) {
       filteredAllRoutes.forEach((route, index) => {
         const routeKey = `all-${route.method}-${route.fullPath}-${index}`;
         allPossibleKeys.add(routeKey);
@@ -132,35 +146,6 @@ const AdminApiReference = () => {
       setExpandAll(false);
     }
   }, [expandedRoutes, filteredRoutes, filteredAllRoutes, searchTerm, apiData]);
-
-  const getMethodColor = (method) => {
-    const colors = {
-      'GET': 'bg-blue-100 text-blue-800 border-blue-300',
-      'POST': 'bg-green-100 text-green-800 border-green-300',
-      'PUT': 'bg-yellow-100 text-yellow-800 border-yellow-300',
-      'PATCH': 'bg-orange-100 text-orange-800 border-orange-300',
-      'DELETE': 'bg-red-100 text-red-800 border-red-300'
-    };
-    return colors[method] || 'bg-gray-100 text-gray-800 border-gray-300';
-  };
-
-  const filteredRoutes = apiData?.routes ? Object.entries(apiData.routes).filter(([group]) => {
-    if (selectedGroup && selectedGroup !== group) return false;
-    if (!searchTerm) return true;
-    const groupRoutes = apiData.routes[group];
-    return groupRoutes.some(route => 
-      route.fullPath.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      route.method.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (route.handler && route.handler.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
-  }) : [];
-
-  const filteredAllRoutes = apiData?.allRoutes ? apiData.allRoutes.filter(route => {
-    if (!searchTerm) return true;
-    return route.fullPath.toLowerCase().includes(searchTerm.toLowerCase()) ||
-           route.method.toLowerCase().includes(searchTerm.toLowerCase()) ||
-           (route.handler && route.handler.toLowerCase().includes(searchTerm.toLowerCase()));
-  }) : [];
 
   if (loading) {
     return (
