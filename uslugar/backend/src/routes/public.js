@@ -230,8 +230,17 @@ r.get('/user-types-overview', async (req, res, next) => {
             const profile = u.providerProfile;
             if (!profile) return false;
             // BUSINESS badge: kycVerified ili badgeData.BUSINESS.verified
+            // badgeData može biti objekt ili JSON string
+            let badgeDataObj = profile.badgeData;
+            if (typeof badgeDataObj === 'string') {
+              try {
+                badgeDataObj = JSON.parse(badgeDataObj);
+              } catch (e) {
+                badgeDataObj = null;
+              }
+            }
             return profile.kycVerified || 
-                   (profile.badgeData && typeof profile.badgeData === 'object' && profile.badgeData.BUSINESS?.verified);
+                   (badgeDataObj && typeof badgeDataObj === 'object' && badgeDataObj.BUSINESS?.verified);
           }).length,
           description: 'Pružatelji s verificiranom tvrtkom (Sudski/Obrtni registar)'
         },
@@ -258,8 +267,17 @@ r.get('/user-types-overview', async (req, res, next) => {
             const profile = u.providerProfile;
             if (!profile) return false;
             // Ima barem jednu značku
+            // badgeData može biti objekt ili JSON string
+            let badgeDataObj = profile.badgeData;
+            if (typeof badgeDataObj === 'string') {
+              try {
+                badgeDataObj = JSON.parse(badgeDataObj);
+              } catch (e) {
+                badgeDataObj = null;
+              }
+            }
             const hasBusiness = profile.kycVerified || 
-                               (profile.badgeData && typeof profile.badgeData === 'object' && profile.badgeData.BUSINESS?.verified);
+                               (badgeDataObj && typeof badgeDataObj === 'object' && badgeDataObj.BUSINESS?.verified);
             const hasIdentity = profile.identityEmailVerified || 
                                profile.identityPhoneVerified || 
                                profile.identityDnsVerified;
