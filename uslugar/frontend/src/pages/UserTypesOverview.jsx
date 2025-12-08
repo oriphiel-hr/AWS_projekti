@@ -58,6 +58,19 @@ export default function UserTypesOverview({ isAdmin = false }) {
         <p className="text-xl text-gray-600 dark:text-gray-400 mb-6">
           Pregled različitih vrsta korisnika, njihovih karakteristika i statusa na Uslugar platformi
         </p>
+        <a
+          href="#user-types-flowcharts"
+          onClick={(e) => {
+            e.preventDefault();
+            window.location.hash = 'user-types-flowcharts';
+            if (window.location.pathname.startsWith('/admin/')) {
+              window.location.replace('/#user-types-flowcharts');
+            }
+          }}
+          className="inline-block px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-semibold shadow-md"
+        >
+          📊 Pregled Dijagrama Procesa
+        </a>
       </div>
 
       {/* Tipovi korisnika - grupirano */}

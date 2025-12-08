@@ -23,6 +23,7 @@ import About from './pages/About';
 import Contact from './pages/Contact';
 import PaymentSuccess from './pages/PaymentSuccess';
 import UserTypesOverview from './pages/UserTypesOverview';
+import UserTypesFlowcharts from './pages/UserTypesFlowcharts';
 // USLUGAR EXCLUSIVE components
 // Trigger deployment #400
 import LeadMarketplace from './pages/LeadMarketplace';
@@ -83,7 +84,7 @@ export default function App(){
     
     // Inače koristi hash-based routing
     const hash = window.location.hash?.slice(1).split('?')[0];
-    const validTabs = ['admin', 'login', 'register-user', 'register-provider', 'provider-profile', 'user-profile', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'leads', 'my-leads', 'my-jobs', 'roi', 'subscription', 'subscription-success', 'pricing', 'providers', 'documentation', 'faq', 'about', 'contact', 'time-landing', 'team-locations', 'invoices', 'user', 'user-types', 'director'];
+    const validTabs = ['admin', 'login', 'register-user', 'register-provider', 'provider-profile', 'user-profile', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'leads', 'my-leads', 'my-jobs', 'roi', 'subscription', 'subscription-success', 'pricing', 'providers', 'documentation', 'faq', 'about', 'contact', 'time-landing', 'team-locations', 'invoices', 'user', 'user-types', 'user-types-flowcharts', 'director'];
     return validTabs.includes(hash) ? hash : 'time-landing';
   });
 
@@ -237,7 +238,7 @@ export default function App(){
       
       // Inače koristi hash-based routing
       const hash = window.location.hash?.slice(1).split('?')[0];
-      const validTabs = ['admin', 'login', 'register-user', 'register-provider', 'provider-profile', 'user-profile', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'leads', 'my-leads', 'my-jobs', 'roi', 'subscription', 'subscription-success', 'pricing', 'providers', 'documentation', 'faq', 'about', 'contact', 'time-landing', 'team-locations', 'invoices', 'user', 'user-types', 'director'];
+      const validTabs = ['admin', 'login', 'register-user', 'register-provider', 'provider-profile', 'user-profile', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'leads', 'my-leads', 'my-jobs', 'roi', 'subscription', 'subscription-success', 'pricing', 'providers', 'documentation', 'faq', 'about', 'contact', 'time-landing', 'team-locations', 'invoices', 'user', 'user-types', 'user-types-flowcharts', 'director'];
       
       // Check for provider direct link: #provider/{providerId}
       const providerMatch = hash.match(/^provider\/(.+)$/);
@@ -446,6 +447,20 @@ export default function App(){
             aria-current={tab === 'user-types' ? 'page' : undefined}
           >
             👥 Tipovi Korisnika
+          </button>
+          <button
+            className={'px-3 py-2 border rounded transition-colors ' + (tab==='user-types-flowcharts' ? 'bg-indigo-600 text-white' : 'border-indigo-600 text-indigo-600 hover:bg-indigo-50 dark:border-indigo-500 dark:text-indigo-400 dark:hover:bg-indigo-900/20')}
+            onClick={() => {
+              if (window.location.pathname.startsWith('/admin/')) {
+                window.location.replace('/#user-types-flowcharts');
+              } else {
+                setTab('user-types-flowcharts');
+              }
+            }}
+            aria-label="Dijagrami procesa"
+            aria-current={tab === 'user-types-flowcharts' ? 'page' : undefined}
+          >
+            📊 Dijagrami Procesa
           </button>
 
           {/* Dropdown Menus */}
@@ -1817,6 +1832,12 @@ export default function App(){
       {tab === 'user-types' && (
         <section id="user-types" className="tab-section">
           <UserTypesOverview />
+        </section>
+      )}
+
+      {tab === 'user-types-flowcharts' && (
+        <section id="user-types-flowcharts" className="tab-section">
+          <UserTypesFlowcharts />
         </section>
       )}
       </main>
