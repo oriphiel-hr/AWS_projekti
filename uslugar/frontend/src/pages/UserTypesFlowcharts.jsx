@@ -1,8 +1,13 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useDarkMode } from '../contexts/DarkModeContext.jsx';
 
 export default function UserTypesFlowcharts() {
   const { isDarkMode } = useDarkMode();
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const containerRef = useRef(null);
   
   const textColor = isDarkMode ? '#E5E7EB' : '#1F2937';
   const bgColor = isDarkMode ? '#111827' : '#FFFFFF';
@@ -13,9 +18,96 @@ export default function UserTypesFlowcharts() {
   const warningColor = '#F59E0B';
   const dangerColor = '#EF4444';
 
+  // Pan/Zoom handlers
+  const handleWheel = (e) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+    const newZoom = Math.max(0.5, Math.min(3, zoom * delta));
+    setZoom(newZoom);
+  };
+
+  const handleMouseDown = (e) => {
+    if (e.button === 0) { // Left mouse button
+      setIsDragging(true);
+      setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
+    }
+  };
+
+  const handleMouseMove = (e) => {
+    if (isDragging) {
+      setPan({
+        x: e.clientX - dragStart.x,
+        y: e.clientY - dragStart.y
+      });
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const resetView = () => {
+    setZoom(1);
+    setPan({ x: 0, y: 0 });
+  };
+
+  // SVG wrapper component with pan/zoom
+  const ZoomableSVG = ({ children, viewBox, className = "" }) => {
+    const svgRef = useRef(null);
+    
+    return (
+      <div 
+        ref={containerRef}
+        className={`relative overflow-hidden border rounded-lg ${className}`}
+        style={{ 
+          cursor: isDragging ? 'grabbing' : 'grab',
+          touchAction: 'none'
+        }}
+        onWheel={handleWheel}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+      >
+        <div className="absolute top-2 right-2 z-10 flex gap-2">
+          <button
+            onClick={() => setZoom(Math.min(3, zoom + 0.1))}
+            className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            +
+          </button>
+          <button
+            onClick={() => setZoom(Math.max(0.5, zoom - 0.1))}
+            className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            −
+          </button>
+          <button
+            onClick={resetView}
+            className="px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-600"
+          >
+            Reset
+          </button>
+        </div>
+        <svg
+          ref={svgRef}
+          viewBox={viewBox}
+          className="w-full h-auto"
+          style={{
+            transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+            transformOrigin: '0 0',
+            transition: isDragging ? 'none' : 'transform 0.1s'
+          }}
+        >
+          {children}
+        </svg>
+      </div>
+    );
+  };
+
   // Dijagram 1: Registracija i Onboarding
   const RegistrationFlowchart = () => (
-    <svg viewBox="0 0 1200 800" className="w-full h-auto">
+    <ZoomableSVG viewBox="0 0 1200 800">
       <defs>
         <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
           <polygon points="0 0, 10 3, 0 6" fill={textColor} />
@@ -176,12 +268,12 @@ export default function UserTypesFlowcharts() {
           ✓ Onboarding završen
         </text>
       </g>
-    </svg>
+    </ZoomableSVG>
   );
 
   // Dijagram 2: Verifikacija i Licenciranje
   const VerificationFlowchart = () => (
-    <svg viewBox="0 0 1200 900" className="w-full h-auto">
+    <ZoomableSVG viewBox="0 0 1200 1220">
       <defs>
         <marker id="arrowhead2" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
           <polygon points="0 0, 10 3, 0 6" fill={textColor} />
@@ -342,12 +434,12 @@ export default function UserTypesFlowcharts() {
       <text x="200" y="1015" textAnchor="middle" fontSize="12" fill="white">
         isVerified = true, Badge: Safety
       </text>
-    </svg>
+    </ZoomableSVG>
   );
 
   // Dijagram 3: Pretplate
   const SubscriptionFlowchart = () => (
-    <svg viewBox="0 0 1200 700" className="w-full h-auto">
+    <ZoomableSVG viewBox="0 0 1200 700">
       <defs>
         <marker id="arrowhead3" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
           <polygon points="0 0, 10 3, 0 6" fill={textColor} />
@@ -407,32 +499,62 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* PREMIUM */}
-      <rect x="400" y="360" width="300" height="80" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <rect x="400" y="360" width="300" height="140" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
       <text x="550" y="385" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         PREMIUM
       </text>
       <text x="550" y="405" textAnchor="middle" fontSize="11" fill={textColor}>
-        Napredne funkcionalnosti
+        • Napredne funkcionalnosti
       </text>
       <text x="550" y="420" textAnchor="middle" fontSize="11" fill={textColor}>
-        Više poslova, prioritet
+        • 50 kredita/mjesec
       </text>
-      <text x="550" y="435" textAnchor="middle" fontSize="11" fill={successColor}>
+      <text x="550" y="435" textAnchor="middle" fontSize="11" fill={textColor}>
+        • AI Priority u queue-u
+      </text>
+      <text x="550" y="450" textAnchor="middle" fontSize="11" fill={textColor}>
+        • SMS notifikacije
+      </text>
+      <text x="550" y="465" textAnchor="middle" fontSize="11" fill={textColor}>
+        • Priority support
+      </text>
+      <text x="550" y="480" textAnchor="middle" fontSize="11" fill={textColor}>
+        • CSV export
+      </text>
+      <text x="550" y="495" textAnchor="middle" fontSize="11" fill={textColor}>
+        • Advanced analytics
+      </text>
+      <text x="550" y="510" textAnchor="middle" fontSize="11" fill={successColor}>
         ✓ Aktivna pretplata
       </text>
 
       {/* PRO */}
-      <rect x="750" y="360" width="300" height="80" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <rect x="750" y="360" width="300" height="140" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
       <text x="900" y="385" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         PRO
       </text>
       <text x="900" y="405" textAnchor="middle" fontSize="11" fill={textColor}>
-        Sve funkcionalnosti
+        • Sve funkcionalnosti
       </text>
       <text x="900" y="420" textAnchor="middle" fontSize="11" fill={textColor}>
-        Unlimited, VIP podrška
+        • Unlimited krediti
       </text>
-      <text x="900" y="435" textAnchor="middle" fontSize="11" fill={successColor}>
+      <text x="900" y="435" textAnchor="middle" fontSize="11" fill={textColor}>
+        • VIP podrška 24/7
+      </text>
+      <text x="900" y="450" textAnchor="middle" fontSize="11" fill={textColor}>
+        • White-label opcija
+      </text>
+      <text x="900" y="465" textAnchor="middle" fontSize="11" fill={textColor}>
+        • Live chat widget
+      </text>
+      <text x="900" y="480" textAnchor="middle" fontSize="11" fill={textColor}>
+        • Support tickets
+      </text>
+      <text x="900" y="495" textAnchor="middle" fontSize="11" fill={textColor}>
+        • Real-time chat podrška
+      </text>
+      <text x="900" y="510" textAnchor="middle" fontSize="11" fill={successColor}>
         ✓ Aktivna pretplata
       </text>
 
@@ -478,7 +600,7 @@ export default function UserTypesFlowcharts() {
 
   // Dijagram 4: Korištenje platforme - Korisnik usluge
   const UserJourneyFlowchart = () => (
-    <svg viewBox="0 0 1200 1520" className="w-full h-auto">
+    <ZoomableSVG viewBox="0 0 1200 1520">
       <defs>
         <marker id="arrowhead4" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
           <polygon points="0 0, 10 3, 0 6" fill={textColor} />
@@ -561,20 +683,29 @@ export default function UserTypesFlowcharts() {
 
       {/* Pretraži poslove */}
       <line x1="650" y1="290" x2="900" y2="290" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead4)" />
-      <rect x="700" y="340" width="400" height="100" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <rect x="700" y="340" width="400" height="140" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
       <text x="900" y="365" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         Pretraži poslove
       </text>
       <text x="900" y="385" textAnchor="middle" fontSize="11" fill={textColor}>
-        1. Filteri (kategorija, grad, budžet)
+        1. Sticky search bar (uvijek vidljiv)
       </text>
       <text x="900" y="400" textAnchor="middle" fontSize="11" fill={textColor}>
-        2. Spremi pretragu (opcionalno)
+        2. Filteri (kategorija, grad, budžet, status, datum)
       </text>
       <text x="900" y="415" textAnchor="middle" fontSize="11" fill={textColor}>
-        3. Job alerts (opcionalno)
+        3. Sortiranje (najnoviji, najstariji, budžet)
       </text>
-      <text x="900" y="430" textAnchor="middle" fontSize="11" fill={successColor}>
+      <text x="900" y="430" textAnchor="middle" fontSize="11" fill={textColor}>
+        4. View mode (Grid/List)
+      </text>
+      <text x="900" y="445" textAnchor="middle" fontSize="11" fill={textColor}>
+        5. Spremi pretragu (opcionalno)
+      </text>
+      <text x="900" y="460" textAnchor="middle" fontSize="11" fill={textColor}>
+        6. Job alerts (DAILY, WEEKLY, INSTANT)
+      </text>
+      <text x="900" y="475" textAnchor="middle" fontSize="11" fill={successColor}>
         ✓ Rezultati prikazani
       </text>
 
@@ -774,12 +905,12 @@ export default function UserTypesFlowcharts() {
       <text x="150" y="1515" textAnchor="middle" fontSize="11" fill="white">
         ⚠️ Bilateralno ocjenjivanje
       </text>
-    </svg>
+    </ZoomableSVG>
   );
 
   // Dijagram 5: Korištenje platforme - Pružatelj
   const ProviderJourneyFlowchart = () => (
-    <svg viewBox="0 0 1200 1120" className="w-full h-auto">
+    <ZoomableSVG viewBox="0 0 1200 1120">
       <defs>
         <marker id="arrowhead5" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
           <polygon points="0 0, 10 3, 0 6" fill={textColor} />
@@ -1084,7 +1215,1298 @@ export default function UserTypesFlowcharts() {
       <text x="550" y="1100" textAnchor="middle" fontSize="12" fill="white">
         • Nema ROI trackinga
       </text>
-    </svg>
+    </ZoomableSVG>
+  );
+
+  // Dijagram 6: USLUGAR EXCLUSIVE Lead Sustav
+  const ExclusiveLeadSystemFlowchart = () => (
+    <ZoomableSVG viewBox="0 0 1400 1400">
+      <defs>
+        <marker id="arrowhead6" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+          <polygon points="0 0, 10 3, 0 6" fill={textColor} />
+        </marker>
+      </defs>
+
+      <text x="700" y="30" textAnchor="middle" fontSize="24" fontWeight="bold" fill={textColor}>
+        USLUGAR EXCLUSIVE - Lead Sustav
+      </text>
+
+      {/* Korisnik objavljuje posao */}
+      <rect x="600" y="60" width="200" height="50" rx="5" fill={primaryColor} stroke={borderColor} strokeWidth="2" />
+      <text x="700" y="90" textAnchor="middle" fontSize="14" fill="white" fontWeight="bold">
+        Korisnik objavljuje posao
+      </text>
+
+      <line x1="700" y1="110" x2="700" y2="150" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead6)" />
+
+      {/* Posao postaje lead */}
+      <rect x="550" y="150" width="300" height="80" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <text x="700" y="175" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
+        Posao → Ekskluzivni Lead
+      </text>
+      <text x="700" y="195" textAnchor="middle" fontSize="12" fill={textColor}>
+        • AI Score izračun (0-100)
+      </text>
+      <text x="700" y="210" textAnchor="middle" fontSize="12" fill={textColor}>
+        • Verifikacija klijenta (Trust Score)
+      </text>
+      <text x="700" y="225" textAnchor="middle" fontSize="12" fill={textColor}>
+        • Dinamička cijena (10-20 kredita)
+      </text>
+
+      <line x1="700" y1="230" x2="700" y2="270" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead6)" />
+
+      {/* Lead na tržištu */}
+      <rect x="550" y="270" width="300" height="100" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
+      <text x="700" y="295" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+        Lead na Tržištu
+      </text>
+      <text x="700" y="315" textAnchor="middle" fontSize="12" fill="white">
+        • Status: AVAILABLE
+      </text>
+      <text x="700" y="330" textAnchor="middle" fontSize="12" fill="white">
+        • Vidljiv providereima
+      </text>
+      <text x="700" y="345" textAnchor="middle" fontSize="12" fill="white">
+        • AI Score prikazan
+      </text>
+      <text x="700" y="360" textAnchor="middle" fontSize="12" fill="white">
+        • Cijena leada prikazana
+      </text>
+
+      <line x1="700" y1="370" x2="700" y2="410" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead6)" />
+
+      {/* Pružatelj kupuje lead */}
+      <polygon points="700,410 750,450 700,490 650,450" fill={warningColor} stroke={borderColor} strokeWidth="2" />
+      <text x="700" y="455" textAnchor="middle" fontSize="12" fill="white" fontWeight="bold">
+        Kupovina?
+      </text>
+
+      {/* Kupovina leada */}
+      <line x1="650" y1="450" x2="500" y2="450" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead6)" />
+      <rect x="300" y="500" width="400" height="140" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <text x="500" y="525" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
+        Pružatelj kupuje lead
+      </text>
+      <text x="500" y="545" textAnchor="middle" fontSize="11" fill={textColor}>
+        1. Pregled leadova na marketplaceu
+      </text>
+      <text x="500" y="560" textAnchor="middle" fontSize="11" fill={textColor}>
+        2. Provjera AI Score i Trust Score
+      </text>
+      <text x="500" y="575" textAnchor="middle" fontSize="11" fill={textColor}>
+        3. Plaćanje (krediti ili Stripe)
+      </text>
+      <text x="500" y="590" textAnchor="middle" fontSize="11" fill={textColor}>
+        4. Lead ASSIGNED pružatelju
+      </text>
+      <text x="500" y="605" textAnchor="middle" fontSize="11" fill={textColor}>
+        5. Kontakt otkriven (maskiran do sada)
+      </text>
+      <text x="500" y="620" textAnchor="middle" fontSize="11" fill={successColor}>
+        ✓ Lead kupljen
+      </text>
+
+      {/* ROI Dashboard */}
+      <line x1="500" y1="640" x2="500" y2="680" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead6)" />
+      <rect x="300" y="680" width="400" height="120" rx="5" fill={primaryColor} stroke={borderColor} strokeWidth="2" />
+      <text x="500" y="705" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+        ROI Dashboard
+      </text>
+      <text x="500" y="725" textAnchor="middle" fontSize="11" fill="white">
+        • Konverzija leadova
+      </text>
+      <text x="500" y="740" textAnchor="middle" fontSize="11" fill="white">
+        • Ukupan prihod od leadova
+      </text>
+      <text x="500" y="755" textAnchor="middle" fontSize="11" fill="white">
+        • Prosječna vrijednost leada
+      </text>
+      <text x="500" y="770" textAnchor="middle" fontSize="11" fill="white">
+        • Ukupno potrošenih kredita
+      </text>
+      <text x="500" y="785" textAnchor="middle" fontSize="11" fill="white">
+        • Grafički prikaz statistika
+      </text>
+
+      {/* Ne kupuje */}
+      <line x1="750" y1="450" x2="900" y2="450" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead6)" />
+      <rect x="800" y="500" width="200" height="60" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <text x="900" y="525" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
+        Lead ostaje na tržištu
+      </text>
+      <text x="900" y="545" textAnchor="middle" fontSize="12" fill={textColor}>
+        Status: AVAILABLE
+      </text>
+
+      {/* Lead statusi */}
+      <line x1="500" y1="800" x2="500" y2="840" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead6)" />
+      <polygon points="500,840 550,880 500,920 450,880" fill={warningColor} stroke={borderColor} strokeWidth="2" />
+      <text x="500" y="885" textAnchor="middle" fontSize="12" fill="white" fontWeight="bold">
+        Status leada?
+      </text>
+
+      {/* CONTACTED */}
+      <line x1="450" y1="880" x2="300" y2="880" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead6)" />
+      <rect x="100" y="940" width="200" height="80" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <text x="200" y="965" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
+        CONTACTED
+      </text>
+      <text x="200" y="985" textAnchor="middle" fontSize="12" fill={textColor}>
+        Pružatelj kontaktirao
+      </text>
+      <text x="200" y="1000" textAnchor="middle" fontSize="12" fill={textColor}>
+        Klijent odgovorio
+      </text>
+      <text x="200" y="1015" textAnchor="middle" fontSize="12" fill={textColor}>
+        Status: CONTACTED
+      </text>
+
+      {/* CONVERTED */}
+      <line x1="200" y1="1020" x2="200" y2="1060" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead6)" />
+      <rect x="100" y="1060" width="200" height="80" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
+      <text x="200" y="1085" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+        CONVERTED
+      </text>
+      <text x="200" y="1105" textAnchor="middle" fontSize="12" fill="white">
+        Posao uspješan
+      </text>
+      <text x="200" y="1120" textAnchor="middle" fontSize="12" fill="white">
+        ROI pozitivan
+      </text>
+      <text x="200" y="1135" textAnchor="middle" fontSize="12" fill="white">
+        Status: CONVERTED
+      </text>
+
+      {/* REFUNDED */}
+      <line x1="550" y1="880" x2="700" y2="880" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead6)" />
+      <rect x="600" y="940" width="200" height="120" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="2" />
+      <text x="700" y="965" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+        REFUNDED
+      </text>
+      <text x="700" y="985" textAnchor="middle" fontSize="12" fill="white">
+        Klijent ne odgovori (48h)
+      </text>
+      <text x="700" y="1000" textAnchor="middle" fontSize="12" fill="white">
+        Lead nije kvalitetan
+      </text>
+      <text x="700" y="1015" textAnchor="middle" fontSize="12" fill="white">
+        Automatski refund
+      </text>
+      <text x="700" y="1030" textAnchor="middle" fontSize="12" fill="white">
+        • Stripe refund (PSD2)
+      </text>
+      <text x="700" y="1045" textAnchor="middle" fontSize="12" fill="white">
+        • Interni krediti
+      </text>
+      <text x="700" y="1060" textAnchor="middle" fontSize="12" fill="white">
+        Lead vraćen na tržište
+      </text>
+
+      {/* AI Score detalji */}
+      <rect x="900" y="940" width="400" height="140" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <text x="1100" y="965" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
+        AI Score Kvalitete Leadova
+      </text>
+      <text x="1100" y="985" textAnchor="middle" fontSize="11" fill={textColor}>
+        • Verificiranje telefona (+10)
+      </text>
+      <text x="1100" y="1000" textAnchor="middle" fontSize="11" fill={textColor}>
+        • Verificiranje emaila (+10)
+      </text>
+      <text x="1100" y="1015" textAnchor="middle" fontSize="11" fill={textColor}>
+        • Verificiranje OIB-a (+15)
+      </text>
+      <text x="1100" y="1030" textAnchor="middle" fontSize="11" fill={textColor}>
+        • Verificiranje firme (+20)
+      </text>
+      <text x="1100" y="1045" textAnchor="middle" fontSize="11" fill={textColor}>
+        • Povijest na platformi (+15)
+      </text>
+      <text x="1100" y="1060" textAnchor="middle" fontSize="11" fill={textColor}>
+        • Detaljnost opisa posla (+10)
+      </text>
+      <text x="1100" y="1075" textAnchor="middle" fontSize="11" fill={textColor}>
+        • Budžet realističan (+10)
+      </text>
+      <text x="1100" y="1090" textAnchor="middle" fontSize="11" fill={textColor}>
+        • Lokacija specificirana (+5)
+      </text>
+      <text x="1100" y="1105" textAnchor="middle" fontSize="11" fill={textColor}>
+        • Hitnost posla (+5)
+      </text>
+      <text x="1100" y="1120" textAnchor="middle" fontSize="11" fill={textColor}>
+        • Ukupno: 0-100 score
+      </text>
+    </ZoomableSVG>
+  );
+
+  // Dijagram 7: Queue Sustav i Distribucija Leadova
+  const QueueSystemFlowchart = () => (
+    <ZoomableSVG viewBox="0 0 1400 1200">
+      <defs>
+        <marker id="arrowhead7" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+          <polygon points="0 0, 10 3, 0 6" fill={textColor} />
+        </marker>
+      </defs>
+
+      <text x="700" y="30" textAnchor="middle" fontSize="24" fontWeight="bold" fill={textColor}>
+        Queue Sustav za Distribuciju Leadova
+      </text>
+
+      {/* Lead kreiran */}
+      <rect x="600" y="60" width="200" height="50" rx="5" fill={primaryColor} stroke={borderColor} strokeWidth="2" />
+      <text x="700" y="90" textAnchor="middle" fontSize="14" fill="white" fontWeight="bold">
+        Lead kreiran
+      </text>
+
+      <line x1="700" y1="110" x2="700" y2="150" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
+
+      {/* LeadQueue kreiranje */}
+      <rect x="550" y="150" width="300" height="100" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <text x="700" y="175" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
+        LeadQueue Entry
+      </text>
+      <text x="700" y="195" textAnchor="middle" fontSize="12" fill={textColor}>
+        • Status: WAITING
+      </text>
+      <text x="700" y="210" textAnchor="middle" fontSize="12" fill={textColor}>
+        • Pozicija u redu čekanja
+      </text>
+      <text x="700" y="225" textAnchor="middle" fontSize="12" fill={textColor}>
+        • Matchmaking algoritam (kategorija, regija)
+      </text>
+      <text x="700" y="240" textAnchor="middle" fontSize="12" fill={textColor}>
+        • Weighted Queue (Partner Score)
+      </text>
+
+      <line x1="700" y1="250" x2="700" y2="290" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
+
+      {/* Queue Scheduler */}
+      <rect x="550" y="290" width="300" height="100" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="3" />
+      <text x="700" y="315" textAnchor="middle" fontSize="16" fontWeight="bold" fill="white">
+        🔐 Queue Scheduler
+      </text>
+      <text x="700" y="340" textAnchor="middle" fontSize="12" fill="white">
+        • Provjera svakih sat vremena
+      </text>
+      <text x="700" y="355" textAnchor="middle" fontSize="12" fill="white">
+        • Automatska distribucija leadova
+      </text>
+      <text x="700" y="370" textAnchor="middle" fontSize="12" fill="white">
+        • Partner Score izračun
+      </text>
+      <text x="700" y="385" textAnchor="middle" fontSize="12" fill="white">
+        • Fairness algoritam
+      </text>
+
+      <line x1="700" y1="390" x2="700" y2="430" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
+
+      {/* Partner Score izračun */}
+      <rect x="450" y="430" width="500" height="140" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <text x="700" y="455" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
+        Partner Score Izračun
+      </text>
+      <text x="700" y="475" textAnchor="middle" fontSize="11" fill={textColor}>
+        • Reputation Score (0-100): 40%
+      </text>
+      <text x="700" y="490" textAnchor="middle" fontSize="11" fill={textColor}>
+        • Response Rate: 25%
+      </text>
+      <text x="700" y="505" textAnchor="middle" fontSize="11" fill={textColor}>
+        • Completion Rate: 20%
+      </text>
+      <text x="700" y="520" textAnchor="middle" fontSize="11" fill={textColor}>
+        • Platform Compliance: 15%
+      </text>
+      <text x="700" y="535" textAnchor="middle" fontSize="11" fill={textColor}>
+        • Match Score (kategorija + regija): bonus
+      </text>
+      <text x="700" y="550" textAnchor="middle" fontSize="11" fill={textColor}>
+        • Premium Partner (Score ≥ 80): prioritet
+      </text>
+      <text x="700" y="565" textAnchor="middle" fontSize="11" fill={textColor}>
+        • Verified Partner (Score 60-79): normalan
+      </text>
+      <text x="700" y="580" textAnchor="middle" fontSize="11" fill={textColor}>
+        • Basic Partner (Score < 60): niži prioritet
+      </text>
+
+      <line x1="700" y1="570" x2="700" y2="610" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
+
+      {/* Lead ponuđen pružatelju */}
+      <polygon points="700,610 750,650 700,690 650,650" fill={warningColor} stroke={borderColor} strokeWidth="2" />
+      <text x="700" y="655" textAnchor="middle" fontSize="12" fill="white" fontWeight="bold">
+        Lead ponuđen?
+      </text>
+
+      {/* OFFERED */}
+      <line x1="650" y1="650" x2="500" y2="650" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
+      <rect x="300" y="710" width="400" height="100" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <text x="500" y="735" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
+        Status: OFFERED
+      </text>
+      <text x="500" y="755" textAnchor="middle" fontSize="11" fill={textColor}>
+        • Lead ponuđen pružatelju
+      </text>
+      <text x="500" y="770" textAnchor="middle" fontSize="11" fill={textColor}>
+        • Notifikacija poslana (email, SMS, in-app)
+      </text>
+      <text x="500" y="785" textAnchor="middle" fontSize="11" fill={textColor}>
+        • Rok za odgovor: 24h
+      </text>
+      <text x="500" y="800" textAnchor="middle" fontSize="11" fill={textColor}>
+        • Pozicija u redu: prikazana
+      </text>
+
+      <line x1="500" y1="810" x2="500" y2="850" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
+
+      {/* Odgovor pružatelja */}
+      <polygon points="500,850 550,890 500,930 450,890" fill={warningColor} stroke={borderColor} strokeWidth="2" />
+      <text x="500" y="895" textAnchor="middle" fontSize="12" fill="white" fontWeight="bold">
+        Odgovor?
+      </text>
+
+      {/* INTERESTED */}
+      <line x1="450" y1="890" x2="300" y2="890" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
+      <rect x="100" y="950" width="200" height="80" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
+      <text x="200" y="975" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+        INTERESTED
+      </text>
+      <text x="200" y="995" textAnchor="middle" fontSize="12" fill="white">
+        Status: ACCEPTED
+      </text>
+      <text x="200" y="1010" textAnchor="middle" fontSize="12" fill="white">
+        Lead dodijeljen
+      </text>
+      <text x="200" y="1025" textAnchor="middle" fontSize="12" fill="white">
+        Kontakt otkriven
+      </text>
+
+      {/* NOT_INTERESTED */}
+      <line x1="550" y1="890" x2="700" y2="890" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
+      <rect x="600" y="950" width="200" height="80" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <text x="700" y="975" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
+        NOT_INTERESTED
+      </text>
+      <text x="700" y="995" textAnchor="middle" fontSize="12" fill="white">
+        Status: DECLINED
+      </text>
+      <text x="700" y="1010" textAnchor="middle" fontSize="12" fill="white">
+        Lead ponuđen sljedećem
+      </text>
+      <text x="700" y="1025" textAnchor="middle" fontSize="12" fill="white">
+        Queue se nastavlja
+      </text>
+
+      {/* NO_RESPONSE / EXPIRED */}
+      <line x1="750" y1="890" x2="900" y2="890" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
+      <rect x="800" y="950" width="200" height="100" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="2" />
+      <text x="900" y="975" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+        NO_RESPONSE
+      </text>
+      <text x="900" y="995" textAnchor="middle" fontSize="12" fill="white">
+        Status: EXPIRED
+      </text>
+      <text x="900" y="1010" textAnchor="middle" fontSize="12" fill="white">
+        Rok istekao (24h)
+      </text>
+      <text x="900" y="1025" textAnchor="white">
+        Preskakanje neaktivnog
+      </text>
+      <text x="900" y="1040" textAnchor="middle" fontSize="12" fill="white">
+        Lead ponuđen sljedećem
+      </text>
+
+      {/* SKIPPED */}
+      <rect x="1100" y="950" width="200" height="80" rx="5" fill={warningColor} stroke={borderColor} strokeWidth="2" />
+      <text x="1200" y="975" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+        SKIPPED
+      </text>
+      <text x="1200" y="995" textAnchor="middle" fontSize="12" fill="white">
+        Pružatelj preskočio
+      </text>
+      <text x="1200" y="1010" textAnchor="middle" fontSize="12" fill="white">
+        Lead ponuđen sljedećem
+      </text>
+      <text x="1200" y="1025" textAnchor="middle" fontSize="12" fill="white">
+        Queue se nastavlja
+      </text>
+    </ZoomableSVG>
+  );
+
+  // Dijagram 8: Refund i Kreditni Sustav
+  const RefundSystemFlowchart = () => (
+    <ZoomableSVG viewBox="0 0 1400 1000">
+      <defs>
+        <marker id="arrowhead8" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+          <polygon points="0 0, 10 3, 0 6" fill={textColor} />
+        </marker>
+      </defs>
+
+      <text x="700" y="30" textAnchor="middle" fontSize="24" fontWeight="bold" fill={textColor}>
+        Refund i Kreditni Sustav
+      </text>
+
+      {/* Lead kupljen */}
+      <rect x="600" y="60" width="200" height="50" rx="5" fill={primaryColor} stroke={borderColor} strokeWidth="2" />
+      <text x="700" y="90" textAnchor="middle" fontSize="14" fill="white" fontWeight="bold">
+        Lead kupljen
+      </text>
+
+      <line x1="700" y1="110" x2="700" y2="150" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead8)" />
+
+      {/* Kontakt pokušaj */}
+      <rect x="550" y="150" width="300" height="80" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <text x="700" y="175" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
+        Pružatelj kontaktira klijenta
+      </text>
+      <text x="700" y="195" textAnchor="middle" fontSize="12" fill={textColor}>
+        • Email, telefon, chat
+      </text>
+      <text x="700" y="210" textAnchor="middle" fontSize="12" fill={textColor}>
+        • Rok za odgovor: 48h
+      </text>
+      <text x="700" y="225" textAnchor="middle" fontSize="12" fill={textColor}>
+        • Tracking aktivnosti
+      </text>
+
+      <line x1="700" y1="230" x2="700" y2="270" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead8)" />
+
+      {/* Odluka o refundu */}
+      <polygon points="700,270 750,310 700,350 650,310" fill={warningColor} stroke={borderColor} strokeWidth="2" />
+      <text x="700" y="315" textAnchor="middle" fontSize="12" fill="white" fontWeight="bold">
+        Klijent odgovorio?
+      </text>
+
+      {/* DA - nema refunda */}
+      <line x1="650" y1="310" x2="500" y2="310" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead8)" />
+      <rect x="300" y="370" width="200" height="80" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
+      <text x="400" y="395" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+        Klijent odgovorio
+      </text>
+      <text x="400" y="415" textAnchor="middle" fontSize="12" fill="white">
+        • Nema refunda
+      </text>
+      <text x="400" y="430" textAnchor="middle" fontSize="12" fill="white">
+        • Lead aktivan
+      </text>
+      <text x="400" y="445" textAnchor="middle" fontSize="12" fill="white">
+        • Status: CONTACTED
+      </text>
+
+      {/* NE - refund */}
+      <line x1="750" y1="310" x2="900" y2="310" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead8)" />
+      <rect x="800" y="370" width="200" height="100" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="2" />
+      <text x="900" y="395" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+        Klijent ne odgovori
+      </text>
+      <text x="900" y="415" textAnchor="middle" fontSize="12" fill="white">
+        • 48h neaktivnosti
+      </text>
+      <text x="900" y="430" textAnchor="middle" fontSize="12" fill="white">
+        • Automatski refund
+      </text>
+      <text x="900" y="445" textAnchor="middle" fontSize="12" fill="white">
+        • Lead nije kvalitetan
+      </text>
+      <text x="900" y="460" textAnchor="middle" fontSize="12" fill="white">
+        • Ručno zatraživanje
+      </text>
+
+      <line x1="900" y1="470" x2="900" y2="510" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead8)" />
+
+      {/* Refund proces */}
+      <rect x="800" y="510" width="200" height="140" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <text x="900" y="535" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
+        Refund Proces
+      </text>
+      <text x="900" y="555" textAnchor="middle" fontSize="11" fill={textColor}>
+        1. Provjera načina plaćanja
+      </text>
+      <text x="900" y="570" textAnchor="middle" fontSize="11" fill={textColor}>
+        2. Stripe Payment Intent?
+      </text>
+      <text x="900" y="585" textAnchor="middle" fontSize="11" fill={textColor}>
+        3. Stripe refund API (PSD2)
+      </text>
+      <text x="900" y="600" textAnchor="middle" fontSize="11" fill="white">
+        • Interni krediti (fallback)
+      </text>
+      <text x="900" y="615" textAnchor="middle" fontSize="11" fill={textColor}>
+        4. CreditTransaction: REFUND
+      </text>
+      <text x="900" y="630" textAnchor="middle" fontSize="11" fill={textColor}>
+        5. Lead oslobođen (vraćen na tržište)
+      </text>
+      <text x="900" y="645" textAnchor="middle" fontSize="11" fill={successColor}>
+        ✓ Refund uspješan
+      </text>
+
+      {/* Kreditni sustav */}
+      <rect x="100" y="370" width="400" height="200" rx="5" fill={primaryColor} stroke={borderColor} strokeWidth="2" />
+      <text x="300" y="395" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+        Kreditni Sustav
+      </text>
+      <text x="300" y="415" textAnchor="middle" fontSize="11" fill="white">
+        • 1 kredit ≈ 10€
+      </text>
+      <text x="300" y="430" textAnchor="middle" fontSize="11" fill="white">
+        • Dobivaju se pretplatom
+      </text>
+      <text x="300" y="445" textAnchor="middle" fontSize="11" fill="white">
+        • Pay-per-credit (Stripe)
+      </text>
+      <text x="300" y="460" textAnchor="middle" fontSize="11" fill="white">
+        • TRIAL: 8 leadova (besplatno)
+      </text>
+      <text x="300" y="475" textAnchor="middle" fontSize="11" fill="white">
+        • BASIC: 10 kredita/mjesec
+      </text>
+      <text x="300" y="490" textAnchor="middle" fontSize="11" fill="white">
+        • PREMIUM: 50 kredita/mjesec
+      </text>
+      <text x="300" y="505" textAnchor="middle" fontSize="11" fill="white">
+        • PRO: Unlimited krediti
+      </text>
+      <text x="300" y="520" textAnchor="middle" fontSize="11" fill="white">
+        • Povijest transakcija
+      </text>
+      <text x="300" y="535" textAnchor="middle" fontSize="11" fill="white">
+        • Filtriranje po tipu
+      </text>
+      <text x="300" y="550" textAnchor="middle" fontSize="11" fill="white">
+        • Izvoz povijesti
+      </text>
+      <text x="300" y="565" textAnchor="middle" fontSize="11" fill="white">
+        • Notifikacije o transakcijama
+      </text>
+
+      {/* Refund razlozi */}
+      <rect x="1100" y="370" width="300" height="200" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <text x="1250" y="395" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
+        Razlozi za Refund
+      </text>
+      <text x="1250" y="415" textAnchor="middle" fontSize="11" fill={textColor}>
+        • Klijent ne odgovori (48h)
+      </text>
+      <text x="1250" y="430" textAnchor="middle" fontSize="11" fill={textColor}>
+        • Lead nije kvalitetan
+      </text>
+      <text x="1250" y="445" textAnchor="middle" fontSize="11" fill={textColor}>
+        • Duplikat leada
+      </text>
+      <text x="1250" y="460" textAnchor="middle" fontSize="11" fill={textColor}>
+        • Lažni kontakt podaci
+      </text>
+      <text x="1250" y="475" textAnchor="middle" fontSize="11" fill={textColor}>
+        • Ručno zatraživanje
+      </text>
+      <text x="1250" y="490" textAnchor="middle" fontSize="11" fill={textColor}>
+        • Automatski refund (48h)
+      </text>
+      <text x="1250" y="505" textAnchor="middle" fontSize="11" fill={textColor}>
+        • Refund za pretplate
+      </text>
+      <text x="1250" y="520" textAnchor="middle" fontSize="11" fill={textColor}>
+        • Stripe refund ID tracking
+      </text>
+      <text x="1250" y="535" textAnchor="middle" fontSize="11" fill={textColor}>
+        • Fallback na interne kredite
+      </text>
+      <text x="1250" y="550" textAnchor="middle" fontSize="11" fill={textColor}>
+        • Povijest refund transakcija
+      </text>
+      <text x="1250" y="565" textAnchor="middle" fontSize="11" fill={textColor}>
+        • Status: REFUNDED
+      </text>
+    </ZoomableSVG>
+  );
+
+  // Dijagram 9: Notifikacije i Komunikacija
+  const NotificationsFlowchart = () => (
+    <ZoomableSVG viewBox="0 0 1400 1100">
+      <defs>
+        <marker id="arrowhead9" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+          <polygon points="0 0, 10 3, 0 6" fill={textColor} />
+        </marker>
+      </defs>
+
+      <text x="700" y="30" textAnchor="middle" fontSize="24" fontWeight="bold" fill={textColor}>
+        Notifikacije i Komunikacija
+      </text>
+
+      {/* Event trigger */}
+      <rect x="600" y="60" width="200" height="50" rx="5" fill={primaryColor} stroke={borderColor} strokeWidth="2" />
+      <text x="700" y="90" textAnchor="middle" fontSize="14" fill="white" fontWeight="bold">
+        Event se dogodio
+      </text>
+
+      <line x1="700" y1="110" x2="700" y2="150" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead9)" />
+
+      {/* Notifikacijski sustav */}
+      <rect x="550" y="150" width="300" height="100" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="3" />
+      <text x="700" y="175" textAnchor="middle" fontSize="16" fontWeight="bold" fill="white">
+        🔔 Notifikacijski Sustav
+      </text>
+      <text x="700" y="200" textAnchor="middle" fontSize="12" fill="white">
+        • Automatska detekcija eventa
+      </text>
+      <text x="700" y="215" textAnchor="middle" fontSize="12" fill="white">
+        • Routing prema korisniku
+      </text>
+      <text x="700" y="230" textAnchor="middle" fontSize="12" fill="white">
+        • Multi-channel slanje
+      </text>
+      <text x="700" y="245" textAnchor="middle" fontSize="12" fill="white">
+        • Brojač nepročitanih
+      </text>
+
+      <line x1="700" y1="250" x2="700" y2="290" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead9)" />
+
+      {/* Tipovi notifikacija */}
+      <rect x="200" y="290" width="1000" height="200" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <text x="700" y="315" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
+        Tipovi Notifikacija
+      </text>
+
+      {/* Email */}
+      <rect x="250" y="340" width="220" height="130" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
+      <text x="360" y="365" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+        📧 Email Notifikacije
+      </text>
+      <text x="360" y="385" textAnchor="middle" fontSize="11" fill="white">
+        • Nove ponude
+      </text>
+      <text x="360" y="400" textAnchor="middle" fontSize="11" fill="white">
+        • Prihvaćene ponude
+      </text>
+      <text x="360" y="415" textAnchor="middle" fontSize="11" fill="white">
+        • Nove poruke
+      </text>
+      <text x="360" y="430" textAnchor="middle" fontSize="11" fill="white">
+        • Novi poslovi
+      </text>
+      <text x="360" y="445" textAnchor="middle" fontSize="11" fill="white">
+        • Job alerts (DAILY, WEEKLY, INSTANT)
+      </text>
+      <text x="360" y="460" textAnchor="middle" fontSize="11" fill="white">
+        • Istek pretplate
+      </text>
+
+      {/* SMS */}
+      <rect x="490" y="340" width="220" height="130" rx="5" fill={primaryColor} stroke={borderColor} strokeWidth="2" />
+      <text x="600" y="365" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+        📱 SMS Notifikacije (Twilio)
+      </text>
+      <text x="600" y="385" textAnchor="middle" fontSize="11" fill="white">
+        • Verifikacija telefona
+      </text>
+      <text x="600" y="400" textAnchor="middle" fontSize="11" fill="white">
+        • Hitne notifikacije
+      </text>
+      <text x="600" y="415" textAnchor="middle" fontSize="11" fill="white">
+        • Nove ponude (PRO plan)
+      </text>
+      <text x="600" y="430" textAnchor="middle" fontSize="11" fill="white">
+        • Lead u redu čekanja
+      </text>
+      <text x="600" y="445" textAnchor="middle" fontSize="11" fill="white">
+        • Rate limiting
+      </text>
+      <text x="600" y="460" textAnchor="middle" fontSize="11" fill="white">
+        • SMS log tracking
+      </text>
+
+      {/* In-App */}
+      <rect x="730" y="340" width="220" height="130" rx="5" fill={warningColor} stroke={borderColor} strokeWidth="2" />
+      <text x="840" y="365" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+        🔔 In-App Notifikacije
+      </text>
+      <text x="840" y="385" textAnchor="middle" fontSize="11" fill="white">
+        • Real-time obavijesti
+      </text>
+      <text x="840" y="400" textAnchor="middle" fontSize="11" fill="white">
+        • Brojač nepročitanih
+      </text>
+      <text x="840" y="415" textAnchor="middle" fontSize="11" fill="white">
+        • Povijest notifikacija
+      </text>
+      <text x="840" y="430" textAnchor="middle" fontSize="11" fill="white">
+        • Mark as read
+      </text>
+      <text x="840" y="445" textAnchor="middle" fontSize="11" fill="white">
+        • Filteri po tipu
+      </text>
+      <text x="840" y="460" textAnchor="middle" fontSize="11" fill="white">
+        • Socket.io real-time
+      </text>
+
+      {/* Push */}
+      <rect x="970" y="340" width="220" height="130" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <text x="1080" y="365" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
+        📲 Push Notifikacije
+      </text>
+      <text x="1080" y="385" textAnchor="middle" fontSize="11" fill={textColor}>
+        • Browser notifications
+      </text>
+      <text x="1080" y="400" textAnchor="middle" fontSize="11" fill="white">
+        • Permission request
+      </text>
+      <text x="1080" y="415" textAnchor="middle" fontSize="11" fill={textColor}>
+        • Desktop notifikacije
+      </text>
+      <text x="1080" y="430" textAnchor="middle" fontSize="11" fill={textColor}>
+        • Mobile web support
+      </text>
+      <text x="1080" y="445" textAnchor="middle" fontSize="11" fill={textColor}>
+        • Custom zvukovi
+      </text>
+      <text x="1080" y="460" textAnchor="middle" fontSize="11" fill={textColor}>
+        • Notification settings
+      </text>
+
+      {/* Eventi koji pokreću notifikacije */}
+      <line x1="700" y1="490" x2="700" y2="530" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead9)" />
+      <rect x="200" y="530" width="1000" height="300" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <text x="700" y="555" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
+        Eventi koji Pokreću Notifikacije
+      </text>
+
+      {/* Korisnik usluge */}
+      <rect x="250" y="580" width="300" height="230" rx="5" fill={primaryColor} stroke={borderColor} strokeWidth="2" />
+      <text x="400" y="605" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+        👤 Korisnik Usluge
+      </text>
+      <text x="400" y="625" textAnchor="middle" fontSize="11" fill="white">
+        • Nova ponuda za posao
+      </text>
+      <text x="400" y="640" textAnchor="middle" fontSize="11" fill="white">
+        • Ponuda prihvaćena/odbijena
+      </text>
+      <text x="400" y="655" textAnchor="middle" fontSize="11" fill="white">
+        • Nova poruka u chatu
+      </text>
+      <text x="400" y="670" textAnchor="middle" fontSize="11" fill="white">
+        • Posao završen (recenzija)
+      </text>
+      <text x="400" y="685" textAnchor="middle" fontSize="11" fill="white">
+        • Job alert (novi poslovi)
+      </text>
+      <text x="400" y="700" textAnchor="middle" fontSize="11" fill="white">
+        • Istek pretplate
+      </text>
+      <text x="400" y="715" textAnchor="middle" fontSize="11" fill="white">
+        • Refund zahtjev odobren
+      </text>
+      <text x="400" y="730" textAnchor="middle" fontSize="11" fill="white">
+        • Verifikacija emaila/telefona
+      </text>
+      <text x="400" y="745" textAnchor="middle" fontSize="11" fill="white">
+        • Admin odgovor na ticket
+      </text>
+      <text x="400" y="760" textAnchor="middle" fontSize="11" fill="white">
+        • KYC verifikacija odobrena/odbijena
+      </text>
+      <text x="400" y="775" textAnchor="middle" fontSize="11" fill="white">
+        • Licenca odobrena/odbijena
+      </text>
+      <text x="400" y="790" textAnchor="middle" fontSize="11" fill="white">
+        • Posao odobren/odbijen (moderacija)
+      </text>
+
+      {/* Pružatelj */}
+      <rect x="570" y="580" width="300" height="230" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
+      <text x="720" y="605" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+        👤 Pružatelj Usluga
+      </text>
+      <text x="720" y="625" textAnchor="middle" fontSize="11" fill="white">
+        • Novi posao objavljen
+      </text>
+      <text x="720" y="640" textAnchor="middle" fontSize="11" fill="white">
+        • Ponuda prihvaćena/odbijena
+      </text>
+      <text x="720" y="655" textAnchor="middle" fontSize="11" fill="white">
+        • Nova poruka u chatu
+      </text>
+      <text x="720" y="670" textAnchor="middle" fontSize="11" fill="white">
+        • Lead u redu čekanja (OFFERED)
+      </text>
+      <text x="720" y="685" textAnchor="middle" fontSize="11" fill="white">
+        • Lead dodijeljen (ACCEPTED)
+      </text>
+      <text x="720" y="700" textAnchor="middle" fontSize="11" fill="white">
+        • Refund odobren
+      </text>
+      <text x="720" y="715" textAnchor="middle" fontSize="11" fill="white">
+        • Istek pretplate/kredita
+      </text>
+      <text x="720" y="730" textAnchor="middle" fontSize="11" fill="white">
+        • KYC verifikacija odobrena/odbijena
+      </text>
+      <text x="720" y="745" textAnchor="middle" fontSize="11" fill="white">
+        • Licenca odobrena/odbijena
+      </text>
+      <text x="720" y="760" textAnchor="middle" fontSize="11" fill="white">
+        • Upsell ponuda (Add-on)
+      </text>
+      <text x="720" y="775" textAnchor="middle" fontSize="11" fill="white">
+        • TRIAL podsjetnik (3 dana)
+      </text>
+      <text x="720" y="790" textAnchor="middle" fontSize="11" fill="white">
+        • Admin odgovor na ticket
+      </text>
+
+      {/* Admin */}
+      <rect x="890" y="580" width="300" height="230" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="2" />
+      <text x="1040" y="605" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+        🔐 ADMIN
+      </text>
+      <text x="1040" y="625" textAnchor="middle" fontSize="11" fill="white">
+        • Novi KYC zahtjev
+      </text>
+      <text x="1040" y="640" textAnchor="middle" fontSize="11" fill="white">
+        • Nova licenca za provjeru
+      </text>
+      <text x="1040" y="655" textAnchor="middle" fontSize="11" fill="white">
+        • Posao za moderaciju
+      </text>
+      <text x="1040" y="670" textAnchor="middle" fontSize="11" fill="white">
+        • Prijava lažne recenzije
+      </text>
+      <text x="1040" y="685" textAnchor="middle" fontSize="11" fill="white">
+        • Support ticket (VIP)
+      </text>
+      <text x="1040" y="700" textAnchor="middle" fontSize="11" fill="white">
+        • Error log (kritičan)
+      </text>
+      <text x="1040" y="715" textAnchor="middle" fontSize="11" fill="white">
+        • API request anomalije
+      </text>
+      <text x="1040" y="730" textAnchor="middle" fontSize="11" fill="white">
+        • Refund zahtjev
+      </text>
+      <text x="1040" y="745" textAnchor="middle" fontSize="11" fill="white">
+        • Stripe webhook error
+      </text>
+      <text x="1040" y="760" textAnchor="middle" fontSize="11" fill="white">
+        • Queue scheduler error
+      </text>
+      <text x="1040" y="775" textAnchor="middle" fontSize="11" fill="white">
+        • SMS sending failure
+      </text>
+      <text x="1040" y="790" textAnchor="middle" fontSize="11" fill="white">
+        • Email sending failure
+      </text>
+
+      {/* Notifikacijski kanali */}
+      <line x1="700" y1="830" x2="700" y2="870" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead9)" />
+      <rect x="200" y="870" width="1000" height="120" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
+      <text x="700" y="895" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+        Notifikacijski Kanal
+      </text>
+      <text x="700" y="915" textAnchor="middle" fontSize="12" fill="white">
+        • Email: uvijek aktivno (osim ako korisnik ne onemogući)
+      </text>
+      <text x="700" y="935" textAnchor="middle" fontSize="12" fill="white">
+        • SMS: PREMIUM/PRO planovi, verifikacije, hitne notifikacije
+      </text>
+      <text x="700" y="955" textAnchor="middle" fontSize="12" fill="white">
+        • In-App: uvijek aktivno, real-time preko Socket.io
+      </text>
+      <text x="700" y="975" textAnchor="middle" fontSize="12" fill="white">
+        • Push: opcionalno, zahtijeva permission, desktop/mobile web
+      </text>
+    </ZoomableSVG>
+  );
+
+  // Dijagram 10: Reputacijski Sustav i Trust Score
+  const ReputationSystemFlowchart = () => (
+    <ZoomableSVG viewBox="0 0 1400 1300">
+      <defs>
+        <marker id="arrowhead10" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+          <polygon points="0 0, 10 3, 0 6" fill={textColor} />
+        </marker>
+      </defs>
+
+      <text x="700" y="30" textAnchor="middle" fontSize="24" fontWeight="bold" fill={textColor}>
+        Reputacijski Sustav i Trust Score
+      </text>
+
+      {/* Pružatelj */}
+      <rect x="600" y="60" width="200" height="50" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
+      <text x="700" y="90" textAnchor="middle" fontSize="14" fill="white" fontWeight="bold">
+        Pružatelj Usluga
+      </text>
+
+      <line x1="700" y1="110" x2="700" y2="150" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead10)" />
+
+      {/* Reputation Score komponente */}
+      <rect x="200" y="150" width="1000" height="300" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <text x="700" y="175" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
+        Reputation Score Komponente (0-100)
+      </text>
+
+      {/* Prosječna ocjena */}
+      <rect x="250" y="200" width="220" height="230" rx="5" fill={primaryColor} stroke={borderColor} strokeWidth="2" />
+      <text x="360" y="225" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+        Prosječna Ocjena (40%)
+      </text>
+      <text x="360" y="245" textAnchor="middle" fontSize="11" fill="white">
+        • Bilateralno ocjenjivanje
+      </text>
+      <text x="360" y="260" textAnchor="middle" fontSize="11" fill="white">
+        • 1-5 zvjezdica
+      </text>
+      <text x="360" y="275" textAnchor="middle" fontSize="11" fill="white">
+        • Komentari i recenzije
+      </text>
+      <text x="360" y="290" textAnchor="middle" fontSize="11" fill="white">
+        • Automatski izračun
+      </text>
+      <text x="360" y="305" textAnchor="middle" fontSize="11" fill="white">
+        • Ponderirane komponente:
+      </text>
+      <text x="360" y="320" textAnchor="middle" fontSize="10" fill="white">
+        - Kvaliteta rada: 50%
+      </text>
+      <text x="360" y="335" textAnchor="middle" fontSize="10" fill="white">
+        - Pouzdanost: 30%
+      </text>
+      <text x="360" y="350" textAnchor="middle" fontSize="10" fill="white">
+        - Komunikacija: 20%
+      </text>
+      <text x="360" y="365" textAnchor="middle" fontSize="11" fill="white">
+        • Moderacija (AI + ljudska)
+      </text>
+      <text x="360" y="380" textAnchor="middle" fontSize="11" fill="white">
+        • Prijava lažnih ocjena
+      </text>
+      <text x="360" y="395" textAnchor="middle" fontSize="11" fill="white">
+        • Odgovor na recenziju (1x)
+      </text>
+      <text x="360" y="410" textAnchor="middle" fontSize="11" fill="white">
+        • Simultana objava (10 dana)
+      </text>
+
+      {/* Prosječno vrijeme odgovora */}
+      <rect x="490" y="200" width="220" height="230" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
+      <text x="600" y="225" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+        Prosječno Vrijeme Odgovora (25%)
+      </text>
+      <text x="600" y="245" textAnchor="middle" fontSize="11" fill="white">
+        • avgResponseTimeMinutes
+      </text>
+      <text x="600" y="260" textAnchor="middle" fontSize="11" fill="white">
+        • Praćenje vremena odgovora
+      </text>
+      <text x="600" y="275" textAnchor="middle" fontSize="11" fill="white">
+        • Na leadove
+      </text>
+      <text x="600" y="290" textAnchor="middle" fontSize="11" fill="white">
+        • Na poruke u chatu
+      </text>
+      <text x="600" y="305" textAnchor="middle" fontSize="11" fill="white">
+        • Na ponude
+      </text>
+      <text x="600" y="320" textAnchor="middle" fontSize="11" fill="white">
+        • < 1h: +20 bodova
+      </text>
+      <text x="600" y="335" textAnchor="middle" fontSize="11" fill="white">
+        • < 4h: +15 bodova
+      </text>
+      <text x="600" y="350" textAnchor="middle" fontSize="11" fill="white">
+        • < 24h: +10 bodova
+      </text>
+      <text x="600" y="365" textAnchor="middle" fontSize="11" fill="white">
+        • > 24h: +5 bodova
+      </text>
+      <text x="600" y="380" textAnchor="middle" fontSize="11" fill="white">
+        • > 48h: 0 bodova
+      </text>
+      <text x="600" y="395" textAnchor="middle" fontSize="11" fill="white">
+        • Integracija s lead matching
+      </text>
+      <text x="600" y="410" textAnchor="middle" fontSize="11" fill="white">
+        • Prikaz na profilu
+      </text>
+
+      {/* Stopa konverzije */}
+      <rect x="730" y="200" width="220" height="230" rx="5" fill={warningColor} stroke={borderColor} strokeWidth="2" />
+      <text x="840" y="225" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+        Stopa Konverzije (20%)
+      </text>
+      <text x="840" y="245" textAnchor="middle" fontSize="11" fill="white">
+        • conversionRate
+      </text>
+      <text x="840" y="260" textAnchor="middle" fontSize="11" fill="white">
+        • Lead → Posao
+      </text>
+      <text x="840" y="275" textAnchor="middle" fontSize="11" fill="white">
+        • Ponuda → Prihvaćena
+      </text>
+      <text x="840" y="290" textAnchor="middle" fontSize="11" fill="white">
+        • Posao → Završen
+      </text>
+      <text x="840" y="305" textAnchor="middle" fontSize="11" fill="white">
+        • > 50%: +20 bodova
+      </text>
+      <text x="840" y="320" textAnchor="middle" fontSize="11" fill="white">
+        • 30-50%: +15 bodova
+      </text>
+      <text x="840" y="335" textAnchor="middle" fontSize="11" fill="white">
+        • 20-30%: +10 bodova
+      </text>
+      <text x="840" y="350" textAnchor="middle" fontSize="11" fill="white">
+        • 10-20%: +5 bodova
+      </text>
+      <text x="840" y="365" textAnchor="middle" fontSize="11" fill="white">
+        • < 10%: 0 bodova
+      </text>
+      <text x="840" y="380" textAnchor="middle" fontSize="11" fill="white">
+        • ROI tracking
+      </text>
+      <text x="840" y="395" textAnchor="middle" fontSize="11" fill="white">
+        • Statistike uspješnosti
+      </text>
+      <text x="840" y="410" textAnchor="middle" fontSize="11" fill="white">
+        • Utjecaj na dodjelu leadova
+      </text>
+
+      {/* Platform Compliance */}
+      <rect x="970" y="200" width="220" height="230" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="2" />
+      <text x="1080" y="225" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+        Platform Compliance (15%)
+      </text>
+      <text x="1080" y="245" textAnchor="middle" fontSize="11" fill="white">
+        • Pridržavanje pravila
+      </text>
+      <text x="1080" y="260" textAnchor="middle" fontSize="11" fill="white">
+        • Nema prijava
+      </text>
+      <text x="1080" y="275" textAnchor="middle" fontSize="11" fill="white">
+        • Nema spam-a
+      </text>
+      <text x="1080" y="290" textAnchor="middle" fontSize="11" fill="white">
+        • Profil kompletan
+      </text>
+      <text x="1080" y="305" textAnchor="middle" fontSize="11" fill="white">
+        • Verificirani (badges)
+      </text>
+      <text x="1080" y="320" textAnchor="middle" fontSize="11" fill="white">
+        • Licencirani (ako potrebno)
+      </text>
+      <text x="1080" y="335" textAnchor="middle" fontSize="11" fill="white">
+        • Aktivna pretplata
+      </text>
+      <text x="1080" y="350" textAnchor="middle" fontSize="11" fill="white">
+        • Povijest transakcija
+      </text>
+      <text x="1080" y="365" textAnchor="middle" fontSize="11" fill="white">
+        • Nema refund problema
+      </text>
+      <text x="1080" y="380" textAnchor="middle" fontSize="11" fill="white">
+        • Odgovaranje na notifikacije
+      </text>
+      <text x="1080" y="395" textAnchor="middle" fontSize="11" fill="white">
+        • Pridržavanje SLA
+      </text>
+      <text x="1080" y="410" textAnchor="middle" fontSize="11" fill="white">
+        • Admin ocjena
+      </text>
+
+      {/* Partner Score izračun */}
+      <line x1="700" y1="450" x2="700" y2="490" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead10)" />
+      <rect x="400" y="490" width="600" height="120" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <text x="700" y="515" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
+        Partner Score Izračun (0-100)
+      </text>
+      <text x="700" y="535" textAnchor="middle" fontSize="12" fill={textColor}>
+        Partner Score = (Prosječna Ocjena × 0.40) + (Prosječno Vrijeme Odgovora × 0.25) + (Stopa Konverzije × 0.20) + (Platform Compliance × 0.15)
+      </text>
+      <text x="700" y="555" textAnchor="middle" fontSize="12" fill={textColor}>
+        + Match Score Bonus (kategorija + regija match)
+      </text>
+      <text x="700" y="575" textAnchor="middle" fontSize="12" fill={textColor}>
+        - Penalty bodovi (prijave, spam, neaktivnost)
+      </text>
+      <text x="700" y="595" textAnchor="middle" fontSize="12" fill={textColor}>
+        = Finalni Partner Score (0-100+)
+      </text>
+
+      {/* Partner Tier */}
+      <line x1="700" y1="610" x2="700" y2="650" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead10)" />
+      <polygon points="700,650 750,690 700,730 650,690" fill={warningColor} stroke={borderColor} strokeWidth="2" />
+      <text x="700" y="695" textAnchor="middle" fontSize="12" fill="white" fontWeight="bold">
+        Partner Tier?
+      </text>
+
+      {/* Premium */}
+      <line x1="650" y1="690" x2="500" y2="690" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead10)" />
+      <rect x="300" y="750" width="200" height="120" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
+      <text x="400" y="775" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+        Premium Partner
+      </text>
+      <text x="400" y="795" textAnchor="middle" fontSize="12" fill="white">
+        Score ≥ 80
+      </text>
+      <text x="400" y="815" textAnchor="middle" fontSize="11" fill="white">
+        • Auto-assign prioritet
+      </text>
+      <text x="400" y="830" textAnchor="middle" fontSize="11" fill="white">
+        • Više leadova
+      </text>
+      <text x="400" y="845" textAnchor="middle" fontSize="11" fill="white">
+        • Badge na profilu
+      </text>
+      <text x="400" y="860" textAnchor="middle" fontSize="11" fill="white">
+        • VIP podrška
+      </text>
+
+      {/* Verified */}
+      <line x1="700" y1="690" x2="700" y2="750" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead10)" />
+      <rect x="600" y="750" width="200" height="120" rx="5" fill={primaryColor} stroke={borderColor} strokeWidth="2" />
+      <text x="700" y="775" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+        Verified Partner
+      </text>
+      <text x="700" y="795" textAnchor="middle" fontSize="12" fill="white">
+        Score 60-79
+      </text>
+      <text x="700" y="815" textAnchor="middle" fontSize="11" fill="white">
+        • Normalan prioritet
+      </text>
+      <text x="700" y="830" textAnchor="middle" fontSize="11" fill="white">
+        • Standard leadovi
+      </text>
+      <text x="700" y="845" textAnchor="middle" fontSize="11" fill="white">
+        • Badge na profilu
+      </text>
+      <text x="700" y="860" textAnchor="middle" fontSize="11" fill="white">
+        • Standard podrška
+      </text>
+
+      {/* Basic */}
+      <line x1="750" y1="690" x2="900" y2="690" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead10)" />
+      <rect x="800" y="750" width="200" height="120" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <text x="900" y="775" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
+        Basic Partner
+      </text>
+      <text x="900" y="795" textAnchor="middle" fontSize="12" fill={textColor}>
+        Score < 60
+      </text>
+      <text x="900" y="815" textAnchor="middle" fontSize="11" fill={textColor}>
+        • Niži prioritet
+      </text>
+      <text x="900" y="830" textAnchor="middle" fontSize="11" fill={textColor}>
+        • Manje leadova
+      </text>
+      <text x="900" y="845" textAnchor="middle" fontSize="11" fill={textColor}>
+        • Nema badge-a
+      </text>
+      <text x="900" y="860" textAnchor="middle" fontSize="11" fill={textColor}>
+        • Standard podrška
+      </text>
+
+      {/* Trust Score za klijente */}
+      <line x1="700" y1="870" x2="700" y2="910" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead10)" />
+      <rect x="200" y="910" width="1000" height="280" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <text x="700" y="935" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
+        Trust Score za Klijente (0-100)
+      </text>
+
+      <rect x="250" y="960" width="220" height="220" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
+      <text x="360" y="985" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+        Verifikacije (+70)
+      </text>
+      <text x="360" y="1005" textAnchor="middle" fontSize="11" fill="white">
+        • Telefon verificiran: +10
+      </text>
+      <text x="360" y="1020" textAnchor="middle" fontSize="11" fill="white">
+        • Email verificiran: +10
+      </text>
+      <text x="360" y="1035" textAnchor="middle" fontSize="11" fill="white">
+        • OIB verificiran: +15
+      </text>
+      <text x="360" y="1050" textAnchor="middle" fontSize="11" fill="white">
+        • Firma verificirana: +20
+      </text>
+      <text x="360" y="1065" textAnchor="middle" fontSize="11" fill="white">
+        • DNS TXT record: +5
+      </text>
+      <text x="360" y="1080" textAnchor="middle" fontSize="11" fill="white">
+        • Company email: +10
+      </text>
+
+      <rect x="490" y="960" width="220" height="220" rx="5" fill={primaryColor} stroke={borderColor} strokeWidth="2" />
+      <text x="600" y="985" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+        Povijest na Platformi (+20)
+      </text>
+      <text x="600" y="1005" textAnchor="middle" fontSize="11" fill="white">
+        • Broj objavljenih poslova: +5
+      </text>
+      <text x="600" y="1020" textAnchor="middle" fontSize="11" fill="white">
+        • Završeni poslovi: +10
+      </text>
+      <text x="600" y="1035" textAnchor="middle" fontSize="11" fill="white">
+        • Pozitivne recenzije: +5
+      </text>
+      <text x="600" y="1050" textAnchor="middle" fontSize="11" fill="white">
+        • Aktivnost (login): +2
+      </text>
+      <text x="600" y="1065" textAnchor="middle" fontSize="11" fill="white">
+        • Nema prijava: +3
+      </text>
+
+      <rect x="730" y="960" width="220" height="220" rx="5" fill={warningColor} stroke={borderColor} strokeWidth="2" />
+      <text x="840" y="985" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+        Kvaliteta Leada (+10)
+      </text>
+      <text x="840" y="1005" textAnchor="middle" fontSize="11" fill="white">
+        • Detaljnost opisa: +5
+      </text>
+      <text x="840" y="1020" textAnchor="middle" fontSize="11" fill="white">
+        • Budžet realističan: +3
+      </text>
+      <text x="840" y="1035" textAnchor="middle" fontSize="11" fill="white">
+        • Lokacija specificirana: +2
+      </text>
+
+      <rect x="970" y="960" width="220" height="220" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="2" />
+      <text x="1080" y="985" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+        Penalty Bodovi (-)
+      </text>
+      <text x="1080" y="1005" textAnchor="middle" fontSize="11" fill="white">
+        • Neaktivnost: -5
+      </text>
+      <text x="1080" y="1020" textAnchor="middle" fontSize="11" fill="white">
+        • Otkazani poslovi: -10
+      </text>
+      <text x="1080" y="1035" textAnchor="middle" fontSize="11" fill="white">
+        • Negativne recenzije: -15
+      </text>
+      <text x="1080" y="1050" textAnchor="middle" fontSize="11" fill="white">
+        • Prijave: -20
+      </text>
+      <text x="1080" y="1065" textAnchor="middle" fontSize="11" fill="white">
+        • Spam: -25
+      </text>
+      <text x="1080" y="1080" textAnchor="middle" fontSize="11" fill="white">
+        • Lažni podaci: -30
+      </text>
+
+      {/* Utjecaj na lead matching */}
+      <line x1="700" y1="1190" x2="700" y2="1230" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead10)" />
+      <rect x="400" y="1230" width="600" height="60" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
+      <text x="700" y="1255" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+        Utjecaj na Lead Matching
+      </text>
+      <text x="700" y="1275" textAnchor="middle" fontSize="12" fill="white">
+        • Partner Score utječe na poziciju u redu čekanja
+      </text>
+      <text x="700" y="1290" textAnchor="middle" fontSize="12" fill="white">
+        • Premium Partneri dobivaju prioritet u Weighted Queue algoritmu
+      </text>
+    </ZoomableSVG>
   );
 
   return (
@@ -1114,9 +2536,10 @@ export default function UserTypesFlowcharts() {
           <h2 className="text-2xl font-bold mb-4" style={{ color: textColor }}>
             2. Proces Verifikacije i Licenciranja
           </h2>
-          <div className="overflow-x-auto">
-            <VerificationFlowchart />
-          </div>
+          <p className="text-sm mb-4" style={{ color: textColor, opacity: 0.7 }}>
+            💡 Koristi miš za pomicanje (drag) i kotačić za zumiranje. Gumbi za kontrolu su u gornjem desnom kutu.
+          </p>
+          <VerificationFlowchart />
         </div>
 
         {/* Dijagram 3 */}
@@ -1124,9 +2547,10 @@ export default function UserTypesFlowcharts() {
           <h2 className="text-2xl font-bold mb-4" style={{ color: textColor }}>
             3. Proces Pretplata
           </h2>
-          <div className="overflow-x-auto">
-            <SubscriptionFlowchart />
-          </div>
+          <p className="text-sm mb-4" style={{ color: textColor, opacity: 0.7 }}>
+            💡 Koristi miš za pomicanje (drag) i kotačić za zumiranje. Gumbi za kontrolu su u gornjem desnom kutu.
+          </p>
+          <SubscriptionFlowchart />
         </div>
 
         {/* Dijagram 4 */}
@@ -1134,9 +2558,10 @@ export default function UserTypesFlowcharts() {
           <h2 className="text-2xl font-bold mb-4" style={{ color: textColor }}>
             4. Proces Korištenja Platforme - Korisnik Usluge
           </h2>
-          <div className="overflow-x-auto">
-            <UserJourneyFlowchart />
-          </div>
+          <p className="text-sm mb-4" style={{ color: textColor, opacity: 0.7 }}>
+            💡 Koristi miš za pomicanje (drag) i kotačić za zumiranje. Gumbi za kontrolu su u gornjem desnom kutu.
+          </p>
+          <UserJourneyFlowchart />
         </div>
 
         {/* Dijagram 5 */}
@@ -1144,9 +2569,65 @@ export default function UserTypesFlowcharts() {
           <h2 className="text-2xl font-bold mb-4" style={{ color: textColor }}>
             5. Proces Korištenja Platforme - Pružatelj Usluga
           </h2>
-          <div className="overflow-x-auto">
-            <ProviderJourneyFlowchart />
-          </div>
+          <p className="text-sm mb-4" style={{ color: textColor, opacity: 0.7 }}>
+            💡 Koristi miš za pomicanje (drag) i kotačić za zumiranje. Gumbi za kontrolu su u gornjem desnom kutu.
+          </p>
+          <ProviderJourneyFlowchart />
+        </div>
+
+        {/* Dijagram 6 */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 border border-gray-200 dark:border-gray-700">
+          <h2 className="text-2xl font-bold mb-4" style={{ color: textColor }}>
+            6. USLUGAR EXCLUSIVE - Lead Sustav
+          </h2>
+          <p className="text-sm mb-4" style={{ color: textColor, opacity: 0.7 }}>
+            💡 Koristi miš za pomicanje (drag) i kotačić za zumiranje. Gumbi za kontrolu su u gornjem desnom kutu.
+          </p>
+          <ExclusiveLeadSystemFlowchart />
+        </div>
+
+        {/* Dijagram 7 */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 border border-gray-200 dark:border-gray-700">
+          <h2 className="text-2xl font-bold mb-4" style={{ color: textColor }}>
+            7. Queue Sustav za Distribuciju Leadova
+          </h2>
+          <p className="text-sm mb-4" style={{ color: textColor, opacity: 0.7 }}>
+            💡 Koristi miš za pomicanje (drag) i kotačić za zumiranje. Gumbi za kontrolu su u gornjem desnom kutu.
+          </p>
+          <QueueSystemFlowchart />
+        </div>
+
+        {/* Dijagram 8 */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 border border-gray-200 dark:border-gray-700">
+          <h2 className="text-2xl font-bold mb-4" style={{ color: textColor }}>
+            8. Refund i Kreditni Sustav
+          </h2>
+          <p className="text-sm mb-4" style={{ color: textColor, opacity: 0.7 }}>
+            💡 Koristi miš za pomicanje (drag) i kotačić za zumiranje. Gumbi za kontrolu su u gornjem desnom kutu.
+          </p>
+          <RefundSystemFlowchart />
+        </div>
+
+        {/* Dijagram 9 */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 border border-gray-200 dark:border-gray-700">
+          <h2 className="text-2xl font-bold mb-4" style={{ color: textColor }}>
+            9. Notifikacije i Komunikacija
+          </h2>
+          <p className="text-sm mb-4" style={{ color: textColor, opacity: 0.7 }}>
+            💡 Koristi miš za pomicanje (drag) i kotačić za zumiranje. Gumbi za kontrolu su u gornjem desnom kutu.
+          </p>
+          <NotificationsFlowchart />
+        </div>
+
+        {/* Dijagram 10 */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 border border-gray-200 dark:border-gray-700">
+          <h2 className="text-2xl font-bold mb-4" style={{ color: textColor }}>
+            10. Reputacijski Sustav i Trust Score
+          </h2>
+          <p className="text-sm mb-4" style={{ color: textColor, opacity: 0.7 }}>
+            💡 Koristi miš za pomicanje (drag) i kotačić za zumiranje. Gumbi za kontrolu su u gornjem desnom kutu.
+          </p>
+          <ReputationSystemFlowchart />
         </div>
       </div>
 
