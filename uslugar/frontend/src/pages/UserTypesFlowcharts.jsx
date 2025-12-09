@@ -2249,7 +2249,7 @@ export default function UserTypesFlowcharts() {
         • Posao → Završen
       </text>
       <text x="840" y="305" textAnchor="middle" fontSize="11" fill="white">
-        • > 50%: +20 bodova
+        • &gt; 50%: +20 bodova
       </text>
       <text x="840" y="320" textAnchor="middle" fontSize="11" fill="white">
         • 30-50%: +15 bodova
@@ -2261,7 +2261,7 @@ export default function UserTypesFlowcharts() {
         • 10-20%: +5 bodova
       </text>
       <text x="840" y="365" textAnchor="middle" fontSize="11" fill="white">
-        • < 10%: 0 bodova
+        • &lt; 10%: 0 bodova
       </text>
       <text x="840" y="380" textAnchor="middle" fontSize="11" fill="white">
         • ROI tracking
