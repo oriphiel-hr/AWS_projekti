@@ -595,7 +595,7 @@ export default function UserTypesFlowcharts() {
       <text x="600" y="665" textAnchor="middle" fontSize="12" fill="white">
         Status: ACTIVE, automatska obnova
       </text>
-    </svg>
+    </ZoomableSVG>
   );
 
   // Dijagram 4: Korištenje platforme - Korisnik usluge
@@ -1523,13 +1523,13 @@ export default function UserTypesFlowcharts() {
         • Match Score (kategorija + regija): bonus
       </text>
       <text x="700" y="550" textAnchor="middle" fontSize="11" fill={textColor}>
-        • Premium Partner (Score ≥ 80): prioritet
+        • Premium Partner (Score &ge; 80): prioritet
       </text>
       <text x="700" y="565" textAnchor="middle" fontSize="11" fill={textColor}>
         • Verified Partner (Score 60-79): normalan
       </text>
       <text x="700" y="580" textAnchor="middle" fontSize="11" fill={textColor}>
-        • Basic Partner (Score < 60): niži prioritet
+        • Basic Partner (Score &lt; 60): niži prioritet
       </text>
 
       <line x1="700" y1="570" x2="700" y2="610" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
@@ -2348,7 +2348,7 @@ export default function UserTypesFlowcharts() {
         Premium Partner
       </text>
       <text x="400" y="795" textAnchor="middle" fontSize="12" fill="white">
-        Score ≥ 80
+        Score &ge; 80
       </text>
       <text x="400" y="815" textAnchor="middle" fontSize="11" fill="white">
         • Auto-assign prioritet
@@ -2392,7 +2392,7 @@ export default function UserTypesFlowcharts() {
         Basic Partner
       </text>
       <text x="900" y="795" textAnchor="middle" fontSize="12" fill={textColor}>
-        Score < 60
+        Score &lt; 60
       </text>
       <text x="900" y="815" textAnchor="middle" fontSize="11" fill={textColor}>
         • Niži prioritet
