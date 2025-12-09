@@ -2209,21 +2209,21 @@ export default function UserTypesFlowcharts() {
       <text x="600" y="305" textAnchor="middle" fontSize="11" fill="white">
         • Na ponude
       </text>
-      <text x="600" y="320" textAnchor="middle" fontSize="11" fill="white">
-        • < 1h: +20 bodova
-      </text>
-      <text x="600" y="335" textAnchor="middle" fontSize="11" fill="white">
-        • < 4h: +15 bodova
-      </text>
-      <text x="600" y="350" textAnchor="middle" fontSize="11" fill="white">
-        • < 24h: +10 bodova
-      </text>
-      <text x="600" y="365" textAnchor="middle" fontSize="11" fill="white">
-        • > 24h: +5 bodova
-      </text>
-      <text x="600" y="380" textAnchor="middle" fontSize="11" fill="white">
-        • > 48h: 0 bodova
-      </text>
+        <text x="600" y="320" textAnchor="middle" fontSize="11" fill="white">
+          • &lt; 1h: +20 bodova
+        </text>
+        <text x="600" y="335" textAnchor="middle" fontSize="11" fill="white">
+          • &lt; 4h: +15 bodova
+        </text>
+        <text x="600" y="350" textAnchor="middle" fontSize="11" fill="white">
+          • &lt; 24h: +10 bodova
+        </text>
+        <text x="600" y="365" textAnchor="middle" fontSize="11" fill="white">
+          • &gt; 24h: +5 bodova
+        </text>
+        <text x="600" y="380" textAnchor="middle" fontSize="11" fill="white">
+          • &gt; 48h: 0 bodova
+        </text>
       <text x="600" y="395" textAnchor="middle" fontSize="11" fill="white">
         • Integracija s lead matching
       </text>
