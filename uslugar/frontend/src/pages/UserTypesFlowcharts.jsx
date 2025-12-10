@@ -1326,7 +1326,8 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Kupovina leada */}
-      <line x1="650" y1="450" x2="500" y2="450" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead6)" />
+      <line x1="650" y1="450" x2="500" y2="450" stroke={textColor} strokeWidth="2" />
+      <line x1="500" y1="450" x2="500" y2="497" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead6)" />
       <rect x="300" y="500" width="400" height="140" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
       <text x="500" y="525" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         Pružatelj kupuje lead
@@ -1373,7 +1374,8 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Ne kupuje */}
-      <line x1="750" y1="450" x2="900" y2="450" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead6)" />
+      <line x1="750" y1="450" x2="900" y2="450" stroke={textColor} strokeWidth="2" />
+      <line x1="900" y1="450" x2="900" y2="497" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead6)" />
       <rect x="800" y="500" width="200" height="60" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
       <text x="900" y="525" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         Lead ostaje na tržištu
@@ -1390,7 +1392,8 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* CONTACTED */}
-      <line x1="450" y1="880" x2="300" y2="880" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead6)" />
+      <line x1="450" y1="880" x2="200" y2="880" stroke={textColor} strokeWidth="2" />
+      <line x1="200" y1="880" x2="200" y2="937" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead6)" />
       <rect x="100" y="940" width="200" height="80" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
       <text x="200" y="965" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         CONTACTED
