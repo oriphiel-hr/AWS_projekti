@@ -138,7 +138,7 @@ export default function UserTypesFlowcharts() {
   const RegistrationFlowchart = () => (
     <ZoomableSVG viewBox="0 0 1200 800">
       <defs>
-        <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+        <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="0" refY="3" orient="auto">
           <polygon points="0 0, 10 3, 0 6" fill={textColor} />
         </marker>
         <linearGradient id="userGradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -172,7 +172,7 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Strelica */}
-      <line x1="600" y1="110" x2="600" y2="150" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead)" />
+      <line x1="600" y1="110" x2="600" y2="147" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead)" />
 
       {/* Grananje */}
       <polygon points="600,210 650,250 600,290 550,250" fill={warningColor} stroke={borderColor} strokeWidth="2" />
@@ -181,11 +181,11 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Strelica USER */}
-      <line x1="550" y1="250" x2="400" y2="250" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead)" />
+      <line x1="550" y1="250" x2="403" y2="250" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead)" />
       <text x="475" y="245" textAnchor="middle" fontSize="12" fill={textColor}>USER</text>
 
       {/* Strelica PROVIDER */}
-      <line x1="650" y1="250" x2="800" y2="250" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead)" />
+      <line x1="650" y1="250" x2="797" y2="250" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead)" />
       <text x="725" y="245" textAnchor="middle" fontSize="12" fill={textColor}>PROVIDER</text>
 
       {/* USER putanja */}
@@ -198,7 +198,7 @@ export default function UserTypesFlowcharts() {
           Email, lozinka, ime
         </text>
 
-        <line x1="400" y1="360" x2="400" y2="400" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead)" />
+        <line x1="400" y1="360" x2="400" y2="397" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead)" />
 
         <polygon points="400,400 450,440 400,480 350,440" fill={warningColor} stroke={borderColor} strokeWidth="2" />
         <text x="400" y="445" textAnchor="middle" fontSize="12" fill="white" fontWeight="bold">
@@ -206,7 +206,7 @@ export default function UserTypesFlowcharts() {
         </text>
 
         {/* Privatni korisnik */}
-        <line x1="350" y1="440" x2="200" y2="440" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead)" />
+        <line x1="350" y1="440" x2="203" y2="440" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead)" />
         <rect x="50" y="490" width="300" height="80" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
         <text x="200" y="515" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
           Privatni korisnik
@@ -222,7 +222,7 @@ export default function UserTypesFlowcharts() {
         </text>
 
         {/* Poslovni korisnik */}
-        <line x1="450" y1="440" x2="600" y2="440" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead)" />
+        <line x1="450" y1="440" x2="597" y2="440" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead)" />
         <rect x="450" y="490" width="300" height="80" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
         <text x="600" y="515" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
           Poslovni korisnik
@@ -248,7 +248,7 @@ export default function UserTypesFlowcharts() {
           Email, lozinka, pravni status, OIB
         </text>
 
-        <line x1="850" y1="360" x2="850" y2="400" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead)" />
+        <line x1="850" y1="360" x2="850" y2="397" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead)" />
 
         <rect x="700" y="400" width="300" height="60" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
         <text x="850" y="425" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
@@ -258,7 +258,7 @@ export default function UserTypesFlowcharts() {
           Kategorije usluga, regije
         </text>
 
-        <line x1="850" y1="460" x2="850" y2="500" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead)" />
+        <line x1="850" y1="460" x2="850" y2="497" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead)" />
 
         <polygon points="850,500 900,540 850,580 800,540" fill={warningColor} stroke={borderColor} strokeWidth="2" />
         <text x="850" y="545" textAnchor="middle" fontSize="12" fill="white" fontWeight="bold">
@@ -266,7 +266,7 @@ export default function UserTypesFlowcharts() {
         </text>
 
         {/* Solo provider */}
-        <line x1="800" y1="540" x2="650" y2="540" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead)" />
+        <line x1="800" y1="540" x2="653" y2="540" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead)" />
         <rect x="500" y="590" width="300" height="80" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
         <text x="650" y="615" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
           Pružatelj (Solo)
@@ -282,7 +282,7 @@ export default function UserTypesFlowcharts() {
         </text>
 
         {/* Tvrtka provider */}
-        <line x1="900" y1="540" x2="1050" y2="540" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead)" />
+        <line x1="900" y1="540" x2="1047" y2="540" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead)" />
         <rect x="900" y="590" width="300" height="80" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
         <text x="1050" y="615" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
           Pružatelj (Tvrtka)
@@ -304,7 +304,7 @@ export default function UserTypesFlowcharts() {
   const VerificationFlowchart = () => (
     <ZoomableSVG viewBox="0 0 1200 1220">
       <defs>
-        <marker id="arrowhead2" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+        <marker id="arrowhead2" markerWidth="10" markerHeight="10" refX="0" refY="3" orient="auto">
           <polygon points="0 0, 10 3, 0 6" fill={textColor} />
         </marker>
         <marker id="arrowhead2-back" markerWidth="10" markerHeight="10" refX="1" refY="3" orient="auto">
@@ -322,7 +322,7 @@ export default function UserTypesFlowcharts() {
         Pružatelj usluga
       </text>
 
-      <line x1="600" y1="110" x2="600" y2="150" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead2)" />
+      <line x1="600" y1="110" x2="600" y2="147" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead2)" />
 
       {/* KYC Verifikacija - Upload */}
       <rect x="450" y="150" width="300" height="80" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
@@ -336,7 +336,7 @@ export default function UserTypesFlowcharts() {
         Dokumenti poslani na provjeru
       </text>
 
-      <line x1="600" y1="230" x2="600" y2="270" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead2)" />
+      <line x1="600" y1="230" x2="600" y2="267" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead2)" />
 
       {/* ADMIN provjera */}
       <rect x="450" y="270" width="300" height="100" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="3" />
@@ -353,7 +353,7 @@ export default function UserTypesFlowcharts() {
         • Odobrenje/Odbijanje
       </text>
 
-      <line x1="600" y1="370" x2="600" y2="410" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead2)" />
+      <line x1="600" y1="370" x2="600" y2="407" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead2)" />
 
       <polygon points="600,410 650,450 600,490 550,450" fill={warningColor} stroke={borderColor} strokeWidth="2" />
       <text x="600" y="455" textAnchor="middle" fontSize="12" fill="white" fontWeight="bold">
@@ -361,7 +361,7 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Verificiran */}
-      <line x1="550" y1="450" x2="400" y2="450" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead2)" />
+      <line x1="550" y1="450" x2="403" y2="450" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead2)" />
       <rect x="200" y="500" width="400" height="80" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
       <text x="400" y="525" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         ✓ Verificirani pružatelj
@@ -374,7 +374,7 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Odbijeno */}
-      <line x1="650" y1="450" x2="800" y2="450" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead2)" />
+      <line x1="650" y1="450" x2="797" y2="450" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead2)" />
       <rect x="700" y="500" width="200" height="100" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="2" />
       <text x="800" y="525" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         ❌ ODBIJENO
@@ -399,7 +399,7 @@ export default function UserTypesFlowcharts() {
       <line x1="600" y1="640" x2="600" y2="230" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" markerEnd="url(#arrowhead2)" />
 
       {/* Licenciranje */}
-      <line x1="400" y1="580" x2="400" y2="620" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead2)" />
+      <line x1="400" y1="580" x2="400" y2="617" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead2)" />
 
       <polygon points="400,620 450,660 400,700 350,660" fill={warningColor} stroke={borderColor} strokeWidth="2" />
       <text x="400" y="665" textAnchor="middle" fontSize="12" fill="white" fontWeight="bold">
@@ -407,7 +407,7 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Potrebna licenca */}
-      <line x1="350" y1="660" x2="200" y2="660" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead2)" />
+      <line x1="350" y1="660" x2="203" y2="660" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead2)" />
       
       {/* Upload licence */}
       <rect x="50" y="710" width="300" height="80" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
@@ -424,7 +424,7 @@ export default function UserTypesFlowcharts() {
         Dokument poslan na provjeru
       </text>
 
-      <line x1="200" y1="790" x2="200" y2="830" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead2)" />
+      <line x1="200" y1="790" x2="200" y2="827" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead2)" />
 
       {/* ADMIN verifikacija licence */}
       <rect x="50" y="830" width="300" height="100" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="3" />
@@ -442,7 +442,7 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Nije potrebna licenca */}
-      <line x1="450" y1="660" x2="600" y2="660" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead2)" />
+      <line x1="450" y1="660" x2="597" y2="660" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead2)" />
       <rect x="500" y="710" width="200" height="60" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
       <text x="600" y="735" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         Licenca nije potrebna
@@ -455,7 +455,7 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Licenca odobrena */}
-      <line x1="200" y1="930" x2="200" y2="970" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead2)" />
+      <line x1="200" y1="930" x2="200" y2="967" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead2)" />
       <rect x="50" y="970" width="300" height="60" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
       <text x="200" y="995" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         ✓ Licencirani pružatelj
@@ -470,7 +470,7 @@ export default function UserTypesFlowcharts() {
   const SubscriptionFlowchart = () => (
     <ZoomableSVG viewBox="0 0 1200 700">
       <defs>
-        <marker id="arrowhead3" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+        <marker id="arrowhead3" markerWidth="10" markerHeight="10" refX="0" refY="3" orient="auto">
           <polygon points="0 0, 10 3, 0 6" fill={textColor} />
         </marker>
       </defs>
@@ -631,7 +631,7 @@ export default function UserTypesFlowcharts() {
   const UserJourneyFlowchart = () => (
     <ZoomableSVG viewBox="0 0 1200 1520">
       <defs>
-        <marker id="arrowhead4" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+        <marker id="arrowhead4" markerWidth="10" markerHeight="10" refX="0" refY="3" orient="auto">
           <polygon points="0 0, 10 3, 0 6" fill={textColor} />
         </marker>
       </defs>
@@ -941,7 +941,7 @@ export default function UserTypesFlowcharts() {
   const ProviderJourneyFlowchart = () => (
     <ZoomableSVG viewBox="0 0 1200 1120">
       <defs>
-        <marker id="arrowhead5" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+        <marker id="arrowhead5" markerWidth="10" markerHeight="10" refX="0" refY="3" orient="auto">
           <polygon points="0 0, 10 3, 0 6" fill={textColor} />
         </marker>
       </defs>
@@ -1251,7 +1251,7 @@ export default function UserTypesFlowcharts() {
   const ExclusiveLeadSystemFlowchart = () => (
     <ZoomableSVG viewBox="0 0 1400 1400">
       <defs>
-        <marker id="arrowhead6" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+        <marker id="arrowhead6" markerWidth="10" markerHeight="10" refX="0" refY="3" orient="auto">
           <polygon points="0 0, 10 3, 0 6" fill={textColor} />
         </marker>
       </defs>
@@ -1474,7 +1474,7 @@ export default function UserTypesFlowcharts() {
   const QueueSystemFlowchart = () => (
     <ZoomableSVG viewBox="0 0 1400 1200">
       <defs>
-        <marker id="arrowhead7" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+        <marker id="arrowhead7" markerWidth="10" markerHeight="10" refX="0" refY="3" orient="auto">
           <polygon points="0 0, 10 3, 0 6" fill={textColor} />
         </marker>
       </defs>
@@ -1668,7 +1668,7 @@ export default function UserTypesFlowcharts() {
   const RefundSystemFlowchart = () => (
     <ZoomableSVG viewBox="0 0 1400 1000">
       <defs>
-        <marker id="arrowhead8" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+        <marker id="arrowhead8" markerWidth="10" markerHeight="10" refX="0" refY="3" orient="auto">
           <polygon points="0 0, 10 3, 0 6" fill={textColor} />
         </marker>
       </defs>
@@ -1856,7 +1856,7 @@ export default function UserTypesFlowcharts() {
   const NotificationsFlowchart = () => (
     <ZoomableSVG viewBox="0 0 1400 1100">
       <defs>
-        <marker id="arrowhead9" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+        <marker id="arrowhead9" markerWidth="10" markerHeight="10" refX="0" refY="3" orient="auto">
           <polygon points="0 0, 10 3, 0 6" fill={textColor} />
         </marker>
       </defs>
@@ -2153,7 +2153,7 @@ export default function UserTypesFlowcharts() {
   const ReputationSystemFlowchart = () => (
     <ZoomableSVG viewBox="0 0 1400 1300">
       <defs>
-        <marker id="arrowhead10" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+        <marker id="arrowhead10" markerWidth="10" markerHeight="10" refX="0" refY="3" orient="auto">
           <polygon points="0 0, 10 3, 0 6" fill={textColor} />
         </marker>
       </defs>
