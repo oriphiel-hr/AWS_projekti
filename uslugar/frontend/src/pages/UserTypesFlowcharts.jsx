@@ -27,7 +27,7 @@ export default function UserTypesFlowcharts() {
   };
 
   const handleMouseDown = (e) => {
-    if (e.button === 0) { // Left mouse button
+    if (e.button === 0 && !e.target.closest('button')) { // Left mouse button, not on button
       setIsDragging(true);
       setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
     }
@@ -51,19 +51,33 @@ export default function UserTypesFlowcharts() {
     setPan({ x: 0, y: 0 });
   };
 
+  const zoomIn = () => {
+    setZoom(prev => Math.min(3, prev + 0.1));
+  };
+
+  const zoomOut = () => {
+    setZoom(prev => Math.max(0.5, prev - 0.1));
+  };
+
   // SVG wrapper component with pan/zoom
   const ZoomableSVG = ({ children, viewBox, className = "" }) => {
     const svgRef = useRef(null);
+    const localContainerRef = useRef(null);
     
     return (
       <div 
-        ref={containerRef}
+        ref={localContainerRef}
         className={`relative overflow-hidden border rounded-lg ${className}`}
         style={{ 
           cursor: isDragging ? 'grabbing' : 'grab',
-          touchAction: 'none'
+          touchAction: 'none',
+          minHeight: '400px'
         }}
-        onWheel={handleWheel}
+        onWheel={(e) => {
+          if (e.target === localContainerRef.current || e.target.closest('svg')) {
+            handleWheel(e);
+          }
+        }}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -71,20 +85,35 @@ export default function UserTypesFlowcharts() {
       >
         <div className="absolute top-2 right-2 z-10 flex gap-2">
           <button
-            onClick={() => setZoom(Math.min(3, zoom + 0.1))}
-            className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              zoomIn();
+            }}
+            className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300"
+            aria-label="Zoom in"
           >
             +
           </button>
           <button
-            onClick={() => setZoom(Math.max(0.5, zoom - 0.1))}
-            className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              zoomOut();
+            }}
+            className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300"
+            aria-label="Zoom out"
           >
             −
           </button>
           <button
-            onClick={resetView}
-            className="px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-600"
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              resetView();
+            }}
+            className="px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-300"
+            aria-label="Reset view"
           >
             Reset
           </button>
