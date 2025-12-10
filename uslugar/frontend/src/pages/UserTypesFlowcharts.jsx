@@ -206,7 +206,8 @@ export default function UserTypesFlowcharts() {
         </text>
 
         {/* Privatni korisnik */}
-        <line x1="350" y1="440" x2="203" y2="440" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead)" />
+        <line x1="350" y1="440" x2="200" y2="440" stroke={textColor} strokeWidth="2" />
+        <line x1="200" y1="440" x2="200" y2="487" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead)" />
         <rect x="50" y="490" width="300" height="80" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
         <text x="200" y="515" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
           Privatni korisnik
@@ -222,7 +223,8 @@ export default function UserTypesFlowcharts() {
         </text>
 
         {/* Poslovni korisnik */}
-        <line x1="450" y1="440" x2="597" y2="440" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead)" />
+        <line x1="450" y1="440" x2="600" y2="440" stroke={textColor} strokeWidth="2" />
+        <line x1="600" y1="440" x2="600" y2="487" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead)" />
         <rect x="450" y="490" width="300" height="80" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
         <text x="600" y="515" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
           Poslovni korisnik
@@ -266,7 +268,8 @@ export default function UserTypesFlowcharts() {
         </text>
 
         {/* Solo provider */}
-        <line x1="800" y1="540" x2="653" y2="540" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead)" />
+        <line x1="800" y1="540" x2="650" y2="540" stroke={textColor} strokeWidth="2" />
+        <line x1="650" y1="540" x2="650" y2="587" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead)" />
         <rect x="500" y="590" width="300" height="80" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
         <text x="650" y="615" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
           Pružatelj (Solo)
@@ -282,7 +285,8 @@ export default function UserTypesFlowcharts() {
         </text>
 
         {/* Tvrtka provider */}
-        <line x1="900" y1="540" x2="1047" y2="540" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead)" />
+        <line x1="900" y1="540" x2="1050" y2="540" stroke={textColor} strokeWidth="2" />
+        <line x1="1050" y1="540" x2="1050" y2="587" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead)" />
         <rect x="900" y="590" width="300" height="80" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
         <text x="1050" y="615" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
           Pružatelj (Tvrtka)
@@ -361,7 +365,8 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Verificiran */}
-      <line x1="550" y1="450" x2="403" y2="450" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead2)" />
+      <line x1="550" y1="450" x2="400" y2="450" stroke={textColor} strokeWidth="2" />
+      <line x1="400" y1="450" x2="400" y2="497" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead2)" />
       <rect x="200" y="500" width="400" height="80" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
       <text x="400" y="525" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         ✓ Verificirani pružatelj
@@ -374,7 +379,8 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Odbijeno */}
-      <line x1="650" y1="450" x2="797" y2="450" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead2)" />
+      <line x1="650" y1="450" x2="800" y2="450" stroke={textColor} strokeWidth="2" />
+      <line x1="800" y1="450" x2="800" y2="497" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead2)" />
       <rect x="700" y="500" width="200" height="100" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="2" />
       <text x="800" y="525" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         ❌ ODBIJENO
@@ -407,7 +413,8 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Potrebna licenca */}
-      <line x1="350" y1="660" x2="203" y2="660" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead2)" />
+      <line x1="350" y1="660" x2="200" y2="660" stroke={textColor} strokeWidth="2" />
+      <line x1="200" y1="660" x2="200" y2="707" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead2)" />
       
       {/* Upload licence */}
       <rect x="50" y="710" width="300" height="80" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
@@ -442,7 +449,8 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Nije potrebna licenca */}
-      <line x1="450" y1="660" x2="597" y2="660" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead2)" />
+      <line x1="450" y1="660" x2="600" y2="660" stroke={textColor} strokeWidth="2" />
+      <line x1="600" y1="660" x2="600" y2="707" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead2)" />
       <rect x="500" y="710" width="200" height="60" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
       <text x="600" y="735" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         Licenca nije potrebna
@@ -805,7 +813,8 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Odbijena ponuda */}
-      <line x1="350" y1="880" x2="500" y2="880" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead4)" />
+      <line x1="350" y1="880" x2="550" y2="880" stroke={textColor} strokeWidth="2" />
+      <line x1="550" y1="880" x2="550" y2="897" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead4)" />
       <rect x="450" y="900" width="200" height="100" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="2" />
       <text x="550" y="925" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         ❌ ODBIJENA
@@ -881,7 +890,8 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Posao izvršen */}
-      <line x1="100" y1="1220" x2="50" y2="1220" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead4)" />
+      <line x1="100" y1="1220" x2="150" y2="1220" stroke={textColor} strokeWidth="2" />
+      <line x1="150" y1="1220" x2="150" y2="1277" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead4)" />
       <rect x="50" y="1280" width="200" height="80" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
       <text x="150" y="1305" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         ✓ POSAO IZVRŠEN
@@ -894,7 +904,8 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Posao otkazan */}
-      <line x1="200" y1="1220" x2="350" y2="1220" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead4)" />
+      <line x1="200" y1="1220" x2="400" y2="1220" stroke={textColor} strokeWidth="2" />
+      <line x1="400" y1="1220" x2="400" y2="1277" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead4)" />
       <rect x="300" y="1280" width="200" height="100" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="2" />
       <text x="400" y="1305" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         ❌ POSAO OTKAZAN
@@ -1088,7 +1099,8 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Prihvaćena */}
-      <line x1="800" y1="660" x2="600" y2="660" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
+      <line x1="800" y1="660" x2="500" y2="660" stroke={textColor} strokeWidth="2" />
+      <line x1="500" y1="660" x2="500" y2="717" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
       <rect x="400" y="720" width="200" height="80" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
       <text x="500" y="745" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         ✓ PRIHVAĆENA
@@ -1101,7 +1113,8 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Odbijena */}
-      <line x1="900" y1="660" x2="1050" y2="660" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
+      <line x1="900" y1="660" x2="1050" y2="660" stroke={textColor} strokeWidth="2" />
+      <line x1="1050" y1="660" x2="1050" y2="717" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
       <rect x="950" y="720" width="200" height="100" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="2" />
       <text x="1050" y="745" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         ❌ ODBIJENA
@@ -1408,7 +1421,8 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* REFUNDED */}
-      <line x1="550" y1="880" x2="700" y2="880" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead6)" />
+      <line x1="550" y1="880" x2="700" y2="880" stroke={textColor} strokeWidth="2" />
+      <line x1="700" y1="880" x2="700" y2="937" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead6)" />
       <rect x="600" y="940" width="200" height="120" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="2" />
       <text x="700" y="965" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         REFUNDED
