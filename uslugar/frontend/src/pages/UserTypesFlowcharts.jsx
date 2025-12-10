@@ -268,8 +268,9 @@ export default function UserTypesFlowcharts() {
         </text>
 
         {/* Solo provider */}
-        <line x1="800" y1="540" x2="650" y2="540" stroke={textColor} strokeWidth="2" />
-        <line x1="650" y1="540" x2="650" y2="587" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead)" />
+        <line x1="800" y1="540" x2="800" y2="430" stroke={textColor} strokeWidth="2" />
+        <line x1="800" y1="430" x2="650" y2="430" stroke={textColor} strokeWidth="2" />
+        <line x1="650" y1="430" x2="650" y2="587" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead)" />
         <rect x="500" y="590" width="300" height="80" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
         <text x="650" y="615" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
           Pružatelj (Solo)
