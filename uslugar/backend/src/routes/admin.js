@@ -3974,7 +3974,6 @@ r.get('/api-reference', (req, res, next) => {
         if (pathLower.includes('/reports/send-monthly-reports')) {
           return 'Slanje mjesečnih izvještaja svim aktivnim korisnicima. Pokreće se ručno ili automatski 1. u mjesecu.';
         }
-t je pva grepka:
         if (pathLower.includes('/audit-logs')) {
           return 'Pregled audit logova za chat akcije, otkrivanje kontakata i druge akcije. Omogućava filtriranje po akciji, korisniku, poruci, sobi, poslu i datumu. Vraća statistike po tipovima akcija.';
         }
