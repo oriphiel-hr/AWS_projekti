@@ -123,7 +123,30 @@ jobs:
           echo "dir=$found" >> "$GITHUB_OUTPUT"
           echo "Using: $found"
 
-      - name: Deploy via FTP
+      - name: Deploy via FTP (with retry)
+        id: deploy
+        continue-on-error: true
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.6
+        with:
+          server: ${{ secrets.HOSTINGER_HOST }}
+          username: ${{ secrets.HOSTINGER_USERNAME }}
+          password: ${{ secrets.HOSTINGER_PASSWORD }}
+          protocol: ${{ secrets.HOSTINGER_FTP_PROTOCOL || 'ftp' }}
+          port: ${{ secrets.HOSTINGER_FTP_PORT || 21 }}
+          local-dir: ${{ env.FRONTEND_DIR }}/${{ steps.detect.outputs.dir }}/
+          server-dir: ${{ env.SERVER_DIR }}
+          dangerous-clean-slate: false
+          timeout: 600000
+          log-level: verbose
+          security: loose
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            **/.DS_Store
+
+      - name: Retry deployment if failed
+        if: steps.deploy.outcome == 'failure'
         uses: SamKirkland/FTP-Deploy-Action@v4.3.6
         with:
           server: ${{ secrets.HOSTINGER_HOST }}
