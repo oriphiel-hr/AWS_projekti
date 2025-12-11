@@ -131,7 +131,7 @@ jobs:
           server: ${{ secrets.HOSTINGER_HOST }}
           username: ${{ secrets.HOSTINGER_USERNAME }}
           password: ${{ secrets.HOSTINGER_PASSWORD }}
-          protocol: ${{ secrets.HOSTINGER_FTP_PROTOCOL || 'ftp' }}
+          protocol: ${{ secrets.HOSTINGER_FTP_PROTOCOL || 'ftps' }}
           port: ${{ secrets.HOSTINGER_FTP_PORT || 21 }}
           local-dir: ${{ env.FRONTEND_DIR }}/${{ steps.detect.outputs.dir }}/
           server-dir: ${{ env.SERVER_DIR }}
@@ -145,15 +145,36 @@ jobs:
             **/node_modules/**
             **/.DS_Store
 
-      - name: Retry deployment if failed
+      - name: Retry deployment if failed (try SFTP)
+        if: steps.deploy.outcome == 'failure'
+        continue-on-error: true
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.6
+        with:
+          server: ${{ secrets.HOSTINGER_HOST }}
+          username: ${{ secrets.HOSTINGER_USERNAME }}
+          password: ${{ secrets.HOSTINGER_PASSWORD }}
+          protocol: 'sftp'
+          port: ${{ secrets.HOSTINGER_SFTP_PORT || 22 }}
+          local-dir: ${{ env.FRONTEND_DIR }}/${{ steps.detect.outputs.dir }}/
+          server-dir: ${{ env.SERVER_DIR }}
+          dangerous-clean-slate: false
+          timeout: 600000
+          log-level: verbose
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            **/.DS_Store
+
+      - name: Final retry with FTP
         if: steps.deploy.outcome == 'failure'
         uses: SamKirkland/FTP-Deploy-Action@v4.3.6
         with:
           server: ${{ secrets.HOSTINGER_HOST }}
           username: ${{ secrets.HOSTINGER_USERNAME }}
           password: ${{ secrets.HOSTINGER_PASSWORD }}
-          protocol: ${{ secrets.HOSTINGER_FTP_PROTOCOL || 'ftp' }}
-          port: ${{ secrets.HOSTINGER_FTP_PORT || 21 }}
+          protocol: 'ftp'
+          port: 21
           local-dir: ${{ env.FRONTEND_DIR }}/${{ steps.detect.outputs.dir }}/
           server-dir: ${{ env.SERVER_DIR }}
           dangerous-clean-slate: false
