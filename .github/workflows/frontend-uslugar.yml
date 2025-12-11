@@ -126,43 +126,69 @@ jobs:
       - name: Validate FTP Secrets
         run: |
           echo "🔍 Validating FTP configuration..."
-          if [ -z "${{ secrets.HOSTINGER_HOST }}" ]; then
-            echo "❌ ERROR: HOSTINGER_HOST secret is missing!"
-            echo "   Please add it in: Settings > Secrets and variables > Actions"
-            echo "   Format: 194.5.156.10 (without ftp:// prefix)"
+          
+          # Check for HOSTINGER secrets first, then fallback to generic FTP secrets
+          if [ -n "${{ secrets.HOSTINGER_HOST }}" ]; then
+            FTP_HOST="${{ secrets.HOSTINGER_HOST }}"
+            FTP_USER="${{ secrets.HOSTINGER_USERNAME }}"
+            FTP_PASS="${{ secrets.HOSTINGER_PASSWORD }}"
+            echo "✅ Using HOSTINGER_* secrets"
+          elif [ -n "${{ secrets.FTP_HOST }}" ]; then
+            FTP_HOST="${{ secrets.FTP_HOST }}"
+            FTP_USER="${{ secrets.FTP_USERNAME }}"
+            FTP_PASS="${{ secrets.FTP_PASSWORD }}"
+            echo "✅ Using FTP_* secrets (fallback)"
+          else
+            echo "❌ ERROR: No FTP secrets found!"
+            echo "   Required secrets (one of):"
+            echo "   - HOSTINGER_HOST, HOSTINGER_USERNAME, HOSTINGER_PASSWORD"
+            echo "   - FTP_HOST, FTP_USERNAME, FTP_PASSWORD"
+            echo "   Please add them in: Settings > Secrets and variables > Actions"
             exit 1
           fi
-          if [ -z "${{ secrets.HOSTINGER_USERNAME }}" ]; then
-            echo "❌ ERROR: HOSTINGER_USERNAME secret is missing!"
+          
+          if [ -z "$FTP_HOST" ]; then
+            echo "❌ ERROR: FTP host is missing!"
+            echo "   Please add HOSTINGER_HOST or FTP_HOST secret"
             exit 1
           fi
-          if [ -z "${{ secrets.HOSTINGER_PASSWORD }}" ]; then
-            echo "❌ ERROR: HOSTINGER_PASSWORD secret is missing!"
+          if [ -z "$FTP_USER" ]; then
+            echo "❌ ERROR: FTP username is missing!"
+            echo "   Please add HOSTINGER_USERNAME or FTP_USERNAME secret"
+            exit 1
+          fi
+          if [ -z "$FTP_PASS" ]; then
+            echo "❌ ERROR: FTP password is missing!"
+            echo "   Please add HOSTINGER_PASSWORD or FTP_PASSWORD secret"
             exit 1
           fi
           
           # Check host format
-          HOST="${{ secrets.HOSTINGER_HOST }}"
-          if [[ "$HOST" == ftp://* ]] || [[ "$HOST" == ftps://* ]]; then
-            echo "⚠️  WARNING: HOSTINGER_HOST contains protocol prefix (ftp:// or ftps://)"
+          if [[ "$FTP_HOST" == ftp://* ]] || [[ "$FTP_HOST" == ftps://* ]]; then
+            echo "⚠️  WARNING: FTP host contains protocol prefix (ftp:// or ftps://)"
             echo "   It should be just the hostname or IP: 194.5.156.10"
-            echo "   Current value starts with: ${HOST:0:10}..."
+            echo "   Current value starts with: ${FTP_HOST:0:10}..."
           fi
           
           echo "✅ All required secrets are present"
-          echo "   Host: ${HOST:0:20}..." # Show first 20 chars only
-          echo "   Username: ${{ secrets.HOSTINGER_USERNAME }}"
+          echo "   Host: ${FTP_HOST:0:20}..." # Show first 20 chars only
+          echo "   Username: $FTP_USER"
           echo "   Password: [hidden]"
           echo "   Server dir: ${{ env.SERVER_DIR }}"
+          
+          # Export for use in deployment steps
+          echo "FTP_HOST=$FTP_HOST" >> $GITHUB_ENV
+          echo "FTP_USER=$FTP_USER" >> $GITHUB_ENV
+          echo "FTP_PASS=$FTP_PASS" >> $GITHUB_ENV
 
       - name: Deploy via FTP (first attempt)
         id: deploy-ftp
         continue-on-error: true
         uses: SamKirkland/FTP-Deploy-Action@v4.3.6
         with:
-          server: ${{ secrets.HOSTINGER_HOST }}
-          username: ${{ secrets.HOSTINGER_USERNAME }}
-          password: ${{ secrets.HOSTINGER_PASSWORD }}
+          server: ${{ secrets.HOSTINGER_HOST || secrets.FTP_HOST }}
+          username: ${{ secrets.HOSTINGER_USERNAME || secrets.FTP_USERNAME }}
+          password: ${{ secrets.HOSTINGER_PASSWORD || secrets.FTP_PASSWORD }}
           protocol: 'ftp'
           port: 21
           local-dir: ${{ env.FRONTEND_DIR }}/${{ steps.detect.outputs.dir }}/
@@ -182,9 +208,9 @@ jobs:
         continue-on-error: true
         uses: SamKirkland/FTP-Deploy-Action@v4.3.6
         with:
-          server: ${{ secrets.HOSTINGER_HOST }}
-          username: ${{ secrets.HOSTINGER_USERNAME }}
-          password: ${{ secrets.HOSTINGER_PASSWORD }}
+          server: ${{ secrets.HOSTINGER_HOST || secrets.FTP_HOST }}
+          username: ${{ secrets.HOSTINGER_USERNAME || secrets.FTP_USERNAME }}
+          password: ${{ secrets.HOSTINGER_PASSWORD || secrets.FTP_PASSWORD }}
           protocol: 'ftps'
           port: 21
           local-dir: ${{ env.FRONTEND_DIR }}/${{ steps.detect.outputs.dir }}/
@@ -203,9 +229,9 @@ jobs:
         if: steps.deploy-ftp.outcome == 'failure'
         uses: SamKirkland/FTP-Deploy-Action@v4.3.6
         with:
-          server: ${{ secrets.HOSTINGER_HOST }}
-          username: ${{ secrets.HOSTINGER_USERNAME }}
-          password: ${{ secrets.HOSTINGER_PASSWORD }}
+          server: ${{ secrets.HOSTINGER_HOST || secrets.FTP_HOST }}
+          username: ${{ secrets.HOSTINGER_USERNAME || secrets.FTP_USERNAME }}
+          password: ${{ secrets.HOSTINGER_PASSWORD || secrets.FTP_PASSWORD }}
           protocol: 'ftps-legacy'
           port: 21
           local-dir: ${{ env.FRONTEND_DIR }}/${{ steps.detect.outputs.dir }}/
