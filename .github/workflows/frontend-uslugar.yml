@@ -123,6 +123,38 @@ jobs:
           echo "dir=$found" >> "$GITHUB_OUTPUT"
           echo "Using: $found"
 
+      - name: Validate FTP Secrets
+        run: |
+          echo "🔍 Validating FTP configuration..."
+          if [ -z "${{ secrets.HOSTINGER_HOST }}" ]; then
+            echo "❌ ERROR: HOSTINGER_HOST secret is missing!"
+            echo "   Please add it in: Settings > Secrets and variables > Actions"
+            echo "   Format: 194.5.156.10 (without ftp:// prefix)"
+            exit 1
+          fi
+          if [ -z "${{ secrets.HOSTINGER_USERNAME }}" ]; then
+            echo "❌ ERROR: HOSTINGER_USERNAME secret is missing!"
+            exit 1
+          fi
+          if [ -z "${{ secrets.HOSTINGER_PASSWORD }}" ]; then
+            echo "❌ ERROR: HOSTINGER_PASSWORD secret is missing!"
+            exit 1
+          fi
+          
+          # Check host format
+          HOST="${{ secrets.HOSTINGER_HOST }}"
+          if [[ "$HOST" == ftp://* ]] || [[ "$HOST" == ftps://* ]]; then
+            echo "⚠️  WARNING: HOSTINGER_HOST contains protocol prefix (ftp:// or ftps://)"
+            echo "   It should be just the hostname or IP: 194.5.156.10"
+            echo "   Current value starts with: ${HOST:0:10}..."
+          fi
+          
+          echo "✅ All required secrets are present"
+          echo "   Host: ${HOST:0:20}..." # Show first 20 chars only
+          echo "   Username: ${{ secrets.HOSTINGER_USERNAME }}"
+          echo "   Password: [hidden]"
+          echo "   Server dir: ${{ env.SERVER_DIR }}"
+
       - name: Deploy via FTP (first attempt)
         id: deploy-ftp
         continue-on-error: true
