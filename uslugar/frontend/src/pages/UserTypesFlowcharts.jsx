@@ -136,7 +136,7 @@ export default function UserTypesFlowcharts() {
 
   // Dijagram 1: Registracija i Onboarding
   const RegistrationFlowchart = () => (
-    <ZoomableSVG viewBox="0 0 1200 800">
+    <ZoomableSVG viewBox="0 0 1200 750">
       <defs>
         <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="0" refY="3" orient="auto">
           <polygon points="0 0, 10 3, 0 6" fill={textColor} />
