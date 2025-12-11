@@ -123,16 +123,16 @@ jobs:
           echo "dir=$found" >> "$GITHUB_OUTPUT"
           echo "Using: $found"
 
-      - name: Deploy via FTP (with retry)
-        id: deploy
+      - name: Deploy via FTP (first attempt)
+        id: deploy-ftp
         continue-on-error: true
         uses: SamKirkland/FTP-Deploy-Action@v4.3.6
         with:
           server: ${{ secrets.HOSTINGER_HOST }}
           username: ${{ secrets.HOSTINGER_USERNAME }}
           password: ${{ secrets.HOSTINGER_PASSWORD }}
-          protocol: ${{ secrets.HOSTINGER_FTP_PROTOCOL || 'ftps' }}
-          port: ${{ secrets.HOSTINGER_FTP_PORT || 21 }}
+          protocol: 'ftp'
+          port: 21
           local-dir: ${{ env.FRONTEND_DIR }}/${{ steps.detect.outputs.dir }}/
           server-dir: ${{ env.SERVER_DIR }}
           dangerous-clean-slate: false
@@ -145,35 +145,36 @@ jobs:
             **/node_modules/**
             **/.DS_Store
 
-      - name: Retry deployment if failed (try SFTP)
-        if: steps.deploy.outcome == 'failure'
+      - name: Retry with FTPS
+        if: steps.deploy-ftp.outcome == 'failure'
         continue-on-error: true
         uses: SamKirkland/FTP-Deploy-Action@v4.3.6
         with:
           server: ${{ secrets.HOSTINGER_HOST }}
           username: ${{ secrets.HOSTINGER_USERNAME }}
           password: ${{ secrets.HOSTINGER_PASSWORD }}
-          protocol: 'sftp'
-          port: ${{ secrets.HOSTINGER_SFTP_PORT || 22 }}
+          protocol: 'ftps'
+          port: 21
           local-dir: ${{ env.FRONTEND_DIR }}/${{ steps.detect.outputs.dir }}/
           server-dir: ${{ env.SERVER_DIR }}
           dangerous-clean-slate: false
           timeout: 600000
           log-level: verbose
+          security: loose
           exclude: |
             **/.git*
             **/.git*/**
             **/node_modules/**
             **/.DS_Store
 
-      - name: Final retry with FTP
-        if: steps.deploy.outcome == 'failure'
+      - name: Final retry with FTPS-legacy
+        if: steps.deploy-ftp.outcome == 'failure'
         uses: SamKirkland/FTP-Deploy-Action@v4.3.6
         with:
           server: ${{ secrets.HOSTINGER_HOST }}
           username: ${{ secrets.HOSTINGER_USERNAME }}
           password: ${{ secrets.HOSTINGER_PASSWORD }}
-          protocol: 'ftp'
+          protocol: 'ftps-legacy'
           port: 21
           local-dir: ${{ env.FRONTEND_DIR }}/${{ steps.detect.outputs.dir }}/
           server-dir: ${{ env.SERVER_DIR }}
