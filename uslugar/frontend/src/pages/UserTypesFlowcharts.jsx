@@ -346,7 +346,7 @@ export default function UserTypesFlowcharts() {
       <line x1="600" y1="230" x2="600" y2="267" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead2)" />
 
       {/* ADMIN provjera */}
-      <rect x="450" y="270" width="300" height="100" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="3" />
+      <rect x="450" y="270" width="300" height="115" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="3" />
       <text x="600" y="300" textAnchor="middle" fontSize="16" fontWeight="bold" fill="white">
         🔐 ADMIN Provjera
       </text>
@@ -360,7 +360,7 @@ export default function UserTypesFlowcharts() {
         • Odobrenje/Odbijanje
       </text>
 
-      <line x1="600" y1="370" x2="600" y2="407" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead2)" />
+      <line x1="600" y1="385" x2="600" y2="407" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead2)" />
 
       <polygon points="600,410 650,450 600,490 550,450" fill={warningColor} stroke={borderColor} strokeWidth="2" />
       <text x="600" y="455" textAnchor="middle" fontSize="12" fill="white" fontWeight="bold">
