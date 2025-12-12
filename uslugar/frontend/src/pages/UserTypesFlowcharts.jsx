@@ -534,10 +534,10 @@ export default function UserTypesFlowcharts() {
       <text x="775" y="305" textAnchor="middle" fontSize="12" fill={textColor}>PRO</text>
       
       {/* Nema pretplate */}
-      <line x1="600" y1="350" x2="1000" y2="350" stroke={textColor} strokeWidth="2" />
-      <line x1="1000" y1="350" x2="1000" y2="470" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
-      <text x="800" y="345" textAnchor="middle" fontSize="12" fill={textColor}>Ne</text>
-
+      <line x1="600" y1="350" x2="1200" y2="350" stroke={textColor} strokeWidth="2" />
+      <line x1="1200" y1="350" x2="1200" y2="360" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
+      <text x="900" y="345" textAnchor="middle" fontSize="12" fill={textColor}>Ne</text>
+      
       {/* BASIC */}
       <rect x="50" y="360" width="300" height="80" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
       <text x="200" y="385" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
@@ -614,13 +614,18 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Nema upgrade */}
-      <line x1="1000" y1="310" x2="1000" y2="360" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
-      <rect x="900" y="470" width="200" height="60" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
-      <text x="1000" y="495" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
+      <rect x="1100" y="360" width="200" height="80" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <text x="1200" y="385" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         Nema pretplate
       </text>
-      <text x="1000" y="515" textAnchor="middle" fontSize="12" fill={textColor}>
+      <text x="1200" y="405" textAnchor="middle" fontSize="12" fill={textColor}>
         TRIAL istekao
+      </text>
+      <text x="1200" y="420" textAnchor="middle" fontSize="12" fill={textColor}>
+        Nema aktivne pretplate
+      </text>
+      <text x="1200" y="435" textAnchor="middle" fontSize="11" fill={dangerColor}>
+        ⚠️ Ograničen pristup
       </text>
 
       {/* ADMIN upravljanje pretplatama */}
