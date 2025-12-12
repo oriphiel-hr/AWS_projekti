@@ -479,7 +479,7 @@ export default function UserTypesFlowcharts() {
 
   // Dijagram 3: Pretplate
   const SubscriptionFlowchart = () => (
-    <ZoomableSVG viewBox="0 0 1200 700">
+    <ZoomableSVG viewBox="0 0 1400 700">
       <defs>
         <marker id="arrowhead3" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
           <polygon points="0 0, 10 3, 0 6" fill={textColor} />
