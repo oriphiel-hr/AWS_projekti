@@ -479,7 +479,7 @@ export default function UserTypesFlowcharts() {
 
   // Dijagram 3: Pretplate
   const SubscriptionFlowchart = () => (
-    <ZoomableSVG viewBox="0 0 1400 800">
+    <ZoomableSVG viewBox="0 0 1400 850">
       <defs>
         <marker id="arrowhead3" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
           <polygon points="0 0, 10 3, 0 6" fill={textColor} />
@@ -630,38 +630,45 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* ADMIN upravljanje pretplatama - povezano sa svim pretplatama */}
-      {/* Linija od BASIC */}
-      <line x1="200" y1="505" x2="200" y2="530" stroke={textColor} strokeWidth="2" />
-      <line x1="200" y1="530" x2="600" y2="530" stroke={textColor} strokeWidth="2" />
-      {/* Linija od PREMIUM */}
-      <line x1="550" y1="565" x2="550" y2="530" stroke={textColor} strokeWidth="2" />
-      {/* Linija od PRO */}
-      <line x1="900" y1="565" x2="900" y2="530" stroke={textColor} strokeWidth="2" />
-      {/* Zajednička linija do ADMIN upravljanja */}
-      <line x1="600" y1="530" x2="600" y2="590" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
-      <rect x="450" y="590" width="300" height="100" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="3" />
-      <text x="600" y="620" textAnchor="middle" fontSize="16" fontWeight="bold" fill="white">
+      {/* Linija od BASIC - ide lijevo pa dolje */}
+      <line x1="200" y1="505" x2="200" y2="580" stroke={textColor} strokeWidth="2" />
+      <line x1="200" y1="580" x2="450" y2="580" stroke={textColor} strokeWidth="2" />
+      <line x1="450" y1="580" x2="450" y2="640" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
+      
+      {/* Linija od PREMIUM - ide dolje pa lijevo */}
+      <line x1="550" y1="565" x2="550" y2="600" stroke={textColor} strokeWidth="2" />
+      <line x1="550" y1="600" x2="450" y2="600" stroke={textColor} strokeWidth="2" />
+      <line x1="450" y1="600" x2="450" y2="640" stroke={textColor} strokeWidth="2" />
+      
+      {/* Linija od PRO - ide dolje pa lijevo */}
+      <line x1="900" y1="565" x2="900" y2="600" stroke={textColor} strokeWidth="2" />
+      <line x1="900" y1="600" x2="750" y2="600" stroke={textColor} strokeWidth="2" />
+      <line x1="750" y1="600" x2="750" y2="640" stroke={textColor} strokeWidth="2" />
+      <line x1="750" y1="640" x2="450" y2="640" stroke={textColor} strokeWidth="2" />
+      
+      <rect x="450" y="640" width="300" height="100" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="3" />
+      <text x="600" y="670" textAnchor="middle" fontSize="16" fontWeight="bold" fill="white">
         🔐 ADMIN Upravljanje
       </text>
-      <text x="600" y="645" textAnchor="middle" fontSize="12" fill="white">
+      <text x="600" y="695" textAnchor="middle" fontSize="12" fill="white">
         • Ručno produženje pretplate
       </text>
-      <text x="600" y="665" textAnchor="middle" fontSize="12" fill="white">
+      <text x="600" y="715" textAnchor="middle" fontSize="12" fill="white">
         • Promjena plana (upgrade/downgrade)
       </text>
-      <text x="600" y="685" textAnchor="middle" fontSize="12" fill="white">
+      <text x="600" y="735" textAnchor="middle" fontSize="12" fill="white">
         • Otkazivanje, refundiranje
       </text>
-      <text x="600" y="705" textAnchor="middle" fontSize="12" fill="white">
+      <text x="600" y="755" textAnchor="middle" fontSize="12" fill="white">
         • Pregled faktura i transakcija
       </text>
 
-      <line x1="600" y1="690" x2="600" y2="710" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
-      <rect x="450" y="710" width="300" height="60" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
-      <text x="600" y="735" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+      <line x1="600" y1="740" x2="600" y2="760" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
+      <rect x="450" y="760" width="300" height="60" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
+      <text x="600" y="785" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         ✓ Pretplata aktivna
       </text>
-      <text x="600" y="755" textAnchor="middle" fontSize="12" fill="white">
+      <text x="600" y="805" textAnchor="middle" fontSize="12" fill="white">
         Status: ACTIVE, automatska obnova
       </text>
     </ZoomableSVG>
