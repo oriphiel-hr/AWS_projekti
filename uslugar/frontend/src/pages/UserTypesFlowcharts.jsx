@@ -518,10 +518,25 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Upgrade opcije */}
-      <line x1="550" y1="310" x2="400" y2="310" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
-      <line x1="400" y1="310" x2="200" y2="310" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
-      <line x1="650" y1="310" x2="800" y2="310" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
-      <line x1="800" y1="310" x2="1000" y2="310" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
+      {/* BASIC */}
+      <line x1="550" y1="310" x2="200" y2="310" stroke={textColor} strokeWidth="2" />
+      <line x1="200" y1="310" x2="200" y2="360" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
+      <text x="375" y="305" textAnchor="middle" fontSize="12" fill={textColor}>BASIC</text>
+      
+      {/* PREMIUM */}
+      <line x1="600" y1="350" x2="550" y2="350" stroke={textColor} strokeWidth="2" />
+      <line x1="550" y1="350" x2="550" y2="360" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
+      <text x="575" y="345" textAnchor="middle" fontSize="12" fill={textColor}>PREMIUM</text>
+      
+      {/* PRO */}
+      <line x1="650" y1="310" x2="900" y2="310" stroke={textColor} strokeWidth="2" />
+      <line x1="900" y1="310" x2="900" y2="360" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
+      <text x="775" y="305" textAnchor="middle" fontSize="12" fill={textColor}>PRO</text>
+      
+      {/* Nema pretplate */}
+      <line x1="600" y1="350" x2="1000" y2="350" stroke={textColor} strokeWidth="2" />
+      <line x1="1000" y1="350" x2="1000" y2="470" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
+      <text x="800" y="345" textAnchor="middle" fontSize="12" fill={textColor}>Ne</text>
 
       {/* BASIC */}
       <rect x="50" y="360" width="300" height="80" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
