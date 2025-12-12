@@ -479,7 +479,7 @@ export default function UserTypesFlowcharts() {
 
   // Dijagram 3: Pretplate
   const SubscriptionFlowchart = () => (
-    <ZoomableSVG viewBox="0 0 1400 650">
+    <ZoomableSVG viewBox="0 0 1400 750">
       <defs>
         <marker id="arrowhead3" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
           <polygon points="0 0, 10 3, 0 6" fill={textColor} />
@@ -629,30 +629,30 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* ADMIN upravljanje pretplatama */}
-      <line x1="600" y1="515" x2="600" y2="520" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
-      <rect x="450" y="520" width="300" height="100" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="3" />
-      <text x="600" y="550" textAnchor="middle" fontSize="16" fontWeight="bold" fill="white">
+      <line x1="600" y1="515" x2="600" y2="540" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
+      <rect x="450" y="540" width="300" height="100" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="3" />
+      <text x="600" y="570" textAnchor="middle" fontSize="16" fontWeight="bold" fill="white">
         🔐 ADMIN Upravljanje
       </text>
-      <text x="600" y="575" textAnchor="middle" fontSize="12" fill="white">
+      <text x="600" y="595" textAnchor="middle" fontSize="12" fill="white">
         • Ručno produženje pretplate
       </text>
-      <text x="600" y="595" textAnchor="middle" fontSize="12" fill="white">
+      <text x="600" y="615" textAnchor="middle" fontSize="12" fill="white">
         • Promjena plana (upgrade/downgrade)
       </text>
-      <text x="600" y="615" textAnchor="middle" fontSize="12" fill="white">
+      <text x="600" y="635" textAnchor="middle" fontSize="12" fill="white">
         • Otkazivanje, refundiranje
       </text>
-      <text x="600" y="630" textAnchor="middle" fontSize="12" fill="white">
+      <text x="600" y="655" textAnchor="middle" fontSize="12" fill="white">
         • Pregled faktura i transakcija
       </text>
 
-      <line x1="600" y1="580" x2="600" y2="620" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
-      <rect x="450" y="620" width="300" height="60" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
-      <text x="600" y="645" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+      <line x1="600" y1="640" x2="600" y2="660" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
+      <rect x="450" y="660" width="300" height="60" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
+      <text x="600" y="685" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         ✓ Pretplata aktivna
       </text>
-      <text x="600" y="665" textAnchor="middle" fontSize="12" fill="white">
+      <text x="600" y="705" textAnchor="middle" fontSize="12" fill="white">
         Status: ACTIVE, automatska obnova
       </text>
     </ZoomableSVG>
