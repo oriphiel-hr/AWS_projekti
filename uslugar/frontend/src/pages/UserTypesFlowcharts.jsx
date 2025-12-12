@@ -479,7 +479,7 @@ export default function UserTypesFlowcharts() {
 
   // Dijagram 3: Pretplate
   const SubscriptionFlowchart = () => (
-    <ZoomableSVG viewBox="0 0 1400 700">
+    <ZoomableSVG viewBox="0 0 1400 650">
       <defs>
         <marker id="arrowhead3" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
           <polygon points="0 0, 10 3, 0 6" fill={textColor} />
@@ -629,21 +629,21 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* ADMIN upravljanje pretplatama */}
-      <line x1="600" y1="350" x2="600" y2="480" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
-      <rect x="450" y="480" width="300" height="100" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="3" />
-      <text x="600" y="510" textAnchor="middle" fontSize="16" fontWeight="bold" fill="white">
+      <line x1="600" y1="500" x2="600" y2="520" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
+      <rect x="450" y="520" width="300" height="100" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="3" />
+      <text x="600" y="550" textAnchor="middle" fontSize="16" fontWeight="bold" fill="white">
         🔐 ADMIN Upravljanje
       </text>
-      <text x="600" y="535" textAnchor="middle" fontSize="12" fill="white">
+      <text x="600" y="575" textAnchor="middle" fontSize="12" fill="white">
         • Ručno produženje pretplate
       </text>
-      <text x="600" y="555" textAnchor="middle" fontSize="12" fill="white">
+      <text x="600" y="595" textAnchor="middle" fontSize="12" fill="white">
         • Promjena plana (upgrade/downgrade)
       </text>
-      <text x="600" y="575" textAnchor="middle" fontSize="12" fill="white">
+      <text x="600" y="615" textAnchor="middle" fontSize="12" fill="white">
         • Otkazivanje, refundiranje
       </text>
-      <text x="600" y="590" textAnchor="middle" fontSize="12" fill="white">
+      <text x="600" y="630" textAnchor="middle" fontSize="12" fill="white">
         • Pregled faktura i transakcija
       </text>
 
