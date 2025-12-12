@@ -629,7 +629,7 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* ADMIN upravljanje pretplatama */}
-      <line x1="600" y1="440" x2="600" y2="480" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
+      <line x1="600" y1="350" x2="600" y2="480" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
       <rect x="450" y="480" width="300" height="100" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="3" />
       <text x="600" y="510" textAnchor="middle" fontSize="16" fontWeight="bold" fill="white">
         🔐 ADMIN Upravljanje
