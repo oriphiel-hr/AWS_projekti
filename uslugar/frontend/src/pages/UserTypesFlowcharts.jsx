@@ -539,7 +539,7 @@ export default function UserTypesFlowcharts() {
       <text x="900" y="345" textAnchor="middle" fontSize="12" fill={textColor}>Ne</text>
       
       {/* BASIC */}
-      <rect x="50" y="360" width="300" height="80" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <rect x="50" y="360" width="300" height="95" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
       <text x="200" y="385" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         BASIC
       </text>
@@ -549,12 +549,12 @@ export default function UserTypesFlowcharts() {
       <text x="200" y="420" textAnchor="middle" fontSize="11" fill={textColor}>
         Ograničen broj poslova
       </text>
-      <text x="200" y="435" textAnchor="middle" fontSize="11" fill={successColor}>
+      <text x="200" y="440" textAnchor="middle" fontSize="11" fill={successColor}>
         ✓ Aktivna pretplata
       </text>
 
       {/* PREMIUM */}
-      <rect x="400" y="360" width="300" height="140" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <rect x="400" y="360" width="300" height="155" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
       <text x="550" y="385" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         PREMIUM
       </text>
@@ -584,7 +584,7 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* PRO */}
-      <rect x="750" y="360" width="300" height="140" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <rect x="750" y="360" width="300" height="155" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
       <text x="900" y="385" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         PRO
       </text>
@@ -614,7 +614,7 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Nema upgrade */}
-      <rect x="1100" y="360" width="200" height="80" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <rect x="1100" y="360" width="200" height="95" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
       <text x="1200" y="385" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         Nema pretplate
       </text>
@@ -624,12 +624,12 @@ export default function UserTypesFlowcharts() {
       <text x="1200" y="420" textAnchor="middle" fontSize="12" fill={textColor}>
         Nema aktivne pretplate
       </text>
-      <text x="1200" y="435" textAnchor="middle" fontSize="11" fill={dangerColor}>
+      <text x="1200" y="440" textAnchor="middle" fontSize="11" fill={dangerColor}>
         ⚠️ Ograničen pristup
       </text>
 
       {/* ADMIN upravljanje pretplatama */}
-      <line x1="600" y1="500" x2="600" y2="520" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
+      <line x1="600" y1="515" x2="600" y2="520" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
       <rect x="450" y="520" width="300" height="100" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="3" />
       <text x="600" y="550" textAnchor="middle" fontSize="16" fontWeight="bold" fill="white">
         🔐 ADMIN Upravljanje
