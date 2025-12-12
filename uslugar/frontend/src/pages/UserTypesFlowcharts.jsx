@@ -512,31 +512,32 @@ export default function UserTypesFlowcharts() {
 
       <line x1="600" y1="230" x2="600" y2="270" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
 
-      <polygon points="600,270 650,310 600,350 550,310" fill={primaryColor} stroke={borderColor} strokeWidth="2" />
-      <text x="600" y="315" textAnchor="middle" fontSize="12" fill="white" fontWeight="bold">
+      {/* Upgrade box */}
+      <rect x="500" y="270" width="200" height="60" rx="5" fill={primaryColor} stroke={borderColor} strokeWidth="2" />
+      <text x="600" y="300" textAnchor="middle" fontSize="14" fill="white" fontWeight="bold">
         Upgrade?
       </text>
 
-      {/* Upgrade opcije */}
-      {/* BASIC - od lijevog vrha diamanta (550, 310) */}
-      <line x1="550" y1="310" x2="200" y2="310" stroke={textColor} strokeWidth="2" />
-      <line x1="200" y1="310" x2="200" y2="360" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
-      <text x="375" y="305" textAnchor="middle" fontSize="12" fill={textColor}>BASIC</text>
+      {/* Upgrade opcije - sve 4 linije idu od donjeg ruba box-a */}
+      {/* BASIC */}
+      <line x1="550" y1="330" x2="200" y2="330" stroke={textColor} strokeWidth="2" />
+      <line x1="200" y1="330" x2="200" y2="360" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
+      <text x="375" y="325" textAnchor="middle" fontSize="12" fill={textColor}>BASIC</text>
       
-      {/* PREMIUM - od donjeg lijevog dijela diamanta (575, 350), ide lijevo pa dolje */}
-      <line x1="575" y1="350" x2="550" y2="350" stroke={textColor} strokeWidth="2" />
-      <line x1="550" y1="350" x2="550" y2="360" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
-      <text x="562" y="345" textAnchor="middle" fontSize="12" fill={textColor}>PREMIUM</text>
+      {/* PREMIUM */}
+      <line x1="575" y1="330" x2="550" y2="330" stroke={textColor} strokeWidth="2" />
+      <line x1="550" y1="330" x2="550" y2="360" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
+      <text x="562" y="325" textAnchor="middle" fontSize="12" fill={textColor}>PREMIUM</text>
       
-      {/* PRO - od desnog vrha diamanta (650, 310) */}
-      <line x1="650" y1="310" x2="900" y2="310" stroke={textColor} strokeWidth="2" />
-      <line x1="900" y1="310" x2="900" y2="360" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
-      <text x="775" y="305" textAnchor="middle" fontSize="12" fill={textColor}>PRO</text>
+      {/* PRO */}
+      <line x1="625" y1="330" x2="900" y2="330" stroke={textColor} strokeWidth="2" />
+      <line x1="900" y1="330" x2="900" y2="360" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
+      <text x="762" y="325" textAnchor="middle" fontSize="12" fill={textColor}>PRO</text>
       
-      {/* Nema pretplate - od donjeg desnog dijela diamanta (625, 350), ide desno pa dolje */}
-      <line x1="625" y1="350" x2="1200" y2="350" stroke={textColor} strokeWidth="2" />
-      <line x1="1200" y1="350" x2="1200" y2="360" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
-      <text x="912" y="345" textAnchor="middle" fontSize="12" fill={textColor}>Ne</text>
+      {/* Nema pretplate */}
+      <line x1="650" y1="330" x2="1200" y2="330" stroke={textColor} strokeWidth="2" />
+      <line x1="1200" y1="330" x2="1200" y2="360" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
+      <text x="925" y="325" textAnchor="middle" fontSize="12" fill={textColor}>Ne</text>
       
       {/* BASIC */}
       <rect x="50" y="360" width="300" height="95" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
