@@ -629,8 +629,16 @@ export default function UserTypesFlowcharts() {
         ⚠️ Ograničen pristup
       </text>
 
-      {/* ADMIN upravljanje pretplatama */}
-      <line x1="600" y1="565" x2="600" y2="590" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
+      {/* ADMIN upravljanje pretplatama - povezano sa svim pretplatama */}
+      {/* Linija od BASIC */}
+      <line x1="200" y1="505" x2="200" y2="530" stroke={textColor} strokeWidth="2" />
+      <line x1="200" y1="530" x2="600" y2="530" stroke={textColor} strokeWidth="2" />
+      {/* Linija od PREMIUM */}
+      <line x1="550" y1="565" x2="550" y2="530" stroke={textColor} strokeWidth="2" />
+      {/* Linija od PRO */}
+      <line x1="900" y1="565" x2="900" y2="530" stroke={textColor} strokeWidth="2" />
+      {/* Zajednička linija do ADMIN upravljanja */}
+      <line x1="600" y1="530" x2="600" y2="590" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
       <rect x="450" y="590" width="300" height="100" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="3" />
       <text x="600" y="620" textAnchor="middle" fontSize="16" fontWeight="bold" fill="white">
         🔐 ADMIN Upravljanje
