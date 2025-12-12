@@ -181,11 +181,13 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Strelica USER */}
-      <line x1="550" y1="250" x2="400" y2="250" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead)" />
+      <line x1="550" y1="250" x2="400" y2="250" stroke={textColor} strokeWidth="2" />
+      <line x1="400" y1="250" x2="400" y2="300" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead)" />
       <text x="475" y="245" textAnchor="middle" fontSize="12" fill={textColor}>USER</text>
 
       {/* Strelica PROVIDER */}
-      <line x1="650" y1="250" x2="800" y2="250" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead)" />
+      <line x1="650" y1="250" x2="850" y2="250" stroke={textColor} strokeWidth="2" />
+      <line x1="850" y1="250" x2="850" y2="300" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead)" />
       <text x="725" y="245" textAnchor="middle" fontSize="12" fill={textColor}>PROVIDER</text>
 
       {/* USER putanja */}
