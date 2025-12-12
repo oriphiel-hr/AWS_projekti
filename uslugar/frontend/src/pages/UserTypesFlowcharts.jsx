@@ -630,20 +630,20 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* ADMIN upravljanje pretplatama - povezano sa svim pretplatama */}
-      {/* Linija od BASIC - ide lijevo pa dolje do sredine box-a */}
+      {/* Linija od BASIC - ide lijevo pa dolje do zajedničke točke */}
       <line x1="200" y1="505" x2="200" y2="580" stroke={textColor} strokeWidth="2" />
       <line x1="200" y1="580" x2="600" y2="580" stroke={textColor} strokeWidth="2" />
+      
+      {/* Linija od PREMIUM - ide dolje do zajedničke točke */}
+      <line x1="550" y1="565" x2="550" y2="580" stroke={textColor} strokeWidth="2" />
+      <line x1="550" y1="580" x2="600" y2="580" stroke={textColor} strokeWidth="2" />
+      
+      {/* Linija od PRO - ide dolje pa lijevo do zajedničke točke */}
+      <line x1="900" y1="565" x2="900" y2="580" stroke={textColor} strokeWidth="2" />
+      <line x1="900" y1="580" x2="600" y2="580" stroke={textColor} strokeWidth="2" />
+      
+      {/* Zajednička linija od točke (600, 580) do sredine ADMIN upravljanje box-a */}
       <line x1="600" y1="580" x2="600" y2="640" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
-      
-      {/* Linija od PREMIUM - ide dolje pa lijevo do sredine box-a */}
-      <line x1="550" y1="565" x2="550" y2="600" stroke={textColor} strokeWidth="2" />
-      <line x1="550" y1="600" x2="600" y2="600" stroke={textColor} strokeWidth="2" />
-      <line x1="600" y1="600" x2="600" y2="640" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
-      
-      {/* Linija od PRO - ide dolje pa lijevo do sredine box-a */}
-      <line x1="900" y1="565" x2="900" y2="600" stroke={textColor} strokeWidth="2" />
-      <line x1="900" y1="600" x2="600" y2="600" stroke={textColor} strokeWidth="2" />
-      <line x1="600" y1="600" x2="600" y2="640" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
       
       <rect x="450" y="640" width="300" height="100" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="3" />
       <text x="600" y="670" textAnchor="middle" fontSize="16" fontWeight="bold" fill="white">
