@@ -384,7 +384,7 @@ export default function UserTypesFlowcharts() {
       {/* Odbijeno */}
       <line x1="650" y1="450" x2="800" y2="450" stroke={textColor} strokeWidth="2" />
       <line x1="800" y1="450" x2="800" y2="497" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead2)" />
-      <rect x="700" y="500" width="200" height="100" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="2" />
+      <rect x="700" y="500" width="200" height="115" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="2" />
       <text x="800" y="525" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         ❌ ODBIJENO
       </text>
@@ -402,7 +402,7 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Povratak na upload */}
-      <line x1="800" y1="600" x2="800" y2="640" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" markerEnd="url(#arrowhead2-back)" />
+      <line x1="800" y1="615" x2="800" y2="640" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" markerEnd="url(#arrowhead2-back)" />
       <text x="820" y="625" textAnchor="start" fontSize="10" fill={textColor}>ponovno slanje</text>
       <line x1="800" y1="640" x2="600" y2="640" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
       <line x1="600" y1="640" x2="600" y2="230" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" markerEnd="url(#arrowhead2)" />
