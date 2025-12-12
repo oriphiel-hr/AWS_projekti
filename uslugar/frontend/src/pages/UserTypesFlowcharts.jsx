@@ -210,7 +210,7 @@ export default function UserTypesFlowcharts() {
         {/* Privatni korisnik */}
         <line x1="350" y1="440" x2="200" y2="440" stroke={textColor} strokeWidth="2" />
         <line x1="200" y1="440" x2="200" y2="487" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead)" />
-        <rect x="50" y="490" width="300" height="80" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+        <rect x="50" y="490" width="300" height="95" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
         <text x="200" y="515" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
           Privatni korisnik
         </text>
@@ -220,14 +220,14 @@ export default function UserTypesFlowcharts() {
         <text x="200" y="550" textAnchor="middle" fontSize="11" fill={textColor}>
           Traži usluge za osobne potrebe
         </text>
-        <text x="200" y="565" textAnchor="middle" fontSize="11" fill={successColor}>
+        <text x="200" y="570" textAnchor="middle" fontSize="11" fill={successColor}>
           ✓ Registracija završena
         </text>
 
         {/* Poslovni korisnik */}
         <line x1="450" y1="440" x2="600" y2="440" stroke={textColor} strokeWidth="2" />
         <line x1="600" y1="440" x2="600" y2="487" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead)" />
-        <rect x="450" y="490" width="300" height="80" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+        <rect x="450" y="490" width="300" height="95" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
         <text x="600" y="515" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
           Poslovni korisnik
         </text>
@@ -237,7 +237,7 @@ export default function UserTypesFlowcharts() {
         <text x="600" y="550" textAnchor="middle" fontSize="11" fill={textColor}>
           Traži usluge za poslovanje
         </text>
-        <text x="600" y="565" textAnchor="middle" fontSize="11" fill={successColor}>
+        <text x="600" y="570" textAnchor="middle" fontSize="11" fill={successColor}>
           ✓ Registracija završena
         </text>
       </g>
@@ -273,7 +273,7 @@ export default function UserTypesFlowcharts() {
         <line x1="800" y1="540" x2="800" y2="600" stroke={textColor} strokeWidth="2" />
         <line x1="800" y1="600" x2="650" y2="600" stroke={textColor} strokeWidth="2" />
         <line x1="650" y1="600" x2="650" y2="650" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead)" />
-        <rect x="500" y="650" width="300" height="80" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+        <rect x="500" y="650" width="300" height="95" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
         <text x="650" y="675" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
           Pružatelj (Solo)
         </text>
@@ -283,14 +283,14 @@ export default function UserTypesFlowcharts() {
         <text x="650" y="710" textAnchor="middle" fontSize="11" fill={textColor}>
           Bez tima
         </text>
-        <text x="650" y="725" textAnchor="middle" fontSize="11" fill={successColor}>
+        <text x="650" y="730" textAnchor="middle" fontSize="11" fill={successColor}>
           ✓ Onboarding završen
         </text>
 
         {/* Tvrtka provider */}
         <line x1="900" y1="540" x2="1050" y2="540" stroke={textColor} strokeWidth="2" />
         <line x1="1050" y1="540" x2="1050" y2="650" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead)" />
-        <rect x="900" y="650" width="300" height="80" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+        <rect x="900" y="650" width="300" height="95" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
         <text x="1050" y="675" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
           Pružatelj (Tvrtka)
         </text>
@@ -300,7 +300,7 @@ export default function UserTypesFlowcharts() {
         <text x="1050" y="710" textAnchor="middle" fontSize="11" fill={textColor}>
           Company name, direktor
         </text>
-        <text x="1050" y="725" textAnchor="middle" fontSize="11" fill={successColor}>
+        <text x="1050" y="730" textAnchor="middle" fontSize="11" fill={successColor}>
           ✓ Onboarding završen
         </text>
       </g>
