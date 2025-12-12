@@ -518,25 +518,25 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Upgrade opcije */}
-      {/* BASIC */}
+      {/* BASIC - od lijevog vrha diamanta (550, 310) */}
       <line x1="550" y1="310" x2="200" y2="310" stroke={textColor} strokeWidth="2" />
       <line x1="200" y1="310" x2="200" y2="360" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
       <text x="375" y="305" textAnchor="middle" fontSize="12" fill={textColor}>BASIC</text>
       
-      {/* PREMIUM */}
-      <line x1="600" y1="350" x2="550" y2="350" stroke={textColor} strokeWidth="2" />
+      {/* PREMIUM - od donjeg lijevog dijela diamanta (575, 350), ide lijevo pa dolje */}
+      <line x1="575" y1="350" x2="550" y2="350" stroke={textColor} strokeWidth="2" />
       <line x1="550" y1="350" x2="550" y2="360" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
-      <text x="575" y="345" textAnchor="middle" fontSize="12" fill={textColor}>PREMIUM</text>
+      <text x="562" y="345" textAnchor="middle" fontSize="12" fill={textColor}>PREMIUM</text>
       
-      {/* PRO */}
+      {/* PRO - od desnog vrha diamanta (650, 310) */}
       <line x1="650" y1="310" x2="900" y2="310" stroke={textColor} strokeWidth="2" />
       <line x1="900" y1="310" x2="900" y2="360" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
       <text x="775" y="305" textAnchor="middle" fontSize="12" fill={textColor}>PRO</text>
       
-      {/* Nema pretplate */}
-      <line x1="600" y1="350" x2="1200" y2="350" stroke={textColor} strokeWidth="2" />
+      {/* Nema pretplate - od donjeg desnog dijela diamanta (625, 350), ide desno pa dolje */}
+      <line x1="625" y1="350" x2="1200" y2="350" stroke={textColor} strokeWidth="2" />
       <line x1="1200" y1="350" x2="1200" y2="360" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
-      <text x="900" y="345" textAnchor="middle" fontSize="12" fill={textColor}>Ne</text>
+      <text x="912" y="345" textAnchor="middle" fontSize="12" fill={textColor}>Ne</text>
       
       {/* BASIC */}
       <rect x="50" y="360" width="300" height="95" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
