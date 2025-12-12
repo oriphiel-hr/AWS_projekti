@@ -437,7 +437,7 @@ export default function UserTypesFlowcharts() {
       <line x1="200" y1="790" x2="200" y2="827" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead2)" />
 
       {/* ADMIN verifikacija licence */}
-      <rect x="50" y="830" width="300" height="100" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="3" />
+      <rect x="50" y="830" width="300" height="115" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="3" />
       <text x="200" y="860" textAnchor="middle" fontSize="16" fontWeight="bold" fill="white">
         🔐 ADMIN Verifikacija
       </text>
@@ -466,7 +466,7 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Licenca odobrena */}
-      <line x1="200" y1="930" x2="200" y2="967" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead2)" />
+      <line x1="200" y1="945" x2="200" y2="967" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead2)" />
       <rect x="50" y="970" width="300" height="60" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
       <text x="200" y="995" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         ✓ Licencirani pružatelj
