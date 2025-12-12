@@ -479,7 +479,7 @@ export default function UserTypesFlowcharts() {
 
   // Dijagram 3: Pretplate
   const SubscriptionFlowchart = () => (
-    <ZoomableSVG viewBox="0 0 1400 750">
+    <ZoomableSVG viewBox="0 0 1400 800">
       <defs>
         <marker id="arrowhead3" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
           <polygon points="0 0, 10 3, 0 6" fill={textColor} />
@@ -520,140 +520,140 @@ export default function UserTypesFlowcharts() {
 
       {/* Upgrade opcije - sve 4 linije idu od donjeg ruba box-a */}
       {/* BASIC */}
-      <line x1="550" y1="330" x2="200" y2="330" stroke={textColor} strokeWidth="2" />
-      <line x1="200" y1="330" x2="200" y2="360" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
-      <text x="375" y="325" textAnchor="middle" fontSize="12" fill={textColor}>BASIC</text>
+      <line x1="550" y1="330" x2="200" y2="380" stroke={textColor} strokeWidth="2" />
+      <line x1="200" y1="380" x2="200" y2="410" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
+      <text x="375" y="375" textAnchor="middle" fontSize="12" fill={textColor}>BASIC</text>
       
       {/* PREMIUM */}
-      <line x1="575" y1="330" x2="550" y2="330" stroke={textColor} strokeWidth="2" />
-      <line x1="550" y1="330" x2="550" y2="360" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
-      <text x="562" y="325" textAnchor="middle" fontSize="12" fill={textColor}>PREMIUM</text>
+      <line x1="575" y1="330" x2="550" y2="380" stroke={textColor} strokeWidth="2" />
+      <line x1="550" y1="380" x2="550" y2="410" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
+      <text x="562" y="375" textAnchor="middle" fontSize="12" fill={textColor}>PREMIUM</text>
       
       {/* PRO */}
-      <line x1="625" y1="330" x2="900" y2="330" stroke={textColor} strokeWidth="2" />
-      <line x1="900" y1="330" x2="900" y2="360" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
-      <text x="762" y="325" textAnchor="middle" fontSize="12" fill={textColor}>PRO</text>
+      <line x1="625" y1="330" x2="900" y2="380" stroke={textColor} strokeWidth="2" />
+      <line x1="900" y1="380" x2="900" y2="410" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
+      <text x="762" y="375" textAnchor="middle" fontSize="12" fill={textColor}>PRO</text>
       
       {/* Nema pretplate */}
-      <line x1="650" y1="330" x2="1200" y2="330" stroke={textColor} strokeWidth="2" />
-      <line x1="1200" y1="330" x2="1200" y2="360" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
-      <text x="925" y="325" textAnchor="middle" fontSize="12" fill={textColor}>Ne</text>
+      <line x1="650" y1="330" x2="1200" y2="380" stroke={textColor} strokeWidth="2" />
+      <line x1="1200" y1="380" x2="1200" y2="410" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
+      <text x="925" y="375" textAnchor="middle" fontSize="12" fill={textColor}>Ne</text>
       
       {/* BASIC */}
-      <rect x="50" y="360" width="300" height="95" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
-      <text x="200" y="385" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
+      <rect x="50" y="410" width="300" height="95" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <text x="200" y="435" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         BASIC
       </text>
-      <text x="200" y="405" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="200" y="455" textAnchor="middle" fontSize="11" fill={textColor}>
         Osnovne funkcionalnosti
       </text>
-      <text x="200" y="420" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="200" y="470" textAnchor="middle" fontSize="11" fill={textColor}>
         Ograničen broj poslova
       </text>
-      <text x="200" y="440" textAnchor="middle" fontSize="11" fill={successColor}>
+      <text x="200" y="490" textAnchor="middle" fontSize="11" fill={successColor}>
         ✓ Aktivna pretplata
       </text>
 
       {/* PREMIUM */}
-      <rect x="400" y="360" width="300" height="155" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
-      <text x="550" y="385" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
+      <rect x="400" y="410" width="300" height="155" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <text x="550" y="435" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         PREMIUM
       </text>
-      <text x="550" y="405" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="550" y="455" textAnchor="middle" fontSize="11" fill={textColor}>
         • Napredne funkcionalnosti
       </text>
-      <text x="550" y="420" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="550" y="470" textAnchor="middle" fontSize="11" fill={textColor}>
         • 50 kredita/mjesec
       </text>
-      <text x="550" y="435" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="550" y="485" textAnchor="middle" fontSize="11" fill={textColor}>
         • AI Priority u queue-u
       </text>
-      <text x="550" y="450" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="550" y="500" textAnchor="middle" fontSize="11" fill={textColor}>
         • SMS notifikacije
       </text>
-      <text x="550" y="465" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="550" y="515" textAnchor="middle" fontSize="11" fill={textColor}>
         • Priority support
       </text>
-      <text x="550" y="480" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="550" y="530" textAnchor="middle" fontSize="11" fill={textColor}>
         • CSV export
       </text>
-      <text x="550" y="495" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="550" y="545" textAnchor="middle" fontSize="11" fill={textColor}>
         • Advanced analytics
       </text>
-      <text x="550" y="510" textAnchor="middle" fontSize="11" fill={successColor}>
+      <text x="550" y="560" textAnchor="middle" fontSize="11" fill={successColor}>
         ✓ Aktivna pretplata
       </text>
 
       {/* PRO */}
-      <rect x="750" y="360" width="300" height="155" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
-      <text x="900" y="385" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
+      <rect x="750" y="410" width="300" height="155" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <text x="900" y="435" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         PRO
       </text>
-      <text x="900" y="405" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="900" y="455" textAnchor="middle" fontSize="11" fill={textColor}>
         • Sve funkcionalnosti
       </text>
-      <text x="900" y="420" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="900" y="470" textAnchor="middle" fontSize="11" fill={textColor}>
         • Unlimited krediti
       </text>
-      <text x="900" y="435" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="900" y="485" textAnchor="middle" fontSize="11" fill={textColor}>
         • VIP podrška 24/7
       </text>
-      <text x="900" y="450" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="900" y="500" textAnchor="middle" fontSize="11" fill={textColor}>
         • White-label opcija
       </text>
-      <text x="900" y="465" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="900" y="515" textAnchor="middle" fontSize="11" fill={textColor}>
         • Live chat widget
       </text>
-      <text x="900" y="480" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="900" y="530" textAnchor="middle" fontSize="11" fill={textColor}>
         • Support tickets
       </text>
-      <text x="900" y="495" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="900" y="545" textAnchor="middle" fontSize="11" fill={textColor}>
         • Real-time chat podrška
       </text>
-      <text x="900" y="510" textAnchor="middle" fontSize="11" fill={successColor}>
+      <text x="900" y="560" textAnchor="middle" fontSize="11" fill={successColor}>
         ✓ Aktivna pretplata
       </text>
 
       {/* Nema upgrade */}
-      <rect x="1100" y="360" width="200" height="95" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
-      <text x="1200" y="385" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
+      <rect x="1100" y="410" width="200" height="95" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <text x="1200" y="435" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         Nema pretplate
       </text>
-      <text x="1200" y="405" textAnchor="middle" fontSize="12" fill={textColor}>
+      <text x="1200" y="455" textAnchor="middle" fontSize="12" fill={textColor}>
         TRIAL istekao
       </text>
-      <text x="1200" y="420" textAnchor="middle" fontSize="12" fill={textColor}>
+      <text x="1200" y="470" textAnchor="middle" fontSize="12" fill={textColor}>
         Nema aktivne pretplate
       </text>
-      <text x="1200" y="440" textAnchor="middle" fontSize="11" fill={dangerColor}>
+      <text x="1200" y="490" textAnchor="middle" fontSize="11" fill={dangerColor}>
         ⚠️ Ograničen pristup
       </text>
 
       {/* ADMIN upravljanje pretplatama */}
-      <line x1="600" y1="515" x2="600" y2="540" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
-      <rect x="450" y="540" width="300" height="100" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="3" />
-      <text x="600" y="570" textAnchor="middle" fontSize="16" fontWeight="bold" fill="white">
+      <line x1="600" y1="565" x2="600" y2="590" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
+      <rect x="450" y="590" width="300" height="100" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="3" />
+      <text x="600" y="620" textAnchor="middle" fontSize="16" fontWeight="bold" fill="white">
         🔐 ADMIN Upravljanje
       </text>
-      <text x="600" y="595" textAnchor="middle" fontSize="12" fill="white">
+      <text x="600" y="645" textAnchor="middle" fontSize="12" fill="white">
         • Ručno produženje pretplate
       </text>
-      <text x="600" y="615" textAnchor="middle" fontSize="12" fill="white">
+      <text x="600" y="665" textAnchor="middle" fontSize="12" fill="white">
         • Promjena plana (upgrade/downgrade)
       </text>
-      <text x="600" y="635" textAnchor="middle" fontSize="12" fill="white">
+      <text x="600" y="685" textAnchor="middle" fontSize="12" fill="white">
         • Otkazivanje, refundiranje
       </text>
-      <text x="600" y="655" textAnchor="middle" fontSize="12" fill="white">
+      <text x="600" y="705" textAnchor="middle" fontSize="12" fill="white">
         • Pregled faktura i transakcija
       </text>
 
-      <line x1="600" y1="640" x2="600" y2="660" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
-      <rect x="450" y="660" width="300" height="60" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
-      <text x="600" y="685" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+      <line x1="600" y1="690" x2="600" y2="710" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
+      <rect x="450" y="710" width="300" height="60" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
+      <text x="600" y="735" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         ✓ Pretplata aktivna
       </text>
-      <text x="600" y="705" textAnchor="middle" fontSize="12" fill="white">
+      <text x="600" y="755" textAnchor="middle" fontSize="12" fill="white">
         Status: ACTIVE, automatska obnova
       </text>
     </ZoomableSVG>
