@@ -138,7 +138,7 @@ export default function UserTypesFlowcharts() {
   const RegistrationFlowchart = () => (
     <ZoomableSVG viewBox="0 0 1200 750">
       <defs>
-        <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="0" refY="3" orient="auto">
+        <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="-10" refY="3" orient="auto">
           <polygon points="0 0, 10 3, 0 6" fill={textColor} />
         </marker>
         <linearGradient id="userGradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -309,10 +309,10 @@ export default function UserTypesFlowcharts() {
   const VerificationFlowchart = () => (
     <ZoomableSVG viewBox="0 0 1200 1220">
       <defs>
-        <marker id="arrowhead2" markerWidth="10" markerHeight="10" refX="0" refY="3" orient="auto">
+        <marker id="arrowhead2" markerWidth="10" markerHeight="10" refX="-10" refY="3" orient="auto">
           <polygon points="0 0, 10 3, 0 6" fill={textColor} />
         </marker>
-        <marker id="arrowhead2-back" markerWidth="10" markerHeight="10" refX="1" refY="3" orient="auto">
+        <marker id="arrowhead2-back" markerWidth="10" markerHeight="10" refX="-9" refY="3" orient="auto">
           <polygon points="10 0, 0 3, 10 6" fill={textColor} />
         </marker>
       </defs>
@@ -479,7 +479,7 @@ export default function UserTypesFlowcharts() {
   const SubscriptionFlowchart = () => (
     <ZoomableSVG viewBox="0 0 1200 700">
       <defs>
-        <marker id="arrowhead3" markerWidth="10" markerHeight="10" refX="0" refY="3" orient="auto">
+        <marker id="arrowhead3" markerWidth="10" markerHeight="10" refX="-10" refY="3" orient="auto">
           <polygon points="0 0, 10 3, 0 6" fill={textColor} />
         </marker>
       </defs>
@@ -640,7 +640,7 @@ export default function UserTypesFlowcharts() {
   const UserJourneyFlowchart = () => (
     <ZoomableSVG viewBox="0 0 1200 1520">
       <defs>
-        <marker id="arrowhead4" markerWidth="10" markerHeight="10" refX="0" refY="3" orient="auto">
+        <marker id="arrowhead4" markerWidth="10" markerHeight="10" refX="-10" refY="3" orient="auto">
           <polygon points="0 0, 10 3, 0 6" fill={textColor} />
         </marker>
       </defs>
@@ -953,7 +953,7 @@ export default function UserTypesFlowcharts() {
   const ProviderJourneyFlowchart = () => (
     <ZoomableSVG viewBox="0 0 1200 1120">
       <defs>
-        <marker id="arrowhead5" markerWidth="10" markerHeight="10" refX="0" refY="3" orient="auto">
+        <marker id="arrowhead5" markerWidth="10" markerHeight="10" refX="-10" refY="3" orient="auto">
           <polygon points="0 0, 10 3, 0 6" fill={textColor} />
         </marker>
       </defs>
@@ -1265,7 +1265,7 @@ export default function UserTypesFlowcharts() {
   const ExclusiveLeadSystemFlowchart = () => (
     <ZoomableSVG viewBox="0 0 1400 1400">
       <defs>
-        <marker id="arrowhead6" markerWidth="10" markerHeight="10" refX="0" refY="3" orient="auto">
+        <marker id="arrowhead6" markerWidth="10" markerHeight="10" refX="-10" refY="3" orient="auto">
           <polygon points="0 0, 10 3, 0 6" fill={textColor} />
         </marker>
       </defs>
@@ -1492,7 +1492,7 @@ export default function UserTypesFlowcharts() {
   const QueueSystemFlowchart = () => (
     <ZoomableSVG viewBox="0 0 1400 1200">
       <defs>
-        <marker id="arrowhead7" markerWidth="10" markerHeight="10" refX="0" refY="3" orient="auto">
+        <marker id="arrowhead7" markerWidth="10" markerHeight="10" refX="-10" refY="3" orient="auto">
           <polygon points="0 0, 10 3, 0 6" fill={textColor} />
         </marker>
       </defs>
@@ -1686,7 +1686,7 @@ export default function UserTypesFlowcharts() {
   const RefundSystemFlowchart = () => (
     <ZoomableSVG viewBox="0 0 1400 1000">
       <defs>
-        <marker id="arrowhead8" markerWidth="10" markerHeight="10" refX="0" refY="3" orient="auto">
+        <marker id="arrowhead8" markerWidth="10" markerHeight="10" refX="-10" refY="3" orient="auto">
           <polygon points="0 0, 10 3, 0 6" fill={textColor} />
         </marker>
       </defs>
@@ -1874,7 +1874,7 @@ export default function UserTypesFlowcharts() {
   const NotificationsFlowchart = () => (
     <ZoomableSVG viewBox="0 0 1400 1100">
       <defs>
-        <marker id="arrowhead9" markerWidth="10" markerHeight="10" refX="0" refY="3" orient="auto">
+        <marker id="arrowhead9" markerWidth="10" markerHeight="10" refX="-10" refY="3" orient="auto">
           <polygon points="0 0, 10 3, 0 6" fill={textColor} />
         </marker>
       </defs>
@@ -2171,7 +2171,7 @@ export default function UserTypesFlowcharts() {
   const ReputationSystemFlowchart = () => (
     <ZoomableSVG viewBox="0 0 1400 1300">
       <defs>
-        <marker id="arrowhead10" markerWidth="10" markerHeight="10" refX="0" refY="3" orient="auto">
+        <marker id="arrowhead10" markerWidth="10" markerHeight="10" refX="-10" refY="3" orient="auto">
           <polygon points="0 0, 10 3, 0 6" fill={textColor} />
         </marker>
       </defs>
