@@ -1491,27 +1491,27 @@ export default function UserTypesFlowcharts() {
       <text x="700" y="960" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         REFUNDED
       </text>
-      <text x="700" y="980" textAnchor="middle" fontSize="12" fill="white">
+      <text x="700" y="978" textAnchor="middle" fontSize="12" fill="white">
         Klijent ne odgovori (48h)
       </text>
-      <text x="700" y="995" textAnchor="middle" fontSize="12" fill="white">
+      <text x="700" y="993" textAnchor="middle" fontSize="12" fill="white">
         Lead nije kvalitetan
       </text>
-      <text x="700" y="1010" textAnchor="middle" fontSize="12" fill="white">
+      <text x="700" y="1008" textAnchor="middle" fontSize="12" fill="white">
         Automatski refund
       </text>
-      <text x="700" y="1025" textAnchor="middle" fontSize="12" fill="white">
+      <text x="700" y="1023" textAnchor="middle" fontSize="12" fill="white">
         • Stripe refund (PSD2)
       </text>
-      <text x="700" y="1040" textAnchor="middle" fontSize="12" fill="white">
+      <text x="700" y="1038" textAnchor="middle" fontSize="12" fill="white">
         • Interni krediti
       </text>
-      <text x="700" y="1055" textAnchor="middle" fontSize="12" fill="white">
+      <text x="700" y="1050" textAnchor="middle" fontSize="12" fill="white">
         Lead vraćen na tržište
       </text>
 
       {/* AI Score detalji */}
-      <rect x="900" y="940" width="400" height="140" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <rect x="900" y="940" width="400" height="180" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
       <text x="1100" y="960" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         AI Score Kvalitete Leadova
       </text>
