@@ -1137,9 +1137,9 @@ export default function UserTypesFlowcharts() {
       <line x1="850" y1="580" x2="850" y2="760" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
 
       {/* Linija od Pružatelj čeka odluku do Odluka? */}
-      <line x1="300" y1="580" x2="300" y2="740" stroke={textColor} strokeWidth="2" />
-      <line x1="300" y1="740" x2="850" y2="740" stroke={textColor} strokeWidth="2" />
-      <line x1="850" y1="740" x2="850" y2="760" stroke={textColor} strokeWidth="2" />
+      <line x1="300" y1="580" x2="300" y2="750" stroke={textColor} strokeWidth="2" />
+      <line x1="300" y1="750" x2="850" y2="750" stroke={textColor} strokeWidth="2" />
+      <line x1="850" y1="750" x2="850" y2="760" stroke={textColor} strokeWidth="2" />
 
       {/* Odluka korisnika */}
       <polygon points="850,760 900,800 850,840 800,800" fill={warningColor} stroke={borderColor} strokeWidth="2" />
