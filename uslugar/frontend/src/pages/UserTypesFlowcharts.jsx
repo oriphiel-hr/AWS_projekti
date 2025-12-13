@@ -1209,33 +1209,33 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Oba sudionika u chatu */}
-      <rect x="500" y="620" width="300" height="120" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
-      <text x="650" y="645" textAnchor="middle" fontSize="12" fontWeight="bold" fill={textColor}>
+      <rect x="500" y="780" width="300" height="120" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <text x="650" y="805" textAnchor="middle" fontSize="12" fontWeight="bold" fill={textColor}>
         👥 OBA SUDIONIKA
       </text>
-      <text x="650" y="665" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="650" y="825" textAnchor="middle" fontSize="11" fill={textColor}>
         Komunikacija u chatroomu
       </text>
-      <text x="650" y="685" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="650" y="845" textAnchor="middle" fontSize="11" fill={textColor}>
         • Razmjena poruka
       </text>
-      <text x="650" y="700" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="650" y="860" textAnchor="middle" fontSize="11" fill={textColor}>
         • Otkrivanje kontakata
       </text>
-      <text x="650" y="715" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="650" y="875" textAnchor="middle" fontSize="11" fill={textColor}>
         • Dogovor detalja
       </text>
-      <text x="650" y="730" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="650" y="890" textAnchor="middle" fontSize="11" fill={textColor}>
         ⚠️ Bez oba sudionika nema chata
       </text>
 
       {/* Strelica između chatrooma i sudionika */}
-      <line x1="400" y1="680" x2="500" y2="680" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
-      <text x="450" y="675" textAnchor="middle" fontSize="10" fill={textColor}>koristi</text>
+      <line x1="300" y1="740" x2="300" y2="780" stroke={textColor} strokeWidth="2" />
+      <line x1="300" y1="780" x2="500" y2="780" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
+      <text x="400" y="775" textAnchor="middle" fontSize="10" fill={textColor}>koristi</text>
 
       {/* Linija od OBA SUDIONIKA do Posao u tijeku */}
-      <line x1="650" y1="740" x2="650" y2="780" stroke={textColor} strokeWidth="2" />
-      <line x1="650" y1="780" x2="300" y2="780" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
+      <line x1="500" y1="840" x2="300" y2="840" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
 
       {/* Linija od CHATROOM do Posao u tijeku */}
       <line x1="300" y1="740" x2="300" y2="780" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
