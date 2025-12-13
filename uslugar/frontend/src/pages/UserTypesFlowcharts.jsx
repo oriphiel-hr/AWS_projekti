@@ -991,7 +991,7 @@ export default function UserTypesFlowcharts() {
 
   // Dijagram 5: Korištenje platforme - Pružatelj
   const ProviderJourneyFlowchart = () => (
-    <ZoomableSVG viewBox="0 0 1200 1620">
+    <ZoomableSVG viewBox="0 0 1200 1700">
       <defs>
         <marker id="arrowhead5" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
           <polygon points="0 0, 10 3, 0 6" fill={textColor} />
@@ -1185,16 +1185,16 @@ export default function UserTypesFlowcharts() {
 
 
       {/* Notifikacija pružatelju */}
-      <rect x="100" y="1100" width="400" height="60" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
-      <text x="300" y="1120" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
+      <rect x="100" y="1180" width="400" height="60" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <text x="300" y="1200" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         👤 PRUŽATELJ: Notifikacija
       </text>
-      <text x="300" y="1140" textAnchor="middle" fontSize="12" fill={textColor}>
+      <text x="300" y="1220" textAnchor="middle" fontSize="12" fill={textColor}>
         Ponuda prihvaćena, chat soba kreirana
       </text>
 
       {/* Linija od Notifikacija do Posao u tijeku */}
-      <line x1="300" y1="1160" x2="300" y2="1260" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
+      <line x1="300" y1="1240" x2="300" y2="1340" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
 
       {/* Chatroom - ZAHTIJEVA OBA SUDIONIKA */}
       <rect x="200" y="840" width="200" height="120" rx="5" fill={primaryColor} stroke={borderColor} strokeWidth="3" />
@@ -1218,92 +1218,92 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Oba sudionika u chatu */}
-      <rect x="550" y="1080" width="300" height="120" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
-      <text x="700" y="1105" textAnchor="middle" fontSize="12" fontWeight="bold" fill={textColor}>
+      <rect x="550" y="1160" width="300" height="120" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <text x="700" y="1185" textAnchor="middle" fontSize="12" fontWeight="bold" fill={textColor}>
         👥 OBA SUDIONIKA
       </text>
-      <text x="700" y="1125" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="700" y="1205" textAnchor="middle" fontSize="11" fill={textColor}>
         Komunikacija u chatroomu
       </text>
-      <text x="700" y="1140" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="700" y="1220" textAnchor="middle" fontSize="11" fill={textColor}>
         • Razmjena poruka
       </text>
-      <text x="700" y="1155" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="700" y="1235" textAnchor="middle" fontSize="11" fill={textColor}>
         • Otkrivanje kontakata
       </text>
-      <text x="700" y="1170" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="700" y="1250" textAnchor="middle" fontSize="11" fill={textColor}>
         • Dogovor detalja
       </text>
-      <text x="700" y="1185" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="700" y="1265" textAnchor="middle" fontSize="11" fill={textColor}>
         ⚠️ Bez oba sudionika nema chata
       </text>
 
 
-      <rect x="100" y="1260" width="400" height="60" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
-      <text x="300" y="1280" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+      <rect x="100" y="1340" width="400" height="60" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
+      <text x="300" y="1360" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         ✓ Posao u tijeku
       </text>
-      <text x="300" y="1300" textAnchor="middle" fontSize="12" fill="white">
+      <text x="300" y="1380" textAnchor="middle" fontSize="12" fill="white">
         Status: U_TIJEKU
       </text>
 
       {/* Odluka o izvršenju posla */}
-      <line x1="300" y1="1320" x2="300" y2="1340" stroke={textColor} strokeWidth="2" />
+      <line x1="300" y1="1400" x2="300" y2="1420" stroke={textColor} strokeWidth="2" />
       
-      <polygon points="300,1340 350,1380 300,1420 250,1380" fill={warningColor} stroke={borderColor} strokeWidth="2" />
-      <text x="300" y="1385" textAnchor="middle" fontSize="12" fill="white" fontWeight="bold">
+      <polygon points="300,1420 350,1460 300,1500 250,1460" fill={warningColor} stroke={borderColor} strokeWidth="2" />
+      <text x="300" y="1465" textAnchor="middle" fontSize="12" fill="white" fontWeight="bold">
         Izvršen?
       </text>
 
       {/* Posao izvršen - linija od Izvršen? lijevo do POSAO IZVRŠEN */}
-      <line x1="250" y1="1380" x2="150" y2="1380" stroke={textColor} strokeWidth="2" />
-      <line x1="150" y1="1380" x2="150" y2="1440" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
-      <rect x="50" y="1440" width="200" height="140" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
-      <text x="150" y="1458" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+      <line x1="250" y1="1460" x2="150" y2="1460" stroke={textColor} strokeWidth="2" />
+      <line x1="150" y1="1460" x2="150" y2="1520" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
+      <rect x="50" y="1520" width="200" height="140" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
+      <text x="150" y="1538" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         ✓ POSAO IZVRŠEN
       </text>
-      <text x="150" y="1475" textAnchor="middle" fontSize="12" fill="white">
+      <text x="150" y="1555" textAnchor="middle" fontSize="12" fill="white">
         Status: ZAVRŠEN
       </text>
-      <text x="150" y="1492" textAnchor="middle" fontSize="11" fill="white">
+      <text x="150" y="1572" textAnchor="middle" fontSize="11" fill="white">
         👥 OBA SUDIONIKA: Recenzije
       </text>
-      <text x="150" y="1507" textAnchor="middle" fontSize="10" fill="white">
+      <text x="150" y="1587" textAnchor="middle" fontSize="10" fill="white">
         • Pružatelj ocjenjuje korisnika
       </text>
-      <text x="150" y="1522" textAnchor="middle" fontSize="10" fill="white">
+      <text x="150" y="1602" textAnchor="middle" fontSize="10" fill="white">
         • Korisnik ocjenjuje pružatelja
       </text>
-      <text x="150" y="1537" textAnchor="middle" fontSize="10" fill="white">
+      <text x="150" y="1617" textAnchor="middle" fontSize="10" fill="white">
         ⚠️ Bilateralno ocjenjivanje
       </text>
-      <text x="150" y="1552" textAnchor="middle" fontSize="11" fill="white">
+      <text x="150" y="1632" textAnchor="middle" fontSize="11" fill="white">
         ROI tracking, statistike
       </text>
-      <text x="150" y="1567" textAnchor="middle" fontSize="11" fill="white">
+      <text x="150" y="1647" textAnchor="middle" fontSize="11" fill="white">
         🔐 ADMIN: Moderacija recenzija
       </text>
 
       {/* Posao otkazan */}
-      <line x1="350" y1="1380" x2="550" y2="1380" stroke={textColor} strokeWidth="2" />
-      <line x1="550" y1="1380" x2="550" y2="1440" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
-      <rect x="450" y="1440" width="200" height="120" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="2" />
-      <text x="550" y="1458" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+      <line x1="350" y1="1460" x2="550" y2="1460" stroke={textColor} strokeWidth="2" />
+      <line x1="550" y1="1460" x2="550" y2="1520" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
+      <rect x="450" y="1520" width="200" height="120" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="2" />
+      <text x="550" y="1538" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         ❌ POSAO OTKAZAN
       </text>
-      <text x="550" y="1475" textAnchor="middle" fontSize="12" fill="white">
+      <text x="550" y="1555" textAnchor="middle" fontSize="12" fill="white">
         Status: OTKAZAN
       </text>
-      <text x="550" y="1492" textAnchor="middle" fontSize="11" fill="white">
+      <text x="550" y="1572" textAnchor="middle" fontSize="11" fill="white">
         ⚠️ Nema ROI statistike
       </text>
-      <text x="550" y="1507" textAnchor="middle" fontSize="12" fill="white">
+      <text x="550" y="1587" textAnchor="middle" fontSize="12" fill="white">
         👤 Korisnik otkazao
       </text>
-      <text x="550" y="1522" textAnchor="middle" fontSize="12" fill="white">
+      <text x="550" y="1602" textAnchor="middle" fontSize="12" fill="white">
         👤 Pružatelj otkazao
       </text>
-      <text x="550" y="1537" textAnchor="middle" fontSize="12" fill="white">
+      <text x="550" y="1617" textAnchor="middle" fontSize="12" fill="white">
         ❌ Nema recenzija
       </text>
     </ZoomableSVG>
