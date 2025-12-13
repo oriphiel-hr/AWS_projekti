@@ -1183,6 +1183,9 @@ export default function UserTypesFlowcharts() {
         • Pružatelj može poslati novu
       </text>
 
+      {/* Linija od PRIHVAĆENA (lijeva strana) do PRUŽATELJ: Notifikacija (gornja strana) */}
+      <line x1="600" y1="880" x2="300" y2="880" stroke={textColor} strokeWidth="2" />
+      <line x1="300" y1="880" x2="300" y2="1180" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
 
       {/* Notifikacija pružatelju */}
       <rect x="100" y="1180" width="400" height="60" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
