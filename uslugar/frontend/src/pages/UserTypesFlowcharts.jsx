@@ -1297,7 +1297,7 @@ export default function UserTypesFlowcharts() {
         Status: OTKAZAN
       </text>
       <text x="550" y="1212" textAnchor="middle" fontSize="11" fill="white">
-        ROI tracking, statistike
+        Nema ROI statistike
       </text>
       <text x="550" y="1227" textAnchor="middle" fontSize="12" fill="white">
         • Korisnik otkazao
@@ -1307,9 +1307,6 @@ export default function UserTypesFlowcharts() {
       </text>
       <text x="550" y="1257" textAnchor="middle" fontSize="12" fill="white">
         • Nema recenzija
-      </text>
-      <text x="550" y="1185" textAnchor="middle" fontSize="12" fill="white">
-        • Nema ROI trackinga
       </text>
     </ZoomableSVG>
   );
