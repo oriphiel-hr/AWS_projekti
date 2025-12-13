@@ -1232,16 +1232,8 @@ export default function UserTypesFlowcharts() {
         ⚠️ Bez oba sudionika nema chata
       </text>
 
-      {/* Strelica između chatrooma i sudionika */}
-      <line x1="300" y1="740" x2="300" y2="880" stroke={textColor} strokeWidth="2" />
-      <line x1="300" y1="880" x2="550" y2="880" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
-      <text x="425" y="875" textAnchor="middle" fontSize="10" fill={textColor}>koristi</text>
-
       {/* Linija od OBA SUDIONIKA do Posao u tijeku */}
       <line x1="550" y1="900" x2="300" y2="900" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
-
-      {/* Linija od CHATROOM do Posao u tijeku */}
-      <line x1="300" y1="740" x2="300" y2="880" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
 
       <rect x="100" y="880" width="400" height="60" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
       <text x="300" y="900" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
