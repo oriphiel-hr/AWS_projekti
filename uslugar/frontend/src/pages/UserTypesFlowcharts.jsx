@@ -1244,6 +1244,10 @@ export default function UserTypesFlowcharts() {
         ⚠️ Bez oba sudionika nema chata
       </text>
 
+      {/* Linija od OBA SUDIONIKA (desna strana) do POSAO U TIJEKU (desna strana) */}
+      <line x1="850" y1="1220" x2="900" y2="1220" stroke={textColor} strokeWidth="2" />
+      <line x1="900" y1="1220" x2="900" y2="1370" stroke={textColor} strokeWidth="2" />
+      <line x1="900" y1="1370" x2="500" y2="1370" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
 
       <rect x="100" y="1340" width="400" height="60" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
       <text x="300" y="1360" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
