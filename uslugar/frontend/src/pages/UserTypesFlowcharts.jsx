@@ -1133,7 +1133,10 @@ export default function UserTypesFlowcharts() {
       <line x1="500" y1="530" x2="700" y2="530" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
       <text x="600" y="525" textAnchor="middle" fontSize="10" fill={textColor}>odlučuje</text>
 
-      <line x1="850" y1="580" x2="850" y2="620" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
+      {/* Linija od Pružatelj čeka odluku do Odluka? */}
+      <line x1="300" y1="580" x2="300" y2="640" stroke={textColor} strokeWidth="2" />
+      <line x1="300" y1="640" x2="850" y2="640" stroke={textColor} strokeWidth="2" />
+      <line x1="850" y1="640" x2="850" y2="620" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
 
       {/* Odluka korisnika */}
       <polygon points="850,620 900,660 850,700 800,660" fill={warningColor} stroke={borderColor} strokeWidth="2" />
@@ -1176,6 +1179,10 @@ export default function UserTypesFlowcharts() {
       <text x="1050" y="805" textAnchor="middle" fontSize="12" fill="white">
         • Pružatelj može poslati novu
       </text>
+
+      {/* Linija od PRIHVAĆENA do Notifikacija pružatelju */}
+      <line x1="550" y1="800" x2="550" y2="820" stroke={textColor} strokeWidth="2" />
+      <line x1="550" y1="820" x2="300" y2="820" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
 
       {/* Notifikacija pružatelju */}
       <rect x="100" y="820" width="400" height="60" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
