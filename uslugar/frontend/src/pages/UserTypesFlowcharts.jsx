@@ -1686,8 +1686,9 @@ export default function UserTypesFlowcharts() {
         Odgovor?
       </text>
 
-      {/* INTERESTED */}
+      {/* INTERESTED - da */}
       <line x1="450" y1="930" x2="300" y2="930" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
+      <text x="375" y="925" textAnchor="middle" fontSize="10" fill={textColor}>da</text>
       <rect x="100" y="990" width="200" height="80" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
       <text x="200" y="1010" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         INTERESTED
@@ -1702,53 +1703,65 @@ export default function UserTypesFlowcharts() {
         Kontakt otkriven
       </text>
 
+      {/* Ne - vodi u Tip odbijanja */}
+      <line x1="550" y1="930" x2="700" y2="930" stroke={textColor} strokeWidth="2" />
+      <line x1="700" y1="930" x2="700" y2="970" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
+      <text x="625" y="925" textAnchor="middle" fontSize="10" fill={textColor}>ne</text>
+
+      {/* Tip odbijanja - drugi dijamant */}
+      <polygon points="700,970 750,1010 700,1050 650,1010" fill={warningColor} stroke={borderColor} strokeWidth="2" />
+      <text x="700" y="1015" textAnchor="middle" fontSize="12" fill="white" fontWeight="bold">
+        Tip?
+      </text>
+
       {/* NOT_INTERESTED */}
-      <line x1="550" y1="930" x2="700" y2="930" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
-      <rect x="600" y="990" width="200" height="80" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
-      <text x="700" y="1010" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
+      <line x1="650" y1="1010" x2="500" y2="1010" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
+      <rect x="300" y="1070" width="200" height="80" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <text x="400" y="1090" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         NOT_INTERESTED
       </text>
-      <text x="700" y="1030" textAnchor="middle" fontSize="12" fill={textColor}>
+      <text x="400" y="1110" textAnchor="middle" fontSize="12" fill={textColor}>
         Status: DECLINED
       </text>
-      <text x="700" y="1045" textAnchor="middle" fontSize="12" fill={textColor}>
+      <text x="400" y="1125" textAnchor="middle" fontSize="12" fill={textColor}>
         Lead ponuđen sljedećem
       </text>
-      <text x="700" y="1060" textAnchor="middle" fontSize="12" fill={textColor}>
+      <text x="400" y="1140" textAnchor="middle" fontSize="12" fill={textColor}>
         Queue se nastavlja
       </text>
 
       {/* NO_RESPONSE / EXPIRED */}
-      <line x1="750" y1="930" x2="900" y2="930" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
-      <rect x="800" y="990" width="200" height="100" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="2" />
-      <text x="900" y="1010" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+      <line x1="750" y1="1010" x2="900" y2="1010" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
+      <rect x="800" y="1070" width="200" height="100" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="2" />
+      <text x="900" y="1090" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         NO_RESPONSE
       </text>
-      <text x="900" y="1030" textAnchor="middle" fontSize="12" fill="white">
+      <text x="900" y="1110" textAnchor="middle" fontSize="12" fill="white">
         Status: EXPIRED
       </text>
-      <text x="900" y="1045" textAnchor="middle" fontSize="12" fill="white">
+      <text x="900" y="1125" textAnchor="middle" fontSize="12" fill="white">
         Rok istekao (24h)
       </text>
-      <text x="900" y="1060" textAnchor="middle" fontSize="12" fill="white">
+      <text x="900" y="1140" textAnchor="middle" fontSize="12" fill="white">
         Preskakanje neaktivnog
       </text>
-      <text x="900" y="1075" textAnchor="middle" fontSize="12" fill="white">
+      <text x="900" y="1155" textAnchor="middle" fontSize="12" fill="white">
         Lead ponuđen sljedećem
       </text>
 
       {/* SKIPPED */}
-      <rect x="1100" y="990" width="200" height="80" rx="5" fill={warningColor} stroke={borderColor} strokeWidth="2" />
-      <text x="1200" y="1010" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+      <line x1="700" y1="1050" x2="700" y2="1090" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
+      <rect x="600" y="1090" width="200" height="80" rx="5" fill={warningColor} stroke={borderColor} strokeWidth="2" />
+      <text x="700" y="1110" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         SKIPPED
       </text>
-      <text x="1200" y="1030" textAnchor="middle" fontSize="12" fill="white">
+      <text x="700" y="1130" textAnchor="middle" fontSize="12" fill="white">
         Pružatelj preskočio
       </text>
-      <text x="1200" y="1045" textAnchor="middle" fontSize="12" fill="white">
+      <text x="700" y="1145" textAnchor="middle" fontSize="12" fill="white">
         Lead ponuđen sljedećem
       </text>
-      <text x="1200" y="1060" textAnchor="middle" fontSize="12" fill="white">
+      <text x="700" y="1160" textAnchor="middle" fontSize="12" fill="white">
         Queue se nastavlja
       </text>
     </ZoomableSVG>
