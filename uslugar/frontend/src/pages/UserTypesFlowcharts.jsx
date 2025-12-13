@@ -932,7 +932,8 @@ export default function UserTypesFlowcharts() {
 
       {/* Posao izvršen */}
       <line x1="100" y1="1220" x2="150" y2="1220" stroke={textColor} strokeWidth="2" />
-      <line x1="150" y1="1220" x2="150" y2="1270" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead4)" />
+      <line x1="150" y1="1220" x2="150" y2="1265" stroke={textColor} strokeWidth="2" />
+      <polygon points="150,1265 145,1270 150,1275 155,1270" fill={textColor} />
       <rect x="50" y="1280" width="200" height="80" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
       <text x="150" y="1305" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         ✓ POSAO IZVRŠEN
@@ -946,7 +947,8 @@ export default function UserTypesFlowcharts() {
 
       {/* Posao otkazan */}
       <line x1="200" y1="1220" x2="400" y2="1220" stroke={textColor} strokeWidth="2" />
-      <line x1="400" y1="1220" x2="400" y2="1270" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead4)" />
+      <line x1="400" y1="1220" x2="400" y2="1265" stroke={textColor} strokeWidth="2" />
+      <polygon points="400,1265 395,1270 400,1275 405,1270" fill={textColor} />
       <rect x="300" y="1280" width="200" height="100" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="2" />
       <text x="400" y="1305" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         ❌ POSAO OTKAZAN
@@ -1251,7 +1253,8 @@ export default function UserTypesFlowcharts() {
 
       {/* Posao izvršen */}
       <line x1="250" y1="920" x2="150" y2="920" stroke={textColor} strokeWidth="2" />
-      <line x1="150" y1="920" x2="150" y2="970" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
+      <line x1="150" y1="920" x2="150" y2="965" stroke={textColor} strokeWidth="2" />
+      <polygon points="150,965 145,970 150,975 155,970" fill={textColor} />
       <rect x="50" y="980" width="200" height="140" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
       <text x="150" y="1005" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         ✓ POSAO IZVRŠEN
