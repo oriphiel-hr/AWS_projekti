@@ -1142,16 +1142,16 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Prihvaćena */}
-      <line x1="800" y1="660" x2="500" y2="660" stroke={textColor} strokeWidth="2" />
-      <line x1="500" y1="660" x2="500" y2="717" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
-      <rect x="400" y="720" width="200" height="80" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
-      <text x="500" y="740" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+      <line x1="800" y1="660" x2="550" y2="660" stroke={textColor} strokeWidth="2" />
+      <line x1="550" y1="660" x2="550" y2="717" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
+      <rect x="450" y="720" width="200" height="80" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
+      <text x="550" y="740" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         ✓ PRIHVAĆENA
       </text>
-      <text x="500" y="760" textAnchor="middle" fontSize="12" fill="white">
+      <text x="550" y="760" textAnchor="middle" fontSize="12" fill="white">
         Status: PRIHVAĆENA
       </text>
-      <text x="500" y="780" textAnchor="middle" fontSize="12" fill="white">
+      <text x="550" y="780" textAnchor="middle" fontSize="12" fill="white">
         Chatroom se kreira
       </text>
 
@@ -1176,7 +1176,7 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Notifikacija pružatelju */}
-      <line x1="500" y1="800" x2="300" y2="800" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
+      <line x1="550" y1="800" x2="300" y2="800" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
       <rect x="100" y="820" width="400" height="60" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
       <text x="300" y="840" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         👤 PRUŽATELJ: Notifikacija
@@ -1186,8 +1186,8 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Linija od PRIHVAĆENA do CHATROOM */}
-      <line x1="500" y1="800" x2="500" y2="680" stroke={textColor} strokeWidth="2" />
-      <line x1="500" y1="680" x2="300" y2="680" stroke={textColor} strokeWidth="2" />
+      <line x1="550" y1="800" x2="550" y2="680" stroke={textColor} strokeWidth="2" />
+      <line x1="550" y1="680" x2="300" y2="680" stroke={textColor} strokeWidth="2" />
       <line x1="300" y1="680" x2="300" y2="620" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
 
       {/* Chatroom - ZAHTIJEVA OBA SUDIONIKA */}
