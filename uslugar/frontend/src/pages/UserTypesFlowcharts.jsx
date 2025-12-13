@@ -711,7 +711,8 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Objavi posao */}
-      <line x1="550" y1="290" x2="300" y2="290" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead4)" />
+      <line x1="550" y1="290" x2="300" y2="290" stroke={textColor} strokeWidth="2" />
+      <line x1="300" y1="290" x2="300" y2="340" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead4)" />
       <rect x="100" y="340" width="400" height="100" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
       <text x="300" y="365" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         Objavi posao
@@ -757,7 +758,8 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Pretraži poslove */}
-      <line x1="650" y1="290" x2="900" y2="290" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead4)" />
+      <line x1="650" y1="290" x2="900" y2="290" stroke={textColor} strokeWidth="2" />
+      <line x1="900" y1="290" x2="900" y2="340" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead4)" />
       <rect x="700" y="340" width="400" height="140" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
       <text x="900" y="365" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         Pretraži poslove
