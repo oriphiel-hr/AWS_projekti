@@ -1687,7 +1687,7 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* INTERESTED - da */}
-      <line x1="450" y1="930" x2="100" y2="930" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
+      <line x1="450" y1="930" x2="300" y2="930" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
       <rect x="260" y="912" width="30" height="16" rx="3" fill="white" stroke={textColor} strokeWidth="1" />
       <text x="275" y="925" textAnchor="middle" fontSize="11" fill={textColor} fontWeight="bold">da</text>
       <rect x="100" y="890" width="200" height="80" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
@@ -1716,8 +1716,7 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* NOT_INTERESTED */}
-      <line x1="650" y1="1040" x2="300" y2="1040" stroke={textColor} strokeWidth="2" />
-      <line x1="300" y1="1040" x2="300" y2="1000" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
+      <line x1="650" y1="1040" x2="500" y2="1040" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
       <rect x="300" y="1000" width="200" height="80" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
       <text x="400" y="1020" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         NOT_INTERESTED
