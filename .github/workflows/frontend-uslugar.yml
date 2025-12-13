@@ -163,32 +163,56 @@ jobs:
             exit 1
           fi
           
-          # Check host format
-          if [[ "$FTP_HOST" == ftp://* ]] || [[ "$FTP_HOST" == ftps://* ]]; then
-            echo "⚠️  WARNING: FTP host contains protocol prefix (ftp:// or ftps://)"
-            echo "   It should be just the hostname or IP: 194.5.156.10"
-            echo "   Current value starts with: ${FTP_HOST:0:10}..."
+          # Clean host format (remove protocol prefix if present)
+          CLEANED_HOST="$FTP_HOST"
+          if [[ "$CLEANED_HOST" == ftp://* ]]; then
+            CLEANED_HOST="${CLEANED_HOST#ftp://}"
+            echo "⚠️  Removed ftp:// prefix from host"
           fi
+          if [[ "$CLEANED_HOST" == ftps://* ]]; then
+            CLEANED_HOST="${CLEANED_HOST#ftps://}"
+            echo "⚠️  Removed ftps:// prefix from host"
+          fi
+          if [[ "$CLEANED_HOST" == sftp://* ]]; then
+            CLEANED_HOST="${CLEANED_HOST#sftp://}"
+            echo "⚠️  Removed sftp:// prefix from host"
+          fi
+          # Remove trailing slash
+          CLEANED_HOST="${CLEANED_HOST%/}"
+          # Remove port if included in host
+          CLEANED_HOST="${CLEANED_HOST%:*}"
           
           echo "✅ All required secrets are present"
-          echo "   Host: ${FTP_HOST:0:20}..." # Show first 20 chars only
+          echo "   Original host: ${FTP_HOST:0:30}..."
+          echo "   Cleaned host: $CLEANED_HOST"
           echo "   Username: $FTP_USER"
           echo "   Password: [hidden]"
           echo "   Server dir: ${{ env.SERVER_DIR }}"
           
-          # Export for use in deployment steps
-          echo "FTP_HOST=$FTP_HOST" >> $GITHUB_ENV
+          # Export cleaned values for use in deployment steps
+          echo "FTP_HOST=$CLEANED_HOST" >> $GITHUB_ENV
           echo "FTP_USER=$FTP_USER" >> $GITHUB_ENV
           echo "FTP_PASS=$FTP_PASS" >> $GITHUB_ENV
 
-      - name: Deploy via FTP (first attempt)
+      - name: Test FTP connection
+        continue-on-error: true
+        run: |
+          echo "🔍 Testing FTP connection..."
+          timeout 10 bash -c "echo > /dev/tcp/${{ env.FTP_HOST }}/21" 2>/dev/null && echo "✅ Port 21 is reachable" || echo "⚠️  Port 21 timeout (may be blocked by firewall)"
+          echo "ℹ️  If connection fails, check:"
+          echo "   1. FTP host is correct (no ftp:// prefix)"
+          echo "   2. Firewall allows port 21"
+          echo "   3. Server supports FTP/FTPS"
+          echo "   4. Credentials are correct in GitHub Secrets"
+
+      - name: Deploy via FTP (first attempt - passive mode)
         id: deploy-ftp
         continue-on-error: true
         uses: SamKirkland/FTP-Deploy-Action@v4.3.6
         with:
-          server: ${{ secrets.HOSTINGER_HOST || secrets.FTP_HOST }}
-          username: ${{ secrets.HOSTINGER_USERNAME || secrets.FTP_USERNAME }}
-          password: ${{ secrets.HOSTINGER_PASSWORD || secrets.FTP_PASSWORD }}
+          server: ${{ env.FTP_HOST }}
+          username: ${{ env.FTP_USER }}
+          password: ${{ env.FTP_PASS }}
           protocol: 'ftp'
           port: 21
           local-dir: ${{ env.FRONTEND_DIR }}/${{ steps.detect.outputs.dir }}/
@@ -197,20 +221,22 @@ jobs:
           timeout: 600000
           log-level: verbose
           security: loose
+          state-name: .ftp-deploy-sync-state.json
+          dry-run: false
           exclude: |
             **/.git*
             **/.git*/**
             **/node_modules/**
             **/.DS_Store
 
-      - name: Retry with FTPS
+      - name: Retry with FTPS (implicit)
         if: steps.deploy-ftp.outcome == 'failure'
         continue-on-error: true
         uses: SamKirkland/FTP-Deploy-Action@v4.3.6
         with:
-          server: ${{ secrets.HOSTINGER_HOST || secrets.FTP_HOST }}
-          username: ${{ secrets.HOSTINGER_USERNAME || secrets.FTP_USERNAME }}
-          password: ${{ secrets.HOSTINGER_PASSWORD || secrets.FTP_PASSWORD }}
+          server: ${{ env.FTP_HOST }}
+          username: ${{ env.FTP_USER }}
+          password: ${{ env.FTP_PASS }}
           protocol: 'ftps'
           port: 21
           local-dir: ${{ env.FRONTEND_DIR }}/${{ steps.detect.outputs.dir }}/
@@ -219,6 +245,30 @@ jobs:
           timeout: 600000
           log-level: verbose
           security: loose
+          state-name: .ftp-deploy-sync-state.json
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            **/.DS_Store
+
+      - name: Retry with FTPS (explicit)
+        if: steps.deploy-ftp.outcome == 'failure'
+        continue-on-error: true
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.6
+        with:
+          server: ${{ env.FTP_HOST }}
+          username: ${{ env.FTP_USER }}
+          password: ${{ env.FTP_PASS }}
+          protocol: 'ftps'
+          port: 990
+          local-dir: ${{ env.FRONTEND_DIR }}/${{ steps.detect.outputs.dir }}/
+          server-dir: ${{ env.SERVER_DIR }}
+          dangerous-clean-slate: false
+          timeout: 600000
+          log-level: verbose
+          security: explicit
+          state-name: .ftp-deploy-sync-state.json
           exclude: |
             **/.git*
             **/.git*/**
@@ -229,9 +279,9 @@ jobs:
         if: steps.deploy-ftp.outcome == 'failure'
         uses: SamKirkland/FTP-Deploy-Action@v4.3.6
         with:
-          server: ${{ secrets.HOSTINGER_HOST || secrets.FTP_HOST }}
-          username: ${{ secrets.HOSTINGER_USERNAME || secrets.FTP_USERNAME }}
-          password: ${{ secrets.HOSTINGER_PASSWORD || secrets.FTP_PASSWORD }}
+          server: ${{ env.FTP_HOST }}
+          username: ${{ env.FTP_USER }}
+          password: ${{ env.FTP_PASS }}
           protocol: 'ftps-legacy'
           port: 21
           local-dir: ${{ env.FRONTEND_DIR }}/${{ steps.detect.outputs.dir }}/
@@ -240,8 +290,38 @@ jobs:
           timeout: 600000
           log-level: verbose
           security: loose
+          state-name: .ftp-deploy-sync-state.json
           exclude: |
             **/.git*
             **/.git*/**
             **/node_modules/**
             **/.DS_Store
+
+      - name: Deployment failed - Troubleshooting info
+        if: steps.deploy-ftp.outcome == 'failure'
+        run: |
+          echo "❌ FTP Deployment failed after all retry attempts"
+          echo ""
+          echo "🔍 Troubleshooting steps:"
+          echo "1. Check GitHub Secrets (Settings > Secrets and variables > Actions):"
+          echo "   - HOSTINGER_HOST or FTP_HOST (should be just hostname, no ftp:// prefix)"
+          echo "   - HOSTINGER_USERNAME or FTP_USERNAME"
+          echo "   - HOSTINGER_PASSWORD or FTP_PASSWORD"
+          echo ""
+          echo "2. Verify FTP server is accessible:"
+          echo "   - Try connecting with FileZilla or similar FTP client"
+          echo "   - Check if port 21 is open (firewall)"
+          echo ""
+          echo "3. Check server requirements:"
+          echo "   - Server must support FTP, FTPS, or SFTP"
+          echo "   - If only SFTP is supported, consider using SFTP action instead"
+          echo ""
+          echo "4. Common issues:"
+          echo "   - Host contains 'ftp://' prefix (should be removed)"
+          echo "   - Firewall blocking port 21"
+          echo "   - Server only supports SFTP (not FTP/FTPS)"
+          echo "   - Incorrect credentials"
+          echo ""
+          echo "5. Alternative: Use manual deployment script:"
+          echo "   - Run: uslugar/frontend/deploy-frontend-ftp-fixed.ps1"
+          exit 1
