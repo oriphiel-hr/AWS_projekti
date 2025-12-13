@@ -1185,7 +1185,10 @@ export default function UserTypesFlowcharts() {
         Ponuda prihvaćena, chat soba kreirana
       </text>
 
-      <line x1="300" y1="880" x2="300" y2="920" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
+      {/* Linija od PRIHVAĆENA do CHATROOM */}
+      <line x1="500" y1="800" x2="500" y2="680" stroke={textColor} strokeWidth="2" />
+      <line x1="500" y1="680" x2="300" y2="680" stroke={textColor} strokeWidth="2" />
+      <line x1="300" y1="680" x2="300" y2="620" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
 
       {/* Chatroom - ZAHTIJEVA OBA SUDIONIKA */}
       <rect x="200" y="620" width="200" height="120" rx="5" fill={primaryColor} stroke={borderColor} strokeWidth="3" />
