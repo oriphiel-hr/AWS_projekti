@@ -1186,6 +1186,9 @@ export default function UserTypesFlowcharts() {
         Ponuda prihvaćena, chat soba kreirana
       </text>
 
+      {/* Linija od Notifikacija do Posao u tijeku */}
+      <line x1="300" y1="880" x2="300" y2="900" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
+
       {/* Chatroom - ZAHTIJEVA OBA SUDIONIKA */}
       <rect x="200" y="620" width="200" height="120" rx="5" fill={primaryColor} stroke={borderColor} strokeWidth="3" />
       <text x="300" y="645" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
@@ -1231,16 +1234,16 @@ export default function UserTypesFlowcharts() {
       {/* Linija od OBA SUDIONIKA do Posao u tijeku */}
       <line x1="550" y1="900" x2="300" y2="900" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
 
-      <rect x="100" y="880" width="400" height="60" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
-      <text x="300" y="900" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+      <rect x="100" y="900" width="400" height="60" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
+      <text x="300" y="920" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         ✓ Posao u tijeku
       </text>
-      <text x="300" y="920" textAnchor="middle" fontSize="12" fill="white">
+      <text x="300" y="940" textAnchor="middle" fontSize="12" fill="white">
         Status: U_TIJEKU
       </text>
 
       {/* Odluka o izvršenju posla */}
-      <line x1="300" y1="940" x2="300" y2="980" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
+      <line x1="300" y1="960" x2="300" y2="980" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
       
       <polygon points="300,980 350,1020 300,1060 250,1020" fill={warningColor} stroke={borderColor} strokeWidth="2" />
       <text x="300" y="1025" textAnchor="middle" fontSize="12" fill="white" fontWeight="bold">
