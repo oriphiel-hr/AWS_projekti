@@ -1657,8 +1657,8 @@ export default function UserTypesFlowcharts() {
 
       {/* Veza natrag u Queue Scheduler (ne) - isprekidana linija */}
       <line x1="750" y1="690" x2="900" y2="690" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
-      <line x1="900" y1="690" x2="900" y2="390" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
-      <line x1="900" y1="390" x2="700" y2="390" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" markerEnd="url(#arrowhead7)" />
+      <line x1="900" y1="690" x2="900" y2="340" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
+      <line x1="900" y1="340" x2="850" y2="340" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" markerEnd="url(#arrowhead7)" />
       <text x="825" y="685" textAnchor="middle" fontSize="10" fill={textColor}>ne</text>
       <rect x="300" y="750" width="400" height="100" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
       <text x="500" y="770" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
