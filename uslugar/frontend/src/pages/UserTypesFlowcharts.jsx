@@ -1297,16 +1297,16 @@ export default function UserTypesFlowcharts() {
         Status: OTKAZAN
       </text>
       <text x="550" y="1212" textAnchor="middle" fontSize="11" fill="white">
-        Nema ROI statistike
+        ⚠️ Nema ROI statistike
       </text>
       <text x="550" y="1227" textAnchor="middle" fontSize="12" fill="white">
-        • Korisnik otkazao
+        👤 Korisnik otkazao
       </text>
       <text x="550" y="1242" textAnchor="middle" fontSize="12" fill="white">
-        • Pružatelj otkazao
+        👤 Pružatelj otkazao
       </text>
       <text x="550" y="1257" textAnchor="middle" fontSize="12" fill="white">
-        • Nema recenzija
+        ❌ Nema recenzija
       </text>
     </ZoomableSVG>
   );
