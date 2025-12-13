@@ -189,21 +189,38 @@ jobs:
           echo "   Password: [hidden]"
           echo "   Server dir: ${{ env.SERVER_DIR }}"
           
+          # Validate host format
+          if [[ "$CLEANED_HOST" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]] || [[ "$CLEANED_HOST" =~ ^[a-zA-Z0-9.-]+$ ]]; then
+            echo "✅ Host format is valid: $CLEANED_HOST"
+          else
+            echo "⚠️  WARNING: Host format may be invalid: $CLEANED_HOST"
+          fi
+          
           # Export cleaned values for use in deployment steps
           echo "FTP_HOST=$CLEANED_HOST" >> $GITHUB_ENV
           echo "FTP_USER=$FTP_USER" >> $GITHUB_ENV
           echo "FTP_PASS=$FTP_PASS" >> $GITHUB_ENV
+          
+          # Save for troubleshooting
+          echo "FTP_HOST_FOR_DEBUG=$CLEANED_HOST" >> $GITHUB_ENV
 
       - name: Test FTP connection
         continue-on-error: true
         run: |
           echo "🔍 Testing FTP connection..."
-          timeout 10 bash -c "echo > /dev/tcp/${{ env.FTP_HOST }}/21" 2>/dev/null && echo "✅ Port 21 is reachable" || echo "⚠️  Port 21 timeout (may be blocked by firewall)"
-          echo "ℹ️  If connection fails, check:"
-          echo "   1. FTP host is correct (no ftp:// prefix)"
-          echo "   2. Firewall allows port 21"
-          echo "   3. Server supports FTP/FTPS"
-          echo "   4. Credentials are correct in GitHub Secrets"
+          echo "Host: ${{ env.FTP_HOST }}"
+          echo "Port 21 test:"
+          timeout 15 bash -c "echo > /dev/tcp/${{ env.FTP_HOST }}/21" 2>/dev/null && echo "✅ Port 21 is reachable" || echo "❌ Port 21 timeout - server may be unreachable or firewall blocked"
+          echo ""
+          echo "Port 22 test (SFTP):"
+          timeout 15 bash -c "echo > /dev/tcp/${{ env.FTP_HOST }}/22" 2>/dev/null && echo "✅ Port 22 (SFTP) is reachable - consider using SFTP instead" || echo "⚠️  Port 22 also not reachable"
+          echo ""
+          echo "ℹ️  Troubleshooting:"
+          echo "   1. Verify FTP host: ${{ env.FTP_HOST }}"
+          echo "   2. Check GitHub Secrets are set correctly"
+          echo "   3. Server may only support SFTP (port 22)"
+          echo "   4. Firewall may block port 21"
+          echo "   5. Try manual deployment: uslugar/frontend/deploy-frontend-ftp-fixed.ps1"
 
       - name: Deploy via FTP (first attempt - passive mode)
         id: deploy-ftp
@@ -302,26 +319,40 @@ jobs:
         run: |
           echo "❌ FTP Deployment failed after all retry attempts"
           echo ""
+          echo "📋 Configuration used:"
+          echo "   Host: ${{ env.FTP_HOST_FOR_DEBUG }}"
+          echo "   Username: ${{ env.FTP_USER }}"
+          echo "   Server dir: ${{ env.SERVER_DIR }}"
+          echo ""
           echo "🔍 Troubleshooting steps:"
-          echo "1. Check GitHub Secrets (Settings > Secrets and variables > Actions):"
-          echo "   - HOSTINGER_HOST or FTP_HOST (should be just hostname, no ftp:// prefix)"
-          echo "   - HOSTINGER_USERNAME or FTP_USERNAME"
-          echo "   - HOSTINGER_PASSWORD or FTP_PASSWORD"
           echo ""
-          echo "2. Verify FTP server is accessible:"
-          echo "   - Try connecting with FileZilla or similar FTP client"
-          echo "   - Check if port 21 is open (firewall)"
+          echo "1. Verify GitHub Secrets (Settings > Secrets and variables > Actions):"
+          echo "   ✅ HOSTINGER_HOST or FTP_HOST = hostname only (no ftp://, no port)"
+          echo "      Example: ftp.uslugar.oriph.io or 194.5.156.10"
+          echo "   ✅ HOSTINGER_USERNAME or FTP_USERNAME = your FTP username"
+          echo "   ✅ HOSTINGER_PASSWORD or FTP_PASSWORD = your FTP password"
           echo ""
-          echo "3. Check server requirements:"
-          echo "   - Server must support FTP, FTPS, or SFTP"
-          echo "   - If only SFTP is supported, consider using SFTP action instead"
+          echo "2. Test connection manually:"
+          echo "   - Use FileZilla: Host=${{ env.FTP_HOST_FOR_DEBUG }}, Port=21"
+          echo "   - Or use PowerShell: uslugar/frontend/deploy-frontend-ftp-fixed.ps1"
           echo ""
-          echo "4. Common issues:"
-          echo "   - Host contains 'ftp://' prefix (should be removed)"
-          echo "   - Firewall blocking port 21"
-          echo "   - Server only supports SFTP (not FTP/FTPS)"
-          echo "   - Incorrect credentials"
+          echo "3. Check server configuration:"
+          echo "   - Server may only support SFTP (port 22) not FTP (port 21)"
+          echo "   - Firewall may block port 21"
+          echo "   - Server may require passive mode"
           echo ""
-          echo "5. Alternative: Use manual deployment script:"
-          echo "   - Run: uslugar/frontend/deploy-frontend-ftp-fixed.ps1"
+          echo "4. Common fixes:"
+          echo "   - Remove 'ftp://' prefix from host secret"
+          echo "   - Remove port number from host (use default 21)"
+          echo "   - Verify credentials in Hostinger control panel"
+          echo "   - Check if server supports FTP (not just SFTP)"
+          echo ""
+          echo "5. Alternative deployment methods:"
+          echo "   📁 Manual: Run uslugar/frontend/deploy-frontend-ftp-fixed.ps1 locally"
+          echo "   📁 FileZilla: Upload uslugar/frontend/dist/* to public_html/"
+          echo "   📁 SSH: Use scp or rsync if SSH is available"
+          echo ""
+          echo "💡 If server only supports SFTP, consider:"
+          echo "   - Using SFTP action instead of FTP action"
+          echo "   - Or contact hosting provider to enable FTP/FTPS"
           exit 1
