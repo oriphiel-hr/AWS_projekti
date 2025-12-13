@@ -1250,16 +1250,16 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Odluka o izvršenju posla */}
-      <line x1="300" y1="1040" x2="300" y2="1060" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
+      <line x1="300" y1="1040" x2="300" y2="1060" stroke={textColor} strokeWidth="2" />
       
       <polygon points="300,1060 350,1100 300,1140 250,1100" fill={warningColor} stroke={borderColor} strokeWidth="2" />
       <text x="300" y="1105" textAnchor="middle" fontSize="12" fill="white" fontWeight="bold">
         Izvršen?
       </text>
 
-      {/* Posao izvršen - linija od Izvršen? do POSAO IZVRŠEN */}
-      <line x1="300" y1="1140" x2="300" y2="1160" stroke={textColor} strokeWidth="2" />
-      <line x1="300" y1="1160" x2="50" y2="1160" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
+      {/* Posao izvršen - linija od Izvršen? lijevo do POSAO IZVRŠEN */}
+      <line x1="250" y1="1100" x2="50" y2="1100" stroke={textColor} strokeWidth="2" />
+      <line x1="50" y1="1100" x2="50" y2="1160" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
       <rect x="50" y="1160" width="200" height="140" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
       <text x="150" y="1180" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         ✓ POSAO IZVRŠEN
