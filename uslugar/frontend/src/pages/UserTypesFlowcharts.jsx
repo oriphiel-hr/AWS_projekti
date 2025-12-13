@@ -1615,7 +1615,7 @@ export default function UserTypesFlowcharts() {
 
       {/* Partner Score izračun */}
       <rect x="450" y="430" width="500" height="140" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
-      <text x="700" y="450" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
+      <text x="700" y="450" textAnchor="middle" fontSize="13" fontWeight="bold" fill={textColor}>
         Partner Score Izračun
       </text>
       <text x="700" y="470" textAnchor="middle" fontSize="11" fill={textColor}>
@@ -1651,8 +1651,9 @@ export default function UserTypesFlowcharts() {
         Lead ponuđen?
       </text>
 
-      {/* OFFERED */}
-      <line x1="650" y1="650" x2="500" y2="650" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
+      {/* OFFERED - direktna veza od Lead ponuđen? */}
+      <line x1="650" y1="650" x2="500" y2="650" stroke={textColor} strokeWidth="2" />
+      <line x1="500" y1="650" x2="500" y2="710" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
       <rect x="300" y="710" width="400" height="100" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
       <text x="500" y="730" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         Status: OFFERED
