@@ -371,13 +371,13 @@ export default function UserTypesFlowcharts() {
       <line x1="550" y1="450" x2="400" y2="450" stroke={textColor} strokeWidth="2" />
       <line x1="400" y1="450" x2="400" y2="497" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead2)" />
       <rect x="200" y="500" width="400" height="80" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
-      <text x="400" y="525" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+      <text x="400" y="520" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         ✓ Verificirani pružatelj
       </text>
-      <text x="400" y="545" textAnchor="middle" fontSize="12" fill="white">
+      <text x="400" y="540" textAnchor="middle" fontSize="12" fill="white">
         companyVerified = true
       </text>
-      <text x="400" y="565" textAnchor="middle" fontSize="12" fill="white">
+      <text x="400" y="560" textAnchor="middle" fontSize="12" fill="white">
         Badge: Business, Identity
       </text>
 
@@ -385,19 +385,19 @@ export default function UserTypesFlowcharts() {
       <line x1="650" y1="450" x2="800" y2="450" stroke={textColor} strokeWidth="2" />
       <line x1="800" y1="450" x2="800" y2="497" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead2)" />
       <rect x="700" y="500" width="200" height="115" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="2" />
-      <text x="800" y="525" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+      <text x="800" y="520" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         ❌ ODBIJENO
       </text>
-      <text x="800" y="545" textAnchor="middle" fontSize="12" fill="white">
+      <text x="800" y="540" textAnchor="middle" fontSize="12" fill="white">
         Admin razlog odbijanja
       </text>
-      <text x="800" y="565" textAnchor="middle" fontSize="12" fill="white">
+      <text x="800" y="560" textAnchor="middle" fontSize="12" fill="white">
         • Neispravni dokumenti
       </text>
-      <text x="800" y="580" textAnchor="middle" fontSize="12" fill="white">
+      <text x="800" y="575" textAnchor="middle" fontSize="12" fill="white">
         • Neuspjela provjera OIB-a
       </text>
-      <text x="800" y="595" textAnchor="middle" fontSize="12" fill="white">
+      <text x="800" y="590" textAnchor="middle" fontSize="12" fill="white">
         Mogućnost ponovnog slanja
       </text>
 
@@ -468,10 +468,10 @@ export default function UserTypesFlowcharts() {
       {/* Licenca odobrena */}
       <line x1="200" y1="945" x2="200" y2="967" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead2)" />
       <rect x="50" y="970" width="300" height="60" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
-      <text x="200" y="995" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+      <text x="200" y="990" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         ✓ Licencirani pružatelj
       </text>
-      <text x="200" y="1015" textAnchor="middle" fontSize="12" fill="white">
+      <text x="200" y="1010" textAnchor="middle" fontSize="12" fill="white">
         isVerified = true, Badge: Safety
       </text>
     </ZoomableSVG>
@@ -541,91 +541,91 @@ export default function UserTypesFlowcharts() {
       
       {/* BASIC */}
       <rect x="50" y="410" width="300" height="95" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
-      <text x="200" y="435" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
+      <text x="200" y="430" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         BASIC
       </text>
-      <text x="200" y="455" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="200" y="450" textAnchor="middle" fontSize="11" fill={textColor}>
         Osnovne funkcionalnosti
       </text>
-      <text x="200" y="470" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="200" y="465" textAnchor="middle" fontSize="11" fill={textColor}>
         Ograničen broj poslova
       </text>
-      <text x="200" y="490" textAnchor="middle" fontSize="11" fill={successColor}>
+      <text x="200" y="485" textAnchor="middle" fontSize="11" fill={successColor}>
         ✓ Aktivna pretplata
       </text>
 
       {/* PREMIUM */}
       <rect x="400" y="410" width="300" height="155" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
-      <text x="550" y="435" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
+      <text x="550" y="430" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         PREMIUM
       </text>
-      <text x="550" y="455" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="550" y="450" textAnchor="middle" fontSize="11" fill={textColor}>
         • Napredne funkcionalnosti
       </text>
-      <text x="550" y="470" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="550" y="465" textAnchor="middle" fontSize="11" fill={textColor}>
         • 50 kredita/mjesec
       </text>
-      <text x="550" y="485" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="550" y="480" textAnchor="middle" fontSize="11" fill={textColor}>
         • AI Priority u queue-u
       </text>
-      <text x="550" y="500" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="550" y="495" textAnchor="middle" fontSize="11" fill={textColor}>
         • SMS notifikacije
       </text>
-      <text x="550" y="515" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="550" y="510" textAnchor="middle" fontSize="11" fill={textColor}>
         • Priority support
       </text>
-      <text x="550" y="530" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="550" y="525" textAnchor="middle" fontSize="11" fill={textColor}>
         • CSV export
       </text>
-      <text x="550" y="545" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="550" y="540" textAnchor="middle" fontSize="11" fill={textColor}>
         • Advanced analytics
       </text>
-      <text x="550" y="560" textAnchor="middle" fontSize="11" fill={successColor}>
+      <text x="550" y="555" textAnchor="middle" fontSize="11" fill={successColor}>
         ✓ Aktivna pretplata
       </text>
 
       {/* PRO */}
       <rect x="750" y="410" width="300" height="155" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
-      <text x="900" y="435" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
+      <text x="900" y="430" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         PRO
       </text>
-      <text x="900" y="455" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="900" y="450" textAnchor="middle" fontSize="11" fill={textColor}>
         • Sve funkcionalnosti
       </text>
-      <text x="900" y="470" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="900" y="465" textAnchor="middle" fontSize="11" fill={textColor}>
         • Unlimited krediti
       </text>
-      <text x="900" y="485" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="900" y="480" textAnchor="middle" fontSize="11" fill={textColor}>
         • VIP podrška 24/7
       </text>
-      <text x="900" y="500" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="900" y="495" textAnchor="middle" fontSize="11" fill={textColor}>
         • White-label opcija
       </text>
-      <text x="900" y="515" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="900" y="510" textAnchor="middle" fontSize="11" fill={textColor}>
         • Live chat widget
       </text>
-      <text x="900" y="530" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="900" y="525" textAnchor="middle" fontSize="11" fill={textColor}>
         • Support tickets
       </text>
-      <text x="900" y="545" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="900" y="540" textAnchor="middle" fontSize="11" fill={textColor}>
         • Real-time chat podrška
       </text>
-      <text x="900" y="560" textAnchor="middle" fontSize="11" fill={successColor}>
+      <text x="900" y="555" textAnchor="middle" fontSize="11" fill={successColor}>
         ✓ Aktivna pretplata
       </text>
 
       {/* Nema upgrade */}
       <rect x="1100" y="410" width="200" height="95" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
-      <text x="1200" y="435" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
+      <text x="1200" y="430" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         Nema pretplate
       </text>
-      <text x="1200" y="455" textAnchor="middle" fontSize="12" fill={textColor}>
+      <text x="1200" y="450" textAnchor="middle" fontSize="12" fill={textColor}>
         TRIAL istekao
       </text>
-      <text x="1200" y="470" textAnchor="middle" fontSize="12" fill={textColor}>
+      <text x="1200" y="465" textAnchor="middle" fontSize="12" fill={textColor}>
         Nema aktivne pretplate
       </text>
-      <text x="1200" y="490" textAnchor="middle" fontSize="11" fill={dangerColor}>
+      <text x="1200" y="485" textAnchor="middle" fontSize="11" fill={dangerColor}>
         ⚠️ Ograničen pristup
       </text>
 
@@ -646,28 +646,28 @@ export default function UserTypesFlowcharts() {
       <line x1="600" y1="580" x2="600" y2="640" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
       
       <rect x="450" y="640" width="300" height="100" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="3" />
-      <text x="600" y="670" textAnchor="middle" fontSize="16" fontWeight="bold" fill="white">
+      <text x="600" y="665" textAnchor="middle" fontSize="16" fontWeight="bold" fill="white">
         🔐 ADMIN Upravljanje
       </text>
-      <text x="600" y="695" textAnchor="middle" fontSize="12" fill="white">
+      <text x="600" y="690" textAnchor="middle" fontSize="12" fill="white">
         • Ručno produženje pretplate
       </text>
-      <text x="600" y="715" textAnchor="middle" fontSize="12" fill="white">
+      <text x="600" y="710" textAnchor="middle" fontSize="12" fill="white">
         • Promjena plana (upgrade/downgrade)
       </text>
-      <text x="600" y="735" textAnchor="middle" fontSize="12" fill="white">
+      <text x="600" y="730" textAnchor="middle" fontSize="12" fill="white">
         • Otkazivanje, refundiranje
       </text>
-      <text x="600" y="755" textAnchor="middle" fontSize="12" fill="white">
+      <text x="600" y="750" textAnchor="middle" fontSize="12" fill="white">
         • Pregled faktura i transakcija
       </text>
 
       <line x1="600" y1="740" x2="600" y2="760" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead3)" />
       <rect x="450" y="760" width="300" height="60" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
-      <text x="600" y="785" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+      <text x="600" y="780" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         ✓ Pretplata aktivna
       </text>
-      <text x="600" y="805" textAnchor="middle" fontSize="12" fill="white">
+      <text x="600" y="800" textAnchor="middle" fontSize="12" fill="white">
         Status: ACTIVE, automatska obnova
       </text>
     </ZoomableSVG>
@@ -843,13 +843,13 @@ export default function UserTypesFlowcharts() {
 
       {/* Prihvaćena ponuda - putanja */}
       <rect x="50" y="900" width="200" height="80" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
-      <text x="150" y="925" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+      <text x="150" y="920" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         ✓ PRIHVAĆENA
       </text>
-      <text x="150" y="945" textAnchor="middle" fontSize="12" fill="white">
+      <text x="150" y="940" textAnchor="middle" fontSize="12" fill="white">
         Status: PRIHVAĆENA
       </text>
-      <text x="150" y="965" textAnchor="middle" fontSize="12" fill="white">
+      <text x="150" y="960" textAnchor="middle" fontSize="12" fill="white">
         Chatroom se kreira
       </text>
 
@@ -857,19 +857,19 @@ export default function UserTypesFlowcharts() {
       <line x1="350" y1="880" x2="550" y2="880" stroke={textColor} strokeWidth="2" />
       <line x1="550" y1="880" x2="550" y2="900" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead4)" />
       <rect x="450" y="900" width="200" height="100" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="2" />
-      <text x="550" y="925" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+      <text x="550" y="920" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         ❌ ODBIJENA
       </text>
-      <text x="550" y="945" textAnchor="middle" fontSize="12" fill="white">
+      <text x="550" y="940" textAnchor="middle" fontSize="12" fill="white">
         Status: ODBIJENA
       </text>
-      <text x="550" y="965" textAnchor="middle" fontSize="12" fill="white">
+      <text x="550" y="960" textAnchor="middle" fontSize="12" fill="white">
         • Ponuda odbijena
       </text>
-      <text x="550" y="980" textAnchor="middle" fontSize="12" fill="white">
+      <text x="550" y="975" textAnchor="middle" fontSize="12" fill="white">
         • Nema chatrooma
       </text>
-      <text x="550" y="995" textAnchor="middle" fontSize="12" fill="white">
+      <text x="550" y="990" textAnchor="middle" fontSize="12" fill="white">
         • Pružatelj može poslati novu
       </text>
 
@@ -933,13 +933,13 @@ export default function UserTypesFlowcharts() {
       {/* Posao izvršen */}
       <line x1="150" y1="1260" x2="150" y2="1280" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead4)" />
       <rect x="50" y="1280" width="200" height="80" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
-      <text x="150" y="1305" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+      <text x="150" y="1300" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         ✓ POSAO IZVRŠEN
       </text>
-      <text x="150" y="1325" textAnchor="middle" fontSize="12" fill="white">
+      <text x="150" y="1320" textAnchor="middle" fontSize="12" fill="white">
         Status: ZAVRŠEN
       </text>
-      <text x="150" y="1345" textAnchor="middle" fontSize="12" fill="white">
+      <text x="150" y="1340" textAnchor="middle" fontSize="12" fill="white">
         Recenzije, ROI tracking
       </text>
 
@@ -948,19 +948,19 @@ export default function UserTypesFlowcharts() {
       <line x1="400" y1="1220" x2="400" y2="1265" stroke={textColor} strokeWidth="2" />
       <polygon points="400,1265 395,1270 400,1275 405,1270" fill={textColor} />
       <rect x="300" y="1280" width="200" height="100" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="2" />
-      <text x="400" y="1305" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+      <text x="400" y="1300" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         ❌ POSAO OTKAZAN
       </text>
-      <text x="400" y="1325" textAnchor="middle" fontSize="12" fill="white">
+      <text x="400" y="1320" textAnchor="middle" fontSize="12" fill="white">
         Status: OTKAZAN
       </text>
-      <text x="400" y="1345" textAnchor="middle" fontSize="12" fill="white">
+      <text x="400" y="1340" textAnchor="middle" fontSize="12" fill="white">
         • Korisnik otkazao
       </text>
-      <text x="400" y="1365" textAnchor="middle" fontSize="12" fill="white">
+      <text x="400" y="1355" textAnchor="middle" fontSize="12" fill="white">
         • Pružatelj otkazao
       </text>
-      <text x="400" y="1380" textAnchor="middle" fontSize="12" fill="white">
+      <text x="400" y="1370" textAnchor="middle" fontSize="12" fill="white">
         • Nema recenzija
       </text>
 
@@ -968,22 +968,22 @@ export default function UserTypesFlowcharts() {
 
       {/* Završetak i recenzije */}
       <rect x="50" y="1400" width="200" height="120" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
-      <text x="150" y="1425" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+      <text x="150" y="1420" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         Završetak posla
       </text>
-      <text x="150" y="1445" textAnchor="middle" fontSize="12" fill="white">
+      <text x="150" y="1440" textAnchor="middle" fontSize="12" fill="white">
         Status: ZAVRŠEN
       </text>
-      <text x="150" y="1465" textAnchor="middle" fontSize="11" fill="white">
+      <text x="150" y="1460" textAnchor="middle" fontSize="11" fill="white">
         👥 OBA SUDIONIKA: Recenzije
       </text>
-      <text x="150" y="1485" textAnchor="middle" fontSize="10" fill="white">
+      <text x="150" y="1475" textAnchor="middle" fontSize="10" fill="white">
         • Korisnik ocjenjuje pružatelja
       </text>
-      <text x="150" y="1500" textAnchor="middle" fontSize="10" fill="white">
+      <text x="150" y="1490" textAnchor="middle" fontSize="10" fill="white">
         • Pružatelj ocjenjuje korisnika
       </text>
-      <text x="150" y="1515" textAnchor="middle" fontSize="11" fill="white">
+      <text x="150" y="1505" textAnchor="middle" fontSize="11" fill="white">
         ⚠️ Bilateralno ocjenjivanje
       </text>
     </ZoomableSVG>
@@ -1143,13 +1143,13 @@ export default function UserTypesFlowcharts() {
       <line x1="800" y1="660" x2="500" y2="660" stroke={textColor} strokeWidth="2" />
       <line x1="500" y1="660" x2="500" y2="717" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
       <rect x="400" y="720" width="200" height="80" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
-      <text x="500" y="745" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+      <text x="500" y="740" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         ✓ PRIHVAĆENA
       </text>
-      <text x="500" y="765" textAnchor="middle" fontSize="12" fill="white">
+      <text x="500" y="760" textAnchor="middle" fontSize="12" fill="white">
         Status: PRIHVAĆENA
       </text>
-      <text x="500" y="785" textAnchor="middle" fontSize="12" fill="white">
+      <text x="500" y="780" textAnchor="middle" fontSize="12" fill="white">
         Chatroom se kreira
       </text>
 
@@ -1157,29 +1157,29 @@ export default function UserTypesFlowcharts() {
       <line x1="900" y1="660" x2="1050" y2="660" stroke={textColor} strokeWidth="2" />
       <line x1="1050" y1="660" x2="1050" y2="717" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
       <rect x="950" y="720" width="200" height="100" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="2" />
-      <text x="1050" y="745" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+      <text x="1050" y="740" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         ❌ ODBIJENA
       </text>
-      <text x="1050" y="765" textAnchor="middle" fontSize="12" fill="white">
+      <text x="1050" y="760" textAnchor="middle" fontSize="12" fill="white">
         Status: ODBIJENA
       </text>
-      <text x="1050" y="785" textAnchor="middle" fontSize="12" fill="white">
+      <text x="1050" y="775" textAnchor="middle" fontSize="12" fill="white">
         • Ponuda odbijena
       </text>
-      <text x="1050" y="805" textAnchor="middle" fontSize="12" fill="white">
+      <text x="1050" y="790" textAnchor="middle" fontSize="12" fill="white">
         • Nema chatrooma
       </text>
-      <text x="1050" y="820" textAnchor="middle" fontSize="12" fill="white">
+      <text x="1050" y="805" textAnchor="middle" fontSize="12" fill="white">
         • Pružatelj može poslati novu
       </text>
 
       {/* Notifikacija pružatelju */}
       <line x1="500" y1="800" x2="300" y2="800" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
       <rect x="100" y="820" width="400" height="60" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
-      <text x="300" y="845" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
+      <text x="300" y="840" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         👤 PRUŽATELJ: Notifikacija
       </text>
-      <text x="300" y="865" textAnchor="middle" fontSize="12" fill={textColor}>
+      <text x="300" y="860" textAnchor="middle" fontSize="12" fill={textColor}>
         Ponuda prihvaćena, chat soba kreirana
       </text>
 
@@ -1234,10 +1234,10 @@ export default function UserTypesFlowcharts() {
       <line x1="300" y1="740" x2="300" y2="780" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
 
       <rect x="100" y="780" width="400" height="60" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
-      <text x="300" y="805" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+      <text x="300" y="800" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         ✓ Posao u tijeku
       </text>
-      <text x="300" y="825" textAnchor="middle" fontSize="12" fill="white">
+      <text x="300" y="820" textAnchor="middle" fontSize="12" fill="white">
         Status: U_TIJEKU
       </text>
 
@@ -1253,50 +1253,50 @@ export default function UserTypesFlowcharts() {
       <line x1="300" y1="960" x2="150" y2="960" stroke={textColor} strokeWidth="2" />
       <line x1="150" y1="960" x2="150" y2="980" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
       <rect x="50" y="980" width="200" height="140" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
-      <text x="150" y="1005" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+      <text x="150" y="1000" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         ✓ POSAO IZVRŠEN
       </text>
-      <text x="150" y="1025" textAnchor="middle" fontSize="12" fill="white">
+      <text x="150" y="1020" textAnchor="middle" fontSize="12" fill="white">
         Status: ZAVRŠEN
       </text>
-      <text x="150" y="1045" textAnchor="middle" fontSize="11" fill="white">
+      <text x="150" y="1040" textAnchor="middle" fontSize="11" fill="white">
         👥 OBA SUDIONIKA: Recenzije
       </text>
-      <text x="150" y="1065" textAnchor="middle" fontSize="10" fill="white">
+      <text x="150" y="1055" textAnchor="middle" fontSize="10" fill="white">
         • Pružatelj ocjenjuje korisnika
       </text>
-      <text x="150" y="1080" textAnchor="middle" fontSize="10" fill="white">
+      <text x="150" y="1070" textAnchor="middle" fontSize="10" fill="white">
         • Korisnik ocjenjuje pružatelja
       </text>
-      <text x="150" y="1095" textAnchor="middle" fontSize="10" fill="white">
+      <text x="150" y="1085" textAnchor="middle" fontSize="10" fill="white">
         ⚠️ Bilateralno ocjenjivanje
       </text>
-      <text x="150" y="1110" textAnchor="middle" fontSize="11" fill="white">
+      <text x="150" y="1100" textAnchor="middle" fontSize="11" fill="white">
         ROI tracking, statistike
       </text>
-      <text x="150" y="1125" textAnchor="middle" fontSize="11" fill="white">
+      <text x="150" y="1115" textAnchor="middle" fontSize="11" fill="white">
         🔐 ADMIN: Moderacija recenzija
       </text>
 
       {/* Posao otkazan */}
       <line x1="350" y1="920" x2="500" y2="920" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
       <rect x="450" y="980" width="200" height="100" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="2" />
-      <text x="550" y="1005" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+      <text x="550" y="1000" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         ❌ POSAO OTKAZAN
       </text>
-      <text x="550" y="1025" textAnchor="middle" fontSize="12" fill="white">
+      <text x="550" y="1020" textAnchor="middle" fontSize="12" fill="white">
         Status: OTKAZAN
       </text>
-      <text x="550" y="1045" textAnchor="middle" fontSize="12" fill="white">
+      <text x="550" y="1040" textAnchor="middle" fontSize="12" fill="white">
         • Korisnik otkazao
       </text>
-      <text x="550" y="1065" textAnchor="middle" fontSize="12" fill="white">
+      <text x="550" y="1055" textAnchor="middle" fontSize="12" fill="white">
         • Pružatelj otkazao
       </text>
-      <text x="550" y="1085" textAnchor="middle" fontSize="12" fill="white">
+      <text x="550" y="1070" textAnchor="middle" fontSize="12" fill="white">
         • Nema recenzija
       </text>
-      <text x="550" y="1100" textAnchor="middle" fontSize="12" fill="white">
+      <text x="550" y="1085" textAnchor="middle" fontSize="12" fill="white">
         • Nema ROI trackinga
       </text>
     </ZoomableSVG>
@@ -1395,22 +1395,22 @@ export default function UserTypesFlowcharts() {
       {/* ROI Dashboard */}
       <line x1="500" y1="640" x2="500" y2="680" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead6)" />
       <rect x="300" y="680" width="400" height="120" rx="5" fill={primaryColor} stroke={borderColor} strokeWidth="2" />
-      <text x="500" y="705" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+      <text x="500" y="700" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         ROI Dashboard
       </text>
-      <text x="500" y="725" textAnchor="middle" fontSize="11" fill="white">
+      <text x="500" y="720" textAnchor="middle" fontSize="11" fill="white">
         • Konverzija leadova
       </text>
-      <text x="500" y="740" textAnchor="middle" fontSize="11" fill="white">
+      <text x="500" y="735" textAnchor="middle" fontSize="11" fill="white">
         • Ukupan prihod od leadova
       </text>
-      <text x="500" y="755" textAnchor="middle" fontSize="11" fill="white">
+      <text x="500" y="750" textAnchor="middle" fontSize="11" fill="white">
         • Prosječna vrijednost leada
       </text>
-      <text x="500" y="770" textAnchor="middle" fontSize="11" fill="white">
+      <text x="500" y="765" textAnchor="middle" fontSize="11" fill="white">
         • Ukupno potrošenih kredita
       </text>
-      <text x="500" y="785" textAnchor="middle" fontSize="11" fill="white">
+      <text x="500" y="780" textAnchor="middle" fontSize="11" fill="white">
         • Grafički prikaz statistika
       </text>
 
@@ -1436,32 +1436,32 @@ export default function UserTypesFlowcharts() {
       <line x1="450" y1="880" x2="200" y2="880" stroke={textColor} strokeWidth="2" />
       <line x1="200" y1="880" x2="200" y2="937" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead6)" />
       <rect x="100" y="940" width="200" height="80" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
-      <text x="200" y="965" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
+      <text x="200" y="960" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         CONTACTED
       </text>
-      <text x="200" y="985" textAnchor="middle" fontSize="12" fill={textColor}>
+      <text x="200" y="980" textAnchor="middle" fontSize="12" fill={textColor}>
         Pružatelj kontaktirao
       </text>
-      <text x="200" y="1000" textAnchor="middle" fontSize="12" fill={textColor}>
+      <text x="200" y="995" textAnchor="middle" fontSize="12" fill={textColor}>
         Klijent odgovorio
       </text>
-      <text x="200" y="1015" textAnchor="middle" fontSize="12" fill={textColor}>
+      <text x="200" y="1010" textAnchor="middle" fontSize="12" fill={textColor}>
         Status: CONTACTED
       </text>
 
       {/* CONVERTED */}
       <line x1="200" y1="1020" x2="200" y2="1060" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead6)" />
       <rect x="100" y="1060" width="200" height="80" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
-      <text x="200" y="1085" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+      <text x="200" y="1080" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         CONVERTED
       </text>
-      <text x="200" y="1105" textAnchor="middle" fontSize="12" fill="white">
+      <text x="200" y="1100" textAnchor="middle" fontSize="12" fill="white">
         Posao uspješan
       </text>
-      <text x="200" y="1120" textAnchor="middle" fontSize="12" fill="white">
+      <text x="200" y="1115" textAnchor="middle" fontSize="12" fill="white">
         ROI pozitivan
       </text>
-      <text x="200" y="1135" textAnchor="middle" fontSize="12" fill="white">
+      <text x="200" y="1130" textAnchor="middle" fontSize="12" fill="white">
         Status: CONVERTED
       </text>
 
@@ -1469,61 +1469,61 @@ export default function UserTypesFlowcharts() {
       <line x1="550" y1="880" x2="700" y2="880" stroke={textColor} strokeWidth="2" />
       <line x1="700" y1="880" x2="700" y2="937" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead6)" />
       <rect x="600" y="940" width="200" height="120" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="2" />
-      <text x="700" y="965" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+      <text x="700" y="960" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         REFUNDED
       </text>
-      <text x="700" y="985" textAnchor="middle" fontSize="12" fill="white">
+      <text x="700" y="980" textAnchor="middle" fontSize="12" fill="white">
         Klijent ne odgovori (48h)
       </text>
-      <text x="700" y="1000" textAnchor="middle" fontSize="12" fill="white">
+      <text x="700" y="995" textAnchor="middle" fontSize="12" fill="white">
         Lead nije kvalitetan
       </text>
-      <text x="700" y="1015" textAnchor="middle" fontSize="12" fill="white">
+      <text x="700" y="1010" textAnchor="middle" fontSize="12" fill="white">
         Automatski refund
       </text>
-      <text x="700" y="1030" textAnchor="middle" fontSize="12" fill="white">
+      <text x="700" y="1025" textAnchor="middle" fontSize="12" fill="white">
         • Stripe refund (PSD2)
       </text>
-      <text x="700" y="1045" textAnchor="middle" fontSize="12" fill="white">
+      <text x="700" y="1040" textAnchor="middle" fontSize="12" fill="white">
         • Interni krediti
       </text>
-      <text x="700" y="1060" textAnchor="middle" fontSize="12" fill="white">
+      <text x="700" y="1055" textAnchor="middle" fontSize="12" fill="white">
         Lead vraćen na tržište
       </text>
 
       {/* AI Score detalji */}
       <rect x="900" y="940" width="400" height="140" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
-      <text x="1100" y="965" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
+      <text x="1100" y="960" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         AI Score Kvalitete Leadova
       </text>
-      <text x="1100" y="985" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="1100" y="980" textAnchor="middle" fontSize="11" fill={textColor}>
         • Verificiranje telefona (+10)
       </text>
-      <text x="1100" y="1000" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="1100" y="995" textAnchor="middle" fontSize="11" fill={textColor}>
         • Verificiranje emaila (+10)
       </text>
-      <text x="1100" y="1015" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="1100" y="1010" textAnchor="middle" fontSize="11" fill={textColor}>
         • Verificiranje OIB-a (+15)
       </text>
-      <text x="1100" y="1030" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="1100" y="1025" textAnchor="middle" fontSize="11" fill={textColor}>
         • Verificiranje firme (+20)
       </text>
-      <text x="1100" y="1045" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="1100" y="1040" textAnchor="middle" fontSize="11" fill={textColor}>
         • Povijest na platformi (+15)
       </text>
-      <text x="1100" y="1060" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="1100" y="1055" textAnchor="middle" fontSize="11" fill={textColor}>
         • Detaljnost opisa posla (+10)
       </text>
-      <text x="1100" y="1075" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="1100" y="1070" textAnchor="middle" fontSize="11" fill={textColor}>
         • Budžet realističan (+10)
       </text>
-      <text x="1100" y="1090" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="1100" y="1085" textAnchor="middle" fontSize="11" fill={textColor}>
         • Lokacija specificirana (+5)
       </text>
-      <text x="1100" y="1105" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="1100" y="1100" textAnchor="middle" fontSize="11" fill={textColor}>
         • Hitnost posla (+5)
       </text>
-      <text x="1100" y="1120" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="1100" y="1115" textAnchor="middle" fontSize="11" fill={textColor}>
         • Ukupno: 0-100 score
       </text>
     </ZoomableSVG>
@@ -1592,31 +1592,31 @@ export default function UserTypesFlowcharts() {
 
       {/* Partner Score izračun */}
       <rect x="450" y="430" width="500" height="140" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
-      <text x="700" y="455" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
+      <text x="700" y="450" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         Partner Score Izračun
       </text>
-      <text x="700" y="475" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="700" y="470" textAnchor="middle" fontSize="11" fill={textColor}>
         • Reputation Score (0-100): 40%
       </text>
-      <text x="700" y="490" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="700" y="485" textAnchor="middle" fontSize="11" fill={textColor}>
         • Response Rate: 25%
       </text>
-      <text x="700" y="505" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="700" y="500" textAnchor="middle" fontSize="11" fill={textColor}>
         • Completion Rate: 20%
       </text>
-      <text x="700" y="520" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="700" y="515" textAnchor="middle" fontSize="11" fill={textColor}>
         • Platform Compliance: 15%
       </text>
-      <text x="700" y="535" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="700" y="530" textAnchor="middle" fontSize="11" fill={textColor}>
         • Match Score (kategorija + regija): bonus
       </text>
-      <text x="700" y="550" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="700" y="545" textAnchor="middle" fontSize="11" fill={textColor}>
         • Premium Partner (Score &ge; 80): prioritet
       </text>
-      <text x="700" y="565" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="700" y="560" textAnchor="middle" fontSize="11" fill={textColor}>
         • Verified Partner (Score 60-79): normalan
       </text>
-      <text x="700" y="580" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="700" y="575" textAnchor="middle" fontSize="11" fill={textColor}>
         • Basic Partner (Score &lt; 60): niži prioritet
       </text>
 
@@ -1631,19 +1631,19 @@ export default function UserTypesFlowcharts() {
       {/* OFFERED */}
       <line x1="650" y1="650" x2="500" y2="650" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
       <rect x="300" y="710" width="400" height="100" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
-      <text x="500" y="735" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
+      <text x="500" y="730" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         Status: OFFERED
       </text>
-      <text x="500" y="755" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="500" y="750" textAnchor="middle" fontSize="11" fill={textColor}>
         • Lead ponuđen pružatelju
       </text>
-      <text x="500" y="770" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="500" y="765" textAnchor="middle" fontSize="11" fill={textColor}>
         • Notifikacija poslana (email, SMS, in-app)
       </text>
-      <text x="500" y="785" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="500" y="780" textAnchor="middle" fontSize="11" fill={textColor}>
         • Rok za odgovor: 24h
       </text>
-      <text x="500" y="800" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="500" y="795" textAnchor="middle" fontSize="11" fill={textColor}>
         • Pozicija u redu: prikazana
       </text>
 
@@ -1658,66 +1658,66 @@ export default function UserTypesFlowcharts() {
       {/* INTERESTED */}
       <line x1="450" y1="890" x2="300" y2="890" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
       <rect x="100" y="950" width="200" height="80" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
-      <text x="200" y="975" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+      <text x="200" y="970" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         INTERESTED
       </text>
-      <text x="200" y="995" textAnchor="middle" fontSize="12" fill="white">
+      <text x="200" y="990" textAnchor="middle" fontSize="12" fill="white">
         Status: ACCEPTED
       </text>
-      <text x="200" y="1010" textAnchor="middle" fontSize="12" fill="white">
+      <text x="200" y="1005" textAnchor="middle" fontSize="12" fill="white">
         Lead dodijeljen
       </text>
-      <text x="200" y="1025" textAnchor="middle" fontSize="12" fill="white">
+      <text x="200" y="1020" textAnchor="middle" fontSize="12" fill="white">
         Kontakt otkriven
       </text>
 
       {/* NOT_INTERESTED */}
       <line x1="550" y1="890" x2="700" y2="890" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
       <rect x="600" y="950" width="200" height="80" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
-      <text x="700" y="975" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
+      <text x="700" y="970" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         NOT_INTERESTED
       </text>
-      <text x="700" y="995" textAnchor="middle" fontSize="12" fill="white">
+      <text x="700" y="990" textAnchor="middle" fontSize="12" fill={textColor}>
         Status: DECLINED
       </text>
-      <text x="700" y="1010" textAnchor="middle" fontSize="12" fill="white">
+      <text x="700" y="1005" textAnchor="middle" fontSize="12" fill={textColor}>
         Lead ponuđen sljedećem
       </text>
-      <text x="700" y="1025" textAnchor="middle" fontSize="12" fill="white">
+      <text x="700" y="1020" textAnchor="middle" fontSize="12" fill={textColor}>
         Queue se nastavlja
       </text>
 
       {/* NO_RESPONSE / EXPIRED */}
       <line x1="750" y1="890" x2="900" y2="890" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
       <rect x="800" y="950" width="200" height="100" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="2" />
-      <text x="900" y="975" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+      <text x="900" y="970" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         NO_RESPONSE
       </text>
-      <text x="900" y="995" textAnchor="middle" fontSize="12" fill="white">
+      <text x="900" y="990" textAnchor="middle" fontSize="12" fill="white">
         Status: EXPIRED
       </text>
-      <text x="900" y="1010" textAnchor="middle" fontSize="12" fill="white">
+      <text x="900" y="1005" textAnchor="middle" fontSize="12" fill="white">
         Rok istekao (24h)
       </text>
-      <text x="900" y="1025" textAnchor="white">
+      <text x="900" y="1020" textAnchor="middle" fontSize="12" fill="white">
         Preskakanje neaktivnog
       </text>
-      <text x="900" y="1040" textAnchor="middle" fontSize="12" fill="white">
+      <text x="900" y="1035" textAnchor="middle" fontSize="12" fill="white">
         Lead ponuđen sljedećem
       </text>
 
       {/* SKIPPED */}
       <rect x="1100" y="950" width="200" height="80" rx="5" fill={warningColor} stroke={borderColor} strokeWidth="2" />
-      <text x="1200" y="975" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+      <text x="1200" y="970" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         SKIPPED
       </text>
-      <text x="1200" y="995" textAnchor="middle" fontSize="12" fill="white">
+      <text x="1200" y="990" textAnchor="middle" fontSize="12" fill="white">
         Pružatelj preskočio
       </text>
-      <text x="1200" y="1010" textAnchor="middle" fontSize="12" fill="white">
+      <text x="1200" y="1005" textAnchor="middle" fontSize="12" fill="white">
         Lead ponuđen sljedećem
       </text>
-      <text x="1200" y="1025" textAnchor="middle" fontSize="12" fill="white">
+      <text x="1200" y="1020" textAnchor="middle" fontSize="12" fill="white">
         Queue se nastavlja
       </text>
     </ZoomableSVG>
@@ -1770,35 +1770,35 @@ export default function UserTypesFlowcharts() {
       {/* DA - nema refunda */}
       <line x1="650" y1="310" x2="500" y2="310" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead8)" />
       <rect x="300" y="370" width="200" height="80" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
-      <text x="400" y="395" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+      <text x="400" y="390" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         Klijent odgovorio
       </text>
-      <text x="400" y="415" textAnchor="middle" fontSize="12" fill="white">
+      <text x="400" y="410" textAnchor="middle" fontSize="12" fill="white">
         • Nema refunda
       </text>
-      <text x="400" y="430" textAnchor="middle" fontSize="12" fill="white">
+      <text x="400" y="425" textAnchor="middle" fontSize="12" fill="white">
         • Lead aktivan
       </text>
-      <text x="400" y="445" textAnchor="middle" fontSize="12" fill="white">
+      <text x="400" y="440" textAnchor="middle" fontSize="12" fill="white">
         • Status: CONTACTED
       </text>
 
       {/* NE - refund */}
       <line x1="750" y1="310" x2="900" y2="310" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead8)" />
       <rect x="800" y="370" width="200" height="100" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="2" />
-      <text x="900" y="395" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+      <text x="900" y="390" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         Klijent ne odgovori
       </text>
-      <text x="900" y="415" textAnchor="middle" fontSize="12" fill="white">
+      <text x="900" y="410" textAnchor="middle" fontSize="12" fill="white">
         • 48h neaktivnosti
       </text>
-      <text x="900" y="430" textAnchor="middle" fontSize="12" fill="white">
+      <text x="900" y="425" textAnchor="middle" fontSize="12" fill="white">
         • Automatski refund
       </text>
-      <text x="900" y="445" textAnchor="middle" fontSize="12" fill="white">
+      <text x="900" y="440" textAnchor="middle" fontSize="12" fill="white">
         • Lead nije kvalitetan
       </text>
-      <text x="900" y="460" textAnchor="middle" fontSize="12" fill="white">
+      <text x="900" y="455" textAnchor="middle" fontSize="12" fill="white">
         • Ručno zatraživanje
       </text>
 
@@ -1806,106 +1806,106 @@ export default function UserTypesFlowcharts() {
 
       {/* Refund proces */}
       <rect x="800" y="510" width="200" height="140" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
-      <text x="900" y="535" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
+      <text x="900" y="530" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         Refund Proces
       </text>
-      <text x="900" y="555" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="900" y="550" textAnchor="middle" fontSize="11" fill={textColor}>
         1. Provjera načina plaćanja
       </text>
-      <text x="900" y="570" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="900" y="565" textAnchor="middle" fontSize="11" fill={textColor}>
         2. Stripe Payment Intent?
       </text>
-      <text x="900" y="585" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="900" y="580" textAnchor="middle" fontSize="11" fill={textColor}>
         3. Stripe refund API (PSD2)
       </text>
-      <text x="900" y="600" textAnchor="middle" fontSize="11" fill="white">
+      <text x="900" y="595" textAnchor="middle" fontSize="11" fill={textColor}>
         • Interni krediti (fallback)
       </text>
-      <text x="900" y="615" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="900" y="610" textAnchor="middle" fontSize="11" fill={textColor}>
         4. CreditTransaction: REFUND
       </text>
-      <text x="900" y="630" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="900" y="625" textAnchor="middle" fontSize="11" fill={textColor}>
         5. Lead oslobođen (vraćen na tržište)
       </text>
-      <text x="900" y="645" textAnchor="middle" fontSize="11" fill={successColor}>
+      <text x="900" y="640" textAnchor="middle" fontSize="11" fill={successColor}>
         ✓ Refund uspješan
       </text>
 
       {/* Kreditni sustav */}
       <rect x="100" y="370" width="400" height="200" rx="5" fill={primaryColor} stroke={borderColor} strokeWidth="2" />
-      <text x="300" y="395" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+      <text x="300" y="390" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         Kreditni Sustav
       </text>
-      <text x="300" y="415" textAnchor="middle" fontSize="11" fill="white">
+      <text x="300" y="410" textAnchor="middle" fontSize="11" fill="white">
         • 1 kredit ≈ 10€
       </text>
-      <text x="300" y="430" textAnchor="middle" fontSize="11" fill="white">
+      <text x="300" y="425" textAnchor="middle" fontSize="11" fill="white">
         • Dobivaju se pretplatom
       </text>
-      <text x="300" y="445" textAnchor="middle" fontSize="11" fill="white">
+      <text x="300" y="440" textAnchor="middle" fontSize="11" fill="white">
         • Pay-per-credit (Stripe)
       </text>
-      <text x="300" y="460" textAnchor="middle" fontSize="11" fill="white">
+      <text x="300" y="455" textAnchor="middle" fontSize="11" fill="white">
         • TRIAL: 8 leadova (besplatno)
       </text>
-      <text x="300" y="475" textAnchor="middle" fontSize="11" fill="white">
+      <text x="300" y="470" textAnchor="middle" fontSize="11" fill="white">
         • BASIC: 10 kredita/mjesec
       </text>
-      <text x="300" y="490" textAnchor="middle" fontSize="11" fill="white">
+      <text x="300" y="485" textAnchor="middle" fontSize="11" fill="white">
         • PREMIUM: 50 kredita/mjesec
       </text>
-      <text x="300" y="505" textAnchor="middle" fontSize="11" fill="white">
+      <text x="300" y="500" textAnchor="middle" fontSize="11" fill="white">
         • PRO: Unlimited krediti
       </text>
-      <text x="300" y="520" textAnchor="middle" fontSize="11" fill="white">
+      <text x="300" y="515" textAnchor="middle" fontSize="11" fill="white">
         • Povijest transakcija
       </text>
-      <text x="300" y="535" textAnchor="middle" fontSize="11" fill="white">
+      <text x="300" y="530" textAnchor="middle" fontSize="11" fill="white">
         • Filtriranje po tipu
       </text>
-      <text x="300" y="550" textAnchor="middle" fontSize="11" fill="white">
+      <text x="300" y="545" textAnchor="middle" fontSize="11" fill="white">
         • Izvoz povijesti
       </text>
-      <text x="300" y="565" textAnchor="middle" fontSize="11" fill="white">
+      <text x="300" y="560" textAnchor="middle" fontSize="11" fill="white">
         • Notifikacije o transakcijama
       </text>
 
       {/* Refund razlozi */}
       <rect x="1100" y="370" width="300" height="200" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
-      <text x="1250" y="395" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
+      <text x="1250" y="390" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         Razlozi za Refund
       </text>
-      <text x="1250" y="415" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="1250" y="410" textAnchor="middle" fontSize="11" fill={textColor}>
         • Klijent ne odgovori (48h)
       </text>
-      <text x="1250" y="430" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="1250" y="425" textAnchor="middle" fontSize="11" fill={textColor}>
         • Lead nije kvalitetan
       </text>
-      <text x="1250" y="445" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="1250" y="440" textAnchor="middle" fontSize="11" fill={textColor}>
         • Duplikat leada
       </text>
-      <text x="1250" y="460" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="1250" y="455" textAnchor="middle" fontSize="11" fill={textColor}>
         • Lažni kontakt podaci
       </text>
-      <text x="1250" y="475" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="1250" y="470" textAnchor="middle" fontSize="11" fill={textColor}>
         • Ručno zatraživanje
       </text>
-      <text x="1250" y="490" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="1250" y="485" textAnchor="middle" fontSize="11" fill={textColor}>
         • Automatski refund (48h)
       </text>
-      <text x="1250" y="505" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="1250" y="500" textAnchor="middle" fontSize="11" fill={textColor}>
         • Refund za pretplate
       </text>
-      <text x="1250" y="520" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="1250" y="515" textAnchor="middle" fontSize="11" fill={textColor}>
         • Stripe refund ID tracking
       </text>
-      <text x="1250" y="535" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="1250" y="530" textAnchor="middle" fontSize="11" fill={textColor}>
         • Fallback na interne kredite
       </text>
-      <text x="1250" y="550" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="1250" y="545" textAnchor="middle" fontSize="11" fill={textColor}>
         • Povijest refund transakcija
       </text>
-      <text x="1250" y="565" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="1250" y="560" textAnchor="middle" fontSize="11" fill={textColor}>
         • Status: REFUNDED
       </text>
     </ZoomableSVG>
@@ -1960,97 +1960,97 @@ export default function UserTypesFlowcharts() {
 
       {/* Email */}
       <rect x="250" y="340" width="220" height="130" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
-      <text x="360" y="365" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+      <text x="360" y="360" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         📧 Email Notifikacije
       </text>
-      <text x="360" y="385" textAnchor="middle" fontSize="11" fill="white">
+      <text x="360" y="380" textAnchor="middle" fontSize="11" fill="white">
         • Nove ponude
       </text>
-      <text x="360" y="400" textAnchor="middle" fontSize="11" fill="white">
+      <text x="360" y="395" textAnchor="middle" fontSize="11" fill="white">
         • Prihvaćene ponude
       </text>
-      <text x="360" y="415" textAnchor="middle" fontSize="11" fill="white">
+      <text x="360" y="410" textAnchor="middle" fontSize="11" fill="white">
         • Nove poruke
       </text>
-      <text x="360" y="430" textAnchor="middle" fontSize="11" fill="white">
+      <text x="360" y="425" textAnchor="middle" fontSize="11" fill="white">
         • Novi poslovi
       </text>
-      <text x="360" y="445" textAnchor="middle" fontSize="11" fill="white">
+      <text x="360" y="440" textAnchor="middle" fontSize="11" fill="white">
         • Job alerts (DAILY, WEEKLY, INSTANT)
       </text>
-      <text x="360" y="460" textAnchor="middle" fontSize="11" fill="white">
+      <text x="360" y="455" textAnchor="middle" fontSize="11" fill="white">
         • Istek pretplate
       </text>
 
       {/* SMS */}
       <rect x="490" y="340" width="220" height="130" rx="5" fill={primaryColor} stroke={borderColor} strokeWidth="2" />
-      <text x="600" y="365" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+      <text x="600" y="360" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         📱 SMS Notifikacije (Twilio)
       </text>
-      <text x="600" y="385" textAnchor="middle" fontSize="11" fill="white">
+      <text x="600" y="380" textAnchor="middle" fontSize="11" fill="white">
         • Verifikacija telefona
       </text>
-      <text x="600" y="400" textAnchor="middle" fontSize="11" fill="white">
+      <text x="600" y="395" textAnchor="middle" fontSize="11" fill="white">
         • Hitne notifikacije
       </text>
-      <text x="600" y="415" textAnchor="middle" fontSize="11" fill="white">
+      <text x="600" y="410" textAnchor="middle" fontSize="11" fill="white">
         • Nove ponude (PRO plan)
       </text>
-      <text x="600" y="430" textAnchor="middle" fontSize="11" fill="white">
+      <text x="600" y="425" textAnchor="middle" fontSize="11" fill="white">
         • Lead u redu čekanja
       </text>
-      <text x="600" y="445" textAnchor="middle" fontSize="11" fill="white">
+      <text x="600" y="440" textAnchor="middle" fontSize="11" fill="white">
         • Rate limiting
       </text>
-      <text x="600" y="460" textAnchor="middle" fontSize="11" fill="white">
+      <text x="600" y="455" textAnchor="middle" fontSize="11" fill="white">
         • SMS log tracking
       </text>
 
       {/* In-App */}
       <rect x="730" y="340" width="220" height="130" rx="5" fill={warningColor} stroke={borderColor} strokeWidth="2" />
-      <text x="840" y="365" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+      <text x="840" y="360" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         🔔 In-App Notifikacije
       </text>
-      <text x="840" y="385" textAnchor="middle" fontSize="11" fill="white">
+      <text x="840" y="380" textAnchor="middle" fontSize="11" fill="white">
         • Real-time obavijesti
       </text>
-      <text x="840" y="400" textAnchor="middle" fontSize="11" fill="white">
+      <text x="840" y="395" textAnchor="middle" fontSize="11" fill="white">
         • Brojač nepročitanih
       </text>
-      <text x="840" y="415" textAnchor="middle" fontSize="11" fill="white">
+      <text x="840" y="410" textAnchor="middle" fontSize="11" fill="white">
         • Povijest notifikacija
       </text>
-      <text x="840" y="430" textAnchor="middle" fontSize="11" fill="white">
+      <text x="840" y="425" textAnchor="middle" fontSize="11" fill="white">
         • Mark as read
       </text>
-      <text x="840" y="445" textAnchor="middle" fontSize="11" fill="white">
+      <text x="840" y="440" textAnchor="middle" fontSize="11" fill="white">
         • Filteri po tipu
       </text>
-      <text x="840" y="460" textAnchor="middle" fontSize="11" fill="white">
+      <text x="840" y="455" textAnchor="middle" fontSize="11" fill="white">
         • Socket.io real-time
       </text>
 
       {/* Push */}
       <rect x="970" y="340" width="220" height="130" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
-      <text x="1080" y="365" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
+      <text x="1080" y="360" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         📲 Push Notifikacije
       </text>
-      <text x="1080" y="385" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="1080" y="380" textAnchor="middle" fontSize="11" fill={textColor}>
         • Browser notifications
       </text>
-      <text x="1080" y="400" textAnchor="middle" fontSize="11" fill="white">
+      <text x="1080" y="395" textAnchor="middle" fontSize="11" fill={textColor}>
         • Permission request
       </text>
-      <text x="1080" y="415" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="1080" y="410" textAnchor="middle" fontSize="11" fill={textColor}>
         • Desktop notifikacije
       </text>
-      <text x="1080" y="430" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="1080" y="425" textAnchor="middle" fontSize="11" fill={textColor}>
         • Mobile web support
       </text>
-      <text x="1080" y="445" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="1080" y="440" textAnchor="middle" fontSize="11" fill={textColor}>
         • Custom zvukovi
       </text>
-      <text x="1080" y="460" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="1080" y="455" textAnchor="middle" fontSize="11" fill={textColor}>
         • Notification settings
       </text>
 
@@ -2190,19 +2190,19 @@ export default function UserTypesFlowcharts() {
       {/* Notifikacijski kanali */}
       <line x1="700" y1="830" x2="700" y2="870" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead9)" />
       <rect x="200" y="870" width="1000" height="120" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
-      <text x="700" y="895" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+      <text x="700" y="890" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         Notifikacijski Kanal
       </text>
-      <text x="700" y="915" textAnchor="middle" fontSize="12" fill="white">
+      <text x="700" y="910" textAnchor="middle" fontSize="12" fill="white">
         • Email: uvijek aktivno (osim ako korisnik ne onemogući)
       </text>
-      <text x="700" y="935" textAnchor="middle" fontSize="12" fill="white">
+      <text x="700" y="930" textAnchor="middle" fontSize="12" fill="white">
         • SMS: PREMIUM/PRO planovi, verifikacije, hitne notifikacije
       </text>
-      <text x="700" y="955" textAnchor="middle" fontSize="12" fill="white">
+      <text x="700" y="950" textAnchor="middle" fontSize="12" fill="white">
         • In-App: uvijek aktivno, real-time preko Socket.io
       </text>
-      <text x="700" y="975" textAnchor="middle" fontSize="12" fill="white">
+      <text x="700" y="970" textAnchor="middle" fontSize="12" fill="white">
         • Push: opcionalno, zahtijeva permission, desktop/mobile web
       </text>
     </ZoomableSVG>
@@ -2432,66 +2432,66 @@ export default function UserTypesFlowcharts() {
       {/* Premium */}
       <line x1="650" y1="690" x2="500" y2="690" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead10)" />
       <rect x="300" y="750" width="200" height="120" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
-      <text x="400" y="775" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+      <text x="400" y="770" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         Premium Partner
       </text>
-      <text x="400" y="795" textAnchor="middle" fontSize="12" fill="white">
+      <text x="400" y="790" textAnchor="middle" fontSize="12" fill="white">
         Score &ge; 80
       </text>
-      <text x="400" y="815" textAnchor="middle" fontSize="11" fill="white">
+      <text x="400" y="810" textAnchor="middle" fontSize="11" fill="white">
         • Auto-assign prioritet
       </text>
-      <text x="400" y="830" textAnchor="middle" fontSize="11" fill="white">
+      <text x="400" y="825" textAnchor="middle" fontSize="11" fill="white">
         • Više leadova
       </text>
-      <text x="400" y="845" textAnchor="middle" fontSize="11" fill="white">
+      <text x="400" y="840" textAnchor="middle" fontSize="11" fill="white">
         • Badge na profilu
       </text>
-      <text x="400" y="860" textAnchor="middle" fontSize="11" fill="white">
+      <text x="400" y="855" textAnchor="middle" fontSize="11" fill="white">
         • VIP podrška
       </text>
 
       {/* Verified */}
       <line x1="700" y1="690" x2="700" y2="750" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead10)" />
       <rect x="600" y="750" width="200" height="120" rx="5" fill={primaryColor} stroke={borderColor} strokeWidth="2" />
-      <text x="700" y="775" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+      <text x="700" y="770" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         Verified Partner
       </text>
-      <text x="700" y="795" textAnchor="middle" fontSize="12" fill="white">
+      <text x="700" y="790" textAnchor="middle" fontSize="12" fill="white">
         Score 60-79
       </text>
-      <text x="700" y="815" textAnchor="middle" fontSize="11" fill="white">
+      <text x="700" y="810" textAnchor="middle" fontSize="11" fill="white">
         • Normalan prioritet
       </text>
-      <text x="700" y="830" textAnchor="middle" fontSize="11" fill="white">
+      <text x="700" y="825" textAnchor="middle" fontSize="11" fill="white">
         • Standard leadovi
       </text>
-      <text x="700" y="845" textAnchor="middle" fontSize="11" fill="white">
+      <text x="700" y="840" textAnchor="middle" fontSize="11" fill="white">
         • Badge na profilu
       </text>
-      <text x="700" y="860" textAnchor="middle" fontSize="11" fill="white">
+      <text x="700" y="855" textAnchor="middle" fontSize="11" fill="white">
         • Standard podrška
       </text>
 
       {/* Basic */}
       <line x1="750" y1="690" x2="900" y2="690" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead10)" />
       <rect x="800" y="750" width="200" height="120" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
-      <text x="900" y="775" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
+      <text x="900" y="770" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         Basic Partner
       </text>
-      <text x="900" y="795" textAnchor="middle" fontSize="12" fill={textColor}>
+      <text x="900" y="790" textAnchor="middle" fontSize="12" fill={textColor}>
         Score &lt; 60
       </text>
-      <text x="900" y="815" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="900" y="810" textAnchor="middle" fontSize="11" fill={textColor}>
         • Niži prioritet
       </text>
-      <text x="900" y="830" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="900" y="825" textAnchor="middle" fontSize="11" fill={textColor}>
         • Manje leadova
       </text>
-      <text x="900" y="845" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="900" y="840" textAnchor="middle" fontSize="11" fill={textColor}>
         • Nema badge-a
       </text>
-      <text x="900" y="860" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="900" y="855" textAnchor="middle" fontSize="11" fill={textColor}>
         • Standard podrška
       </text>
 
@@ -2585,13 +2585,13 @@ export default function UserTypesFlowcharts() {
       {/* Utjecaj na lead matching */}
       <line x1="700" y1="1190" x2="700" y2="1230" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead10)" />
       <rect x="400" y="1230" width="600" height="60" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
-      <text x="700" y="1255" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+      <text x="700" y="1250" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         Utjecaj na Lead Matching
       </text>
-      <text x="700" y="1275" textAnchor="middle" fontSize="12" fill="white">
+      <text x="700" y="1270" textAnchor="middle" fontSize="12" fill="white">
         • Partner Score utječe na poziciju u redu čekanja
       </text>
-      <text x="700" y="1290" textAnchor="middle" fontSize="12" fill="white">
+      <text x="700" y="1285" textAnchor="middle" fontSize="12" fill="white">
         • Premium Partneri dobivaju prioritet u Weighted Queue algoritmu
       </text>
     </ZoomableSVG>
