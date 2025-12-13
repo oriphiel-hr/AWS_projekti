@@ -1688,8 +1688,8 @@ export default function UserTypesFlowcharts() {
 
       {/* INTERESTED - da */}
       <line x1="450" y1="930" x2="300" y2="930" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
-      <rect x="260" y="912" width="30" height="16" rx="3" fill="white" stroke={textColor} strokeWidth="1" />
-      <text x="275" y="925" textAnchor="middle" fontSize="11" fill={textColor} fontWeight="bold">da</text>
+      <rect x="360" y="912" width="30" height="16" rx="3" fill="white" stroke={textColor} strokeWidth="1" />
+      <text x="375" y="925" textAnchor="middle" fontSize="11" fill={textColor} fontWeight="bold">da</text>
       <rect x="100" y="890" width="200" height="80" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
       <text x="200" y="910" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         INTERESTED
