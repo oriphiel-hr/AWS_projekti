@@ -838,7 +838,8 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Prihvaćena ponuda */}
-      <line x1="250" y1="880" x2="100" y2="880" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead4)" />
+      <line x1="250" y1="880" x2="150" y2="880" stroke={textColor} strokeWidth="2" />
+      <line x1="150" y1="880" x2="150" y2="900" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead4)" />
 
       {/* Prihvaćena ponuda - putanja */}
       <rect x="50" y="900" width="200" height="80" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
@@ -854,7 +855,7 @@ export default function UserTypesFlowcharts() {
 
       {/* Odbijena ponuda */}
       <line x1="350" y1="880" x2="550" y2="880" stroke={textColor} strokeWidth="2" />
-      <line x1="550" y1="880" x2="550" y2="897" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead4)" />
+      <line x1="550" y1="880" x2="550" y2="900" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead4)" />
       <rect x="450" y="900" width="200" height="100" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="2" />
       <text x="550" y="925" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         ❌ ODBIJENA
