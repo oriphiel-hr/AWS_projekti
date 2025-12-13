@@ -1614,8 +1614,8 @@ export default function UserTypesFlowcharts() {
       <line x1="700" y1="390" x2="700" y2="430" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
 
       {/* Partner Score izračun */}
-      <rect x="450" y="430" width="500" height="140" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
-      <text x="700" y="450" textAnchor="middle" fontSize="13" fontWeight="bold" fill={textColor}>
+      <rect x="400" y="430" width="600" height="140" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <text x="700" y="450" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         Partner Score Izračun
       </text>
       <text x="700" y="470" textAnchor="middle" fontSize="11" fill={textColor}>
