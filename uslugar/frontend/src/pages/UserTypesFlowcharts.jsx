@@ -1197,23 +1197,23 @@ export default function UserTypesFlowcharts() {
       <line x1="300" y1="1080" x2="300" y2="1180" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
 
       {/* Chatroom - ZAHTIJEVA OBA SUDIONIKA */}
-      <rect x="200" y="620" width="200" height="120" rx="5" fill={primaryColor} stroke={borderColor} strokeWidth="3" />
-      <text x="300" y="645" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+      <rect x="200" y="840" width="200" height="120" rx="5" fill={primaryColor} stroke={borderColor} strokeWidth="3" />
+      <text x="300" y="865" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         💬 CHATROOM
       </text>
-      <text x="300" y="665" textAnchor="middle" fontSize="11" fill="white">
+      <text x="300" y="885" textAnchor="middle" fontSize="11" fill="white">
         ⚠️ ZAHTIJEVA:
       </text>
-      <text x="300" y="685" textAnchor="middle" fontSize="10" fill="white">
+      <text x="300" y="905" textAnchor="middle" fontSize="10" fill="white">
         • Korisnik (vlasnik posla)
       </text>
-      <text x="300" y="700" textAnchor="middle" fontSize="10" fill="white">
+      <text x="300" y="920" textAnchor="middle" fontSize="10" fill="white">
         • Pružatelj (prihvaćena ponuda)
       </text>
-      <text x="300" y="715" textAnchor="middle" fontSize="10" fill="white">
+      <text x="300" y="935" textAnchor="middle" fontSize="10" fill="white">
         • Oboje moraju biti aktivni
       </text>
-      <text x="300" y="730" textAnchor="middle" fontSize="11" fill="white">
+      <text x="300" y="950" textAnchor="middle" fontSize="11" fill="white">
         ✓ Automatski kreiran
       </text>
 
