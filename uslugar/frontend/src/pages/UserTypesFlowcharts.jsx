@@ -1141,10 +1141,6 @@ export default function UserTypesFlowcharts() {
         Odluka?
       </text>
 
-      {/* Linija od Odluka? lijevo do PRIHVAĆENA */}
-      <line x1="800" y1="660" x2="550" y2="660" stroke={textColor} strokeWidth="2" />
-      <line x1="550" y1="660" x2="550" y2="720" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
-
       {/* Prihvaćena */}
       <rect x="450" y="720" width="200" height="80" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
       <text x="550" y="740" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
@@ -1187,11 +1183,6 @@ export default function UserTypesFlowcharts() {
         Ponuda prihvaćena, chat soba kreirana
       </text>
 
-      {/* Linija od PRIHVAĆENA do CHATROOM */}
-      <line x1="550" y1="800" x2="550" y2="600" stroke={textColor} strokeWidth="2" />
-      <line x1="550" y1="600" x2="300" y2="600" stroke={textColor} strokeWidth="2" />
-      <line x1="300" y1="600" x2="300" y2="620" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
-
       {/* Chatroom - ZAHTIJEVA OBA SUDIONIKA */}
       <rect x="200" y="620" width="200" height="120" rx="5" fill={primaryColor} stroke={borderColor} strokeWidth="3" />
       <text x="300" y="645" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
@@ -1212,11 +1203,6 @@ export default function UserTypesFlowcharts() {
       <text x="300" y="730" textAnchor="middle" fontSize="11" fill="white">
         ✓ Automatski kreiran
       </text>
-
-      {/* Linija od CHATROOM do OBA SUDIONIKA */}
-      <line x1="300" y1="740" x2="300" y2="850" stroke={textColor} strokeWidth="2" />
-      <line x1="300" y1="850" x2="550" y2="850" stroke={textColor} strokeWidth="2" />
-      <line x1="550" y1="850" x2="550" y2="880" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
 
       {/* Oba sudionika u chatu */}
       <rect x="550" y="880" width="300" height="120" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
