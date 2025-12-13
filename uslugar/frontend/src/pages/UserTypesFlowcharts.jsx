@@ -1149,17 +1149,17 @@ export default function UserTypesFlowcharts() {
 
       {/* Linija od Odluka? lijevo do PRIHVAĆENA */}
       <line x1="800" y1="800" x2="550" y2="800" stroke={textColor} strokeWidth="2" />
-      <line x1="550" y1="800" x2="550" y2="840" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
+      <line x1="550" y1="800" x2="550" y2="1160" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
 
       {/* Prihvaćena */}
-      <rect x="450" y="840" width="200" height="80" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
-      <text x="550" y="860" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+      <rect x="450" y="1160" width="200" height="80" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
+      <text x="550" y="1180" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         ✓ PRIHVAĆENA
       </text>
-      <text x="550" y="880" textAnchor="middle" fontSize="12" fill="white">
+      <text x="550" y="1200" textAnchor="middle" fontSize="12" fill="white">
         Status: PRIHVAĆENA
       </text>
-      <text x="550" y="900" textAnchor="middle" fontSize="12" fill="white">
+      <text x="550" y="1220" textAnchor="middle" fontSize="12" fill="white">
         Chatroom se kreira
       </text>
 
@@ -1194,33 +1194,31 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Linija od PRIHVAĆENA do CHATROOM */}
-      <line x1="550" y1="920" x2="550" y2="1000" stroke={textColor} strokeWidth="2" />
-      <line x1="550" y1="1000" x2="300" y2="1000" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
+      <line x1="450" y1="1200" x2="400" y2="1200" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
 
       {/* Chatroom - ZAHTIJEVA OBA SUDIONIKA */}
-      <rect x="200" y="1000" width="200" height="120" rx="5" fill={primaryColor} stroke={borderColor} strokeWidth="3" />
-      <text x="300" y="1025" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+      <rect x="200" y="1160" width="200" height="120" rx="5" fill={primaryColor} stroke={borderColor} strokeWidth="3" />
+      <text x="300" y="1185" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         💬 CHATROOM
       </text>
-      <text x="300" y="1045" textAnchor="middle" fontSize="11" fill="white">
+      <text x="300" y="1205" textAnchor="middle" fontSize="11" fill="white">
         ⚠️ ZAHTIJEVA:
       </text>
-      <text x="300" y="1065" textAnchor="middle" fontSize="10" fill="white">
+      <text x="300" y="1225" textAnchor="middle" fontSize="10" fill="white">
         • Korisnik (vlasnik posla)
       </text>
-      <text x="300" y="1080" textAnchor="middle" fontSize="10" fill="white">
+      <text x="300" y="1240" textAnchor="middle" fontSize="10" fill="white">
         • Pružatelj (prihvaćena ponuda)
       </text>
-      <text x="300" y="1095" textAnchor="middle" fontSize="10" fill="white">
+      <text x="300" y="1255" textAnchor="middle" fontSize="10" fill="white">
         • Oboje moraju biti aktivni
       </text>
-      <text x="300" y="1110" textAnchor="middle" fontSize="11" fill="white">
+      <text x="300" y="1270" textAnchor="middle" fontSize="11" fill="white">
         ✓ Automatski kreiran
       </text>
 
       {/* Linija od CHATROOM do OBA SUDIONIKA */}
-      <line x1="300" y1="1120" x2="300" y2="1160" stroke={textColor} strokeWidth="2" />
-      <line x1="300" y1="1160" x2="550" y2="1160" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
+      <line x1="400" y1="1220" x2="550" y2="1220" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
 
       {/* Linija od Notifikacija do Posao u tijeku */}
       <line x1="300" y1="1240" x2="300" y2="1340" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
