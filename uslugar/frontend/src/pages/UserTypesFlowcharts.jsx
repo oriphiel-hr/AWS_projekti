@@ -1165,21 +1165,21 @@ export default function UserTypesFlowcharts() {
 
       {/* Odbijena */}
       <line x1="900" y1="800" x2="1050" y2="800" stroke={textColor} strokeWidth="2" />
-      <line x1="1050" y1="800" x2="1050" y2="837" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
+      <line x1="1050" y1="800" x2="1050" y2="840" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
       <rect x="950" y="840" width="200" height="100" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="2" />
-      <text x="1050" y="740" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
-        ❌ ODBIJENA
+      <text x="1050" y="858" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+        ODBIJENA
       </text>
-      <text x="1050" y="760" textAnchor="middle" fontSize="12" fill="white">
+      <text x="1050" y="875" textAnchor="middle" fontSize="12" fill="white">
         Status: ODBIJENA
       </text>
-      <text x="1050" y="775" textAnchor="middle" fontSize="12" fill="white">
+      <text x="1050" y="890" textAnchor="middle" fontSize="12" fill="white">
         • Ponuda odbijena
       </text>
-      <text x="1050" y="790" textAnchor="middle" fontSize="12" fill="white">
+      <text x="1050" y="905" textAnchor="middle" fontSize="12" fill="white">
         • Nema chatrooma
       </text>
-      <text x="1050" y="925" textAnchor="middle" fontSize="12" fill="white">
+      <text x="1050" y="920" textAnchor="middle" fontSize="12" fill="white">
         • Pružatelj može poslati novu
       </text>
 
