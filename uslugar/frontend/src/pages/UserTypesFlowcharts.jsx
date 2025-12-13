@@ -1734,7 +1734,7 @@ export default function UserTypesFlowcharts() {
       {/* Veza natrag u Queue Scheduler od NOT_INTERESTED */}
       <line x1="300" y1="1040" x2="200" y2="1040" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
       <line x1="200" y1="1040" x2="200" y2="340" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
-      <line x1="200" y1="340" x2="850" y2="340" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" markerEnd="url(#arrowhead7)" />
+      <line x1="200" y1="340" x2="550" y2="340" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" markerEnd="url(#arrowhead7)" />
 
       {/* NO_RESPONSE / EXPIRED */}
       <line x1="750" y1="1040" x2="800" y2="1040" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
@@ -1777,8 +1777,9 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Veza natrag u Queue Scheduler od SKIPPED */}
-      <line x1="700" y1="1160" x2="700" y2="340" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
-      <line x1="700" y1="340" x2="850" y2="340" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" markerEnd="url(#arrowhead7)" />
+      <line x1="600" y1="1160" x2="400" y2="1160" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
+      <line x1="400" y1="1160" x2="400" y2="340" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
+      <line x1="400" y1="340" x2="550" y2="340" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" markerEnd="url(#arrowhead7)" />
     </ZoomableSVG>
   );
 
