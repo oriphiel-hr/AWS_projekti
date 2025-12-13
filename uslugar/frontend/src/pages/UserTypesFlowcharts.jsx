@@ -1046,7 +1046,8 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Ekskluzivni leadovi - ZAHTIJEVA KORISNIKA koji je objavio posao */}
-      <line x1="650" y1="290" x2="900" y2="290" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
+      <line x1="650" y1="290" x2="850" y2="290" stroke={textColor} strokeWidth="2" />
+      <line x1="850" y1="290" x2="850" y2="340" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
       
       {/* Korisnik objavio posao koji postaje lead */}
       <rect x="700" y="340" width="300" height="100" rx="5" fill={primaryColor} stroke={borderColor} strokeWidth="2" />
