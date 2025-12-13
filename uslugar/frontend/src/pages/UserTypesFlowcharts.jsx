@@ -1142,8 +1142,6 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Prihvaćena */}
-      <line x1="800" y1="660" x2="550" y2="660" stroke={textColor} strokeWidth="2" />
-      <line x1="550" y1="660" x2="550" y2="717" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
       <rect x="450" y="720" width="200" height="80" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
       <text x="550" y="740" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         ✓ PRIHVAĆENA
