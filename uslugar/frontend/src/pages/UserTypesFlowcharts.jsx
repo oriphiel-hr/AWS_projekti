@@ -1233,6 +1233,11 @@ export default function UserTypesFlowcharts() {
       <line x1="400" y1="680" x2="500" y2="680" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
       <text x="450" y="675" textAnchor="middle" fontSize="10" fill={textColor}>koristi</text>
 
+      {/* Linija od OBA SUDIONIKA do Posao u tijeku */}
+      <line x1="650" y1="740" x2="650" y2="780" stroke={textColor} strokeWidth="2" />
+      <line x1="650" y1="780" x2="300" y2="780" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
+
+      {/* Linija od CHATROOM do Posao u tijeku */}
       <line x1="300" y1="740" x2="300" y2="780" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
 
       <rect x="100" y="780" width="400" height="60" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
