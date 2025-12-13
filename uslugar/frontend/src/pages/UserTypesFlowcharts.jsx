@@ -1257,9 +1257,9 @@ export default function UserTypesFlowcharts() {
         Izvršen?
       </text>
 
-      {/* Posao izvršen */}
-      <line x1="250" y1="1140" x2="150" y2="1140" stroke={textColor} strokeWidth="2" />
-      <line x1="150" y1="1140" x2="150" y2="1160" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
+      {/* Posao izvršen - linija od Izvršen? do POSAO IZVRŠEN */}
+      <line x1="300" y1="1140" x2="300" y2="1160" stroke={textColor} strokeWidth="2" />
+      <line x1="300" y1="1160" x2="50" y2="1160" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
       <rect x="50" y="1160" width="200" height="140" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
       <text x="150" y="1180" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         ✓ POSAO IZVRŠEN
