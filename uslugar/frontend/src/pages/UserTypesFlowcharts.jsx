@@ -1510,6 +1510,10 @@ export default function UserTypesFlowcharts() {
         Lead vraćen na tržište
       </text>
 
+      {/* Linija od Posao → Ekskluzivni Lead do AI Score detalji (informativna veza) */}
+      <line x1="850" y1="190" x2="1100" y2="190" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
+      <line x1="1100" y1="190" x2="1100" y2="940" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
+
       {/* AI Score detalji */}
       <rect x="900" y="940" width="400" height="180" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
       <text x="1100" y="960" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
