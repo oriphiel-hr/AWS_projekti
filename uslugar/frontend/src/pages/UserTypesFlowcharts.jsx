@@ -1614,7 +1614,7 @@ export default function UserTypesFlowcharts() {
       <line x1="700" y1="390" x2="700" y2="430" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
 
       {/* Partner Score izračun */}
-      <rect x="300" y="430" width="800" height="140" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <rect x="300" y="430" width="800" height="160" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
       <text x="700" y="450" textAnchor="middle" fontSize="13" fontWeight="bold" fill={textColor}>
         Partner Score Izračun
       </text>
@@ -1643,7 +1643,7 @@ export default function UserTypesFlowcharts() {
         • Basic Partner (Score &lt; 60): niži prioritet
       </text>
 
-      <line x1="700" y1="570" x2="700" y2="610" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
+      <line x1="700" y1="590" x2="700" y2="610" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
 
       {/* Lead ponuđen pružatelju */}
       <polygon points="700,610 750,650 700,690 650,650" fill={warningColor} stroke={borderColor} strokeWidth="2" />
