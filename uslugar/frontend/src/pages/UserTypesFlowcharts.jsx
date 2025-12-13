@@ -1731,21 +1731,21 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* NO_RESPONSE / EXPIRED */}
-      <line x1="750" y1="1010" x2="900" y2="1010" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
-      <rect x="800" y="1070" width="200" height="100" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="2" />
-      <text x="900" y="1090" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+      <line x1="750" y1="1010" x2="750" y2="1020" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
+      <rect x="750" y="1020" width="200" height="100" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="2" />
+      <text x="850" y="1040" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         NO_RESPONSE
       </text>
-      <text x="900" y="1110" textAnchor="middle" fontSize="12" fill="white">
+      <text x="850" y="1060" textAnchor="middle" fontSize="12" fill="white">
         Status: EXPIRED
       </text>
-      <text x="900" y="1125" textAnchor="middle" fontSize="12" fill="white">
+      <text x="850" y="1075" textAnchor="middle" fontSize="12" fill="white">
         Rok istekao (24h)
       </text>
-      <text x="900" y="1140" textAnchor="middle" fontSize="12" fill="white">
+      <text x="850" y="1090" textAnchor="middle" fontSize="12" fill="white">
         Preskakanje neaktivnog
       </text>
-      <text x="900" y="1155" textAnchor="middle" fontSize="12" fill="white">
+      <text x="850" y="1105" textAnchor="middle" fontSize="12" fill="white">
         Lead ponuđen sljedećem
       </text>
 
