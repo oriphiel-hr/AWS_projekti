@@ -1261,28 +1261,28 @@ export default function UserTypesFlowcharts() {
       <line x1="250" y1="1100" x2="150" y2="1100" stroke={textColor} strokeWidth="2" />
       <line x1="150" y1="1100" x2="150" y2="1160" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
       <rect x="50" y="1160" width="200" height="140" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
-      <text x="150" y="1180" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+      <text x="150" y="1178" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         ✓ POSAO IZVRŠEN
       </text>
-      <text x="150" y="1200" textAnchor="middle" fontSize="12" fill="white">
+      <text x="150" y="1195" textAnchor="middle" fontSize="12" fill="white">
         Status: ZAVRŠEN
       </text>
-      <text x="150" y="1220" textAnchor="middle" fontSize="11" fill="white">
+      <text x="150" y="1212" textAnchor="middle" fontSize="11" fill="white">
         👥 OBA SUDIONIKA: Recenzije
       </text>
-      <text x="150" y="1235" textAnchor="middle" fontSize="10" fill="white">
+      <text x="150" y="1227" textAnchor="middle" fontSize="10" fill="white">
         • Pružatelj ocjenjuje korisnika
       </text>
-      <text x="150" y="1250" textAnchor="middle" fontSize="10" fill="white">
+      <text x="150" y="1242" textAnchor="middle" fontSize="10" fill="white">
         • Korisnik ocjenjuje pružatelja
       </text>
-      <text x="150" y="1265" textAnchor="middle" fontSize="10" fill="white">
+      <text x="150" y="1257" textAnchor="middle" fontSize="10" fill="white">
         ⚠️ Bilateralno ocjenjivanje
       </text>
-      <text x="150" y="1280" textAnchor="middle" fontSize="11" fill="white">
+      <text x="150" y="1272" textAnchor="middle" fontSize="11" fill="white">
         ROI tracking, statistike
       </text>
-      <text x="150" y="1295" textAnchor="middle" fontSize="11" fill="white">
+      <text x="150" y="1287" textAnchor="middle" fontSize="11" fill="white">
         🔐 ADMIN: Moderacija recenzija
       </text>
 
@@ -1290,19 +1290,19 @@ export default function UserTypesFlowcharts() {
       <line x1="350" y1="1100" x2="550" y2="1100" stroke={textColor} strokeWidth="2" />
       <line x1="550" y1="1100" x2="550" y2="1160" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
       <rect x="450" y="1160" width="200" height="100" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="2" />
-      <text x="550" y="1180" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+      <text x="550" y="1178" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         ❌ POSAO OTKAZAN
       </text>
-      <text x="550" y="1200" textAnchor="middle" fontSize="12" fill="white">
+      <text x="550" y="1195" textAnchor="middle" fontSize="12" fill="white">
         Status: OTKAZAN
       </text>
-      <text x="550" y="1220" textAnchor="middle" fontSize="12" fill="white">
+      <text x="550" y="1212" textAnchor="middle" fontSize="12" fill="white">
         • Korisnik otkazao
       </text>
-      <text x="550" y="1235" textAnchor="middle" fontSize="12" fill="white">
+      <text x="550" y="1227" textAnchor="middle" fontSize="12" fill="white">
         • Pružatelj otkazao
       </text>
-      <text x="550" y="1250" textAnchor="middle" fontSize="12" fill="white">
+      <text x="550" y="1242" textAnchor="middle" fontSize="12" fill="white">
         • Nema recenzija
       </text>
       <text x="550" y="1185" textAnchor="middle" fontSize="12" fill="white">
