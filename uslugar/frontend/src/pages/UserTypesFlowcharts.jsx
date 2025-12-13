@@ -1643,105 +1643,105 @@ export default function UserTypesFlowcharts() {
         • Basic Partner (Score &lt; 60): niži prioritet
       </text>
 
-      <line x1="700" y1="590" x2="700" y2="610" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
+      <line x1="700" y1="590" x2="700" y2="650" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
 
       {/* Lead ponuđen pružatelju */}
-      <polygon points="700,610 750,650 700,690 650,650" fill={warningColor} stroke={borderColor} strokeWidth="2" />
-      <text x="700" y="655" textAnchor="middle" fontSize="12" fill="white" fontWeight="bold">
+      <polygon points="700,650 750,690 700,730 650,690" fill={warningColor} stroke={borderColor} strokeWidth="2" />
+      <text x="700" y="695" textAnchor="middle" fontSize="12" fill="white" fontWeight="bold">
         Lead ponuđen?
       </text>
 
       {/* OFFERED - direktna veza od Lead ponuđen? */}
-      <line x1="650" y1="650" x2="500" y2="650" stroke={textColor} strokeWidth="2" />
-      <line x1="500" y1="650" x2="500" y2="710" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
-      <rect x="300" y="710" width="400" height="100" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
-      <text x="500" y="730" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
+      <line x1="650" y1="690" x2="500" y2="690" stroke={textColor} strokeWidth="2" />
+      <line x1="500" y1="690" x2="500" y2="750" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
+      <rect x="300" y="750" width="400" height="100" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <text x="500" y="770" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         Status: OFFERED
       </text>
-      <text x="500" y="750" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="500" y="790" textAnchor="middle" fontSize="11" fill={textColor}>
         • Lead ponuđen pružatelju
       </text>
-      <text x="500" y="765" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="500" y="805" textAnchor="middle" fontSize="11" fill={textColor}>
         • Notifikacija poslana (email, SMS, in-app)
       </text>
-      <text x="500" y="780" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="500" y="820" textAnchor="middle" fontSize="11" fill={textColor}>
         • Rok za odgovor: 24h
       </text>
-      <text x="500" y="795" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="500" y="835" textAnchor="middle" fontSize="11" fill={textColor}>
         • Pozicija u redu: prikazana
       </text>
 
-      <line x1="500" y1="810" x2="500" y2="850" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
+      <line x1="500" y1="850" x2="500" y2="890" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
 
       {/* Odgovor pružatelja */}
-      <polygon points="500,850 550,890 500,930 450,890" fill={warningColor} stroke={borderColor} strokeWidth="2" />
-      <text x="500" y="895" textAnchor="middle" fontSize="12" fill="white" fontWeight="bold">
+      <polygon points="500,890 550,930 500,970 450,930" fill={warningColor} stroke={borderColor} strokeWidth="2" />
+      <text x="500" y="935" textAnchor="middle" fontSize="12" fill="white" fontWeight="bold">
         Odgovor?
       </text>
 
       {/* INTERESTED */}
-      <line x1="450" y1="890" x2="300" y2="890" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
-      <rect x="100" y="950" width="200" height="80" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
-      <text x="200" y="970" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+      <line x1="450" y1="930" x2="300" y2="930" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
+      <rect x="100" y="990" width="200" height="80" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
+      <text x="200" y="1010" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         INTERESTED
       </text>
-      <text x="200" y="990" textAnchor="middle" fontSize="12" fill="white">
+      <text x="200" y="1030" textAnchor="middle" fontSize="12" fill="white">
         Status: ACCEPTED
       </text>
-      <text x="200" y="1005" textAnchor="middle" fontSize="12" fill="white">
+      <text x="200" y="1045" textAnchor="middle" fontSize="12" fill="white">
         Lead dodijeljen
       </text>
-      <text x="200" y="1020" textAnchor="middle" fontSize="12" fill="white">
+      <text x="200" y="1060" textAnchor="middle" fontSize="12" fill="white">
         Kontakt otkriven
       </text>
 
       {/* NOT_INTERESTED */}
-      <line x1="550" y1="890" x2="700" y2="890" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
-      <rect x="600" y="950" width="200" height="80" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
-      <text x="700" y="970" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
+      <line x1="550" y1="930" x2="700" y2="930" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
+      <rect x="600" y="990" width="200" height="80" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <text x="700" y="1010" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         NOT_INTERESTED
       </text>
-      <text x="700" y="990" textAnchor="middle" fontSize="12" fill={textColor}>
+      <text x="700" y="1030" textAnchor="middle" fontSize="12" fill={textColor}>
         Status: DECLINED
       </text>
-      <text x="700" y="1005" textAnchor="middle" fontSize="12" fill={textColor}>
+      <text x="700" y="1045" textAnchor="middle" fontSize="12" fill={textColor}>
         Lead ponuđen sljedećem
       </text>
-      <text x="700" y="1020" textAnchor="middle" fontSize="12" fill={textColor}>
+      <text x="700" y="1060" textAnchor="middle" fontSize="12" fill={textColor}>
         Queue se nastavlja
       </text>
 
       {/* NO_RESPONSE / EXPIRED */}
-      <line x1="750" y1="890" x2="900" y2="890" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
-      <rect x="800" y="950" width="200" height="100" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="2" />
-      <text x="900" y="970" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+      <line x1="750" y1="930" x2="900" y2="930" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
+      <rect x="800" y="990" width="200" height="100" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="2" />
+      <text x="900" y="1010" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         NO_RESPONSE
       </text>
-      <text x="900" y="990" textAnchor="middle" fontSize="12" fill="white">
+      <text x="900" y="1030" textAnchor="middle" fontSize="12" fill="white">
         Status: EXPIRED
       </text>
-      <text x="900" y="1005" textAnchor="middle" fontSize="12" fill="white">
+      <text x="900" y="1045" textAnchor="middle" fontSize="12" fill="white">
         Rok istekao (24h)
       </text>
-      <text x="900" y="1020" textAnchor="middle" fontSize="12" fill="white">
+      <text x="900" y="1060" textAnchor="middle" fontSize="12" fill="white">
         Preskakanje neaktivnog
       </text>
-      <text x="900" y="1035" textAnchor="middle" fontSize="12" fill="white">
+      <text x="900" y="1075" textAnchor="middle" fontSize="12" fill="white">
         Lead ponuđen sljedećem
       </text>
 
       {/* SKIPPED */}
-      <rect x="1100" y="950" width="200" height="80" rx="5" fill={warningColor} stroke={borderColor} strokeWidth="2" />
-      <text x="1200" y="970" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+      <rect x="1100" y="990" width="200" height="80" rx="5" fill={warningColor} stroke={borderColor} strokeWidth="2" />
+      <text x="1200" y="1010" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         SKIPPED
       </text>
-      <text x="1200" y="990" textAnchor="middle" fontSize="12" fill="white">
+      <text x="1200" y="1030" textAnchor="middle" fontSize="12" fill="white">
         Pružatelj preskočio
       </text>
-      <text x="1200" y="1005" textAnchor="middle" fontSize="12" fill="white">
+      <text x="1200" y="1045" textAnchor="middle" fontSize="12" fill="white">
         Lead ponuđen sljedećem
       </text>
-      <text x="1200" y="1020" textAnchor="middle" fontSize="12" fill="white">
+      <text x="1200" y="1060" textAnchor="middle" fontSize="12" fill="white">
         Queue se nastavlja
       </text>
     </ZoomableSVG>
