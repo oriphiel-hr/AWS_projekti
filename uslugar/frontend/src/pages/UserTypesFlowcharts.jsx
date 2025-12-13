@@ -1654,6 +1654,7 @@ export default function UserTypesFlowcharts() {
       {/* OFFERED - direktna veza od Lead ponuđen? (da) */}
       <line x1="650" y1="690" x2="500" y2="690" stroke={textColor} strokeWidth="2" />
       <line x1="500" y1="690" x2="500" y2="750" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
+      <text x="575" y="685" textAnchor="middle" fontSize="10" fill={textColor}>da</text>
 
       {/* Veza natrag u Queue Scheduler (ne) - isprekidana linija */}
       <line x1="750" y1="690" x2="900" y2="690" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
