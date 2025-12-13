@@ -1178,7 +1178,6 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Notifikacija pružatelju */}
-      <line x1="550" y1="800" x2="300" y2="800" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
       <rect x="100" y="820" width="400" height="60" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
       <text x="300" y="840" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         👤 PRUŽATELJ: Notifikacija
