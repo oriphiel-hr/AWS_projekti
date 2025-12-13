@@ -1687,19 +1687,19 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* INTERESTED - da */}
-      <line x1="450" y1="930" x2="300" y2="930" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
-      <text x="375" y="925" textAnchor="middle" fontSize="10" fill={textColor}>da</text>
-      <rect x="100" y="990" width="200" height="80" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
-      <text x="200" y="1010" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+      <line x1="450" y1="930" x2="100" y2="930" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
+      <text x="275" y="925" textAnchor="middle" fontSize="10" fill={textColor}>da</text>
+      <rect x="100" y="890" width="200" height="80" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
+      <text x="200" y="910" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         INTERESTED
       </text>
-      <text x="200" y="1030" textAnchor="middle" fontSize="12" fill="white">
+      <text x="200" y="930" textAnchor="middle" fontSize="12" fill="white">
         Status: ACCEPTED
       </text>
-      <text x="200" y="1045" textAnchor="middle" fontSize="12" fill="white">
+      <text x="200" y="945" textAnchor="middle" fontSize="12" fill="white">
         Lead dodijeljen
       </text>
-      <text x="200" y="1060" textAnchor="middle" fontSize="12" fill="white">
+      <text x="200" y="960" textAnchor="middle" fontSize="12" fill="white">
         Kontakt otkriven
       </text>
 
@@ -1715,18 +1715,18 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* NOT_INTERESTED */}
-      <line x1="650" y1="1010" x2="500" y2="1010" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
-      <rect x="300" y="1070" width="200" height="80" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
-      <text x="400" y="1090" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
+      <line x1="650" y1="1010" x2="300" y2="1010" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
+      <rect x="300" y="970" width="200" height="80" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <text x="400" y="990" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         NOT_INTERESTED
       </text>
-      <text x="400" y="1110" textAnchor="middle" fontSize="12" fill={textColor}>
+      <text x="400" y="1010" textAnchor="middle" fontSize="12" fill={textColor}>
         Status: DECLINED
       </text>
-      <text x="400" y="1125" textAnchor="middle" fontSize="12" fill={textColor}>
+      <text x="400" y="1025" textAnchor="middle" fontSize="12" fill={textColor}>
         Lead ponuđen sljedećem
       </text>
-      <text x="400" y="1140" textAnchor="middle" fontSize="12" fill={textColor}>
+      <text x="400" y="1040" textAnchor="middle" fontSize="12" fill={textColor}>
         Queue se nastavlja
       </text>
 
