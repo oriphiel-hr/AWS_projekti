@@ -1731,6 +1731,11 @@ export default function UserTypesFlowcharts() {
         Queue se nastavlja
       </text>
 
+      {/* Veza natrag u Queue Scheduler od NOT_INTERESTED */}
+      <line x1="300" y1="1040" x2="200" y2="1040" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
+      <line x1="200" y1="1040" x2="200" y2="340" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
+      <line x1="200" y1="340" x2="850" y2="340" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" markerEnd="url(#arrowhead7)" />
+
       {/* NO_RESPONSE / EXPIRED */}
       <line x1="750" y1="1040" x2="800" y2="1040" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
       <rect x="800" y="990" width="200" height="100" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="2" />
@@ -1750,6 +1755,11 @@ export default function UserTypesFlowcharts() {
         Lead ponuđen sljedećem
       </text>
 
+      {/* Veza natrag u Queue Scheduler od NO_RESPONSE */}
+      <line x1="1000" y1="1040" x2="1100" y2="1040" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
+      <line x1="1100" y1="1040" x2="1100" y2="340" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
+      <line x1="1100" y1="340" x2="850" y2="340" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" markerEnd="url(#arrowhead7)" />
+
       {/* SKIPPED */}
       <line x1="700" y1="1080" x2="700" y2="1120" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
       <rect x="600" y="1120" width="200" height="80" rx="5" fill={warningColor} stroke={borderColor} strokeWidth="2" />
@@ -1765,6 +1775,10 @@ export default function UserTypesFlowcharts() {
       <text x="700" y="1190" textAnchor="middle" fontSize="12" fill="white">
         Queue se nastavlja
       </text>
+
+      {/* Veza natrag u Queue Scheduler od SKIPPED */}
+      <line x1="700" y1="1160" x2="700" y2="340" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
+      <line x1="700" y1="340" x2="850" y2="340" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" markerEnd="url(#arrowhead7)" />
     </ZoomableSVG>
   );
 
