@@ -555,7 +555,7 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* PREMIUM */}
-      <rect x="430" y="410" width="240" height="140" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <rect x="430" y="410" width="240" height="160" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
       <text x="550" y="428" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         PREMIUM
       </text>
@@ -580,12 +580,12 @@ export default function UserTypesFlowcharts() {
       <text x="550" y="548" textAnchor="middle" fontSize="11" fill={textColor}>
         • Advanced analytics
       </text>
-      <text x="550" y="535" textAnchor="middle" fontSize="11" fill={successColor}>
+      <text x="550" y="565" textAnchor="middle" fontSize="11" fill={successColor}>
         ✓ Aktivna pretplata
       </text>
 
       {/* PRO */}
-      <rect x="776" y="410" width="248" height="140" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <rect x="776" y="410" width="248" height="160" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
       <text x="900" y="428" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         PRO
       </text>
@@ -610,7 +610,7 @@ export default function UserTypesFlowcharts() {
       <text x="900" y="548" textAnchor="middle" fontSize="11" fill={textColor}>
         • Real-time chat podrška
       </text>
-      <text x="900" y="535" textAnchor="middle" fontSize="11" fill={successColor}>
+      <text x="900" y="565" textAnchor="middle" fontSize="11" fill={successColor}>
         ✓ Aktivna pretplata
       </text>
 
