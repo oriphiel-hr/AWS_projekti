@@ -760,7 +760,7 @@ export default function UserTypesFlowcharts() {
       {/* Pretraži poslove */}
       <line x1="650" y1="290" x2="900" y2="290" stroke={textColor} strokeWidth="2" />
       <line x1="900" y1="290" x2="900" y2="340" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead4)" />
-      <rect x="700" y="340" width="400" height="135" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <rect x="700" y="340" width="400" height="155" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
       <text x="900" y="363" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         Pretraži poslove
       </text>
@@ -782,7 +782,7 @@ export default function UserTypesFlowcharts() {
       <text x="900" y="466" textAnchor="middle" fontSize="11" fill={textColor}>
         6. Job alerts (DAILY, WEEKLY, INSTANT)
       </text>
-      <text x="900" y="460" textAnchor="middle" fontSize="11" fill={successColor}>
+      <text x="900" y="485" textAnchor="middle" fontSize="11" fill={successColor}>
         ✓ Rezultati prikazani
       </text>
 
