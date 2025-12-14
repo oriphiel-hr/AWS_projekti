@@ -945,8 +945,7 @@ export default function UserTypesFlowcharts() {
 
       {/* Posao otkazan */}
       <line x1="200" y1="1220" x2="400" y2="1220" stroke={textColor} strokeWidth="2" />
-      <line x1="400" y1="1220" x2="400" y2="1265" stroke={textColor} strokeWidth="2" />
-      <polygon points="400,1265 395,1270 400,1275 405,1270" fill={textColor} />
+      <line x1="400" y1="1220" x2="400" y2="1280" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead4)" />
       <rect x="300" y="1280" width="200" height="95" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="2" />
       <text x="400" y="1298" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         ❌ POSAO OTKAZAN
