@@ -382,8 +382,8 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Odbijeno */}
-      <line x1="650" y1="450" x2="800" y2="450" stroke={textColor} strokeWidth="2" />
-      <line x1="800" y1="450" x2="800" y2="497" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead2)" />
+      <line x1="650" y1="450" x2="900" y2="450" stroke={textColor} strokeWidth="2" />
+      <line x1="900" y1="450" x2="900" y2="500" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead2)" />
       <rect x="768" y="500" width="264" height="105" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="2" />
       <text x="900" y="523" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         ❌ ODBIJENO
@@ -405,7 +405,7 @@ export default function UserTypesFlowcharts() {
       <line x1="1032" y1="552" x2="1100" y2="552" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
       <line x1="1100" y1="552" x2="1100" y2="315" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
       <line x1="1100" y1="315" x2="760" y2="315" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" markerEnd="url(#arrowhead2)" />
-      <text x="1066" y="548" textAnchor="start" fontSize="10" fill={textColor}>ponovno slanje</text>
+      <text x="930" y="310" textAnchor="middle" fontSize="10" fill={textColor}>ponovno slanje</text>
 
       {/* Licenciranje */}
       <line x1="400" y1="580" x2="400" y2="617" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead2)" />
@@ -466,7 +466,7 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Licenca odobrena */}
-      <line x1="200" y1="920" x2="200" y2="942" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead2)" />
+      <line x1="200" y1="920" x2="200" y2="970" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead2)" />
       <rect x="68" y="970" width="264" height="65" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
       <text x="200" y="988" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         ✓ Licencirani pružatelj
