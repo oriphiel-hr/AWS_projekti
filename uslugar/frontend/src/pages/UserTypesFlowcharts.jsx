@@ -1004,7 +1004,7 @@ export default function UserTypesFlowcharts() {
       {/* Prijava */}
       <rect x="500" y="60" width="200" height="50" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
       <text x="600" y="90" textAnchor="middle" fontSize="14" fill="white" fontWeight="bold">
-        Prijava (PROVIDER)
+        Prijava (PRUŽATELJ)
       </text>
 
       <line x1="600" y1="110" x2="600" y2="150" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
@@ -1012,7 +1012,7 @@ export default function UserTypesFlowcharts() {
       {/* Dashboard */}
       <rect x="450" y="150" width="300" height="65" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
       <text x="600" y="177" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
-        Provider Dashboard
+        Sučelje za pružatelja
       </text>
       <text x="600" y="197" textAnchor="middle" fontSize="12" fill={textColor}>
         Pregled poslova, leadovi, statistike
