@@ -385,27 +385,27 @@ export default function UserTypesFlowcharts() {
       <line x1="650" y1="450" x2="800" y2="450" stroke={textColor} strokeWidth="2" />
       <line x1="800" y1="450" x2="800" y2="497" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead2)" />
       <rect x="768" y="500" width="264" height="105" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="2" />
-      <text x="800" y="518" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+      <text x="900" y="523" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         ❌ ODBIJENO
       </text>
-      <text x="800" y="536" textAnchor="middle" fontSize="12" fill="white">
+      <text x="900" y="541" textAnchor="middle" fontSize="12" fill="white">
         Admin razlog odbijanja
       </text>
-      <text x="800" y="554" textAnchor="middle" fontSize="12" fill="white">
+      <text x="900" y="559" textAnchor="middle" fontSize="12" fill="white">
         • Neispravni dokumenti
       </text>
-      <text x="800" y="572" textAnchor="middle" fontSize="12" fill="white">
+      <text x="900" y="577" textAnchor="middle" fontSize="12" fill="white">
         • Neuspjela provjera OIB-a
       </text>
-      <text x="800" y="590" textAnchor="middle" fontSize="12" fill="white">
+      <text x="900" y="595" textAnchor="middle" fontSize="12" fill="white">
         Mogućnost ponovnog slanja
       </text>
 
       {/* Povratak na upload */}
-      <line x1="800" y1="615" x2="800" y2="640" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" markerEnd="url(#arrowhead2-back)" />
-      <text x="820" y="625" textAnchor="start" fontSize="10" fill={textColor}>ponovno slanje</text>
-      <line x1="800" y1="640" x2="600" y2="640" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
-      <line x1="600" y1="640" x2="600" y2="230" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" markerEnd="url(#arrowhead2)" />
+      <line x1="1032" y1="552" x2="1100" y2="552" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
+      <line x1="1100" y1="552" x2="1100" y2="315" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
+      <line x1="1100" y1="315" x2="760" y2="315" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" markerEnd="url(#arrowhead2)" />
+      <text x="1066" y="548" textAnchor="start" fontSize="10" fill={textColor}>ponovno slanje</text>
 
       {/* Licenciranje */}
       <line x1="400" y1="580" x2="400" y2="617" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead2)" />
@@ -438,16 +438,16 @@ export default function UserTypesFlowcharts() {
 
       {/* ADMIN verifikacija licence */}
       <rect x="68" y="830" width="264" height="90" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="3" />
-      <text x="200" y="858" textAnchor="middle" fontSize="16" fontWeight="bold" fill="white">
+      <text x="200" y="850" textAnchor="middle" fontSize="16" fontWeight="bold" fill="white">
         🔐 ADMIN Verifikacija
       </text>
-      <text x="200" y="881" textAnchor="middle" fontSize="12" fill="white">
+      <text x="200" y="870" textAnchor="middle" fontSize="12" fill="white">
         • Provjera valjanosti licence
       </text>
-      <text x="200" y="899" textAnchor="middle" fontSize="12" fill="white">
+      <text x="200" y="888" textAnchor="middle" fontSize="12" fill="white">
         • Kontakt s izdavateljem (opcionalno)
       </text>
-      <text x="200" y="917" textAnchor="middle" fontSize="12" fill="white">
+      <text x="200" y="906" textAnchor="middle" fontSize="12" fill="white">
         • Odobrenje/Odbijanje
       </text>
 
