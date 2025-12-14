@@ -1614,7 +1614,7 @@ export default function UserTypesFlowcharts() {
       <line x1="700" y1="390" x2="700" y2="430" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
 
       {/* Partner Score izračun */}
-      <rect x="300" y="430" width="800" height="160" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <rect x="350" y="430" width="700" height="160" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
       <text x="700" y="450" textAnchor="middle" fontSize="13" fontWeight="bold" fill={textColor}>
         Partner Score Izračun
       </text>
@@ -1661,7 +1661,7 @@ export default function UserTypesFlowcharts() {
       <line x1="900" y1="690" x2="900" y2="340" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
       <line x1="900" y1="340" x2="850" y2="340" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" markerEnd="url(#arrowhead7)" />
       <text x="825" y="685" textAnchor="middle" fontSize="10" fill={textColor}>ne</text>
-      <rect x="300" y="750" width="400" height="100" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <rect x="350" y="750" width="300" height="100" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
       <text x="500" y="770" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         Status: OFFERED
       </text>
