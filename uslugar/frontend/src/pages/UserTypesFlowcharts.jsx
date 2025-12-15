@@ -1133,7 +1133,8 @@ export default function UserTypesFlowcharts() {
       <text x="600" y="525" textAnchor="middle" fontSize="10" fill={textColor}>odlučuje</text>
 
       {/* Linija od PRUŽATELJ čeka odluku korisnika do Odluka? */}
-      <line x1="300" y1="575" x2="850" y2="667.5" stroke={textColor} strokeWidth="2" />
+      <line x1="300" y1="575" x2="300" y2="667.5" stroke={textColor} strokeWidth="2" />
+      <line x1="300" y1="667.5" x2="850" y2="667.5" stroke={textColor} strokeWidth="2" />
       
       {/* Linija od KORISNIK USLUGE Odluka o ponudi do Odluka? */}
       <line x1="850" y1="575" x2="850" y2="667.5" stroke={textColor} strokeWidth="2" />
