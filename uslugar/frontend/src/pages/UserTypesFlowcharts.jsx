@@ -1133,13 +1133,13 @@ export default function UserTypesFlowcharts() {
       <text x="600" y="525" textAnchor="middle" fontSize="10" fill={textColor}>odlučuje</text>
 
       {/* Linija od PRUŽATELJ čeka odluku korisnika do Odluka? */}
-      <line x1="500" y1="575" x2="700" y2="667.5" stroke={textColor} strokeWidth="2" />
+      <line x1="300" y1="575" x2="850" y2="667.5" stroke={textColor} strokeWidth="2" />
       
       {/* Linija od KORISNIK USLUGE Odluka o ponudi do Odluka? */}
-      <line x1="700" y1="575" x2="700" y2="667.5" stroke={textColor} strokeWidth="2" />
+      <line x1="850" y1="575" x2="850" y2="667.5" stroke={textColor} strokeWidth="2" />
       
       {/* Zajednička linija od točke spajanja do Odluka? */}
-      <line x1="700" y1="667.5" x2="800" y2="800" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
+      <line x1="850" y1="667.5" x2="850" y2="760" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
 
       {/* Odluka korisnika */}
       <polygon points="850,760 900,800 850,840 800,800" fill={warningColor} stroke={borderColor} strokeWidth="2" />
