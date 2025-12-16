@@ -1830,9 +1830,11 @@ export default function UserTypesFlowcharts() {
       {/* DA - nema refunda */}
       <line x1="650" y1="310" x2="300" y2="310" stroke={textColor} strokeWidth="2" />
       <line x1="300" y1="310" x2="300" y2="370" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead8)" />
+      <text x="475" y="305" textAnchor="middle" fontSize="10" fill={textColor}>da</text>
       
       {/* Linija od Kreditni sustav do Klijent odgovorio */}
       <line x1="500" y1="407.5" x2="300" y2="407.5" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
+      <text x="400" y="402.5" textAnchor="middle" fontSize="10" fill={textColor}>krediti potrošeni</text>
       
       <rect x="300" y="370" width="200" height="75" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
       <text x="400" y="388" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
@@ -1900,10 +1902,12 @@ export default function UserTypesFlowcharts() {
       {/* Linija od Razlozi za Refund do Refund Proces */}
       <line x1="1100" y1="475" x2="1000" y2="475" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
       <line x1="1000" y1="475" x2="1000" y2="510" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
+      <text x="1050" y="470" textAnchor="middle" fontSize="10" fill={textColor}>razlozi</text>
 
       {/* Linija od Kreditni sustav do Refund Proces */}
       <line x1="500" y1="475" x2="800" y2="475" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
       <line x1="800" y1="475" x2="800" y2="510" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
+      <text x="650" y="470" textAnchor="middle" fontSize="10" fill={textColor}>fallback krediti</text>
 
       {/* Kreditni sustav */}
       <rect x="100" y="370" width="400" height="210" rx="5" fill={primaryColor} stroke={borderColor} strokeWidth="2" />
