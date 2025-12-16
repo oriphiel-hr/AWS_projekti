@@ -1249,7 +1249,7 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Linija od OBA SUDIONIKA (donja strana) do POSAO U TIJEKU (desna strana) */}
-      <line x1="700" y1="1280" x2="700" y2="1370" stroke={textColor} strokeWidth="2" />
+      <line x1="700" y1="1275" x2="700" y2="1370" stroke={textColor} strokeWidth="2" />
       <line x1="700" y1="1370" x2="500" y2="1370" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead5)" />
 
       <rect x="100" y="1340" width="400" height="65" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
@@ -1575,7 +1575,7 @@ export default function UserTypesFlowcharts() {
       <line x1="700" y1="110" x2="700" y2="150" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
 
       {/* LeadQueue kreiranje */}
-      <rect x="550" y="150" width="300" height="95" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <rect x="550" y="150" width="300" height="110" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
       <text x="700" y="173" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         LeadQueue Entry
       </text>
@@ -1592,10 +1592,10 @@ export default function UserTypesFlowcharts() {
         • Weighted Queue (Partner Score)
       </text>
 
-      <line x1="700" y1="250" x2="700" y2="290" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
+      <line x1="700" y1="260" x2="700" y2="290" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
 
       {/* Queue Scheduler */}
-      <rect x="550" y="290" width="300" height="90" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="3" />
+      <rect x="550" y="290" width="300" height="110" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="3" />
       <text x="700" y="313" textAnchor="middle" fontSize="16" fontWeight="bold" fill="white">
         🔐 Queue Scheduler
       </text>
@@ -1612,10 +1612,10 @@ export default function UserTypesFlowcharts() {
         • Fairness algoritam
       </text>
 
-      <line x1="700" y1="390" x2="700" y2="430" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
+      <line x1="700" y1="400" x2="700" y2="430" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
 
       {/* Partner Score izračun */}
-      <rect x="525" y="430" width="350" height="155" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <rect x="525" y="430" width="350" height="170" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
       <text x="700" y="448" textAnchor="middle" fontSize="13" fontWeight="bold" fill={textColor}>
         Partner Score Izračun
       </text>
@@ -1644,7 +1644,7 @@ export default function UserTypesFlowcharts() {
         • Basic Partner (Score &lt; 60): niži prioritet
       </text>
 
-      <line x1="700" y1="590" x2="700" y2="650" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
+      <line x1="700" y1="600" x2="700" y2="650" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
 
       {/* Lead ponuđen pružatelju */}
       <polygon points="700,650 750,690 700,730 650,690" fill={warningColor} stroke={borderColor} strokeWidth="2" />
@@ -1689,8 +1689,7 @@ export default function UserTypesFlowcharts() {
 
       {/* INTERESTED - da */}
       <line x1="450" y1="930" x2="300" y2="930" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead7)" />
-      <rect x="360" y="912" width="30" height="16" rx="3" fill="white" stroke={textColor} strokeWidth="1" />
-      <text x="375" y="925" textAnchor="middle" fontSize="11" fill={textColor} fontWeight="bold">da</text>
+      <text x="375" y="925" textAnchor="middle" fontSize="10" fill={textColor}>da</text>
       <rect x="100" y="890" width="200" height="75" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
       <text x="200" y="908" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         INTERESTED
