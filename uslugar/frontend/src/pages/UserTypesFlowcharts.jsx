@@ -1344,7 +1344,7 @@ export default function UserTypesFlowcharts() {
       <line x1="700" y1="110" x2="700" y2="150" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead6)" />
 
       {/* Posao postaje lead */}
-      <rect x="550" y="150" width="300" height="75" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <rect x="550" y="150" width="300" height="95" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
       <text x="700" y="178" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         Posao → Ekskluzivni Lead
       </text>
@@ -1358,10 +1358,10 @@ export default function UserTypesFlowcharts() {
         • Dinamička cijena (10-20 kredita)
       </text>
 
-      <line x1="700" y1="230" x2="700" y2="270" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead6)" />
+      <line x1="700" y1="245" x2="700" y2="270" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead6)" />
 
       {/* Lead na tržištu */}
-      <rect x="550" y="270" width="300" height="95" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
+      <rect x="550" y="270" width="300" height="110" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
       <text x="700" y="293" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         Lead na Tržištu
       </text>
@@ -1378,7 +1378,7 @@ export default function UserTypesFlowcharts() {
         • Cijena leada prikazana
       </text>
 
-      <line x1="700" y1="370" x2="700" y2="410" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead6)" />
+      <line x1="700" y1="380" x2="700" y2="410" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead6)" />
 
       {/* Pružatelj kupuje lead */}
       <polygon points="700,410 750,450 700,490 650,450" fill={warningColor} stroke={borderColor} strokeWidth="2" />
@@ -1488,7 +1488,7 @@ export default function UserTypesFlowcharts() {
       {/* REFUNDED */}
       <line x1="550" y1="880" x2="700" y2="880" stroke={textColor} strokeWidth="2" />
       <line x1="700" y1="880" x2="700" y2="937" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead6)" />
-      <rect x="600" y="940" width="200" height="115" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="2" />
+      <rect x="600" y="940" width="200" height="130" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="2" />
       <text x="700" y="958" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         REFUNDED
       </text>
@@ -1507,7 +1507,7 @@ export default function UserTypesFlowcharts() {
       <text x="700" y="1048" textAnchor="middle" fontSize="12" fill="white">
         • Interni krediti
       </text>
-      <text x="700" y="1045" textAnchor="middle" fontSize="12" fill="white">
+      <text x="700" y="1066" textAnchor="middle" fontSize="12" fill="white">
         Lead vraćen na tržište
       </text>
 
@@ -1516,7 +1516,7 @@ export default function UserTypesFlowcharts() {
       <line x1="1100" y1="190" x2="1100" y2="940" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
 
       {/* AI Score detalji */}
-      <rect x="900" y="940" width="400" height="175" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <rect x="900" y="940" width="400" height="195" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
       <text x="1100" y="958" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         AI Score Kvalitete Leadova
       </text>
