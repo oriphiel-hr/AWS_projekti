@@ -1805,7 +1805,7 @@ export default function UserTypesFlowcharts() {
       <line x1="700" y1="110" x2="700" y2="150" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead8)" />
 
       {/* Kontakt pokušaj */}
-      <rect x="550" y="150" width="300" height="75" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <rect x="550" y="150" width="300" height="90" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
       <text x="700" y="173" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         Pružatelj kontaktira klijenta
       </text>
@@ -1819,7 +1819,7 @@ export default function UserTypesFlowcharts() {
         • Tracking aktivnosti
       </text>
 
-      <line x1="700" y1="230" x2="700" y2="270" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead8)" />
+      <line x1="700" y1="240" x2="700" y2="270" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead8)" />
 
       {/* Odluka o refundu */}
       <polygon points="700,270 750,310 700,350 650,310" fill={warningColor} stroke={borderColor} strokeWidth="2" />
@@ -1892,7 +1892,7 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Kreditni sustav */}
-      <rect x="100" y="370" width="400" height="195" rx="5" fill={primaryColor} stroke={borderColor} strokeWidth="2" />
+      <rect x="100" y="370" width="400" height="210" rx="5" fill={primaryColor} stroke={borderColor} strokeWidth="2" />
       <text x="300" y="388" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         Kreditni Sustav
       </text>
@@ -1926,12 +1926,12 @@ export default function UserTypesFlowcharts() {
       <text x="300" y="559" textAnchor="middle" fontSize="11" fill="white">
         • Izvoz povijesti
       </text>
-      <text x="300" y="556" textAnchor="middle" fontSize="11" fill="white">
+      <text x="300" y="576" textAnchor="middle" fontSize="11" fill="white">
         • Notifikacije o transakcijama
       </text>
 
       {/* Refund razlozi */}
-      <rect x="1100" y="370" width="300" height="195" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <rect x="1100" y="370" width="300" height="210" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
       <text x="1250" y="388" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         Razlozi za Refund
       </text>
@@ -1965,7 +1965,7 @@ export default function UserTypesFlowcharts() {
       <text x="1250" y="559" textAnchor="middle" fontSize="11" fill={textColor}>
         • Povijest refund transakcija
       </text>
-      <text x="1250" y="556" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="1250" y="576" textAnchor="middle" fontSize="11" fill={textColor}>
         • Status: REFUNDED
       </text>
     </ZoomableSVG>
