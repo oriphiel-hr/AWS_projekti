@@ -1516,7 +1516,7 @@ export default function UserTypesFlowcharts() {
       <line x1="1100" y1="190" x2="1100" y2="940" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
 
       {/* AI Score detalji */}
-      <rect x="900" y="940" width="400" height="195" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <rect x="900" y="940" width="400" height="210" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
       <text x="1100" y="958" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         AI Score Kvalitete Leadova
       </text>
@@ -1547,7 +1547,7 @@ export default function UserTypesFlowcharts() {
       <text x="1100" y="1112" textAnchor="middle" fontSize="11" fill={textColor}>
         • Hitnost posla (+5)
       </text>
-      <text x="1100" y="1109" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="1100" y="1129" textAnchor="middle" fontSize="11" fill={textColor}>
         • Ukupno: 0-100 score
       </text>
     </ZoomableSVG>
