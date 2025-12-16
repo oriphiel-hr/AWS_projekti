@@ -1828,7 +1828,12 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* DA - nema refunda */}
-      <line x1="650" y1="310" x2="500" y2="310" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead8)" />
+      <line x1="650" y1="310" x2="300" y2="310" stroke={textColor} strokeWidth="2" />
+      <line x1="300" y1="310" x2="300" y2="370" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead8)" />
+      
+      {/* Linija od Kreditni sustav do Klijent odgovorio */}
+      <line x1="500" y1="407.5" x2="300" y2="407.5" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
+      
       <rect x="300" y="370" width="200" height="75" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
       <text x="400" y="388" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         Klijent odgovorio
@@ -1844,10 +1849,11 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* NE - refund */}
-      <line x1="750" y1="310" x2="900" y2="310" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead8)" />
+      <line x1="750" y1="310" x2="900" y2="310" stroke={textColor} strokeWidth="2" />
+      <line x1="900" y1="310" x2="900" y2="370" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead8)" />
       <rect x="800" y="370" width="200" height="95" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="2" />
       <text x="900" y="388" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
-        Klijent ne odgovori
+        Klijent nije odgovorio
       </text>
       <text x="900" y="406" textAnchor="middle" fontSize="12" fill="white">
         • 48h neaktivnosti
@@ -1890,6 +1896,14 @@ export default function UserTypesFlowcharts() {
       <text x="900" y="640" textAnchor="middle" fontSize="11" fill={successColor}>
         ✓ Refund uspješan
       </text>
+
+      {/* Linija od Razlozi za Refund do Refund Proces */}
+      <line x1="1100" y1="475" x2="1000" y2="475" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
+      <line x1="1000" y1="475" x2="1000" y2="510" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
+
+      {/* Linija od Kreditni sustav do Refund Proces */}
+      <line x1="500" y1="475" x2="800" y2="475" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
+      <line x1="800" y1="475" x2="800" y2="510" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
 
       {/* Kreditni sustav */}
       <rect x="100" y="370" width="400" height="210" rx="5" fill={primaryColor} stroke={borderColor} strokeWidth="2" />
@@ -1936,7 +1950,7 @@ export default function UserTypesFlowcharts() {
         Razlozi za Refund
       </text>
       <text x="1250" y="406" textAnchor="middle" fontSize="11" fill={textColor}>
-        • Klijent ne odgovori (48h)
+        • Klijent nije odgovorio (48h)
       </text>
       <text x="1250" y="423" textAnchor="middle" fontSize="11" fill={textColor}>
         • Lead nije kvalitetan
