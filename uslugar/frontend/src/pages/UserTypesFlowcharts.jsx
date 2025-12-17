@@ -1832,11 +1832,6 @@ export default function UserTypesFlowcharts() {
       <line x1="300" y1="310" x2="300" y2="370" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead8)" />
       <text x="475" y="305" textAnchor="middle" fontSize="10" fill={textColor}>da</text>
       
-      {/* Linija od Kreditni sustav do Klijent odgovorio */}
-      <line x1="500" y1="615" x2="200" y2="615" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
-      <line x1="200" y1="615" x2="200" y2="407.5" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
-      <text x="350" y="610" textAnchor="middle" fontSize="10" fill={textColor}>krediti potrošeni</text>
-      
       <rect x="200" y="370" width="200" height="75" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
       <text x="300" y="388" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         Klijent odgovorio
