@@ -1851,6 +1851,9 @@ export default function UserTypesFlowcharts() {
         • Status: CONTACTED
       </text>
 
+      {/* Linija od Klijent odgovorio (sredina donje stranice) do Kreditni sustav (sredina gornje stranice) */}
+      <line x1="300" y1="445" x2="300" y2="510" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
+
       {/* NE - refund */}
       <line x1="750" y1="310" x2="900" y2="310" stroke={textColor} strokeWidth="2" />
       <line x1="900" y1="310" x2="900" y2="370" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead8)" />
