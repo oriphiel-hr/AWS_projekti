@@ -1853,8 +1853,7 @@ export default function UserTypesFlowcharts() {
       {/* NE - refund */}
       <line x1="750" y1="310" x2="900" y2="310" stroke={textColor} strokeWidth="2" />
       <line x1="900" y1="310" x2="900" y2="370" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead8)" />
-      <rect x="820" y="305" width="20" height="12" rx="2" fill="white" />
-      <text x="830" y="315" textAnchor="middle" fontSize="10" fill={textColor} fontWeight="bold">ne</text>
+      <text x="825" y="305" textAnchor="middle" fontSize="10" fill={textColor}>ne</text>
       <rect x="800" y="370" width="200" height="95" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="2" />
       <text x="900" y="388" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         Klijent nije odgovorio
@@ -1901,14 +1900,14 @@ export default function UserTypesFlowcharts() {
         ✓ Refund uspješan
       </text>
 
-      {/* Linija od Razlozi za Refund do Refund Proces */}
+      {/* Linija od Razlozi za Refund (lijevi kraj) do Refund Proces (desni kraj) */}
       <line x1="1100" y1="475" x2="1000" y2="475" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
-      <line x1="1000" y1="475" x2="1000" y2="510" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
+      <line x1="1000" y1="475" x2="1000" y2="577.5" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
       <text x="1050" y="470" textAnchor="middle" fontSize="10" fill={textColor}>razlozi</text>
 
-      {/* Linija od Kreditni sustav do Refund Proces */}
+      {/* Linija od Kreditni sustav (desni kraj) do Refund Proces (lijevi kraj) */}
       <line x1="500" y1="475" x2="800" y2="475" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
-      <line x1="800" y1="475" x2="800" y2="510" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
+      <line x1="800" y1="475" x2="800" y2="577.5" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
       <text x="650" y="470" textAnchor="middle" fontSize="10" fill={textColor}>fallback krediti</text>
 
       {/* Kreditni sustav */}
