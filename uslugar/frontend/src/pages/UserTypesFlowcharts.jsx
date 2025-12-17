@@ -1833,8 +1833,9 @@ export default function UserTypesFlowcharts() {
       <text x="475" y="305" textAnchor="middle" fontSize="10" fill={textColor}>da</text>
       
       {/* Linija od Kreditni sustav do Klijent odgovorio */}
-      <line x1="500" y1="407.5" x2="300" y2="407.5" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
-      <text x="400" y="402.5" textAnchor="middle" fontSize="10" fill={textColor}>krediti potrošeni</text>
+      <line x1="500" y1="547.5" x2="300" y2="547.5" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
+      <line x1="300" y1="547.5" x2="300" y2="407.5" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
+      <text x="400" y="542.5" textAnchor="middle" fontSize="10" fill={textColor}>krediti potrošeni</text>
       
       <rect x="300" y="370" width="200" height="75" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
       <text x="400" y="388" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
@@ -1901,90 +1902,90 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Linija od Razlozi za Refund (lijevi kraj) do Refund Proces (desni kraj) */}
-      <line x1="1100" y1="475" x2="1000" y2="475" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
-      <line x1="1000" y1="475" x2="1000" y2="577.5" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
-      <text x="1050" y="470" textAnchor="middle" fontSize="10" fill={textColor}>razlozi</text>
+      <line x1="1100" y1="615" x2="1000" y2="615" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
+      <line x1="1000" y1="615" x2="1000" y2="577.5" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
+      <text x="1050" y="610" textAnchor="middle" fontSize="10" fill={textColor}>razlozi</text>
 
       {/* Linija od Kreditni sustav (desni kraj) do Refund Proces (lijevi kraj) */}
-      <line x1="500" y1="475" x2="800" y2="475" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
-      <line x1="800" y1="475" x2="800" y2="577.5" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
-      <text x="650" y="470" textAnchor="middle" fontSize="10" fill={textColor}>fallback krediti</text>
+      <line x1="500" y1="615" x2="800" y2="615" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
+      <line x1="800" y1="615" x2="800" y2="577.5" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
+      <text x="650" y="610" textAnchor="middle" fontSize="10" fill={textColor}>fallback krediti</text>
 
       {/* Kreditni sustav */}
-      <rect x="100" y="370" width="400" height="210" rx="5" fill={primaryColor} stroke={borderColor} strokeWidth="2" />
-      <text x="300" y="388" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+      <rect x="100" y="510" width="400" height="210" rx="5" fill={primaryColor} stroke={borderColor} strokeWidth="2" />
+      <text x="300" y="528" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         Kreditni Sustav
       </text>
-      <text x="300" y="406" textAnchor="middle" fontSize="11" fill="white">
+      <text x="300" y="546" textAnchor="middle" fontSize="11" fill="white">
         • 1 kredit ≈ 10€
       </text>
-      <text x="300" y="423" textAnchor="middle" fontSize="11" fill="white">
+      <text x="300" y="563" textAnchor="middle" fontSize="11" fill="white">
         • Dobivaju se pretplatom
       </text>
-      <text x="300" y="440" textAnchor="middle" fontSize="11" fill="white">
+      <text x="300" y="580" textAnchor="middle" fontSize="11" fill="white">
         • Pay-per-credit (Stripe)
       </text>
-      <text x="300" y="457" textAnchor="middle" fontSize="11" fill="white">
+      <text x="300" y="597" textAnchor="middle" fontSize="11" fill="white">
         • TRIAL: 8 leadova (besplatno)
       </text>
-      <text x="300" y="474" textAnchor="middle" fontSize="11" fill="white">
+      <text x="300" y="614" textAnchor="middle" fontSize="11" fill="white">
         • BASIC: 10 kredita/mjesec
       </text>
-      <text x="300" y="491" textAnchor="middle" fontSize="11" fill="white">
+      <text x="300" y="631" textAnchor="middle" fontSize="11" fill="white">
         • PREMIUM: 50 kredita/mjesec
       </text>
-      <text x="300" y="508" textAnchor="middle" fontSize="11" fill="white">
+      <text x="300" y="648" textAnchor="middle" fontSize="11" fill="white">
         • PRO: Unlimited krediti
       </text>
-      <text x="300" y="525" textAnchor="middle" fontSize="11" fill="white">
+      <text x="300" y="665" textAnchor="middle" fontSize="11" fill="white">
         • Povijest transakcija
       </text>
-      <text x="300" y="542" textAnchor="middle" fontSize="11" fill="white">
+      <text x="300" y="682" textAnchor="middle" fontSize="11" fill="white">
         • Filtriranje po tipu
       </text>
-      <text x="300" y="559" textAnchor="middle" fontSize="11" fill="white">
+      <text x="300" y="699" textAnchor="middle" fontSize="11" fill="white">
         • Izvoz povijesti
       </text>
-      <text x="300" y="576" textAnchor="middle" fontSize="11" fill="white">
+      <text x="300" y="716" textAnchor="middle" fontSize="11" fill="white">
         • Notifikacije o transakcijama
       </text>
 
       {/* Refund razlozi */}
-      <rect x="1100" y="370" width="300" height="210" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
-      <text x="1250" y="388" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
+      <rect x="1100" y="510" width="300" height="210" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <text x="1250" y="528" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         Razlozi za Refund
       </text>
-      <text x="1250" y="406" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="1250" y="546" textAnchor="middle" fontSize="11" fill={textColor}>
         • Klijent nije odgovorio (48h)
       </text>
-      <text x="1250" y="423" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="1250" y="563" textAnchor="middle" fontSize="11" fill={textColor}>
         • Lead nije kvalitetan
       </text>
-      <text x="1250" y="440" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="1250" y="580" textAnchor="middle" fontSize="11" fill={textColor}>
         • Duplikat leada
       </text>
-      <text x="1250" y="457" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="1250" y="597" textAnchor="middle" fontSize="11" fill={textColor}>
         • Lažni kontakt podaci
       </text>
-      <text x="1250" y="474" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="1250" y="614" textAnchor="middle" fontSize="11" fill={textColor}>
         • Ručno zatraživanje
       </text>
-      <text x="1250" y="491" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="1250" y="631" textAnchor="middle" fontSize="11" fill={textColor}>
         • Automatski refund (48h)
       </text>
-      <text x="1250" y="508" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="1250" y="648" textAnchor="middle" fontSize="11" fill={textColor}>
         • Refund za pretplate
       </text>
-      <text x="1250" y="525" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="1250" y="665" textAnchor="middle" fontSize="11" fill={textColor}>
         • Stripe refund ID tracking
       </text>
-      <text x="1250" y="542" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="1250" y="682" textAnchor="middle" fontSize="11" fill={textColor}>
         • Fallback na interne kredite
       </text>
-      <text x="1250" y="559" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="1250" y="699" textAnchor="middle" fontSize="11" fill={textColor}>
         • Povijest refund transakcija
       </text>
-      <text x="1250" y="576" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="1250" y="716" textAnchor="middle" fontSize="11" fill={textColor}>
         • Status: REFUNDED
       </text>
     </ZoomableSVG>
