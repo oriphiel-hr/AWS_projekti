@@ -1872,43 +1872,41 @@ export default function UserTypesFlowcharts() {
         • Ručno zatraživanje
       </text>
 
-      <line x1="900" y1="470" x2="900" y2="510" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead8)" />
+      <line x1="900" y1="470" x2="900" y2="547.5" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead8)" />
 
       {/* Refund proces */}
-      <rect x="800" y="510" width="200" height="135" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
-      <text x="900" y="528" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
+      <rect x="800" y="547.5" width="200" height="135" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <text x="900" y="565.5" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         Refund Proces
       </text>
-      <text x="900" y="546" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="900" y="583.5" textAnchor="middle" fontSize="11" fill={textColor}>
         1. Provjera načina plaćanja
       </text>
-      <text x="900" y="563" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="900" y="600.5" textAnchor="middle" fontSize="11" fill={textColor}>
         2. Stripe Payment Intent?
       </text>
-      <text x="900" y="580" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="900" y="617.5" textAnchor="middle" fontSize="11" fill={textColor}>
         3. Stripe refund API (PSD2)
       </text>
-      <text x="900" y="597" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="900" y="634.5" textAnchor="middle" fontSize="11" fill={textColor}>
         • Interni krediti (fallback)
       </text>
-      <text x="900" y="614" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="900" y="651.5" textAnchor="middle" fontSize="11" fill={textColor}>
         4. CreditTransaction: REFUND
       </text>
-      <text x="900" y="631" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="900" y="668.5" textAnchor="middle" fontSize="11" fill={textColor}>
         5. Lead oslobođen (vraćen na tržište)
       </text>
-      <text x="900" y="640" textAnchor="middle" fontSize="11" fill={successColor}>
+      <text x="900" y="677.5" textAnchor="middle" fontSize="11" fill={successColor}>
         ✓ Refund uspješan
       </text>
 
       {/* Linija od Razlozi za Refund (lijevi kraj) do Refund Proces (desni kraj) */}
       <line x1="1100" y1="615" x2="1000" y2="615" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
-      <line x1="1000" y1="615" x2="1000" y2="577.5" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
       <text x="1050" y="610" textAnchor="middle" fontSize="10" fill={textColor}>razlozi</text>
 
       {/* Linija od Kreditni sustav (desni kraj) do Refund Proces (lijevi kraj) */}
       <line x1="500" y1="615" x2="800" y2="615" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
-      <line x1="800" y1="615" x2="800" y2="577.5" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
       <text x="650" y="610" textAnchor="middle" fontSize="10" fill={textColor}>fallback krediti</text>
 
       {/* Kreditni sustav */}
