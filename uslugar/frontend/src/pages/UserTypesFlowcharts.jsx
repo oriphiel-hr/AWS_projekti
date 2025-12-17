@@ -1828,26 +1828,26 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* DA - nema refunda */}
-      <line x1="650" y1="310" x2="300" y2="310" stroke={textColor} strokeWidth="2" />
-      <line x1="300" y1="310" x2="300" y2="370" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead8)" />
-      <text x="475" y="305" textAnchor="middle" fontSize="10" fill={textColor}>da</text>
+      <line x1="650" y1="310" x2="200" y2="310" stroke={textColor} strokeWidth="2" />
+      <line x1="200" y1="310" x2="200" y2="370" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead8)" />
+      <text x="425" y="305" textAnchor="middle" fontSize="10" fill={textColor}>da</text>
       
       {/* Linija od Kreditni sustav do Klijent odgovorio */}
-      <line x1="500" y1="547.5" x2="300" y2="547.5" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
-      <line x1="300" y1="547.5" x2="300" y2="407.5" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
-      <text x="400" y="542.5" textAnchor="middle" fontSize="10" fill={textColor}>krediti potrošeni</text>
+      <line x1="500" y1="547.5" x2="200" y2="547.5" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
+      <line x1="200" y1="547.5" x2="200" y2="407.5" stroke={textColor} strokeWidth="2" strokeDasharray="5,5" />
+      <text x="350" y="542.5" textAnchor="middle" fontSize="10" fill={textColor}>krediti potrošeni</text>
       
-      <rect x="300" y="370" width="200" height="75" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
-      <text x="400" y="388" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
+      <rect x="200" y="370" width="200" height="75" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
+      <text x="300" y="388" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         Klijent odgovorio
       </text>
-      <text x="400" y="406" textAnchor="middle" fontSize="12" fill="white">
+      <text x="300" y="406" textAnchor="middle" fontSize="12" fill="white">
         • Nema refunda
       </text>
-      <text x="400" y="424" textAnchor="middle" fontSize="12" fill="white">
+      <text x="300" y="424" textAnchor="middle" fontSize="12" fill="white">
         • Lead aktivan
       </text>
-      <text x="400" y="442" textAnchor="middle" fontSize="12" fill="white">
+      <text x="300" y="442" textAnchor="middle" fontSize="12" fill="white">
         • Status: CONTACTED
       </text>
 
