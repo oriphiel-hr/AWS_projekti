@@ -2506,7 +2506,7 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Premium */}
-      <line x1="650" y1="690" x2="500" y2="690" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead10)" />
+      <line x1="650" y1="690" x2="400" y2="750" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead10)" />
       <rect x="300" y="750" width="200" height="130" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
       <text x="400" y="768" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         Premium Partner
@@ -2528,7 +2528,7 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Verified */}
-      <line x1="700" y1="690" x2="700" y2="750" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead10)" />
+      <line x1="700" y1="730" x2="700" y2="750" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead10)" />
       <rect x="600" y="750" width="200" height="130" rx="5" fill={primaryColor} stroke={borderColor} strokeWidth="2" />
       <text x="700" y="768" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         Verified Partner
@@ -2550,7 +2550,7 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Basic */}
-      <line x1="750" y1="690" x2="1000" y2="690" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead10)" />
+      <line x1="750" y1="690" x2="1000" y2="750" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead10)" />
       <rect x="900" y="750" width="200" height="130" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
       <text x="1000" y="768" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         Basic Partner
