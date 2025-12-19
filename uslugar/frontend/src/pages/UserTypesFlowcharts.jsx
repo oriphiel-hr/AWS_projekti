@@ -2481,7 +2481,7 @@ export default function UserTypesFlowcharts() {
 
       {/* Partner Score izračun */}
       <line x1="700" y1="465" x2="700" y2="490" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead10)" />
-      <rect x="400" y="490" width="600" height="115" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <rect x="200" y="490" width="1000" height="115" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
       <text x="700" y="513" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         Partner Score Izračun (0-100)
       </text>
@@ -2550,24 +2550,24 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Basic */}
-      <line x1="750" y1="690" x2="900" y2="690" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead10)" />
-      <rect x="800" y="750" width="200" height="130" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
-      <text x="900" y="768" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
+      <line x1="750" y1="690" x2="1000" y2="690" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead10)" />
+      <rect x="900" y="750" width="200" height="130" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <text x="1000" y="768" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         Basic Partner
       </text>
-      <text x="900" y="786" textAnchor="middle" fontSize="12" fill={textColor}>
+      <text x="1000" y="786" textAnchor="middle" fontSize="12" fill={textColor}>
         Score &lt; 60
       </text>
-      <text x="900" y="804" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="1000" y="804" textAnchor="middle" fontSize="11" fill={textColor}>
         • Niži prioritet
       </text>
-      <text x="900" y="822" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="1000" y="822" textAnchor="middle" fontSize="11" fill={textColor}>
         • Manje leadova
       </text>
-      <text x="900" y="840" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="1000" y="840" textAnchor="middle" fontSize="11" fill={textColor}>
         • Nema badge-a
       </text>
-      <text x="900" y="858" textAnchor="middle" fontSize="11" fill={textColor}>
+      <text x="1000" y="858" textAnchor="middle" fontSize="11" fill={textColor}>
         • Standard podrška
       </text>
 
