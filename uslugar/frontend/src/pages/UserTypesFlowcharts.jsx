@@ -2023,7 +2023,7 @@ export default function UserTypesFlowcharts() {
         • Multi-channel slanje
       </text>
       <text x="700" y="245" textAnchor="middle" fontSize="12" fill="white">
-        • Brojač nepročitanih
+        • Brojač nepročitanih notifikacija
       </text>
 
       <line x1="700" y1="255" x2="700" y2="290" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead9)" />
