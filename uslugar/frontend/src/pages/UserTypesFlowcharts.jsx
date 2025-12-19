@@ -2306,13 +2306,13 @@ export default function UserTypesFlowcharts() {
       <line x1="700" y1="110" x2="700" y2="150" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead10)" />
 
       {/* Reputation Score komponente */}
-      <rect x="200" y="150" width="1000" height="295" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <rect x="200" y="150" width="1000" height="315" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
       <text x="700" y="173" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         Reputation Score Komponente (0-100)
       </text>
 
       {/* Prosječna ocjena */}
-      <rect x="250" y="200" width="220" height="225" rx="5" fill={primaryColor} stroke={borderColor} strokeWidth="2" />
+      <rect x="250" y="200" width="220" height="245" rx="5" fill={primaryColor} stroke={borderColor} strokeWidth="2" />
       <text x="360" y="223" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         Prosječna Ocjena (40%)
       </text>
@@ -2354,7 +2354,7 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Prosječno vrijeme odgovora */}
-      <rect x="490" y="200" width="220" height="225" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
+      <rect x="490" y="200" width="220" height="245" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
       <text x="600" y="223" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         Prosječno Vrijeme Odgovora (25%)
       </text>
@@ -2396,7 +2396,7 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Stopa konverzije */}
-      <rect x="730" y="200" width="220" height="225" rx="5" fill={warningColor} stroke={borderColor} strokeWidth="2" />
+      <rect x="730" y="200" width="220" height="245" rx="5" fill={warningColor} stroke={borderColor} strokeWidth="2" />
       <text x="840" y="223" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         Stopa Konverzije (20%)
       </text>
@@ -2438,7 +2438,7 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Platform Compliance */}
-      <rect x="970" y="200" width="220" height="225" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="2" />
+      <rect x="970" y="200" width="220" height="245" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="2" />
       <text x="1080" y="223" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         Platform Compliance (15%)
       </text>
@@ -2480,7 +2480,7 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Partner Score izračun */}
-      <line x1="700" y1="445" x2="700" y2="490" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead10)" />
+      <line x1="700" y1="465" x2="700" y2="490" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead10)" />
       <rect x="400" y="490" width="600" height="115" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
       <text x="700" y="513" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         Partner Score Izračun (0-100)
@@ -2507,7 +2507,7 @@ export default function UserTypesFlowcharts() {
 
       {/* Premium */}
       <line x1="650" y1="690" x2="500" y2="690" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead10)" />
-      <rect x="300" y="750" width="200" height="115" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
+      <rect x="300" y="750" width="200" height="130" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
       <text x="400" y="768" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         Premium Partner
       </text>
@@ -2529,7 +2529,7 @@ export default function UserTypesFlowcharts() {
 
       {/* Verified */}
       <line x1="700" y1="690" x2="700" y2="750" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead10)" />
-      <rect x="600" y="750" width="200" height="115" rx="5" fill={primaryColor} stroke={borderColor} strokeWidth="2" />
+      <rect x="600" y="750" width="200" height="130" rx="5" fill={primaryColor} stroke={borderColor} strokeWidth="2" />
       <text x="700" y="768" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         Verified Partner
       </text>
@@ -2551,7 +2551,7 @@ export default function UserTypesFlowcharts() {
 
       {/* Basic */}
       <line x1="750" y1="690" x2="900" y2="690" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead10)" />
-      <rect x="800" y="750" width="200" height="115" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <rect x="800" y="750" width="200" height="130" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
       <text x="900" y="768" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         Basic Partner
       </text>
@@ -2572,7 +2572,7 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Trust Score za klijente */}
-      <line x1="700" y1="865" x2="700" y2="910" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead10)" />
+      <line x1="700" y1="880" x2="700" y2="910" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead10)" />
       <rect x="200" y="910" width="1000" height="275" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
       <text x="700" y="933" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         Trust Score za Klijente (0-100)
@@ -2660,7 +2660,7 @@ export default function UserTypesFlowcharts() {
 
       {/* Utjecaj na lead matching */}
       <line x1="700" y1="1185" x2="700" y2="1230" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead10)" />
-      <rect x="400" y="1230" width="600" height="65" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
+      <rect x="400" y="1230" width="600" height="80" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
       <text x="700" y="1250" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         Utjecaj na Lead Matching
       </text>
