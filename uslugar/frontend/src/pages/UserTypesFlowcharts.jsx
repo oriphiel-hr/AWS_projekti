@@ -2009,7 +2009,7 @@ export default function UserTypesFlowcharts() {
       <line x1="700" y1="110" x2="700" y2="150" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead9)" />
 
       {/* Notifikacijski sustav */}
-      <rect x="550" y="150" width="300" height="90" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="3" />
+      <rect x="550" y="150" width="300" height="105" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="3" />
       <text x="700" y="173" textAnchor="middle" fontSize="16" fontWeight="bold" fill="white">
         🔔 Notifikacijski Sustav
       </text>
@@ -2026,7 +2026,7 @@ export default function UserTypesFlowcharts() {
         • Brojač nepročitanih
       </text>
 
-      <line x1="700" y1="250" x2="700" y2="290" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead9)" />
+      <line x1="700" y1="255" x2="700" y2="290" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead9)" />
 
       {/* Tipovi notifikacija */}
       <rect x="200" y="290" width="1000" height="195" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
@@ -2035,7 +2035,7 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Email */}
-      <rect x="250" y="340" width="220" height="125" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
+      <rect x="250" y="340" width="220" height="140" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
       <text x="360" y="358" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         📧 Email Notifikacije
       </text>
@@ -2059,7 +2059,7 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* SMS */}
-      <rect x="490" y="340" width="220" height="125" rx="5" fill={primaryColor} stroke={borderColor} strokeWidth="2" />
+      <rect x="490" y="340" width="220" height="140" rx="5" fill={primaryColor} stroke={borderColor} strokeWidth="2" />
       <text x="600" y="358" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         📱 SMS Notifikacije (Twilio)
       </text>
@@ -2083,7 +2083,7 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* In-App */}
-      <rect x="730" y="340" width="220" height="125" rx="5" fill={warningColor} stroke={borderColor} strokeWidth="2" />
+      <rect x="730" y="340" width="220" height="140" rx="5" fill={warningColor} stroke={borderColor} strokeWidth="2" />
       <text x="840" y="358" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         🔔 In-App Notifikacije
       </text>
@@ -2107,7 +2107,7 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Push */}
-      <rect x="970" y="340" width="220" height="125" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <rect x="970" y="340" width="220" height="140" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
       <text x="1080" y="358" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         📲 Push Notifikacije
       </text>
@@ -2131,14 +2131,14 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Eventi koji pokreću notifikacije */}
-      <line x1="700" y1="485" x2="700" y2="530" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead9)" />
-      <rect x="200" y="530" width="1000" height="295" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
+      <line x1="700" y1="480" x2="700" y2="530" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead9)" />
+      <rect x="200" y="530" width="1000" height="310" rx="5" fill={boxColor} stroke={borderColor} strokeWidth="2" />
       <text x="700" y="553" textAnchor="middle" fontSize="14" fontWeight="bold" fill={textColor}>
         Eventi koji Pokreću Notifikacije
       </text>
 
       {/* Korisnik usluge */}
-      <rect x="250" y="580" width="300" height="225" rx="5" fill={primaryColor} stroke={borderColor} strokeWidth="2" />
+      <rect x="250" y="580" width="300" height="240" rx="5" fill={primaryColor} stroke={borderColor} strokeWidth="2" />
       <text x="400" y="603" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         👤 Korisnik Usluge
       </text>
@@ -2180,7 +2180,7 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Pružatelj */}
-      <rect x="570" y="580" width="300" height="225" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
+      <rect x="570" y="580" width="300" height="240" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
       <text x="720" y="603" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         👤 Pružatelj Usluga
       </text>
@@ -2222,7 +2222,7 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Admin */}
-      <rect x="890" y="580" width="300" height="225" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="2" />
+      <rect x="890" y="580" width="300" height="240" rx="5" fill={dangerColor} stroke={borderColor} strokeWidth="2" />
       <text x="1040" y="603" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         🔐 ADMIN
       </text>
@@ -2264,7 +2264,7 @@ export default function UserTypesFlowcharts() {
       </text>
 
       {/* Notifikacijski kanali */}
-      <line x1="700" y1="805" x2="700" y2="870" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead9)" />
+      <line x1="700" y1="820" x2="700" y2="870" stroke={textColor} strokeWidth="2" markerEnd="url(#arrowhead9)" />
       <rect x="200" y="870" width="1000" height="115" rx="5" fill={successColor} stroke={borderColor} strokeWidth="2" />
       <text x="700" y="888" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">
         Notifikacijski Kanal
