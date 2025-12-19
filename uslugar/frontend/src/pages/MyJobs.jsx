@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import api from '../api';
 import { useAuth } from '../App.jsx';
+import { createChatRoom } from '../api/chat';
+import ChatRoom from '../components/ChatRoom';
 
 export default function MyJobs({ onNavigate }) {
   const { token } = useAuth();
@@ -9,6 +11,8 @@ export default function MyJobs({ onNavigate }) {
   const [loading, setLoading] = useState(true);
   const [selectedJob, setSelectedJob] = useState(null);
   const [offers, setOffers] = useState({});
+  const [chatRoom, setChatRoom] = useState(null);
+  const [currentUserId, setCurrentUserId] = useState(null);
 
   useEffect(() => {
     if (!token) {
@@ -20,7 +24,9 @@ export default function MyJobs({ onNavigate }) {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       try {
-        setUser(JSON.parse(storedUser));
+        const userData = JSON.parse(storedUser);
+        setUser(userData);
+        setCurrentUserId(userData.id);
       } catch (e) {
         console.error('Error parsing user:', e);
       }
@@ -95,12 +101,28 @@ export default function MyJobs({ onNavigate }) {
 
     try {
       await api.patch(`/offers/${offerId}/accept`);
-      alert('Ponuda je prihvaćena!');
+      alert('Ponuda je prihvaćena! Chat soba je sada dostupna.');
       await loadMyJobs();
       await loadOffers(jobId);
     } catch (error) {
       console.error('Error accepting offer:', error);
       alert('Greška pri prihvaćanju ponude');
+    }
+  };
+
+  const rejectOffer = async (offerId, jobId) => {
+    if (!confirm('Jeste li sigurni da želite odbiti ovu ponudu?')) {
+      return;
+    }
+
+    try {
+      await api.patch(`/offers/${offerId}/reject`);
+      alert('Ponuda je odbijena.');
+      await loadMyJobs();
+      await loadOffers(jobId);
+    } catch (error) {
+      console.error('Error rejecting offer:', error);
+      alert('Greška pri odbijanju ponude');
     }
   };
 
@@ -110,6 +132,57 @@ export default function MyJobs({ onNavigate }) {
       loadOffers(job.id);
     }
   };
+
+  const handleOpenChat = async (job) => {
+    try {
+      // Pronađi prihvaćenu ponudu
+      const jobOffers = offers[job.id] || [];
+      const acceptedOffer = jobOffers.find(o => o.status === 'ACCEPTED');
+      
+      if (!acceptedOffer) {
+        alert('Chat je dostupan samo za poslove s prihvaćenom ponudom.');
+        return;
+      }
+
+      // Odredi drugog sudionika
+      // Ako je korisnik PROVIDER, drugi sudionik je vlasnik posla (job.userId)
+      // Ako je korisnik USER, drugi sudionik je pružatelj koji je poslao prihvaćenu ponudu (acceptedOffer.userId)
+      const otherParticipantId = user?.role === 'PROVIDER' ? job.userId : acceptedOffer.userId;
+
+      // Kreiraj ili dohvati chat room
+      try {
+        const response = await createChatRoom(job.id, otherParticipantId);
+        setChatRoom(response.data);
+      } catch (err) {
+        if (err.response?.status === 403) {
+          alert(err.response?.data?.error || 'Nemate pristup chatu za ovaj posao.');
+        } else {
+          console.error('Error creating chat room:', err);
+          alert('Greška pri otvaranju chata');
+        }
+      }
+    } catch (error) {
+      console.error('Error opening chat:', error);
+      alert('Greška pri otvaranju chata');
+    }
+  };
+
+  if (chatRoom && currentUserId) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg" style={{ height: 'calc(100vh - 200px)', minHeight: '600px' }}>
+          <ChatRoom
+            room={chatRoom}
+            currentUserId={currentUserId}
+            onClose={() => {
+              setChatRoom(null);
+              loadMyJobs(); // Refresh to get updated data
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
 
   if (!token) {
     return (
@@ -231,12 +304,20 @@ export default function MyJobs({ onNavigate }) {
                               </p>
                             </div>
                             {job.status === 'OPEN' && (
-                              <button
-                                onClick={() => acceptOffer(offer.id, job.id)}
-                                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-                              >
-                                Prihvati ponudu
-                              </button>
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => acceptOffer(offer.id, job.id)}
+                                  className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                                >
+                                  Prihvati
+                                </button>
+                                <button
+                                  onClick={() => rejectOffer(offer.id, job.id)}
+                                  className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                                >
+                                  Odbij
+                                </button>
+                              </div>
                             )}
                           </div>
                         </div>
@@ -245,6 +326,30 @@ export default function MyJobs({ onNavigate }) {
                   ) : (
                     <p className="text-gray-500">Još nema primljenih ponuda.</p>
                   )}
+                  
+                  {/* Chat gumb - ako postoji prihvaćena ponuda */}
+                  {(job.status === 'ACCEPTED' || job.status === 'IN_PROGRESS') && (
+                    <div className="mt-4 pt-4 border-t">
+                      <button
+                        onClick={() => handleOpenChat(job)}
+                        className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                      >
+                        💬 Otvori Chat
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Chat gumb za providera - ako je ponuda prihvaćena */}
+              {isProvider && job.myOffer?.status === 'ACCEPTED' && (
+                <div className="mt-4 pt-4 border-t">
+                  <button
+                    onClick={() => handleOpenChat(job)}
+                    className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                  >
+                    💬 Otvori Chat
+                  </button>
                 </div>
               )}
             </div>

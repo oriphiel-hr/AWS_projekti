@@ -35,6 +35,9 @@ import SubscriptionPlans from './pages/SubscriptionPlans';
 import Invoices from './pages/Invoices';
 import DirectorDashboard from './pages/DirectorDashboard';
 import CreditsWidget from './components/CreditsWidget';
+// Chat and Offers
+import ChatList from './components/ChatList';
+import OfferForm from './components/OfferForm';
 // Navigation components
 import DropdownMenu from './components/DropdownMenu';
 import MobileMenu from './components/MobileMenu';
@@ -84,7 +87,7 @@ export default function App(){
     
     // Inače koristi hash-based routing
     const hash = window.location.hash?.slice(1).split('?')[0];
-    const validTabs = ['admin', 'login', 'register-user', 'register-provider', 'provider-profile', 'user-profile', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'leads', 'my-leads', 'my-jobs', 'roi', 'subscription', 'subscription-success', 'pricing', 'providers', 'documentation', 'faq', 'about', 'contact', 'time-landing', 'team-locations', 'invoices', 'user', 'user-types', 'user-types-flowcharts', 'director'];
+    const validTabs = ['admin', 'login', 'register-user', 'register-provider', 'provider-profile', 'user-profile', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'leads', 'my-leads', 'my-jobs', 'roi', 'subscription', 'subscription-success', 'pricing', 'providers', 'documentation', 'faq', 'about', 'contact', 'time-landing', 'team-locations', 'invoices', 'user', 'user-types', 'user-types-flowcharts', 'director', 'chat'];
     return validTabs.includes(hash) ? hash : 'time-landing';
   });
 
@@ -110,6 +113,9 @@ export default function App(){
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [savedSearches, setSavedSearches] = useState([]);
   const [viewMode, setViewMode] = useState('grid'); // grid, list
+  const [showOfferForm, setShowOfferForm] = useState(false);
+  const [selectedJobForOffer, setSelectedJobForOffer] = useState(null);
+  const [currentUserId, setCurrentUserId] = useState(null);
   const [providerFilters, setProviderFilters] = useState({
     search: null,
     categoryId: null,
@@ -162,6 +168,27 @@ export default function App(){
     }
   }, [token, tab]);
 
+  // Učitaj currentUserId iz tokena
+  useEffect(() => {
+    if (token) {
+      try {
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          const userData = JSON.parse(storedUser);
+          setCurrentUserId(userData.id);
+        } else {
+          // Ako nema u localStorage, pokušaj iz tokena
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          setCurrentUserId(payload.userId);
+        }
+      } catch (e) {
+        console.error('Error parsing user ID:', e);
+      }
+    } else {
+      setCurrentUserId(null);
+    }
+  }, [token]);
+
   useEffect(() => {
     if (tab !== 'providers') return;
     
@@ -210,7 +237,21 @@ export default function App(){
       alert('Morate se prijaviti da biste poslali ponudu');
       return;
     }
-    // TODO: Implementirati modal za slanje ponude
+    // Provjeri da li je korisnik PROVIDER
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        const userData = JSON.parse(storedUser);
+        if (userData.role !== 'PROVIDER' && !userData.legalStatusId) {
+          alert('Samo pružatelji usluga mogu slati ponude. Nadogradite svoj profil na pružatelja.');
+          return;
+        }
+      } catch (e) {
+        console.error('Error parsing user:', e);
+      }
+    }
+    setSelectedJobForOffer(job);
+    setShowOfferForm(true);
   };
 
 
@@ -238,7 +279,7 @@ export default function App(){
       
       // Inače koristi hash-based routing
       const hash = window.location.hash?.slice(1).split('?')[0];
-      const validTabs = ['admin', 'login', 'register-user', 'register-provider', 'provider-profile', 'user-profile', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'leads', 'my-leads', 'my-jobs', 'roi', 'subscription', 'subscription-success', 'pricing', 'providers', 'documentation', 'faq', 'about', 'contact', 'time-landing', 'team-locations', 'invoices', 'user', 'user-types', 'user-types-flowcharts', 'director'];
+      const validTabs = ['admin', 'login', 'register-user', 'register-provider', 'provider-profile', 'user-profile', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'leads', 'my-leads', 'my-jobs', 'roi', 'subscription', 'subscription-success', 'pricing', 'providers', 'documentation', 'faq', 'about', 'contact', 'time-landing', 'team-locations', 'invoices', 'user', 'user-types', 'user-types-flowcharts', 'director', 'chat'];
       
       // Check for provider direct link: #provider/{providerId}
       const providerMatch = hash.match(/^provider\/(.+)$/);
@@ -596,6 +637,17 @@ export default function App(){
                 </>
               )}
 
+              {/* Chat gumb - za sve prijavljene korisnike */}
+              {token && (
+                <button
+                  className={'px-3 py-2 border rounded transition-colors ' + (tab==='chat' ? 'bg-indigo-600 text-white' : 'border-indigo-600 text-indigo-600 hover:bg-indigo-50 dark:border-indigo-500 dark:text-indigo-400 dark:hover:bg-indigo-900/20')}
+                  onClick={() => setTab('chat')}
+                  aria-label="Chat"
+                >
+                  💬 Chat
+                </button>
+              )}
+
               <button
                 className={'px-3 py-2 border rounded ' + ((tab==='provider-profile' || tab==='user-profile') ? 'bg-blue-600 text-white' : 'border-blue-600 text-blue-600 hover:bg-blue-50')}
                 onClick={() => {
@@ -874,6 +926,21 @@ export default function App(){
                   onClick={() => { setTab('providers'); setIsMobileMenuOpen(false); }}
                 >
                   👥 Pružatelji usluga
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Chat sekcija - za sve prijavljene korisnike */}
+          {token && (
+            <div>
+              <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Komunikacija</h3>
+              <div className="space-y-1">
+                <button
+                  className={'w-full text-left px-3 py-2 rounded transition-colors ' + (tab==='chat' ? 'bg-indigo-600 text-white' : 'hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-300')}
+                  onClick={() => { setTab('chat'); setIsMobileMenuOpen(false); }}
+                >
+                  💬 Chat
                 </button>
               </div>
             </div>
@@ -1457,12 +1524,22 @@ export default function App(){
                             <span>📅 {new Date(job.createdAt).toLocaleDateString('hr-HR')}</span>
                           </div>
                         </div>
-                        <button
-                          onClick={() => handleViewJobDetails(job)}
-                          className="ml-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                        >
-                          Detalji
-                        </button>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleViewJobDetails(job)}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                          >
+                            Detalji
+                          </button>
+                          {isProviderOrBusinessUser() && job.status === 'OPEN' && (
+                            <button
+                              onClick={() => handleMakeOffer(job)}
+                              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                            >
+                              Pošalji ponudu
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -1840,7 +1917,56 @@ export default function App(){
           <UserTypesFlowcharts />
         </section>
       )}
+
+      {tab === 'chat' && token && currentUserId && (
+        <section id="chat" className="tab-section">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg" style={{ height: 'calc(100vh - 200px)', minHeight: '600px' }}>
+              <ChatList
+                currentUserId={currentUserId}
+                onClose={() => setTab('user')}
+              />
+            </div>
+          </div>
+        </section>
+      )}
+
+      {tab === 'chat' && !token && (
+        <section id="chat" className="tab-section">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Morate se prijaviti</h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">Prijavite se da biste pristupili chatu.</p>
+            <button
+              onClick={() => setTab('login')}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Prijava
+            </button>
+          </div>
+        </section>
+      )}
       </main>
+
+      {/* Offer Form Modal */}
+      {showOfferForm && selectedJobForOffer && (
+        <OfferForm
+          job={selectedJobForOffer}
+          onClose={() => {
+            setShowOfferForm(false);
+            setSelectedJobForOffer(null);
+          }}
+          onSuccess={() => {
+            // Refresh jobs list if needed
+            if (tab === 'user') {
+              const params = { q, ...filters };
+              Object.keys(params).forEach(key => {
+                if (!params[key]) delete params[key];
+              });
+              api.get('/jobs', { params }).then(r => setJobs(r.data)).catch(() => setJobs([]));
+            }
+          }}
+        />
+      )}
 
       {/* Provider Profile Modal */}
       {selectedProvider && (

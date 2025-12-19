@@ -1,6 +1,20 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 const JobCard = ({ job, onViewDetails, onMakeOffer }) => {
+  const [isProvider, setIsProvider] = useState(false);
+
+  useEffect(() => {
+    // Provjeri da li je korisnik PROVIDER
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        const userData = JSON.parse(storedUser);
+        setIsProvider(userData.role === 'PROVIDER' || (userData.role === 'USER' && userData.legalStatusId));
+      } catch (e) {
+        setIsProvider(false);
+      }
+    }
+  }, []);
   const formatPrice = (amount) => {
     return new Intl.NumberFormat('hr-HR', {
       style: 'currency',
@@ -111,13 +125,15 @@ const JobCard = ({ job, onViewDetails, onMakeOffer }) => {
         >
           Pregledaj detalje
         </button>
-        <button
-          onClick={() => onMakeOffer(job)}
-          className="flex-1 bg-green-600 dark:bg-green-700 text-white px-4 py-2 rounded-lg hover:bg-green-700 dark:hover:bg-green-600 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
-          aria-label={`Pošalji ponudu za posao: ${job.title}`}
-        >
-          Pošalji ponudu
-        </button>
+        {isProvider && job.status === 'OPEN' && (
+          <button
+            onClick={() => onMakeOffer(job)}
+            className="flex-1 bg-green-600 dark:bg-green-700 text-white px-4 py-2 rounded-lg hover:bg-green-700 dark:hover:bg-green-600 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+            aria-label={`Pošalji ponudu za posao: ${job.title}`}
+          >
+            Pošalji ponudu
+          </button>
+        )}
       </div>
     </article>
   );
