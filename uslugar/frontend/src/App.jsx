@@ -87,8 +87,10 @@ export default function App(){
     
     // Inače koristi hash-based routing
     const hash = window.location.hash?.slice(1).split('?')[0];
+    // Obfuscated admin panel pristup: #adm -> admin
+    const normalizedHash = hash === 'adm' ? 'admin' : hash;
     const validTabs = ['admin', 'login', 'register-user', 'register-provider', 'provider-profile', 'user-profile', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'leads', 'my-leads', 'my-jobs', 'roi', 'subscription', 'subscription-success', 'pricing', 'providers', 'documentation', 'faq', 'about', 'contact', 'time-landing', 'team-locations', 'invoices', 'user', 'user-types', 'user-types-flowcharts', 'director', 'chat'];
-    return validTabs.includes(hash) ? hash : 'time-landing';
+    return validTabs.includes(normalizedHash) ? normalizedHash : 'time-landing';
   });
 
   // USER tab state
@@ -279,10 +281,12 @@ export default function App(){
       
       // Inače koristi hash-based routing
       const hash = window.location.hash?.slice(1).split('?')[0];
+      // Obfuscated admin panel pristup: #adm -> admin
+      const normalizedHash = hash === 'adm' ? 'admin' : hash;
       const validTabs = ['admin', 'login', 'register-user', 'register-provider', 'provider-profile', 'user-profile', 'upgrade-to-provider', 'verify', 'forgot-password', 'reset-password', 'leads', 'my-leads', 'my-jobs', 'roi', 'subscription', 'subscription-success', 'pricing', 'providers', 'documentation', 'faq', 'about', 'contact', 'time-landing', 'team-locations', 'invoices', 'user', 'user-types', 'user-types-flowcharts', 'director', 'chat'];
       
       // Check for provider direct link: #provider/{providerId}
-      const providerMatch = hash.match(/^provider\/(.+)$/);
+      const providerMatch = normalizedHash.match(/^provider\/(.+)$/);
       if (providerMatch) {
         const providerId = providerMatch[1];
         // Fetch and display provider
@@ -336,9 +340,9 @@ export default function App(){
         return;
       }
       
-      if (validTabs.includes(hash)) {
-        setTab(hash);
-      } else if (!hash) {
+      if (validTabs.includes(normalizedHash)) {
+        setTab(normalizedHash);
+      } else if (!normalizedHash) {
         setTab('user');
       }
     };
@@ -354,6 +358,38 @@ export default function App(){
     return () => {
       window.removeEventListener('hashchange', handleLocationChange);
       window.removeEventListener('popstate', handleLocationChange);
+    };
+  }, []);
+
+  // Keyboard shortcut za pristup admin panelu: Ctrl+Shift+A (ili Cmd+Shift+A na Mac)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Ctrl+Shift+A (ili Cmd+Shift+A na Mac)
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'A') {
+        e.preventDefault();
+        // Provjeri da li korisnik ima admin prava (opcionalno - može se provjeriti i na backendu)
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          try {
+            const userData = JSON.parse(storedUser);
+            // Provjeri da li je admin (može se dodati provjera role === 'ADMIN' ako postoji)
+            // Za sada dozvoljavamo svim prijavljenim korisnicima, backend će provjeriti prava
+            window.location.hash = '#adm';
+            setTab('admin');
+          } catch (e) {
+            console.error('Error parsing user:', e);
+          }
+        } else {
+          // Ako nije prijavljen, preusmjeri na login
+          window.location.hash = '#login';
+          setTab('login');
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
     };
   }, []);
 
@@ -695,13 +731,7 @@ export default function App(){
             {isDarkMode ? '☀️' : '🌙'}
           </button>
 
-          {/* Admin Panel */}
-          <button
-            className={'px-3 py-2 border rounded ml-auto ' + (tab==='admin' ? 'bg-gray-900 dark:bg-gray-700 text-white' : 'hover:bg-gray-100 dark:hover:bg-gray-800 dark:border-gray-600 dark:text-gray-300')}
-            onClick={() => setTab('admin')}
-          >
-            ⚙️ Admin Panel
-          </button>
+          {/* Admin Panel - skriven, pristup preko Ctrl+Shift+A ili #adm */}
         </div>
 
         {/* Mobile Navigation */}
@@ -990,18 +1020,7 @@ export default function App(){
             </div>
           )}
 
-          {/* Admin Section */}
-          <div>
-            <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Admin</h3>
-            <div className="space-y-1">
-              <button
-                className={'w-full text-left px-3 py-2 rounded transition-colors ' + (tab==='admin' ? 'bg-gray-900 dark:bg-gray-700 text-white' : 'hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-300')}
-                onClick={() => { setTab('admin'); setIsMobileMenuOpen(false); }}
-              >
-                ⚙️ Admin Panel
-              </button>
-            </div>
-          </div>
+          {/* Admin Panel - skriven, pristup preko Ctrl+Shift+A ili #adm */}
         </div>
       </MobileMenu>
 
