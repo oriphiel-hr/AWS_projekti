@@ -283,7 +283,7 @@ export const sendCompanyEmailVerification = async (toEmail, fullName, verificati
 
   try {
     await transporter.sendMail({
-      from: `"Uslugar" <${process.env.SMTP_USER || 'uslugar@uslugar.oriph.io'}>`,
+      from: `"Uslugar" <${process.env.SMTP_USER || 'uslugar@oriphiel.hr'}>`,
       to: toEmail,
       subject: 'Potvrdite email adresu na domeni tvrtke - Uslugar',
       html: `
