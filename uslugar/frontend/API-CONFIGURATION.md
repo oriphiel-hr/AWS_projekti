@@ -44,7 +44,7 @@ node src/server.js
 
 **Opcija 2: Backend na subdomeni**
 ```env
-VITE_API_URL=https://api.uslugar.oriph.io/api
+VITE_API_URL=https://api.uslugar.oriphiel.hr/api
 ```
 
 **Opcija 3: AWS Backend**
@@ -96,7 +96,7 @@ fetch('/api/admin/categories') → server/api/admin/categories
 
 **Za production:** Dodaj GitHub Secret
 ```
-VITE_API_URL=https://uslugar.oriph.io/api
+VITE_API_URL=https://uslugar.oriphiel.hr/api
 ```
 
 **U workflow:**
@@ -119,9 +119,9 @@ npm run build
 **Production:**
 ```bash
 cd uslugar/frontend
-VITE_API_URL=https://uslugar.oriph.io/api npm run build
+VITE_API_URL=https://uslugar.oriphiel.hr/api npm run build
 # ili
-export VITE_API_URL=https://uslugar.oriph.io/api
+export VITE_API_URL=https://uslugar.oriphiel.hr/api
 npm run build
 ```
 
@@ -150,7 +150,7 @@ console.log(import.meta.env.VITE_API_URL)
 
 **Rješenje:** Provjeri backend `.env`:
 ```env
-CORS_ORIGINS=http://localhost:5173,https://uslugar.oriph.io
+CORS_ORIGINS=http://localhost:5173,https://uslugar.oriphiel.hr
 ```
 
 ### ❌ `import.meta` greška u crud.js
@@ -181,11 +181,11 @@ npm run dev
 ### 2. Production build test:
 ```bash
 cd uslugar/frontend
-VITE_API_URL=https://uslugar.oriph.io/api npm run build
+VITE_API_URL=https://uslugar.oriphiel.hr/api npm run build
 npm run preview
 
 # Browser: http://localhost:4173
-# Provjeri Network tab - API pozivi trebaju ići na uslugar.oriph.io
+# Provjeri Network tab - API pozivi trebaju ići na uslugar.oriphiel.hr
 ```
 
 ### 3. API endpoint test:
@@ -226,25 +226,25 @@ VITE_API_URL=http://localhost:4000/api
 
 ### Production (Hostinger - isti server):
 ```
-Frontend: https://uslugar.oriph.io
-Backend:  https://uslugar.oriph.io/api (Node.js app)
-API:      https://uslugar.oriph.io/api
+Frontend: https://uslugar.oriphiel.hr
+Backend:  https://uslugar.oriphiel.hr/api (Node.js app)
+API:      https://uslugar.oriphiel.hr/api
 
 VITE_API_URL=/api (relativan)
 ```
 
 ### Production (Hostinger - subdomena):
 ```
-Frontend: https://uslugar.oriph.io
-Backend:  https://api.uslugar.oriph.io
-API:      https://api.uslugar.oriph.io/api
+Frontend: https://uslugar.oriphiel.hr
+Backend:  https://api.uslugar.oriphiel.hr
+API:      https://api.uslugar.oriphiel.hr/api
 
-VITE_API_URL=https://api.uslugar.oriph.io/api
+VITE_API_URL=https://api.uslugar.oriphiel.hr/api
 ```
 
 ### Production (AWS ECS):
 ```
-Frontend: https://uslugar.oriph.io
+Frontend: https://uslugar.oriphiel.hr
 Backend:  https://uslugar.api.oriph.io
 API:      https://uslugar.api.oriph.io/api
 

@@ -104,7 +104,7 @@ export const sendInvoiceEmail = async (toEmail, fullName, invoice, pdfBuffer) =>
 
   try {
     const invoiceAmount = (invoice.totalAmount / 100).toFixed(2);
-    const invoiceUrl = `${process.env.FRONTEND_URL || 'https://uslugar.oriph.io'}#invoices/${invoice.id}`;
+    const invoiceUrl = `${process.env.FRONTEND_URL || 'https://uslugar.oriphiel.hr'}#invoices/${invoice.id}`;
 
     await transporter.sendMail({
       from: `"Uslugar" <${process.env.SMTP_USER}>`,
@@ -614,7 +614,7 @@ export const sendPaymentConfirmationEmail = async (toEmail, fullName, planName, 
             </div>
             
             <div style="text-align: center; margin: 30px 0;">
-              <a href="https://uslugar.oriph.io/#leads" 
+              <a href="${process.env.FRONTEND_URL || 'https://uslugar.oriphiel.hr'}/#leads" 
                  style="background-color: #4CAF50; 
                         color: white; 
                         padding: 15px 40px; 
@@ -693,7 +693,7 @@ export const sendSubscriptionRefundEmail = async (toEmail, fullName, planName, r
             <p>Vaša pretplata je otkazana, a svi krediti su oduzeti.</p>
 
             <div style="text-align: center; margin: 30px 0;">
-              <a href="${process.env.FRONTEND_URL || 'https://uslugar.oriph.io'}#subscription" 
+              <a href="${process.env.FRONTEND_URL || 'https://uslugar.oriphiel.hr'}#subscription" 
                  style="background-color: #4CAF50; 
                         color: white; 
                         padding: 12px 24px; 

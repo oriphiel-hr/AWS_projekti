@@ -1,0 +1,40 @@
+# Force HTTPS
+RewriteEngine On
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Redirect uslugar.oriph.io to uslugar.oriphiel.hr
+RewriteCond %{HTTP_HOST} ^uslugar\.oriph\.io$ [NC]
+RewriteRule ^(.*)$ https://uslugar.oriphiel.hr/$1 [L,R=301]
+
+# Redirect www.uslugar.oriph.io to uslugar.oriphiel.hr
+RewriteCond %{HTTP_HOST} ^www\.uslugar\.oriph\.io$ [NC]
+RewriteRule ^(.*)$ https://uslugar.oriphiel.hr/$1 [L,R=301]
+
+# Security Headers
+<IfModule mod_headers.c>
+    # HSTS (HTTP Strict Transport Security)
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+    
+    # X-Frame-Options
+    Header always set X-Frame-Options "SAMEORIGIN"
+    
+    # X-Content-Type-Options
+    Header always set X-Content-Type-Options "nosniff"
+    
+    # X-XSS-Protection
+    Header always set X-XSS-Protection "1; mode=block"
+</IfModule>
+
+# Cache Control
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/css "access plus 1 year"
+    ExpiresByType application/javascript "access plus 1 year"
+    ExpiresByType image/png "access plus 1 year"
+    ExpiresByType image/jpg "access plus 1 year"
+    ExpiresByType image/jpeg "access plus 1 year"
+    ExpiresByType image/gif "access plus 1 year"
+    ExpiresByType image/svg+xml "access plus 1 year"
+</IfModule>
+

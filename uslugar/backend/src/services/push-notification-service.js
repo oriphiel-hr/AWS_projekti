@@ -5,7 +5,7 @@ import { prisma } from '../lib/prisma.js';
 // Generate keys with: npx web-push generate-vapid-keys
 const vapidPublicKey = process.env.VAPID_PUBLIC_KEY;
 const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
-const vapidSubject = process.env.VAPID_SUBJECT || 'mailto:admin@uslugar.oriph.io';
+const vapidSubject = process.env.VAPID_SUBJECT || 'mailto:admin@uslugar.oriphiel.hr';
 
 if (vapidPublicKey && vapidPrivateKey) {
   webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);

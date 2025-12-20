@@ -303,8 +303,8 @@ r.post('/create-checkout', auth(true, ['PROVIDER']), async (req, res, next) => {
         },
         quantity: 1
       }],
-      success_url: `${process.env.CLIENT_URL || 'https://uslugar.oriph.io'}#subscription-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.CLIENT_URL || 'https://uslugar.oriph.io'}#pricing`,
+      success_url: `${process.env.CLIENT_URL || 'https://uslugar.oriphiel.hr'}#subscription-success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.CLIENT_URL || 'https://uslugar.oriphiel.hr'}#pricing`,
       metadata: metadata
     };
     
