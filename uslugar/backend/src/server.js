@@ -110,7 +110,7 @@ console.log('  SMTP_PORT:', process.env.SMTP_PORT || 'NOT SET');
 console.log('  FRONTEND_URL:', process.env.FRONTEND_URL || 'NOT SET');
 
 // === CORS KONFIGURACIJA – PRIJE SVIH DRUGIH MIDDLEWARE-A ===================
-const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS || 'https://uslugar.oriph.io,https://uslugar.oriphiel.io')
+const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS || 'https://uslugar.oriph.io')
   .split(',').map(s => s.trim()).filter(Boolean)
 
 console.log('[CORS] Allowed origins:', ALLOWED_ORIGINS);
