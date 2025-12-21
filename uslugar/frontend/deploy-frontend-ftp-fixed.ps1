@@ -7,11 +7,10 @@ Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
 # FTP Configuration
-$ftpHost = "ftp.oriph.io"
-$ftpUser = Read-Host "FTP Username"
-$ftpPass = Read-Host "FTP Password" -AsSecureString
-$ftpPassword = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($ftpPass))
-$ftpBasePath = "/domains/oriph.io/public_html/uslugar/"
+$ftpHost = "194.5.156.10"
+$ftpUser = "u208993221"
+$ftpPassword = "G73S3ebakh6O!"
+$ftpBasePath = "/public_html/uslugar/"
 $localPath = "dist/"
 
 if (!(Test-Path $localPath)) {
