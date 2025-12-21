@@ -420,8 +420,8 @@ async function sendAddonUpsellNotification(addon, daysLeft, isExpired = false, i
 
   // Kreiraj notifikaciju u aplikaciji
   let title, message;
-  const renewalUrl = `${process.env.CLIENT_URL || 'https://uslugar.oriphiel.hr'}#addons/${addon.id}/renew`;
-  const upgradeUrl = `${process.env.CLIENT_URL || 'https://uslugar.oriphiel.hr'}#subscription/plans`;
+  const renewalUrl = `${process.env.CLIENT_URL || 'https://uslugar.oriph.io'}#addons/${addon.id}/renew`;
+  const upgradeUrl = `${process.env.CLIENT_URL || 'https://uslugar.oriph.io'}#subscription/plans`;
 
   if (isGracePeriod) {
     title = `Add-on "${addon.displayName}" - posljednja prilika!`;

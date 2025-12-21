@@ -5,10 +5,10 @@
 VITE_API_URL=http://localhost:4000
 
 # Production (Hostinger - ako je backend na istom serveru):
-VITE_API_URL=https://uslugar.oriphiel.hr
+VITE_API_URL=https://uslugar.oriph.io
 
 # Production (Hostinger - ako je backend na subdomeni):
-VITE_API_URL=https://api.uslugar.oriphiel.hr
+VITE_API_URL=https://api.uslugar.oriph.io
 
 # Production (AWS ECS):
 VITE_API_URL=https://uslugar.api.oriph.io

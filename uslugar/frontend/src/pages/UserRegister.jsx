@@ -385,7 +385,7 @@ export default function UserRegister({ onSuccess }) {
                   <strong>Aktivacijski link:</strong>
                 </p>
                 <p className="text-sm text-blue-600 break-all font-mono bg-gray-50 p-3 rounded border border-blue-200">
-                  {typeof window !== 'undefined' ? window.location.origin : 'https://uslugar.oriphiel.hr'}/#verify?token=...
+                  {typeof window !== 'undefined' ? window.location.origin : 'https://uslugar.oriph.io'}/#verify?token=...
                 </p>
                 <p className="text-xs text-gray-500 mt-2">
                   💡 Link će doći na vašu email adresu. Kopirajte cijeli link iz emaila ako button ne radi.

@@ -153,7 +153,7 @@ function generateEmailTemplate(reportData) {
         ` : ''}
         
         <div style="text-align: center; margin: 30px 0;">
-          <a href="${process.env.FRONTEND_URL || 'https://uslugar.oriphiel.hr'}/#roi" 
+          <a href="${process.env.FRONTEND_URL || 'https://uslugar.oriph.io'}/#roi" 
              style="background: #16a34a; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-size: 16px; font-weight: bold;">
             Pogledaj detaljnu analitiku →
           </a>

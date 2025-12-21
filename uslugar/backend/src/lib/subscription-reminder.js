@@ -81,7 +81,7 @@ export async function sendExpiryReminder(subscription, daysLeft, user) {
           </div>
           
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${process.env.FRONTEND_URL || 'https://uslugar.oriphiel.hr'}/#subscription" 
+            <a href="${process.env.FRONTEND_URL || 'https://uslugar.oriph.io'}/#subscription" 
                style="background: #4CAF50; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-size: 16px; font-weight: bold;">
               Nadogradi Pretplatu →
             </a>
@@ -119,7 +119,7 @@ export async function sendExpiryReminder(subscription, daysLeft, user) {
       </div>
       
       <p style="margin-top: 30px; color: #666; font-size: 14px;">
-        Više o paketima: <a href="${process.env.FRONTEND_URL || 'https://uslugar.oriphiel.hr'}/#subscription">Pogledaj planove</a>
+        Više o paketima: <a href="${process.env.FRONTEND_URL || 'https://uslugar.oriph.io'}/#subscription">Pogledaj planove</a>
       </p>
     `;
 
@@ -308,7 +308,7 @@ export async function sendTrialExpiredEmail(subscription, user) {
   }
 
   // Generiraj popust link - frontend će automatski primijeniti 20% popust
-  const discountLink = `${process.env.FRONTEND_URL || 'https://uslugar.oriphiel.hr'}/#subscription?trial_expired=true&user_id=${user.id}`;
+  const discountLink = `${process.env.FRONTEND_URL || 'https://uslugar.oriph.io'}/#subscription?trial_expired=true&user_id=${user.id}`;
   
   const subject = '🎁 Vaš TRIAL je istekao - Specijalna ponuda za vas!';
   
@@ -513,7 +513,7 @@ export async function sendInactivityReminderEmail(user, daysInactive) {
         </div>
         
         <div style="text-align: center; margin: 30px 0;">
-          <a href="${process.env.FRONTEND_URL || 'https://uslugar.oriphiel.hr'}/#dashboard" 
+          <a href="${process.env.FRONTEND_URL || 'https://uslugar.oriph.io'}/#dashboard" 
              style="background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%); color: white; padding: 18px 40px; text-decoration: none; border-radius: 8px; display: inline-block; font-size: 18px; font-weight: bold; box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3);">
             🚀 Otvori Dashboard →
           </a>

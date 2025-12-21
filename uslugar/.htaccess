@@ -3,14 +3,6 @@ RewriteEngine On
 RewriteCond %{HTTPS} off
 RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
-# Redirect uslugar.oriph.io to uslugar.oriphiel.hr
-RewriteCond %{HTTP_HOST} ^uslugar\.oriph\.io$ [NC]
-RewriteRule ^(.*)$ https://uslugar.oriphiel.hr/$1 [L,R=301]
-
-# Redirect www.uslugar.oriph.io to uslugar.oriphiel.hr
-RewriteCond %{HTTP_HOST} ^www\.uslugar\.oriph\.io$ [NC]
-RewriteRule ^(.*)$ https://uslugar.oriphiel.hr/$1 [L,R=301]
-
 # Security Headers
 <IfModule mod_headers.c>
     # HSTS (HTTP Strict Transport Security)

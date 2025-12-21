@@ -4422,7 +4422,7 @@ r.get('/api-reference', (req, res, next) => {
       // Admin endpoints - ručno ili iz admin panela
       if (fullPath.startsWith('/api/admin')) {
         triggers.type = 'page';
-        triggers.details.push('Admin Panel: https://uslugar.oriphiel.hr/admin/...');
+        triggers.details.push('Admin Panel: https://uslugar.oriph.io/admin/...');
         if (fullPath.includes('/api-reference')) {
           triggers.details.push('Admin Panel → API Reference stranica');
         } else if (fullPath.includes('/cleanup')) {
@@ -4435,18 +4435,18 @@ r.get('/api-reference', (req, res, next) => {
           triggers.type = 'manual';
           triggers.details.push('Ručno pokretanje iz Admin Panela');
         } else if (fullPath.includes('/audit-logs')) {
-          triggers.details.push('Admin Panel → Audit Logs stranica (https://uslugar.oriphiel.hr/admin/audit-logs)');
+          triggers.details.push('Admin Panel → Audit Logs stranica (https://uslugar.oriph.io/admin/audit-logs)');
         } else if (fullPath.includes('/api-request-logs')) {
-          triggers.details.push('Admin Panel → API Request Logs stranica (https://uslugar.oriphiel.hr/admin/api-request-logs)');
+          triggers.details.push('Admin Panel → API Request Logs stranica (https://uslugar.oriph.io/admin/api-request-logs)');
           triggers.details.push('Automatski: Middleware logira sve API zahtjeve u real-time');
         } else if (fullPath.includes('/error-logs')) {
-          triggers.details.push('Admin Panel → Error Logs stranica (https://uslugar.oriphiel.hr/admin/error-logs)');
+          triggers.details.push('Admin Panel → Error Logs stranica (https://uslugar.oriph.io/admin/error-logs)');
           triggers.details.push('Automatski: Error handler middleware logira sve greške u real-time');
         } else if (fullPath.includes('/addon-event-logs')) {
-          triggers.details.push('Admin Panel → Addon Event Logs stranica (https://uslugar.oriphiel.hr/admin/addon-event-logs)');
+          triggers.details.push('Admin Panel → Addon Event Logs stranica (https://uslugar.oriph.io/admin/addon-event-logs)');
           triggers.details.push('Automatski: Addon lifecycle service logira evente pri promjenama statusa');
         } else if (fullPath.includes('/sms-logs')) {
-          triggers.details.push('Admin Panel → SMS Logs stranica (https://uslugar.oriphiel.hr/admin/sms-logs)');
+          triggers.details.push('Admin Panel → SMS Logs stranica (https://uslugar.oriph.io/admin/sms-logs)');
           triggers.details.push('Automatski: SMS service logira sve poslane SMS poruke');
         }
         return triggers;
@@ -4456,9 +4456,9 @@ r.get('/api-reference', (req, res, next) => {
       if (fullPath.startsWith('/api/auth')) {
         triggers.type = 'page';
         if (fullPath.includes('/login')) {
-          triggers.details.push('Stranica: https://uslugar.oriphiel.hr/#login');
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#login');
         } else if (fullPath.includes('/register')) {
-          triggers.details.push('Stranica: https://uslugar.oriphiel.hr/#register-user');
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#register-user');
         } else if (fullPath.includes('/me')) {
           triggers.type = 'api';
           triggers.details.push('Poziva se iz drugih API-ja ili frontend komponenti za provjeru autentifikacije');
@@ -4472,13 +4472,13 @@ r.get('/api-reference', (req, res, next) => {
       if (fullPath.startsWith('/api/jobs')) {
         triggers.type = 'page';
         if (method === 'GET') {
-          triggers.details.push('Stranica: https://uslugar.oriphiel.hr/#user (Početna - lista poslova)');
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#user (Početna - lista poslova)');
         } else if (method === 'POST') {
-          triggers.details.push('Stranica: https://uslugar.oriphiel.hr/#user (JobForm komponenta)');
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#user (JobForm komponenta)');
         } else if (fullPath.includes('/accept')) {
-          triggers.details.push('Stranica: https://uslugar.oriphiel.hr/#my-jobs (prihvaćanje ponude)');
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#my-jobs (prihvaćanje ponude)');
         } else if (fullPath.includes('/complete')) {
-          triggers.details.push('Stranica: https://uslugar.oriphiel.hr/#my-jobs (završavanje posla)');
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#my-jobs (završavanje posla)');
         } else {
           triggers.details.push('Stranica: Nema specifične stranice - poziva se iz frontend komponenti');
         }
@@ -4489,15 +4489,15 @@ r.get('/api-reference', (req, res, next) => {
       if (fullPath.startsWith('/api/saved-searches')) {
         triggers.type = 'page';
         if (method === 'GET') {
-          triggers.details.push('Stranica: https://uslugar.oriphiel.hr/#user-profile (SavedSearchesSection komponenta)');
-          triggers.details.push('Stranica: https://uslugar.oriphiel.hr/#user (tražilica - dropdown spremljenih pretraga)');
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#user-profile (SavedSearchesSection komponenta)');
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#user (tražilica - dropdown spremljenih pretraga)');
         } else if (method === 'POST') {
-          triggers.details.push('Stranica: https://uslugar.oriphiel.hr/#user (tražilica - gumb "Spremi pretragu")');
-          triggers.details.push('Stranica: https://uslugar.oriphiel.hr/#user-profile (SavedSearchesSection - dodavanje nove pretrage)');
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#user (tražilica - gumb "Spremi pretragu")');
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#user-profile (SavedSearchesSection - dodavanje nove pretrage)');
         } else if (fullPath.includes('/use') && method === 'POST') {
-          triggers.details.push('Stranica: https://uslugar.oriphiel.hr/#user (tražilica - odabir spremljene pretrage iz dropdowna)');
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#user (tražilica - odabir spremljene pretrage iz dropdowna)');
         } else if (['PUT', 'DELETE'].includes(method)) {
-          triggers.details.push('Stranica: https://uslugar.oriphiel.hr/#user-profile (SavedSearchesSection - upravljanje pretragama)');
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#user-profile (SavedSearchesSection - upravljanje pretragama)');
         }
         return triggers;
       }
@@ -4506,11 +4506,11 @@ r.get('/api-reference', (req, res, next) => {
       if (fullPath.startsWith('/api/job-alerts')) {
         triggers.type = 'page';
         if (method === 'GET') {
-          triggers.details.push('Stranica: https://uslugar.oriphiel.hr/#user-profile (SavedSearchesSection komponenta)');
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#user-profile (SavedSearchesSection komponenta)');
         } else if (method === 'POST') {
-          triggers.details.push('Stranica: https://uslugar.oriphiel.hr/#user-profile (SavedSearchesSection - kreiranje novog alerta)');
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#user-profile (SavedSearchesSection - kreiranje novog alerta)');
         } else if (['PUT', 'DELETE'].includes(method)) {
-          triggers.details.push('Stranica: https://uslugar.oriphiel.hr/#user-profile (SavedSearchesSection - upravljanje alertovima)');
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#user-profile (SavedSearchesSection - upravljanje alertovima)');
         }
         // Background job također poziva provjeru novih poslova
         triggers.details.push('Backend Job: Provjera novih poslova i slanje email notifikacija (cron job)');
@@ -4521,9 +4521,9 @@ r.get('/api-reference', (req, res, next) => {
       if (fullPath.startsWith('/api/offers')) {
         triggers.type = 'page';
         if (method === 'POST') {
-          triggers.details.push('Stranica: https://uslugar.oriphiel.hr/#providers (slanje ponude na posao)');
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#providers (slanje ponude na posao)');
         } else if (fullPath.includes('/accept')) {
-          triggers.details.push('Stranica: https://uslugar.oriphiel.hr/#my-jobs (prihvaćanje ponude)');
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#my-jobs (prihvaćanje ponude)');
         } else {
           triggers.details.push('Stranica: Nema specifične stranice - poziva se iz frontend komponenti');
         }
@@ -4534,9 +4534,9 @@ r.get('/api-reference', (req, res, next) => {
       if (fullPath.startsWith('/api/providers')) {
         triggers.type = 'page';
         if (method === 'GET') {
-          triggers.details.push('Stranica: https://uslugar.oriphiel.hr/#providers (lista pružatelja)');
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#providers (lista pružatelja)');
         } else if (method === 'POST' || method === 'PUT' || method === 'PATCH') {
-          triggers.details.push('Stranica: https://uslugar.oriphiel.hr/#provider-profile (uređivanje profila)');
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#provider-profile (uređivanje profila)');
         } else {
           triggers.details.push('Stranica: Nema specifične stranice - poziva se iz frontend komponenti');
         }
@@ -4547,7 +4547,7 @@ r.get('/api-reference', (req, res, next) => {
       if (fullPath.startsWith('/api/chat')) {
         triggers.type = 'page';
         if (fullPath.includes('/rooms') && method === 'POST') {
-          triggers.details.push('Stranica: https://uslugar.oriphiel.hr/#my-jobs (kreiranje chat sobe nakon prihvaćanja ponude)');
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#my-jobs (kreiranje chat sobe nakon prihvaćanja ponude)');
         } else if (fullPath.includes('/messages')) {
           triggers.details.push('Stranica: Nema specifične stranice - poziva se iz ChatRoom komponente (real-time chat)');
         } else {
@@ -4560,11 +4560,11 @@ r.get('/api-reference', (req, res, next) => {
       if (fullPath.startsWith('/api/exclusive')) {
         triggers.type = 'page';
         if (fullPath.includes('/leads') && method === 'GET') {
-          triggers.details.push('Stranica: https://uslugar.oriphiel.hr/#leads (Lead Marketplace)');
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#leads (Lead Marketplace)');
         } else if (fullPath.includes('/purchase')) {
-          triggers.details.push('Stranica: https://uslugar.oriphiel.hr/#leads (kupnja leada)');
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#leads (kupnja leada)');
         } else if (fullPath.includes('/contacted') || fullPath.includes('/converted')) {
-          triggers.details.push('Stranica: https://uslugar.oriphiel.hr/#my-leads (označavanje statusa leada)');
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#my-leads (označavanje statusa leada)');
         } else {
           triggers.details.push('Stranica: Nema specifične stranice - poziva se iz frontend komponenti');
         }
@@ -4575,9 +4575,9 @@ r.get('/api-reference', (req, res, next) => {
       if (fullPath.startsWith('/api/lead-queue') || fullPath.includes('/my-offers') || fullPath.includes('/my-queue')) {
         triggers.type = 'page';
         if (fullPath.includes('/respond')) {
-          triggers.details.push('Stranica: https://uslugar.oriphiel.hr/#my-leads (odgovaranje na queue ponudu)');
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#my-leads (odgovaranje na queue ponudu)');
         } else {
-          triggers.details.push('Stranica: https://uslugar.oriphiel.hr/#my-leads (Lead Queue management)');
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#my-leads (Lead Queue management)');
         }
         return triggers;
       }
@@ -4592,11 +4592,11 @@ r.get('/api-reference', (req, res, next) => {
         }
         triggers.type = 'page';
         if (fullPath.includes('/subscribe')) {
-          triggers.details.push('Stranica: https://uslugar.oriphiel.hr/#pricing (pretplata)');
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#pricing (pretplata)');
         } else if (fullPath.includes('/cancel')) {
-          triggers.details.push('Stranica: https://uslugar.oriphiel.hr/#subscription (otkazivanje pretplate)');
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#subscription (otkazivanje pretplate)');
         } else if (method === 'GET') {
-          triggers.details.push('Stranica: https://uslugar.oriphiel.hr/#subscription (pregled pretplate)');
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#subscription (pregled pretplate)');
         } else {
           triggers.details.push('Stranica: Nema specifične stranice - poziva se iz frontend komponenti');
         }
@@ -4612,7 +4612,7 @@ r.get('/api-reference', (req, res, next) => {
         }
         triggers.type = 'page';
         if (fullPath.includes('/create-checkout')) {
-          triggers.details.push('Stranica: https://uslugar.oriphiel.hr/#pricing (Stripe checkout)');
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#pricing (Stripe checkout)');
         } else {
           triggers.details.push('Stranica: Nema specifične stranice - poziva se iz frontend komponenti');
         }
@@ -4629,7 +4629,7 @@ r.get('/api-reference', (req, res, next) => {
         }
         triggers.type = 'page';
         if (method === 'POST') {
-          triggers.details.push('Stranica: https://uslugar.oriphiel.hr/#my-jobs (dodavanje recenzije nakon završetka posla)');
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#my-jobs (dodavanje recenzije nakon završetka posla)');
         } else if (method === 'GET') {
           triggers.details.push('Stranica: Nema specifične stranice - poziva se iz ProviderProfile komponente (prikaz recenzija)');
         } else {
@@ -4653,14 +4653,14 @@ r.get('/api-reference', (req, res, next) => {
       // KYC endpoints
       if (fullPath.startsWith('/api/kyc')) {
         triggers.type = 'page';
-        triggers.details.push('Stranica: https://uslugar.oriphiel.hr/#provider-profile (KYC upload)');
+        triggers.details.push('Stranica: https://uslugar.oriph.io/#provider-profile (KYC upload)');
         return triggers;
       }
       
       // Support endpoints
       if (fullPath.startsWith('/api/support')) {
         triggers.type = 'page';
-        triggers.details.push('Stranica: https://uslugar.oriphiel.hr/#contact (Support ticket)');
+        triggers.details.push('Stranica: https://uslugar.oriph.io/#contact (Support ticket)');
         return triggers;
       }
       
@@ -4668,9 +4668,9 @@ r.get('/api-reference', (req, res, next) => {
       if (fullPath.startsWith('/api/public')) {
         triggers.type = 'page';
         if (fullPath.includes('/user-types')) {
-          triggers.details.push('Stranica: https://uslugar.oriphiel.hr/#user-types (Tipovi korisnika)');
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#user-types (Tipovi korisnika)');
         } else if (fullPath.includes('/providers')) {
-          triggers.details.push('Stranica: https://uslugar.oriphiel.hr/#providers (Javni pregled pružatelja)');
+          triggers.details.push('Stranica: https://uslugar.oriph.io/#providers (Javni pregled pružatelja)');
         } else {
           triggers.details.push('Stranica: Nema specifične stranice - javni endpoint');
         }
@@ -4705,7 +4705,7 @@ r.get('/api-reference', (req, res, next) => {
       // Documentation endpoints
       if (fullPath.startsWith('/api/documentation')) {
         triggers.type = 'page';
-        triggers.details.push('Stranica: https://uslugar.oriphiel.hr/#documentation (Dokumentacija)');
+        triggers.details.push('Stranica: https://uslugar.oriph.io/#documentation (Dokumentacija)');
         return triggers;
       }
       
@@ -4726,7 +4726,7 @@ r.get('/api-reference', (req, res, next) => {
       // Director endpoints
       if (fullPath.startsWith('/api/director')) {
         triggers.type = 'page';
-        triggers.details.push('Stranica: https://uslugar.oriphiel.hr/#director (Director Dashboard)');
+        triggers.details.push('Stranica: https://uslugar.oriph.io/#director (Director Dashboard)');
         return triggers;
       }
       
@@ -4740,14 +4740,14 @@ r.get('/api-reference', (req, res, next) => {
       // Provider ROI endpoints
       if (fullPath.startsWith('/api/provider-roi')) {
         triggers.type = 'page';
-        triggers.details.push('Stranica: https://uslugar.oriphiel.hr/#roi (ROI Dashboard)');
+        triggers.details.push('Stranica: https://uslugar.oriph.io/#roi (ROI Dashboard)');
         return triggers;
       }
       
       // Invoices endpoints
       if (fullPath.startsWith('/api/invoices')) {
         triggers.type = 'page';
-        triggers.details.push('Stranica: https://uslugar.oriphiel.hr/#invoices (Fakture)');
+        triggers.details.push('Stranica: https://uslugar.oriph.io/#invoices (Fakture)');
         return triggers;
       }
       
