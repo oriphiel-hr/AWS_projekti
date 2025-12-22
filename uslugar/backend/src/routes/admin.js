@@ -296,32 +296,44 @@ r.post('/cleanup/non-master', auth(true, ['ADMIN']), async (req, res, next) => {
 
     const result = { deleted: {} };
 
-    // 1) Delete chat-related data first
-    result.deleted.messageSLAs = await prisma.messageSLA.deleteMany({});
+    // IMPORTANT: Delete in correct order to avoid foreign key constraint violations
+    // Delete child tables BEFORE parent tables
+
+    // 1) Delete most dependent data first (deepest level)
     result.deleted.messageVersions = await prisma.messageVersion.deleteMany({});
-    result.deleted.auditLogs = await prisma.auditLog.deleteMany({});
+    result.deleted.messageSLAs = await prisma.messageSLA.deleteMany({});
     result.deleted.chatMessages = await prisma.chatMessage.deleteMany({});
+    result.deleted.auditLogs = await prisma.auditLog.deleteMany({});
+    
+    // Disconnect ChatRoom participants (many-to-many) before deleting rooms
+    const allChatRooms = await prisma.chatRoom.findMany({ select: { id: true } });
+    for (const room of allChatRooms) {
+      await prisma.chatRoom.update({
+        where: { id: room.id },
+        data: { participants: { set: [] } }
+      });
+    }
     result.deleted.chatRooms = await prisma.chatRoom.deleteMany({});
 
-    // 2) Reviews, Notifications
+    // 2) Delete reviews and notifications (depend on User)
     result.deleted.reviews = await prisma.review.deleteMany({});
     result.deleted.notifications = await prisma.notification.deleteMany({});
 
-    // 3) Offers, Jobs
+    // 3) Delete offers first (depend on Job and User), then jobs (depend on User)
     result.deleted.offers = await prisma.offer.deleteMany({});
     result.deleted.jobs = await prisma.job.deleteMany({});
 
-    // 4) Lead management
+    // 4) Lead management (depend on Job, ProviderProfile, User)
     result.deleted.companyLeadQueues = await prisma.companyLeadQueue.deleteMany({});
     result.deleted.leadQueues = await prisma.leadQueue.deleteMany({});
     result.deleted.leadPurchases = await prisma.leadPurchase.deleteMany({});
 
-    // 5) Provider-related data
+    // 5) Provider-related data (depend on ProviderProfile)
     result.deleted.providerROIs = await prisma.providerROI.deleteMany({});
     result.deleted.providerLicenses = await prisma.providerLicense.deleteMany({});
     result.deleted.providerTeamLocations = await prisma.providerTeamLocation.deleteMany({});
     
-    // Provider profiles (disconnect categories per profile to clear m2m)
+    // Provider profiles - disconnect categories (many-to-many) before deleting
     const providerList = await prisma.providerProfile.findMany({ select: { id: true, userId: true } });
     for (const p of providerList) {
       await prisma.providerProfile.update({
@@ -331,53 +343,52 @@ r.post('/cleanup/non-master', auth(true, ['ADMIN']), async (req, res, next) => {
     }
     result.deleted.providerProfiles = await prisma.providerProfile.deleteMany({});
 
-    // 6) Subscriptions and billing
+    // 6) Subscriptions and billing (depend on User, Subscription, AddonSubscription)
     result.deleted.addonEventLogs = await prisma.addonEventLog.deleteMany({});
     result.deleted.addonUsages = await prisma.addonUsage.deleteMany({});
-    result.deleted.addonSubscriptions = await prisma.addonSubscription.deleteMany({});
     result.deleted.subscriptionHistories = await prisma.subscriptionHistory.deleteMany({});
     result.deleted.trialEngagements = await prisma.trialEngagement.deleteMany({});
+    result.deleted.addonSubscriptions = await prisma.addonSubscription.deleteMany({});
     result.deleted.subscriptions = await prisma.subscription.deleteMany({});
     result.deleted.billingAdjustments = await prisma.billingAdjustment.deleteMany({});
     result.deleted.billingPlans = await prisma.billingPlan.deleteMany({});
 
-    // 7) Invoices
+    // 7) Invoices (depend on User, Subscription, AddonSubscription, LeadPurchase)
     result.deleted.invoices = await prisma.invoice.deleteMany({});
 
-    // 8) Credit transactions
+    // 8) Credit transactions (depend on User, Job, LeadPurchase)
     result.deleted.creditTransactions = await prisma.creditTransaction.deleteMany({});
 
-    // 9) Feature ownership
+    // 9) Feature ownership (depend on User, FeatureCatalog)
     result.deleted.featureOwnershipHistories = await prisma.featureOwnershipHistory.deleteMany({});
     result.deleted.companyFeatureOwnerships = await prisma.companyFeatureOwnership.deleteMany({});
 
-    // 10) Client verification
+    // 10) Client verification (depend on User)
     result.deleted.clientVerifications = await prisma.clientVerification.deleteMany({});
 
-    // 11) Support tickets
+    // 11) Support tickets (depend on User)
     result.deleted.supportTickets = await prisma.supportTicket.deleteMany({});
 
-    // 12) WhiteLabel settings
+    // 12) WhiteLabel settings (depend on User)
     result.deleted.whiteLabels = await prisma.whiteLabel.deleteMany({});
 
-    // 13) SMS and Push notifications
+    // 13) SMS and Push notifications (depend on User)
     result.deleted.pushSubscriptions = await prisma.pushSubscription.deleteMany({});
     result.deleted.smsLogs = await prisma.smsLog.deleteMany({});
 
-    // 14) Chatbot sessions
+    // 14) Chatbot sessions (depend on User, Job)
     result.deleted.chatbotSessions = await prisma.chatbotSession.deleteMany({});
 
-    // 15) Saved searches and job alerts
+    // 15) Saved searches and job alerts (depend on User)
     result.deleted.savedSearches = await prisma.savedSearch.deleteMany({});
     result.deleted.jobAlerts = await prisma.jobAlert.deleteMany({});
 
-    // 16) Logging tables
+    // 16) Logging tables (depend on User, Job, ChatMessage, ChatRoom)
     result.deleted.apiRequestLogs = await prisma.apiRequestLog.deleteMany({});
     result.deleted.errorLogs = await prisma.errorLog.deleteMany({});
-    // Note: addonEventLogs already deleted in section 6
 
     // 17) Users except ADMIN and optionally preserved emails
-    // Use delete helpers if needed per-user for safety; but relations already deleted above
+    // All relations are already deleted above, so direct delete is safe
     const usersToDelete = await prisma.user.findMany({
       where: {
         role: { not: 'ADMIN' },
@@ -388,9 +399,21 @@ r.post('/cleanup/non-master', auth(true, ['ADMIN']), async (req, res, next) => {
 
     let usersDeleted = 0;
     for (const u of usersToDelete) {
-      // direct delete is safe as relations are already removed
-      await prisma.user.delete({ where: { id: u.id } });
-      usersDeleted++;
+      try {
+        // Direct delete is safe as all relations are already removed above
+        await prisma.user.delete({ where: { id: u.id } });
+        usersDeleted++;
+      } catch (userDeleteError) {
+        // If direct delete fails, use helper function as fallback
+        console.warn(`[CLEANUP] Direct delete failed for user ${u.id}, using helper:`, userDeleteError.message);
+        try {
+          await deleteUserWithRelations(u.id);
+          usersDeleted++;
+        } catch (helperError) {
+          console.error(`[CLEANUP] Failed to delete user ${u.id}:`, helperError.message);
+          // Continue with other users
+        }
+      }
     }
     result.deleted.users = { count: usersDeleted };
 
@@ -399,6 +422,7 @@ r.post('/cleanup/non-master', auth(true, ['ADMIN']), async (req, res, next) => {
     // Note: Master data preserved: Category, SubscriptionPlan, LegalStatus, ADMIN user, and all Testing models
     res.json({ success: true, ...result });
   } catch (e) {
+    console.error('[CLEANUP] Error during cleanup:', e);
     next(e);
   }
 });
@@ -5453,6 +5477,35 @@ r.get('/user-types-overview', auth(true, ['ADMIN']), async (req, res, next) => {
       }
     });
   } catch (e) {
+    next(e);
+  }
+});
+
+// DELETE /api/admin/testing/cleanup - Obriši sve test podatke
+r.delete('/testing/cleanup', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const result = { deleted: {} };
+
+    // Delete in correct order to avoid foreign key constraint violations
+    // 1. Delete TestRunItem first (depends on TestRun and TestItem)
+    result.deleted.testRunItems = await prisma.testRunItem.deleteMany({});
+
+    // 2. Delete TestRun (depends on TestPlan and User)
+    result.deleted.testRuns = await prisma.testRun.deleteMany({});
+
+    // 3. Delete TestItem (depends on TestPlan)
+    result.deleted.testItems = await prisma.testItem.deleteMany({});
+
+    // 4. Delete TestPlan last (parent table)
+    result.deleted.testPlans = await prisma.testPlan.deleteMany({});
+
+    res.json({ 
+      success: true, 
+      message: 'Svi test podaci su uspješno obrisani',
+      ...result 
+    });
+  } catch (e) {
+    console.error('[TESTING CLEANUP] Error:', e);
     next(e);
   }
 });

@@ -323,6 +323,7 @@ export default function AdminTesting(){
   const [runs, setRuns] = useState([])
   const [activePlan, setActivePlan] = useState(null)
   const [preset, setPreset] = useState('ALL')
+  const [seeding, setSeeding] = useState(false)
 
   const load = async () => {
     const [p, r] = await Promise.all([
@@ -334,6 +335,22 @@ export default function AdminTesting(){
   }
   useEffect(() => { load() }, [])
 
+  const handleSeed = async () => {
+    if (!confirm('Ovo će obrisati sve postojeće test planove i kreirati nove iz TEST-PLAN-FRONTEND.md i TEST-PLAN-ADMIN.md. Nastaviti?')) {
+      return
+    }
+    setSeeding(true)
+    try {
+      const res = await api.post('/testing/plans/seed')
+      alert(`✅ Seed uspješan!\n\nKreirano ${res.data.plansCount} planova\nUkupno ${res.data.totalItems} test itema`)
+      await load()
+    } catch (e) {
+      alert(`❌ Greška: ${e?.response?.data?.error || e?.message || String(e)}`)
+    } finally {
+      setSeeding(false)
+    }
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -342,7 +359,12 @@ export default function AdminTesting(){
           <button onClick={() => setTab('runs')} className={`px-3 py-2 rounded ${tab==='runs'?'bg-indigo-600 text-white':'bg-gray-100'}`}>Runovi</button>
           <button onClick={() => setTab('new')} className={`px-3 py-2 rounded ${tab==='new'?'bg-indigo-600 text-white':'bg-gray-100'}`}>Novi plan</button>
         </div>
-        <button onClick={load} className="px-3 py-2 bg-gray-100 rounded">Osvježi</button>
+        <div className="flex gap-2">
+          <button onClick={handleSeed} disabled={seeding} className={`px-3 py-2 rounded ${seeding?'bg-gray-400':'bg-green-600 text-white'}`}>
+            {seeding ? 'Seeding...' : '🌱 Seed iz MD fajlova'}
+          </button>
+          <button onClick={load} className="px-3 py-2 bg-gray-100 rounded">Osvježi</button>
+        </div>
       </div>
 
       {tab === 'plans' && (
