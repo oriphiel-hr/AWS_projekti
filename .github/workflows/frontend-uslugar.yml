@@ -314,6 +314,31 @@ jobs:
             **/node_modules/**
             **/.DS_Store
 
+      - name: Upload .htaccess file
+        if: steps.deploy-ftp.outcome == 'success' || steps.deploy-ftp.outcome == 'failure'
+        continue-on-error: true
+        run: |
+          echo "📤 Uploading .htaccess file..."
+          
+          # Check if .htaccess exists in uslugar directory
+          if [ -f "uslugar/.htaccess" ]; then
+            echo "✅ Found .htaccess file"
+            
+            # Use curl to upload via FTP
+            curl -T uslugar/.htaccess \
+              --ftp-ssl \
+              --user "${{ env.FTP_USER }}:${{ env.FTP_PASS }}" \
+              "ftps://${{ env.FTP_HOST }}/${{ env.SERVER_DIR }}.htaccess" \
+              || curl -T uslugar/.htaccess \
+                --user "${{ env.FTP_USER }}:${{ env.FTP_PASS }}" \
+                "ftp://${{ env.FTP_HOST }}/${{ env.SERVER_DIR }}.htaccess"
+            
+            echo "✅ .htaccess uploaded successfully"
+          else
+            echo "⚠️  .htaccess file not found at uslugar/.htaccess"
+            echo "   Skipping .htaccess upload"
+          fi
+
       - name: Deployment failed - Troubleshooting info
         if: steps.deploy-ftp.outcome == 'failure'
         run: |
