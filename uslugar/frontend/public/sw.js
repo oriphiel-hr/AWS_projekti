@@ -1,5 +1,5 @@
 // Service Worker for Push Notifications
-const CACHE_NAME = 'uslugar-v1';
+const CACHE_NAME = 'uslugar-v3';
 const urlsToCache = [
   '/',
   '/index.html',

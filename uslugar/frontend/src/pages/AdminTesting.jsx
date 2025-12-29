@@ -249,15 +249,53 @@ function RunExecutor({ plan, onClose }){
     }
   }
 
-  if (!run) return <div>Pokretanje...</div>
+  if (!run) return (
+    <div className="flex items-center justify-center p-8">
+      <div className="text-center">
+        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+        <p className="mt-2 text-gray-600">Pokretanje...</p>
+      </div>
+    </div>
+  )
+
+  // Izračunaj progress
+  const totalItems = run.plan?.items?.length || 0
+  const completedItems = (run.items || []).filter(item => 
+    item.status === 'PASS' || item.status === 'FAIL' || item.status === 'NOT_APPLICABLE'
+  ).length
+  const progressPercent = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">Run: {run.name}</h3>
-        <div className="flex gap-2">
-          <button onClick={() => api.patch(`/testing/runs/${run.id}`, { status: 'COMPLETED' }).then(refresh)} className="px-3 py-2 bg-green-600 text-white rounded">Završi run</button>
-          <button onClick={onClose} className="px-3 py-2 bg-gray-100 rounded">Zatvori</button>
+      <div className="flex justify-between items-center border-b pb-4">
+        <div className="flex-1">
+          <h3 className="text-lg font-semibold">Run: {run.name}</h3>
+          <div className="mt-2">
+            <div className="flex items-center justify-between text-sm text-gray-600 mb-1">
+              <span>Progres: {completedItems} / {totalItems} završeno</span>
+              <span className="font-medium">{progressPercent}%</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div 
+                className="bg-indigo-600 h-2 rounded-full transition-all duration-300" 
+                style={{ width: `${progressPercent}%` }}
+              ></div>
+            </div>
+          </div>
+        </div>
+        <div className="flex gap-2 ml-4">
+          <button 
+            onClick={() => api.patch(`/testing/runs/${run.id}`, { status: 'COMPLETED' }).then(refresh)} 
+            className="px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors duration-150"
+          >
+            Završi run
+          </button>
+          <button 
+            onClick={onClose} 
+            className="px-3 py-2 bg-gray-100 rounded hover:bg-gray-200 transition-colors duration-150"
+          >
+            Zatvori
+          </button>
         </div>
       </div>
 
@@ -351,55 +389,182 @@ export default function AdminTesting(){
     }
   }
 
+  // Izračunaj statistike za badge-ove
+  const plansCount = plans.length
+  const runsCount = runs.length
+  const activeRunsCount = runs.filter(r => r.status === 'IN_PROGRESS').length
+
   return (
     <div className="space-y-4">
+      {/* Breadcrumb */}
+      <nav className="text-sm text-gray-500" aria-label="Breadcrumb">
+        <ol className="flex items-center gap-2">
+          <li><a href="/admin" className="hover:text-gray-700 transition-colors">Admin</a></li>
+          <li>/</li>
+          <li className="text-gray-900 font-medium">Testiranje</li>
+        </ol>
+      </nav>
+
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex gap-2">
-          <button onClick={() => setTab('plans')} className={`px-3 py-2 rounded ${tab==='plans'?'bg-indigo-600 text-white':'bg-gray-100'}`}>Planovi</button>
-          <button onClick={() => setTab('runs')} className={`px-3 py-2 rounded ${tab==='runs'?'bg-indigo-600 text-white':'bg-gray-100'}`}>Runovi</button>
-          <button onClick={() => setTab('new')} className={`px-3 py-2 rounded ${tab==='new'?'bg-indigo-600 text-white':'bg-gray-100'}`}>Novi plan</button>
-        </div>
-        <div className="flex gap-2">
-          <button onClick={handleSeed} disabled={seeding} className={`px-3 py-2 rounded ${seeding?'bg-gray-400':'bg-green-600 text-white'}`}>
-            {seeding ? 'Seeding...' : '🌱 Seed iz MD fajlova'}
-          </button>
-          <button onClick={load} className="px-3 py-2 bg-gray-100 rounded">Osvježi</button>
-        </div>
+        <h2 className="text-2xl font-bold text-gray-900">Testiranje</h2>
+        <button 
+          onClick={load} 
+          className="px-3 py-2 bg-gray-100 rounded hover:bg-gray-200 transition-colors duration-150 flex items-center gap-2"
+        >
+          <span>🔄</span>
+          <span>Osvježi</span>
+        </button>
+      </div>
+
+      {/* Tabs with badges */}
+      <div className="flex items-center gap-2 border-b">
+        <button 
+          onClick={() => setTab('plans')} 
+          className={`px-4 py-2 rounded-t-lg font-medium transition-all duration-150 flex items-center gap-2 ${
+            tab==='plans'
+              ? 'bg-indigo-600 text-white shadow-sm border-b-2 border-indigo-600' 
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          }`}
+        >
+          <span>Planovi</span>
+          {plansCount > 0 && (
+            <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+              tab==='plans' ? 'bg-white text-indigo-600' : 'bg-indigo-600 text-white'
+            }`}>
+              {plansCount}
+            </span>
+          )}
+        </button>
+        <button 
+          onClick={() => setTab('runs')} 
+          className={`px-4 py-2 rounded-t-lg font-medium transition-all duration-150 flex items-center gap-2 ${
+            tab==='runs'
+              ? 'bg-indigo-600 text-white shadow-sm border-b-2 border-indigo-600' 
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          }`}
+        >
+          <span>Runovi</span>
+          {runsCount > 0 && (
+            <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+              tab==='runs' ? 'bg-white text-indigo-600' : 'bg-indigo-600 text-white'
+            }`}>
+              {runsCount}
+            </span>
+          )}
+          {activeRunsCount > 0 && (
+            <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-yellow-500 text-white animate-pulse">
+              {activeRunsCount} aktivno
+            </span>
+          )}
+        </button>
+        <button 
+          onClick={() => setTab('new')} 
+          className={`px-4 py-2 rounded-t-lg font-medium transition-all duration-150 ${
+            tab==='new'
+              ? 'bg-indigo-600 text-white shadow-sm border-b-2 border-indigo-600' 
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          }`}
+        >
+          Novi plan
+        </button>
+        <button 
+          onClick={handleSeed} 
+          disabled={seeding} 
+          className={`px-4 py-2 rounded-lg flex items-center gap-2 ml-auto transition-all duration-150 ${
+            seeding
+              ? 'bg-gray-400 text-white cursor-not-allowed' 
+              : 'bg-purple-600 text-white hover:bg-purple-700'
+          }`}
+          title="Briše postojeće planove i runove te kreira nove iz markdown fajlova"
+        >
+          {seeding && <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>}
+          <span>🌱</span>
+          <span>{seeding ? 'Seeding...' : 'Seed iz MD fajlova'}</span>
+        </button>
       </div>
 
       {tab === 'plans' && (
         <div className="space-y-3">
           {plans.map(pl => (
-            <div key={pl.id} className="border rounded p-3">
+            <div key={pl.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow duration-150">
               <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-semibold">{pl.name}</div>
-                  <div className="text-sm text-gray-600">{pl.description}</div>
-                  {!!pl.category && <div className="text-xs text-gray-500 mt-1">Kategorija: {pl.category}</div>}
-                  <div className="text-xs text-gray-500 mt-1">Stavki: {pl.items?.length || 0}</div>
+                <div className="flex-1">
+                  <div className="font-semibold text-lg">{pl.name}</div>
+                  <div className="text-sm text-gray-600 mt-1">{pl.description}</div>
+                  <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
+                    {!!pl.category && <span>📁 Kategorija: {pl.category}</span>}
+                    <span>📋 Stavki: {pl.items?.length || 0}</span>
+                  </div>
                 </div>
-                <div className="flex gap-2">
-                  <button onClick={() => setActivePlan(pl)} className="px-3 py-2 bg-green-600 text-white rounded">Pokreni run</button>
+                <div className="flex gap-2 ml-4">
+                  <button 
+                    onClick={() => setActivePlan(pl)} 
+                    className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors duration-150"
+                  >
+                    ▶️ Pokreni run
+                  </button>
                 </div>
               </div>
             </div>
           ))}
-          {plans.length === 0 && <div className="text-gray-500">Nema planova. Kreiraj novi.</div>}
+          {plans.length === 0 && (
+            <div className="text-center py-8 text-gray-500">
+              <p>Nema planova.</p>
+              <button 
+                onClick={() => setTab('new')} 
+                className="mt-2 text-indigo-600 hover:text-indigo-700"
+              >
+                Kreiraj novi plan →
+              </button>
+            </div>
+          )}
         </div>
       )}
 
       {tab === 'runs' && (
         <div className="space-y-3">
-          {runs.map(r => (
-            <div key={r.id} className="border rounded p-3 flex items-center justify-between">
-              <div>
-                <div className="font-semibold">{r.name}</div>
-                <div className="text-sm text-gray-600">Plan: {r.plan?.name}</div>
+          {runs.map(r => {
+            const totalItems = r.plan?.items?.length || 0
+            const completedItems = (r.items || []).filter(item => 
+              item.status === 'PASS' || item.status === 'FAIL' || item.status === 'NOT_APPLICABLE'
+            ).length
+            const progressPercent = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0
+            
+            return (
+              <div key={r.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow duration-150">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex-1">
+                    <div className="font-semibold text-lg">{r.name}</div>
+                    <div className="text-sm text-gray-600 mt-1">Plan: {r.plan?.name}</div>
+                  </div>
+                  <Badge status={r.status} />
+                </div>
+                {totalItems > 0 && (
+                  <div className="mt-3">
+                    <div className="flex items-center justify-between text-xs text-gray-600 mb-1">
+                      <span>Progres: {completedItems} / {totalItems}</span>
+                      <span className="font-medium">{progressPercent}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className={`h-2 rounded-full transition-all duration-300 ${
+                          r.status === 'COMPLETED' ? 'bg-green-600' : 'bg-indigo-600'
+                        }`}
+                        style={{ width: `${progressPercent}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                )}
               </div>
-              <Badge status={r.status} />
+            )
+          })}
+          {runs.length === 0 && (
+            <div className="text-center py-8 text-gray-500">
+              <p>Nema runova.</p>
+              <p className="text-sm mt-1">Kreiraj run iz taba "Planovi"</p>
             </div>
-          ))}
-          {runs.length === 0 && <div className="text-gray-500">Nema runova.</div>}
+          )}
         </div>
       )}
 

@@ -545,7 +545,7 @@ export default function App(){
             <>
               <DropdownMenu title="👤 Korisnik" icon="👤">
                 <button
-                  className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"
+                  className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-200 flex items-center gap-2 transition-colors duration-150"
                   onClick={() => {
                     if (window.location.pathname.startsWith('/admin/')) {
                       window.location.replace('/#login');
@@ -557,7 +557,7 @@ export default function App(){
                   🔑 Prijava
                 </button>
                 <button
-                  className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"
+                  className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-200 flex items-center gap-2 transition-colors duration-150"
                   onClick={() => {
                     if (window.location.pathname.startsWith('/admin/')) {
                       window.location.replace('/#register-user');
@@ -572,7 +572,7 @@ export default function App(){
 
               <DropdownMenu title="🛠️ Usluge" icon="🛠️">
                 <button
-                  className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"
+                  className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-200 flex items-center gap-2 transition-colors duration-150"
                   onClick={() => {
                     if (window.location.pathname.startsWith('/admin/')) {
                       window.location.replace('/#categories');
@@ -584,7 +584,7 @@ export default function App(){
                   🛠️ Kategorije ({categories.length})
                 </button>
                 <button
-                  className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"
+                  className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-200 flex items-center gap-2 transition-colors duration-150"
                   onClick={() => {
                     if (window.location.pathname.startsWith('/admin/')) {
                       window.location.replace('/#providers');
