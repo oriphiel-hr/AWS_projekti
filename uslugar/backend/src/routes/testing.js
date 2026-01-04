@@ -50,7 +50,15 @@ r.post('/plans', auth(true, ['ADMIN']), async (req, res, next) => {
       include: { items: true }
     });
     res.status(201).json(plan);
-  } catch (e) { next(e); }
+  } catch (e) {
+    console.error('[TESTING] Error in POST /plans:', e);
+    console.error('[TESTING] Error details:', {
+      message: e.message,
+      code: e.code,
+      meta: e.meta
+    });
+    next(e);
+  }
 });
 
 r.put('/plans/:planId', auth(true, ['ADMIN']), async (req, res, next) => {
