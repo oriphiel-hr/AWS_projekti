@@ -2426,6 +2426,12 @@ r.get('/audit-logs', auth(true, ['ADMIN']), async (req, res, next) => {
       }, {})
     });
   } catch (e) {
+    console.error('[ADMIN] Error in GET /audit-logs:', e);
+    console.error('[ADMIN] Error details:', {
+      message: e.message,
+      code: e.code,
+      meta: e.meta
+    });
     next(e);
   }
 });
