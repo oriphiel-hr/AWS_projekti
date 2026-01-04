@@ -18,17 +18,30 @@ r.get('/plans', auth(true, ['ADMIN']), async (req, res, next) => {
 r.post('/plans', auth(true, ['ADMIN']), async (req, res, next) => {
   try {
     const { name, description, category, items = [] } = req.body || {};
+    
+    // Validacija: name je obavezno polje
+    if (!name || typeof name !== 'string' || name.trim().length === 0) {
+      return res.status(400).json({ error: 'Naziv plana je obavezan' });
+    }
+    
+    // Filtriraj iteme koji imaju title (title je obavezno polje)
+    const validItems = items
+      .filter(it => it.title && typeof it.title === 'string' && it.title.trim().length > 0)
+      .map((it, idx) => ({
+        title: it.title.trim(),
+        description: it.description || null,
+        expectedResult: it.expectedResult || null,
+        dataVariations: it.dataVariations ?? null,
+        order: it.order ?? idx
+      }));
+    
     const plan = await prisma.testPlan.create({
       data: {
-        name, description, category,
+        name: name.trim(),
+        description: description || null,
+        category: category || null,
         items: {
-          create: items.map((it, idx) => ({
-            title: it.title,
-            description: it.description,
-            expectedResult: it.expectedResult,
-            dataVariations: it.dataVariations ?? null,
-            order: it.order ?? idx
-          }))
+          create: validItems
         }
       },
       include: { items: true }
@@ -42,7 +55,16 @@ r.put('/plans/:planId', auth(true, ['ADMIN']), async (req, res, next) => {
     const { planId } = req.params;
     const { name, description, category, items } = req.body || {};
 
-    const updates = { name, description, category };
+    const updates = {};
+    if (name !== undefined) {
+      if (!name || typeof name !== 'string' || name.trim().length === 0) {
+        return res.status(400).json({ error: 'Naziv plana ne može biti prazan' });
+      }
+      updates.name = name.trim();
+    }
+    if (description !== undefined) updates.description = description || null;
+    if (category !== undefined) updates.category = category || null;
+    
     // Basic update for plan fields
     const updated = await prisma.testPlan.update({
       where: { id: planId },
@@ -51,19 +73,25 @@ r.put('/plans/:planId', auth(true, ['ADMIN']), async (req, res, next) => {
 
     // Optional items full replace if provided
     if (Array.isArray(items)) {
-      // Delete existing, recreate (simpler sync)
-      await prisma.testItem.deleteMany({ where: { planId } });
-      await prisma.testItem.createMany({
-        data: items.map((it, idx) => ({
-          id: undefined,
+      // Filtriraj iteme koji imaju title (title je obavezno polje)
+      const validItems = items
+        .filter(it => it.title && typeof it.title === 'string' && it.title.trim().length > 0)
+        .map((it, idx) => ({
           planId,
-          title: it.title,
-          description: it.description ?? null,
-          expectedResult: it.expectedResult ?? null,
+          title: it.title.trim(),
+          description: it.description || null,
+          expectedResult: it.expectedResult || null,
           dataVariations: it.dataVariations ?? null,
           order: it.order ?? idx
-        }))
-      });
+        }));
+      
+      // Delete existing, recreate (simpler sync)
+      await prisma.testItem.deleteMany({ where: { planId } });
+      if (validItems.length > 0) {
+        await prisma.testItem.createMany({
+          data: validItems
+        });
+      }
     }
 
     const full = await prisma.testPlan.findUnique({
