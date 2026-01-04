@@ -302,25 +302,82 @@ function RunExecutor({ plan, onClose }){
       {(run.plan?.items || []).map(it => {
         const ri = (run.items || []).find(x => x.itemId === it.id)
         const status = ri?.status || 'PENDING'
+        
+        // Parsiraj korake iz description polja (split po novim redovima)
+        const steps = it.description ? it.description.split('\n').filter(s => s.trim()) : []
+        const hasSteps = steps.length > 1 || (steps.length === 1 && steps[0].length > 100)
+        
         return (
-          <div key={it.id} className="border rounded p-3">
-            <div className="flex justify-between items-start">
-              <div>
-                <div className="flex items-center gap-2">
-                  <h4 className="font-semibold">{it.title}</h4>
+          <div key={it.id} className="border rounded p-4 bg-white shadow-sm">
+            <div className="flex justify-between items-start mb-3">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <h4 className="font-semibold text-lg">{it.title}</h4>
                   <Badge status={status} />
                 </div>
-                {it.description && <p className="text-sm text-gray-600 mt-1">{it.description}</p>}
-                {it.expectedResult && <p className="text-sm text-gray-800 mt-1"><span className="font-medium">Očekivano:</span> {it.expectedResult}</p>}
+                
+                {/* Koraci - formatirani kao checklista */}
+                {hasSteps && (
+                  <div className="mt-3 mb-3 bg-gray-50 rounded-lg p-4 border-l-4 border-indigo-500">
+                    <div className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                      <span>📋</span>
+                      <span>Koraci testiranja:</span>
+                    </div>
+                    <ol className="space-y-2 list-decimal list-inside text-sm text-gray-700">
+                      {steps.map((step, idx) => (
+                        <li key={idx} className="pl-2 py-1 leading-relaxed">
+                          {step.trim()}
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                )}
+                
+                {/* Opis (ako nema koraka ili je kratak) */}
+                {!hasSteps && it.description && (
+                  <p className="text-sm text-gray-600 mt-2 mb-2">{it.description}</p>
+                )}
+                
+                {/* Očekivani rezultat */}
+                {it.expectedResult && (
+                  <div className="mt-3 mb-2 bg-green-50 rounded-lg p-3 border-l-4 border-green-500">
+                    <div className="text-sm font-semibold text-green-800 mb-1 flex items-center gap-2">
+                      <span>✅</span>
+                      <span>Očekivani rezultat:</span>
+                    </div>
+                    <div className="text-sm text-green-700 whitespace-pre-line">
+                      {it.expectedResult.split('\n').map((line, idx) => (
+                        <div key={idx} className="py-0.5">{line.trim() || '\u00A0'}</div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Varijacije podataka */}
                 {!!(it.dataVariations?.examples||[]).length && (
-                  <div className="text-sm text-gray-600 mt-1">
-                    <span className="font-medium">Varijacije:</span> {(it.dataVariations.examples||[]).join(', ')}
+                  <div className="mt-2 mb-2">
+                    <span className="text-xs font-medium text-gray-500">Varijacije: </span>
+                    <span className="text-xs text-gray-600">
+                      {(it.dataVariations.examples||[]).join(', ')}
+                    </span>
                   </div>
                 )}
               </div>
-              <div className="flex gap-2">
+              
+              {/* Status gumbovi */}
+              <div className="flex flex-col gap-1 ml-4">
                 {['PASS','FAIL','BLOCKED','NOT_APPLICABLE','PENDING'].map(s => (
-                  <button key={s} onClick={() => updateItem(it.id, { status: s })} className={`px-2 py-1 rounded text-xs border ${status===s?'bg-indigo-600 text-white':'bg-white'}`}>{s}</button>
+                  <button 
+                    key={s} 
+                    onClick={() => updateItem(it.id, { status: s })} 
+                    className={`px-3 py-1.5 rounded text-xs font-medium border transition-colors ${
+                      status===s
+                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm' 
+                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    {s}
+                  </button>
                 ))}
               </div>
             </div>
