@@ -12,7 +12,10 @@ r.get('/plans', auth(true, ['ADMIN']), async (req, res, next) => {
       orderBy: { createdAt: 'desc' }
     });
     res.json(plans);
-  } catch (e) { next(e); }
+  } catch (e) {
+    console.error('[TESTING] Error in GET /plans:', e);
+    next(e);
+  }
 });
 
 r.post('/plans', auth(true, ['ADMIN']), async (req, res, next) => {
@@ -120,7 +123,10 @@ r.get('/runs', auth(true, ['ADMIN']), async (req, res, next) => {
       orderBy: { createdAt: 'desc' }
     });
     res.json(runs);
-  } catch (e) { next(e); }
+  } catch (e) {
+    console.error('[TESTING] Error in GET /runs:', e);
+    next(e);
+  }
 });
 
 r.get('/runs/:runId', auth(true, ['ADMIN']), async (req, res, next) => {
@@ -135,7 +141,10 @@ r.get('/runs/:runId', auth(true, ['ADMIN']), async (req, res, next) => {
     });
     if (!run) return res.status(404).json({ error: 'Not found' });
     res.json(run);
-  } catch (e) { next(e); }
+  } catch (e) {
+    console.error('[TESTING] Error in GET /runs/:runId:', e);
+    next(e);
+  }
 });
 
 r.post('/runs', auth(true, ['ADMIN']), async (req, res, next) => {
