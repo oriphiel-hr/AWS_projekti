@@ -596,7 +596,7 @@ export default function AdminTesting(){
     }
     setSeeding(true)
     try {
-      const res = await api.post('/testing/plans/seed')
+      const res = await api.post('/testing/seed')
       alert(`✅ Seed uspješan!\n\nKreirano ${res.data.plansCount} planova\nUkupno ${res.data.totalItems} test itema`)
       await load()
     } catch (e) {
