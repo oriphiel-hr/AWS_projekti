@@ -216,14 +216,55 @@ function PresetPlanEditor({ preset, onSaved }){
 function RunExecutor({ plan, onClose }){
   const [run, setRun] = useState(null)
   const [uploading, setUploading] = useState(false)
+  const [creating, setCreating] = useState(false)
+  const [fullPlan, setFullPlan] = useState(plan)
 
+  // Učitaj puni plan s itemima ako ih nema
   useEffect(() => {
-    const start = async () => {
-      const r = await api.post('/testing/runs', { planId: plan.id, name: `${plan.name} - ručno testiranje` })
-      setRun(r.data)
+    const loadFullPlan = async () => {
+      // Ako plan već ima iteme, ne treba ponovno učitati
+      if (plan.items && plan.items.length > 0) {
+        setFullPlan(plan)
+        return
+      }
+      
+      // Učitaj plan s itemima
+      try {
+        const res = await api.get(`/testing/plans`)
+        const foundPlan = res.data.find(p => p.id === plan.id)
+        if (foundPlan) {
+          console.log('[TESTING] Loaded full plan:', {
+            id: foundPlan.id,
+            name: foundPlan.name,
+            itemsCount: foundPlan.items?.length || 0
+          })
+          setFullPlan(foundPlan)
+        } else {
+          console.warn('[TESTING] Plan not found in response')
+        }
+      } catch (e) {
+        console.error('[TESTING] Error loading plan:', e)
+      }
     }
-    start()
-  }, [plan.id, plan.name])
+    loadFullPlan()
+  }, [plan.id])
+
+  const startRun = async () => {
+    const planToUse = fullPlan || plan
+    if (!planToUse.items || planToUse.items.length === 0) {
+      alert('Plan nema stavki. Ne možete pokrenuti run bez stavki.')
+      return
+    }
+    setCreating(true)
+    try {
+      const r = await api.post('/testing/runs', { planId: planToUse.id, name: `${planToUse.name} - ručno testiranje` })
+      setRun(r.data)
+    } catch (e) {
+      alert(`Greška pri kreiranju run-a: ${e?.response?.data?.error || e?.message || String(e)}`)
+    } finally {
+      setCreating(false)
+    }
+  }
 
   const refresh = async () => {
     if (!run) return
@@ -249,14 +290,96 @@ function RunExecutor({ plan, onClose }){
     }
   }
 
-  if (!run) return (
-    <div className="flex items-center justify-center p-8">
-      <div className="text-center">
-        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-        <p className="mt-2 text-gray-600">Pokretanje...</p>
+  // Ako run još nije kreiran, prikaži plan preview
+  if (!run) {
+    const planToUse = fullPlan || plan
+    const itemsCount = planToUse.items?.length || 0
+    
+    // Debug logging
+    console.log('[TESTING] RunExecutor - Plan preview:', {
+      planId: planToUse.id,
+      planName: planToUse.name,
+      itemsCount,
+      hasItems: !!(planToUse.items && planToUse.items.length > 0),
+      items: planToUse.items
+    })
+    
+    return (
+      <div className="space-y-4">
+        <div className="flex justify-between items-center border-b pb-4">
+          <div>
+            <h3 className="text-lg font-semibold">Plan: {planToUse.name}</h3>
+            {planToUse.description && <p className="text-sm text-gray-600 mt-1">{planToUse.description}</p>}
+            <div className="mt-2 text-sm text-gray-500">
+              📋 Stavki u planu: <span className="font-semibold">{itemsCount}</span>
+            </div>
+          </div>
+        </div>
+
+        {itemsCount === 0 ? (
+          <div className="text-center py-8 text-gray-500 border rounded-lg bg-gray-50">
+            <p className="text-lg font-medium mb-2">⚠️ Plan nema stavki</p>
+            <p className="text-sm">Ovaj plan ne može biti pokrenut jer nema test stavki.</p>
+            <p className="text-xs text-gray-400 mt-2">Provjerite da li je plan pravilno kreiran s test stavkama.</p>
+            <button 
+              onClick={onClose}
+              className="mt-4 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+            >
+              Zatvori
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <span className="text-2xl">ℹ️</span>
+                <div className="flex-1">
+                  <h4 className="font-semibold text-blue-900 mb-1">Pregled plana</h4>
+                  <p className="text-sm text-blue-800">
+                    Plan sadrži <strong>{itemsCount}</strong> test stavki. Kliknite "Pokreni run" da započnete testiranje.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Preview stavki */}
+            <div className="space-y-2 max-h-96 overflow-y-auto border rounded-lg p-4 bg-gray-50">
+              <h4 className="font-semibold text-gray-700 mb-3">Stavke u planu:</h4>
+              {planToUse.items.map((item, idx) => (
+                <div key={item.id || idx} className="bg-white border rounded p-3 text-sm">
+                  <div className="font-medium text-gray-900">
+                    {idx + 1}. {item.title}
+                  </div>
+                  {item.description && (
+                    <div className="text-gray-600 mt-1 text-xs line-clamp-2">
+                      {item.description.substring(0, 100)}{item.description.length > 100 ? '...' : ''}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4 border-t">
+              <button 
+                onClick={onClose}
+                className="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+              >
+                Odustani
+              </button>
+              <button 
+                onClick={startRun}
+                disabled={creating}
+                className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {creating && <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>}
+                <span>{creating ? 'Kreiranje...' : 'Pokreni run'}</span>
+              </button>
+            </div>
+          </>
+        )}
       </div>
-    </div>
-  )
+    )
+  }
 
   // Izračunaj progress
   const totalItems = run.plan?.items?.length || 0
@@ -284,11 +407,33 @@ function RunExecutor({ plan, onClose }){
           </div>
         </div>
         <div className="flex gap-2 ml-4">
+          {run.status !== 'COMPLETED' && (
+            <button 
+              onClick={async () => {
+                if (confirm('Jeste li sigurni da želite završiti ovaj run?')) {
+                  await api.patch(`/testing/runs/${run.id}`, { status: 'COMPLETED' })
+                  await refresh()
+                }
+              }} 
+              className="px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors duration-150"
+            >
+              Završi run
+            </button>
+          )}
           <button 
-            onClick={() => api.patch(`/testing/runs/${run.id}`, { status: 'COMPLETED' }).then(refresh)} 
-            className="px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors duration-150"
+            onClick={async () => {
+              if (confirm('Jeste li sigurni da želite obrisati ovaj run? Ova akcija je nepovratna.')) {
+                try {
+                  await api.delete(`/testing/runs/${run.id}`)
+                  onClose()
+                } catch (e) {
+                  alert(`Greška pri brisanju: ${e?.response?.data?.error || e?.message || String(e)}`)
+                }
+              }
+            }}
+            className="px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors duration-150"
           >
-            Završi run
+            🗑️ Obriši
           </button>
           <button 
             onClick={onClose} 
@@ -421,12 +566,27 @@ export default function AdminTesting(){
   const [seeding, setSeeding] = useState(false)
 
   const load = async () => {
-    const [p, r] = await Promise.all([
-      api.get('/testing/plans'),
-      api.get('/testing/runs')
-    ])
-    setPlans(p.data)
-    setRuns(r.data)
+    try {
+      const [p, r] = await Promise.all([
+        api.get('/testing/plans'),
+        api.get('/testing/runs')
+      ])
+      setPlans(p.data)
+      setRuns(r.data)
+      
+      // Debug: provjeri ima li planovi iteme
+      if (p.data && p.data.length > 0) {
+        console.log('[TESTING] Loaded plans:', p.data.map(pl => ({
+          id: pl.id,
+          name: pl.name,
+          itemsCount: pl.items?.length || 0,
+          hasItems: !!(pl.items && pl.items.length > 0)
+        })))
+      }
+    } catch (e) {
+      console.error('[TESTING] Error loading:', e)
+      alert(`Greška pri učitavanju: ${e?.response?.data?.error || e?.message || String(e)}`)
+    }
   }
   useEffect(() => { load() }, [])
 
@@ -551,8 +711,27 @@ export default function AdminTesting(){
                   <div className="text-sm text-gray-600 mt-1">{pl.description}</div>
                   <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
                     {!!pl.category && <span>📁 Kategorija: {pl.category}</span>}
-                    <span>📋 Stavki: {pl.items?.length || 0}</span>
+                    <span>📋 Stavki: <strong>{pl.items?.length || 0}</strong></span>
                   </div>
+                  {/* Prikaz prvih nekoliko stavki */}
+                  {pl.items && pl.items.length > 0 && (
+                    <div className="mt-3 pt-3 border-t">
+                      <div className="text-xs font-medium text-gray-500 mb-2">Stavke:</div>
+                      <div className="space-y-1">
+                        {pl.items.slice(0, 3).map((item, idx) => (
+                          <div key={item.id || idx} className="text-xs text-gray-600 flex items-start gap-2">
+                            <span className="text-gray-400">•</span>
+                            <span>{item.title}</span>
+                          </div>
+                        ))}
+                        {pl.items.length > 3 && (
+                          <div className="text-xs text-gray-400 italic">
+                            + još {pl.items.length - 3} stavki...
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div className="flex gap-2 ml-4">
                   <button 
@@ -613,6 +792,40 @@ export default function AdminTesting(){
                     </div>
                   </div>
                 )}
+                <div className="flex gap-2 mt-3">
+                  <button
+                    onClick={async () => {
+                      if (confirm(`Jeste li sigurni da želite obrisati run "${r.name}"?`)) {
+                        try {
+                          await api.delete(`/testing/runs/${r.id}`)
+                          await load()
+                        } catch (e) {
+                          alert(`Greška pri brisanju: ${e?.response?.data?.error || e?.message || String(e)}`)
+                        }
+                      }
+                    }}
+                    className="px-3 py-1.5 bg-red-600 text-white rounded text-xs hover:bg-red-700 transition-colors"
+                  >
+                    🗑️ Obriši
+                  </button>
+                  {r.status !== 'COMPLETED' && (
+                    <button
+                      onClick={async () => {
+                        if (confirm(`Jeste li sigurni da želite završiti run "${r.name}"?`)) {
+                          try {
+                            await api.patch(`/testing/runs/${r.id}`, { status: 'COMPLETED' })
+                            await load()
+                          } catch (e) {
+                            alert(`Greška: ${e?.response?.data?.error || e?.message || String(e)}`)
+                          }
+                        }
+                      }}
+                      className="px-3 py-1.5 bg-green-600 text-white rounded text-xs hover:bg-green-700 transition-colors"
+                    >
+                      ✅ Završi
+                    </button>
+                  )}
+                </div>
               </div>
             )
           })}

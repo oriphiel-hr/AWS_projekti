@@ -175,7 +175,10 @@ r.post('/runs', auth(true, ['ADMIN']), async (req, res, next) => {
             .map(it => ({ itemId: it.id, status: 'PENDING', screenshots: [] }))
         }
       },
-      include: { items: true }
+      include: {
+        plan: { include: { items: { orderBy: { order: 'asc' } } } },
+        items: { include: { item: true } }
+      }
     });
     res.status(201).json(run);
   } catch (e) { next(e); }
@@ -195,6 +198,17 @@ r.patch('/runs/:runId', auth(true, ['ADMIN']), async (req, res, next) => {
     });
     res.json(updated);
   } catch (e) { next(e); }
+});
+
+r.delete('/runs/:runId', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const { runId } = req.params;
+    await prisma.testRun.delete({ where: { id: runId } });
+    res.json({ success: true });
+  } catch (e) {
+    console.error('[TESTING] Error in DELETE /runs/:runId:', e);
+    next(e);
+  }
 });
 
 // Update a specific run item (status/comment/screenshots)
