@@ -285,6 +285,13 @@ app.use('/api/notifications', notificationsRouter)
 app.use('/api/push-notifications', pushNotificationsRouter)
 app.use('/api/chat', chatRouter)
 app.use('/api/subscriptions', subscriptionsRouter)
+
+// Debug middleware for testing routes
+app.use('/api/testing', (req, res, next) => {
+  console.log(`[SERVER] Testing route requested: ${req.method} ${req.path}`);
+  next();
+});
+
 app.use('/api/testing', testingRouter)
 // USLUGAR EXCLUSIVE API routes
 app.use('/api/exclusive/leads', exclusiveLeadsRouter)
