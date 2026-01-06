@@ -21,6 +21,7 @@ r.get('/plans', auth(true, ['ADMIN']), async (req, res, next) => {
 // POST /api/testing/plans/seed - Seed test plans from markdown files
 // MUST be before /plans/:planId to avoid route conflict
 r.post('/plans/seed', auth(true, ['ADMIN']), async (req, res, next) => {
+  console.log('[TESTING SEED] Endpoint called');
   try {
     const { readFileSync } = await import('fs');
     const { fileURLToPath } = await import('url');
