@@ -4,6 +4,12 @@ import { auth } from '../lib/auth.js';
 
 const r = Router();
 
+// Debug middleware - log all requests to testing router
+r.use((req, res, next) => {
+  console.log(`[TESTING ROUTER] ${req.method} ${req.path}`);
+  next();
+});
+
 // ===== Test Plans =====
 r.get('/plans', auth(true, ['ADMIN']), async (req, res, next) => {
   try {
