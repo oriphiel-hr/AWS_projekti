@@ -18,6 +18,259 @@ r.get('/plans', auth(true, ['ADMIN']), async (req, res, next) => {
   }
 });
 
+// POST /api/testing/plans/seed - Seed test plans from markdown files
+// MUST be before /plans/:planId to avoid route conflict
+r.post('/plans/seed', auth(true, ['ADMIN']), async (req, res, next) => {
+  try {
+    const { readFileSync } = await import('fs');
+    const { fileURLToPath } = await import('url');
+    const { dirname, join } = await import('path');
+    
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = dirname(__filename);
+    
+    // Učitaj markdown fajlove - fajlovi su u uslugar/ direktoriju
+    const frontendPath = join(__dirname, '../../../TEST-PLAN-FRONTEND.md');
+    const adminPath = join(__dirname, '../../../TEST-PLAN-ADMIN.md');
+    
+    console.log('[TESTING SEED] Reading markdown files...');
+    console.log('[TESTING SEED] Frontend path:', frontendPath);
+    console.log('[TESTING SEED] Admin path:', adminPath);
+    
+    let frontendContent, adminContent;
+    try {
+      frontendContent = readFileSync(frontendPath, 'utf-8');
+      adminContent = readFileSync(adminPath, 'utf-8');
+    } catch (fileError) {
+      console.error('[TESTING SEED] Error reading files:', fileError);
+      return res.status(404).json({ 
+        error: 'Test plan markdown files not found',
+        details: fileError.message,
+        frontendPath,
+        adminPath
+      });
+    }
+    
+    // Parsiraj markdown fajlove
+    const parseTestPlanMarkdown = (markdownContent) => {
+      const plans = [];
+      const lines = markdownContent.split('\n');
+      
+      let currentCategory = null;
+      let currentTest = null;
+      let currentSteps = [];
+      let currentExpectedResult = [];
+      let inSteps = false;
+      let inExpectedResult = false;
+      
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        
+        // Preskoči prazne linije i separator
+        if (!line || line === '---' || line.startsWith('## 📋') || line.startsWith('## ✅') || line.startsWith('## 🎯') || line.startsWith('## ⚠️')) {
+          continue;
+        }
+        
+        // Detektiraj kategoriju (## 1️⃣, ## 2️⃣, itd. ili ## 🔟)
+        if (line.match(/^## \d+[️⃣🔟]/) || line.match(/^## [1-9]0?[️⃣🔟]/)) {
+          // Spremi prethodni test ako postoji
+          if (currentTest && currentCategory) {
+            if (!plans.find(p => p.category === currentCategory)) {
+              plans.push({
+                category: currentCategory,
+                name: currentCategory,
+                description: `Test plan za ${currentCategory}`,
+                items: []
+              });
+            }
+            const plan = plans.find(p => p.category === currentCategory);
+            plan.items.push({
+              title: currentTest,
+              description: currentSteps.join('\n').trim() || null,
+              expectedResult: currentExpectedResult.join('\n').trim() || null,
+              dataVariations: { examples: [] }
+            });
+          }
+          
+          // Nova kategorija - ukloni emoji i brojeve
+          currentCategory = line.replace(/^## \d+[️⃣🔟]\s*/, '').replace(/^## [1-9]0?[️⃣🔟]\s*/, '').trim();
+          currentTest = null;
+          currentSteps = [];
+          currentExpectedResult = [];
+          inSteps = false;
+          inExpectedResult = false;
+        }
+        // Detektiraj test slučaj (### Test X.Y:)
+        else if (line.match(/^### Test \d+\.\d+:/)) {
+          // Spremi prethodni test ako postoji
+          if (currentTest && currentCategory) {
+            if (!plans.find(p => p.category === currentCategory)) {
+              plans.push({
+                category: currentCategory,
+                name: currentCategory,
+                description: `Test plan za ${currentCategory}`,
+                items: []
+              });
+            }
+            const plan = plans.find(p => p.category === currentCategory);
+            plan.items.push({
+              title: currentTest,
+              description: currentSteps.join('\n').trim() || null,
+              expectedResult: currentExpectedResult.join('\n').trim() || null,
+              dataVariations: { examples: [] }
+            });
+          }
+          
+          // Novi test - ukloni "Test X.Y:"
+          currentTest = line.replace(/^### Test \d+\.\d+:\s*/, '').trim();
+          currentSteps = [];
+          currentExpectedResult = [];
+          inSteps = false;
+          inExpectedResult = false;
+        }
+        // Detektiraj "Koraci:" sekciju
+        else if (line.startsWith('**Koraci:**') || line.startsWith('**Koraci**')) {
+          inSteps = true;
+          inExpectedResult = false;
+        }
+        // Detektiraj "Očekivani rezultat:" sekciju
+        else if (line.startsWith('**Očekivani rezultat:**') || line.startsWith('**Očekivani rezultat**')) {
+          inSteps = false;
+          inExpectedResult = true;
+        }
+        // Dodaj u korake
+        else if (inSteps && line && !line.startsWith('**') && !line.startsWith('---')) {
+          // Ukloni markdown formatting i numeraciju
+          let cleanLine = line.replace(/^\d+\.\s*/, '').replace(/\*\*/g, '').trim();
+          // Ukloni backticks
+          cleanLine = cleanLine.replace(/`/g, '');
+          if (cleanLine) {
+            currentSteps.push(cleanLine);
+          }
+        }
+        // Dodaj u očekivane rezultate
+        else if (inExpectedResult && line && !line.startsWith('**') && !line.startsWith('---')) {
+          // Ukloni markdown formatting
+          let cleanLine = line.replace(/^-\s*✅\s*/, '').replace(/^-\s*/, '').replace(/\*\*/g, '').trim();
+          // Ukloni backticks
+          cleanLine = cleanLine.replace(/`/g, '');
+          if (cleanLine) {
+            currentExpectedResult.push(cleanLine);
+          }
+        }
+      }
+      
+      // Spremi zadnji test
+      if (currentTest && currentCategory) {
+        if (!plans.find(p => p.category === currentCategory)) {
+          plans.push({
+            category: currentCategory,
+            name: currentCategory,
+            description: `Test plan za ${currentCategory}`,
+            items: []
+          });
+        }
+        const plan = plans.find(p => p.category === currentCategory);
+        plan.items.push({
+          title: currentTest,
+          description: currentSteps.join('\n').trim() || null,
+          expectedResult: currentExpectedResult.join('\n').trim() || null,
+          dataVariations: { examples: [] }
+        });
+      }
+      
+      // Filtriraj planove koji imaju iteme
+      return plans.filter(p => p.items && p.items.length > 0);
+    };
+    
+    console.log('[TESTING SEED] Parsing markdown files...');
+    const frontendPlans = parseTestPlanMarkdown(frontendContent);
+    const adminPlans = parseTestPlanMarkdown(adminContent);
+    
+    // Dodaj prefix za kategorije
+    frontendPlans.forEach(plan => {
+      plan.category = `Frontend - ${plan.category}`;
+      plan.name = plan.category;
+      plan.description = `Frontend test plan: ${plan.description}`;
+    });
+    
+    adminPlans.forEach(plan => {
+      plan.category = `Admin - ${plan.category}`;
+      plan.name = plan.category;
+      plan.description = `Admin test plan: ${plan.description}`;
+    });
+    
+    const allPlans = [...frontendPlans, ...adminPlans];
+    console.log(`[TESTING SEED] Parsed ${allPlans.length} test plans`);
+    
+    // 1. Obriši postojeće test planove
+    console.log('[TESTING SEED] Deleting existing test plans...');
+    await prisma.testRunItem.deleteMany({});
+    await prisma.testRun.deleteMany({});
+    await prisma.testItem.deleteMany({});
+    await prisma.testPlan.deleteMany({});
+    console.log('[TESTING SEED] Existing plans deleted');
+    
+    // 2. Kreiraj test planove u bazi
+    console.log('[TESTING SEED] Creating test plans in database...');
+    let totalPlans = 0;
+    let totalItems = 0;
+    
+    for (const planData of allPlans) {
+      if (!planData.items || planData.items.length === 0) {
+        console.log(`[TESTING SEED] Skipping plan "${planData.name}" - no items`);
+        continue;
+      }
+      
+      const plan = await prisma.testPlan.create({
+        data: {
+          name: planData.name,
+          description: planData.description || `Test plan za ${planData.category}`,
+          category: planData.category,
+          items: {
+            create: planData.items.map((item, idx) => ({
+              title: item.title,
+              description: item.description || null,
+              expectedResult: item.expectedResult || null,
+              dataVariations: item.dataVariations || null,
+              order: idx
+            }))
+          }
+        },
+        include: { items: true }
+      });
+      
+      totalPlans++;
+      totalItems += plan.items.length;
+      console.log(`[TESTING SEED] Created plan: "${plan.name}" (${plan.items.length} items)`);
+    }
+    
+    console.log(`[TESTING SEED] Seeding complete! ${totalPlans} plans, ${totalItems} items`);
+    
+    // Dohvati kreirane planove
+    const plans = await prisma.testPlan.findMany({
+      include: { items: { orderBy: { order: 'asc' } } },
+      orderBy: { createdAt: 'desc' }
+    });
+    
+    res.json({ 
+      success: true, 
+      message: 'Test plans seeded successfully',
+      plansCount: plans.length,
+      totalItems: plans.reduce((sum, p) => sum + (p.items?.length || 0), 0),
+      plans: plans.map(p => ({
+        id: p.id,
+        name: p.name,
+        category: p.category,
+        itemsCount: p.items?.length || 0
+      }))
+    });
+  } catch (e) {
+    console.error('[TESTING SEED] Error:', e);
+    next(e);
+  }
+});
+
 r.post('/plans', auth(true, ['ADMIN']), async (req, res, next) => {
   try {
     const { name, description, category, items = [] } = req.body || {};
@@ -245,244 +498,6 @@ r.patch('/runs/:runId/items/:itemId', auth(true, ['ADMIN']), async (req, res, ne
     });
     res.json(updated);
   } catch (e) { next(e); }
-});
-
-// POST /api/testing/plans/seed - Seed test plans from markdown files
-r.post('/plans/seed', auth(true, ['ADMIN']), async (req, res, next) => {
-  try {
-    const { readFileSync } = await import('fs');
-    const { fileURLToPath } = await import('url');
-    const { dirname, join } = await import('path');
-    
-    const __filename = fileURLToPath(import.meta.url);
-    const __dirname = dirname(__filename);
-    
-    // Učitaj markdown fajlove
-    const frontendPath = join(__dirname, '../../../TEST-PLAN-FRONTEND.md');
-    const adminPath = join(__dirname, '../../../TEST-PLAN-ADMIN.md');
-    
-    console.log('[TESTING SEED] Reading markdown files...');
-    const frontendContent = readFileSync(frontendPath, 'utf-8');
-    const adminContent = readFileSync(adminPath, 'utf-8');
-    
-    // Parsiraj markdown fajlove
-    const parseTestPlanMarkdown = (markdownContent) => {
-      const plans = [];
-      const lines = markdownContent.split('\n');
-      
-      let currentCategory = null;
-      let currentTest = null;
-      let currentSteps = [];
-      let currentExpectedResult = [];
-      let inSteps = false;
-      let inExpectedResult = false;
-      
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i].trim();
-        
-        // Preskoči prazne linije i separator
-        if (!line || line === '---' || line.startsWith('## 📋') || line.startsWith('## ✅') || line.startsWith('## 🎯') || line.startsWith('## ⚠️')) {
-          continue;
-        }
-        
-        // Detektiraj kategoriju (## 1️⃣, ## 2️⃣, itd. ili ## 🔟)
-        if (line.match(/^## \d+[️⃣🔟]/) || line.match(/^## [1-9]0?[️⃣🔟]/)) {
-          // Spremi prethodni test ako postoji
-          if (currentTest && currentCategory) {
-            if (!plans.find(p => p.category === currentCategory)) {
-              plans.push({
-                category: currentCategory,
-                name: currentCategory,
-                description: `Test plan za ${currentCategory}`,
-                items: []
-              });
-            }
-            const plan = plans.find(p => p.category === currentCategory);
-            plan.items.push({
-              title: currentTest,
-              description: currentSteps.join('\n').trim() || null,
-              expectedResult: currentExpectedResult.join('\n').trim() || null,
-              dataVariations: { examples: [] }
-            });
-          }
-          
-          // Nova kategorija - ukloni emoji i brojeve
-          currentCategory = line.replace(/^## \d+[️⃣🔟]\s*/, '').replace(/^## [1-9]0?[️⃣🔟]\s*/, '').trim();
-          currentTest = null;
-          currentSteps = [];
-          currentExpectedResult = [];
-          inSteps = false;
-          inExpectedResult = false;
-        }
-        // Detektiraj test slučaj (### Test X.Y:)
-        else if (line.match(/^### Test \d+\.\d+:/)) {
-          // Spremi prethodni test ako postoji
-          if (currentTest && currentCategory) {
-            if (!plans.find(p => p.category === currentCategory)) {
-              plans.push({
-                category: currentCategory,
-                name: currentCategory,
-                description: `Test plan za ${currentCategory}`,
-                items: []
-              });
-            }
-            const plan = plans.find(p => p.category === currentCategory);
-            plan.items.push({
-              title: currentTest,
-              description: currentSteps.join('\n').trim() || null,
-              expectedResult: currentExpectedResult.join('\n').trim() || null,
-              dataVariations: { examples: [] }
-            });
-          }
-          
-          // Novi test - ukloni "Test X.Y:"
-          currentTest = line.replace(/^### Test \d+\.\d+:\s*/, '').trim();
-          currentSteps = [];
-          currentExpectedResult = [];
-          inSteps = false;
-          inExpectedResult = false;
-        }
-        // Detektiraj "Koraci:" sekciju
-        else if (line.startsWith('**Koraci:**') || line.startsWith('**Koraci**')) {
-          inSteps = true;
-          inExpectedResult = false;
-        }
-        // Detektiraj "Očekivani rezultat:" sekciju
-        else if (line.startsWith('**Očekivani rezultat:**') || line.startsWith('**Očekivani rezultat**')) {
-          inSteps = false;
-          inExpectedResult = true;
-        }
-        // Dodaj u korake
-        else if (inSteps && line && !line.startsWith('**') && !line.startsWith('---')) {
-          // Ukloni markdown formatting i numeraciju
-          let cleanLine = line.replace(/^\d+\.\s*/, '').replace(/\*\*/g, '').trim();
-          // Ukloni backticks
-          cleanLine = cleanLine.replace(/`/g, '');
-          if (cleanLine) {
-            currentSteps.push(cleanLine);
-          }
-        }
-        // Dodaj u očekivane rezultate
-        else if (inExpectedResult && line && !line.startsWith('**') && !line.startsWith('---')) {
-          // Ukloni markdown formatting
-          let cleanLine = line.replace(/^-\s*✅\s*/, '').replace(/^-\s*/, '').replace(/\*\*/g, '').trim();
-          // Ukloni backticks
-          cleanLine = cleanLine.replace(/`/g, '');
-          if (cleanLine) {
-            currentExpectedResult.push(cleanLine);
-          }
-        }
-      }
-      
-      // Spremi zadnji test
-      if (currentTest && currentCategory) {
-        if (!plans.find(p => p.category === currentCategory)) {
-          plans.push({
-            category: currentCategory,
-            name: currentCategory,
-            description: `Test plan za ${currentCategory}`,
-            items: []
-          });
-        }
-        const plan = plans.find(p => p.category === currentCategory);
-        plan.items.push({
-          title: currentTest,
-          description: currentSteps.join('\n').trim() || null,
-          expectedResult: currentExpectedResult.join('\n').trim() || null,
-          dataVariations: { examples: [] }
-        });
-      }
-      
-      // Filtriraj planove koji imaju iteme
-      return plans.filter(p => p.items && p.items.length > 0);
-    };
-    
-    console.log('[TESTING SEED] Parsing markdown files...');
-    const frontendPlans = parseTestPlanMarkdown(frontendContent);
-    const adminPlans = parseTestPlanMarkdown(adminContent);
-    
-    // Dodaj prefix za kategorije
-    frontendPlans.forEach(plan => {
-      plan.category = `Frontend - ${plan.category}`;
-      plan.name = plan.category;
-      plan.description = `Frontend test plan: ${plan.description}`;
-    });
-    
-    adminPlans.forEach(plan => {
-      plan.category = `Admin - ${plan.category}`;
-      plan.name = plan.category;
-      plan.description = `Admin test plan: ${plan.description}`;
-    });
-    
-    const allPlans = [...frontendPlans, ...adminPlans];
-    console.log(`[TESTING SEED] Parsed ${allPlans.length} test plans`);
-    
-    // 1. Obriši postojeće test planove
-    console.log('[TESTING SEED] Deleting existing test plans...');
-    await prisma.testRunItem.deleteMany({});
-    await prisma.testRun.deleteMany({});
-    await prisma.testItem.deleteMany({});
-    await prisma.testPlan.deleteMany({});
-    console.log('[TESTING SEED] Existing plans deleted');
-    
-    // 2. Kreiraj test planove u bazi
-    console.log('[TESTING SEED] Creating test plans in database...');
-    let totalPlans = 0;
-    let totalItems = 0;
-    
-    for (const planData of allPlans) {
-      if (!planData.items || planData.items.length === 0) {
-        console.log(`[TESTING SEED] Skipping plan "${planData.name}" - no items`);
-        continue;
-      }
-      
-      const plan = await prisma.testPlan.create({
-        data: {
-          name: planData.name,
-          description: planData.description || `Test plan za ${planData.category}`,
-          category: planData.category,
-          items: {
-            create: planData.items.map((item, idx) => ({
-              title: item.title,
-              description: item.description || null,
-              expectedResult: item.expectedResult || null,
-              dataVariations: item.dataVariations || null,
-              order: idx
-            }))
-          }
-        },
-        include: { items: true }
-      });
-      
-      totalPlans++;
-      totalItems += plan.items.length;
-      console.log(`[TESTING SEED] Created plan: "${plan.name}" (${plan.items.length} items)`);
-    }
-    
-    console.log(`[TESTING SEED] Seeding complete! ${totalPlans} plans, ${totalItems} items`);
-    
-    // Dohvati kreirane planove
-    const plans = await prisma.testPlan.findMany({
-      include: { items: { orderBy: { order: 'asc' } } },
-      orderBy: { createdAt: 'desc' }
-    });
-    
-    res.json({ 
-      success: true, 
-      message: 'Test plans seeded successfully',
-      plansCount: plans.length,
-      totalItems: plans.reduce((sum, p) => sum + (p.items?.length || 0), 0),
-      plans: plans.map(p => ({
-        id: p.id,
-        name: p.name,
-        category: p.category,
-        itemsCount: p.items?.length || 0
-      }))
-    });
-  } catch (e) {
-    console.error('[TESTING SEED] Error:', e);
-    next(e);
-  }
 });
 
 export default r;
