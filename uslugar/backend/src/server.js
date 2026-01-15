@@ -110,7 +110,7 @@ console.log('  SMTP_PORT:', process.env.SMTP_PORT || 'NOT SET');
 console.log('  FRONTEND_URL:', process.env.FRONTEND_URL || 'NOT SET');
 
 // === CORS KONFIGURACIJA – PRIJE SVIH DRUGIH MIDDLEWARE-A ===================
-const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS || 'https://uslugar.oriph.io')
+const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS || 'https://www.uslugar.eu')
   .split(',').map(s => s.trim()).filter(Boolean)
 
 console.log('[CORS] Allowed origins:', ALLOWED_ORIGINS);
@@ -136,11 +136,21 @@ app.use((req, res, next) => {
   if (origin && ALLOWED_ORIGINS.includes(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin)
     res.setHeader('Access-Control-Allow-Credentials', 'true')
+    // Debug logging
+    if (process.env.NODE_ENV !== 'production' || process.env.DEBUG_CORS) {
+      console.log('[CORS] ✅ Allowed origin:', origin);
+    }
   } else if (origin) {
     // Log blocked origins for debugging
-    console.warn('[CORS] Blocked origin:', origin);
+    console.warn('[CORS] ❌ Blocked origin:', origin);
     console.warn('[CORS] Allowed origins:', ALLOWED_ORIGINS);
+    console.warn('[CORS] Origin matches?', ALLOWED_ORIGINS.includes(origin));
     // Note: We still continue, but without CORS headers (browser will block)
+  } else {
+    // No origin header (same-origin request or server-to-server)
+    if (process.env.DEBUG_CORS) {
+      console.log('[CORS] ℹ️  No origin header in request');
+    }
   }
   
   // Always set Vary header
@@ -154,6 +164,16 @@ app.use((req, res, next) => {
 
 // ostali middlewares
 app.use(express.json())
+app.use((req, res, next) => {
+  // Osiguraj da svi JSON odgovori koriste UTF-8 encoding
+  // Override res.json() da uvijek postavi charset=utf-8
+  const originalJson = res.json.bind(res)
+  res.json = function(data) {
+    res.setHeader('Content-Type', 'application/json; charset=utf-8')
+    return originalJson(data)
+  }
+  next()
+})
 app.use(morgan('dev'))
 
 // API Request Logger - logira sve API zahtjeve (prije ruta)
